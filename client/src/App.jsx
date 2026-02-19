@@ -1,5 +1,5 @@
 import { useState, lazy, Suspense, useEffect, useMemo } from 'react';
-import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
+import { Routes, Route, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { MODULE_REGISTRY, CATEGORIES, getModulesByCategory } from './config/modules';
 import { ThemeContext, useTheme } from './context/ThemeContext';
 
@@ -94,6 +94,7 @@ export default function App() {
   const [navOpen, setNavOpen] = useState(true);
   const [dark, setDark] = useState(false);
   const [pageKey, setPageKey] = useState(location.pathname);
+  const navigate = useNavigate();
   const isLanding = location.pathname === '/';
   const current = MODULE_REGISTRY.find(m =>
     m.path === '/dashboard' ? location.pathname === '/dashboard' : location.pathname.startsWith(m.path)
@@ -352,6 +353,15 @@ export default function App() {
             )}
 
             <div className={`relative flex items-center gap-2 text-xs ${dark ? 'text-gray-500' : 'text-gray-500'}`}>
+              {location.pathname !== '/dashboard' && (
+                <button onClick={() => navigate(-1)}
+                  className={`mr-1 p-1.5 rounded-lg transition-all duration-200 ${dark ? 'hover:bg-white/[0.06] text-gray-500 hover:text-gray-300' : 'hover:bg-gray-100 text-gray-400 hover:text-gray-600'}`}
+                  title="Go back">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                  </svg>
+                </button>
+              )}
               <span className={`font-bold tracking-widest ${dark ? 'text-glow' : ''}`} style={{ color: dark ? '#00d4ff' : '#4338ca', fontSize: '10px' }}>OVERLOAD</span>
               {current && (
                 <>

@@ -18,6 +18,7 @@ module.exports = {
   getRouter() {
     const router = express.Router();
     router.use('/', require('./routes/integrations'));
+    router.use('/', require('./routes/oauth'));
     return router;
   },
 };
