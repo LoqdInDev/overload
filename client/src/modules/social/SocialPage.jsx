@@ -69,6 +69,7 @@ export default function SocialPage() {
   const [loading, setLoading] = useState(true);
   const [connectingId, setConnectingId] = useState(null);
   const [disconnectingId, setDisconnectingId] = useState(null);
+  const [connectError, setConnectError] = useState(null); // { providerId, message }
 
   // Publishing state
   const [publishing, setPublishing] = useState(false);
@@ -104,8 +105,22 @@ export default function SocialPage() {
     return () => window.removeEventListener('message', handler);
   }, [fetchAccounts]);
 
+  const getProviderConfig = (providerId) => allProviders.find(p => p.id === providerId);
+
   const connectAccount = async (platform) => {
     const providerId = platform.provider;
+    setConnectError(null);
+
+    // Check if provider is configured (has API keys in .env)
+    const provConfig = getProviderConfig(providerId);
+    if (provConfig && !provConfig.configured) {
+      setConnectError({
+        providerId,
+        message: `${platform.name} requires API credentials. Add ${providerId.toUpperCase()}_CLIENT_ID and ${providerId.toUpperCase()}_CLIENT_SECRET to your .env file, then restart the server.`,
+      });
+      return;
+    }
+
     setConnectingId(providerId);
     try {
       const res = await fetch(`/api/integrations/oauth/authorize/${providerId}`);
@@ -124,6 +139,7 @@ export default function SocialPage() {
       }, 1000);
     } catch (err) {
       console.error('OAuth error:', err);
+      setConnectError({ providerId, message: err.message });
       setConnectingId(null);
     }
   };
@@ -258,12 +274,30 @@ export default function SocialPage() {
             <div className="flex-1 hud-line" />
           </div>
 
+          {/* Error banner */}
+          {connectError && (
+            <div className={`rounded-xl p-4 flex items-start gap-3 ${dark ? 'bg-red-500/10 border border-red-500/20' : 'bg-red-50 border border-red-200'}`}>
+              <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+              <div className="flex-1 min-w-0">
+                <p className={`text-xs font-semibold ${dark ? 'text-red-300' : 'text-red-700'}`}>Connection Error</p>
+                <p className={`text-[11px] mt-0.5 ${dark ? 'text-red-400/80' : 'text-red-600'}`}>{connectError.message}</p>
+              </div>
+              <button onClick={() => setConnectError(null)} className={`text-[10px] font-semibold px-2 py-1 rounded-md ${dark ? 'text-red-400/60 hover:text-red-400' : 'text-red-400 hover:text-red-600'}`}>
+                Dismiss
+              </button>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {SOCIAL_PLATFORMS.map(platform => {
               const isConnected = getProviderStatus(platform.provider);
               const acct = connectedAccounts.find(a => a.providerId === platform.provider);
               const isConnecting = connectingId === platform.provider;
               const isDisconnecting = disconnectingId === platform.provider;
+              const provConfig = getProviderConfig(platform.provider);
+              const isConfigured = provConfig?.configured !== false;
               return (
                 <div key={platform.id} className={`${panelCls} rounded-xl p-4 transition-all`}>
                   <div className="flex items-center gap-3 mb-3">
@@ -276,11 +310,13 @@ export default function SocialPage() {
                       <p className={`text-sm font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{platform.name}</p>
                       {isConnected && acct ? (
                         <p className={`text-[10px] truncate ${dark ? 'text-gray-500' : 'text-gray-400'}`}>{acct.accountName || acct.username || 'Connected'}</p>
+                      ) : !isConfigured ? (
+                        <p className={`text-[10px] ${dark ? 'text-amber-500/70' : 'text-amber-600'}`}>API keys not configured</p>
                       ) : (
                         <p className={`text-[10px] ${dark ? 'text-gray-600' : 'text-gray-400'}`}>Not connected</p>
                       )}
                     </div>
-                    <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-400' : dark ? 'bg-gray-700' : 'bg-gray-300'}`} />
+                    <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-400' : !isConfigured ? 'bg-amber-400' : dark ? 'bg-gray-700' : 'bg-gray-300'}`} />
                   </div>
 
                   {isConnected ? (
@@ -303,7 +339,7 @@ export default function SocialPage() {
                           <span className="w-2.5 h-2.5 border-[1.5px] border-current border-t-transparent rounded-full animate-spin" />
                           Connecting...
                         </span>
-                      ) : 'Connect Account'}
+                      ) : !isConfigured ? 'Setup Required' : 'Connect Account'}
                     </button>
                   )}
                 </div>
@@ -311,9 +347,15 @@ export default function SocialPage() {
             })}
           </div>
 
-          {socialConnected.length === 0 && (
-            <div className={`${panelCls} rounded-xl p-8 text-center`}>
-              <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>No social accounts connected yet. Click "Connect Account" on any platform above.</p>
+          {socialConnected.length === 0 && !connectError && (
+            <div className={`${panelCls} rounded-xl p-6 text-center`}>
+              <svg className="w-8 h-8 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+              </svg>
+              <p className={`text-sm font-semibold mb-1 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>No accounts connected yet</p>
+              <p className={`text-xs ${dark ? 'text-gray-500' : 'text-gray-400'}`}>
+                To connect accounts, add your API credentials to the <code className={`px-1 py-0.5 rounded text-[10px] ${dark ? 'bg-white/5' : 'bg-gray-100'}`}>.env</code> file and click "Connect Account" above.
+              </p>
             </div>
           )}
         </div>
