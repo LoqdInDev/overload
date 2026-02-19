@@ -4,6 +4,7 @@ const { generateWithClaude } = require('../../../services/claude');
 const { logActivity } = require('../../../db/database');
 const { queries } = require('../db/queries');
 const { buildAdCampaignPrompt } = require('../prompts/adGenerator');
+const pm = require('../../../services/platformManager');
 
 const router = express.Router();
 
@@ -81,6 +82,111 @@ router.delete('/campaigns/:id', (req, res) => {
   queries.delete.run(req.params.id);
   logActivity('ads', 'delete', 'Deleted ad campaign', null, req.params.id);
   res.json({ success: true });
+});
+
+// ══════════════════════════════════════════════════════
+// Real Platform Integration Routes
+// ══════════════════════════════════════════════════════
+
+// GET /platforms/campaigns - fetch real campaigns from connected ad platforms
+router.get('/platforms/campaigns', async (req, res) => {
+  try {
+    const { provider, customerId, adAccountId } = req.query;
+    const results = {};
+
+    const providers = provider ? [provider] : ['google', 'meta'];
+
+    for (const pid of providers) {
+      if (!pm.isConnected(pid)) continue;
+      try {
+        const params = {};
+        if (pid === 'google' && customerId) params.customerId = customerId;
+        if (pid === 'meta' && adAccountId) params.adAccountId = adAccountId;
+        results[pid] = await pm.adsCampaigns(pid, params);
+      } catch (e) {
+        results[pid] = { error: e.message };
+      }
+    }
+
+    res.json({ success: true, data: results });
+  } catch (error) {
+    console.error('Platform campaigns error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /platforms/metrics - get campaign performance metrics
+router.get('/platforms/metrics', async (req, res) => {
+  try {
+    const { provider, campaignId, customerId, startDate, endDate } = req.query;
+    if (!provider || !campaignId) return res.status(400).json({ success: false, error: 'provider and campaignId required' });
+    if (!pm.isConnected(provider)) return res.status(400).json({ success: false, error: `${provider} not connected` });
+
+    const data = await pm.adsMetrics(provider, { campaignId, customerId, startDate, endDate });
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('Platform metrics error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /platforms/campaigns/:campaignId/pause - pause a campaign
+router.post('/platforms/campaigns/:campaignId/pause', async (req, res) => {
+  try {
+    const { provider, customerId } = req.body;
+    if (!provider) return res.status(400).json({ success: false, error: 'provider required' });
+    if (!pm.isConnected(provider)) return res.status(400).json({ success: false, error: `${provider} not connected` });
+
+    const data = await pm.adsPause(provider, { campaignId: req.params.campaignId, customerId });
+    logActivity('ads', 'pause', `Paused ${provider} campaign`, req.params.campaignId);
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('Pause campaign error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /platforms/campaigns/:campaignId/enable - enable a campaign
+router.post('/platforms/campaigns/:campaignId/enable', async (req, res) => {
+  try {
+    const { provider, customerId } = req.body;
+    if (!provider) return res.status(400).json({ success: false, error: 'provider required' });
+    if (!pm.isConnected(provider)) return res.status(400).json({ success: false, error: `${provider} not connected` });
+
+    const data = await pm.adsEnable(provider, { campaignId: req.params.campaignId, customerId });
+    logActivity('ads', 'enable', `Enabled ${provider} campaign`, req.params.campaignId);
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('Enable campaign error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /platforms/accounts - get connected ad accounts
+router.get('/platforms/accounts', async (req, res) => {
+  try {
+    const results = {};
+
+    if (pm.isConnected('google')) {
+      try {
+        const token = await pm.getToken('google');
+        const platforms = require('../../../services/platforms');
+        results.google = await platforms.googleAds.listAccessibleCustomers(token);
+      } catch (e) { results.google = { error: e.message }; }
+    }
+
+    if (pm.isConnected('meta')) {
+      try {
+        const token = await pm.getToken('meta');
+        const platforms = require('../../../services/platforms');
+        results.meta = await platforms.metaAds.getAdAccounts(token);
+      } catch (e) { results.meta = { error: e.message }; }
+    }
+
+    res.json({ success: true, data: results });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 module.exports = router;

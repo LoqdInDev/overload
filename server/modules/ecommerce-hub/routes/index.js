@@ -3,6 +3,7 @@ const router = express.Router();
 const { db } = require('../../../db/database');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
+const pm = require('../../../services/platformManager');
 
 // GET / - list all stores
 router.get('/', (req, res) => {
@@ -164,6 +165,107 @@ router.post('/generate', async (req, res) => {
   } catch (error) {
     console.error('E-Commerce Hub generation error:', error);
     sse.sendError(error);
+  }
+});
+
+// ══════════════════════════════════════════════════════
+// Real Platform Integration Routes (Shopify)
+// ══════════════════════════════════════════════════════
+
+// GET /platforms/products - pull products from connected Shopify
+router.get('/platforms/products', async (req, res) => {
+  try {
+    if (!pm.isConnected('shopify')) {
+      return res.status(400).json({ success: false, error: 'Shopify not connected. Go to Integrations to connect.' });
+    }
+    const { limit, sinceId } = req.query;
+    const products = await pm.ecommerceProducts('shopify', { limit: parseInt(limit) || 50, sinceId });
+    res.json({ success: true, data: products });
+  } catch (error) {
+    console.error('Shopify products error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /platforms/orders - pull orders from connected Shopify
+router.get('/platforms/orders', async (req, res) => {
+  try {
+    if (!pm.isConnected('shopify')) {
+      return res.status(400).json({ success: false, error: 'Shopify not connected. Go to Integrations to connect.' });
+    }
+    const { limit, status, createdAtMin, createdAtMax } = req.query;
+    const orders = await pm.ecommerceOrders('shopify', {
+      limit: parseInt(limit) || 50,
+      status: status || 'any',
+      createdAtMin, createdAtMax,
+    });
+    res.json({ success: true, data: orders });
+  } catch (error) {
+    console.error('Shopify orders error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /platforms/sync - sync products and orders from Shopify into local DB
+router.post('/platforms/sync', async (req, res) => {
+  try {
+    if (!pm.isConnected('shopify')) {
+      return res.status(400).json({ success: false, error: 'Shopify not connected' });
+    }
+
+    const conn = pm.getConnection('shopify');
+    const shop = conn?.account_id || req.body.shop;
+
+    // Find or create the store record
+    let store = db.prepare("SELECT * FROM eh_stores WHERE platform = 'shopify' AND store_name = ?").get(shop || 'Shopify');
+    if (!store) {
+      const r = db.prepare("INSERT INTO eh_stores (platform, store_name, status) VALUES ('shopify', ?, 'connected')").run(shop || 'Shopify');
+      store = db.prepare('SELECT * FROM eh_stores WHERE id = ?').get(r.lastInsertRowid);
+    }
+
+    // Sync products
+    const products = await pm.ecommerceProducts('shopify', { limit: 50 });
+    for (const p of products) {
+      const existing = db.prepare('SELECT id FROM eh_products WHERE store_id = ? AND sku = ?').get(store.id, String(p.id));
+      if (existing) {
+        db.prepare('UPDATE eh_products SET name = ?, price = ?, stock = ?, status = ? WHERE id = ?')
+          .run(p.title, p.price || 0, p.inventory || 0, p.status || 'active', existing.id);
+      } else {
+        db.prepare('INSERT INTO eh_products (store_id, name, sku, price, stock, status) VALUES (?, ?, ?, ?, ?, ?)')
+          .run(store.id, p.title, String(p.id), p.price || 0, p.inventory || 0, p.status || 'active');
+      }
+    }
+
+    // Sync orders
+    const orders = await pm.ecommerceOrders('shopify', { limit: 50 });
+    for (const o of orders) {
+      const existing = db.prepare('SELECT id FROM eh_orders WHERE store_id = ? AND order_number = ?').get(store.id, String(o.orderNumber));
+      if (existing) {
+        db.prepare('UPDATE eh_orders SET customer = ?, total = ?, status = ? WHERE id = ?')
+          .run(o.customerName, o.totalPrice, o.financialStatus || 'pending', existing.id);
+      } else {
+        db.prepare('INSERT INTO eh_orders (store_id, order_number, customer, total, status, platform) VALUES (?, ?, ?, ?, ?, ?)')
+          .run(store.id, String(o.orderNumber), o.customerName, o.totalPrice, o.financialStatus || 'pending', 'shopify');
+      }
+    }
+
+    db.prepare("UPDATE eh_stores SET last_sync = datetime('now') WHERE id = ?").run(store.id);
+
+    res.json({ success: true, synced: { products: products.length, orders: orders.length } });
+  } catch (error) {
+    console.error('Shopify sync error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /platforms/connected - check if Shopify is connected
+router.get('/platforms/connected', (req, res) => {
+  try {
+    const connected = pm.getConnectedProviders()
+      .filter(p => ['shopify', 'bigcommerce', 'amazon'].includes(p.provider_id));
+    res.json({ success: true, data: connected });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

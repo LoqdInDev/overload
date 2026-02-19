@@ -156,8 +156,9 @@ const JOURNEY = [
 ];
 
 const INTEGRATIONS = [
-  'Shopify', 'Meta', 'Google', 'TikTok', 'Klaviyo', 'Mailchimp',
-  'Stripe', 'HubSpot', 'Zapier', 'Slack', 'YouTube', 'Amazon',
+  'Shopify', 'Meta', 'Google', 'TikTok', 'Twitter/X', 'LinkedIn',
+  'Klaviyo', 'Mailchimp', 'Stripe', 'HubSpot', 'YouTube', 'Pinterest',
+  'Slack', 'Amazon', 'Notion', 'Airtable', 'Zapier', 'Snapchat',
 ];
 
 const TESTIMONIALS = [
@@ -488,7 +489,7 @@ export default function LandingPage() {
                 <span style={{ fontSize: 24, fontWeight: 900, color: '#fff' }}>O</span>
               </div>
 
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4 max-w-2xl mx-auto">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4 max-w-3xl mx-auto">
                 {INTEGRATIONS.map((name, i) => (
                   <div key={i} className="flex flex-col items-center gap-2 py-4 px-2 rounded-2xl transition-all duration-300 cursor-default"
                     style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}

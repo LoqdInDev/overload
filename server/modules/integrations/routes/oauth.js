@@ -58,6 +58,15 @@ router.get('/oauth/authorize/:providerId', (req, res) => {
     const result = getAuthorizationUrl(providerId, extraParams);
     if (!result) return res.status(500).json({ success: false, error: 'Could not generate auth URL' });
 
+    // For PKCE providers, store the codeVerifier in the state's extra_params
+    if (result.codeVerifier) {
+      const stateParam = new URL(result.url).searchParams.get('state');
+      if (stateParam) {
+        db.prepare('UPDATE int_oauth_states SET extra_params = ? WHERE state = ?')
+          .run(JSON.stringify({ ...extraParams, codeVerifier: result.codeVerifier }), stateParam);
+      }
+    }
+
     res.json({ success: true, authUrl: result.url });
   } catch (error) {
     console.error('OAuth authorize error:', error);

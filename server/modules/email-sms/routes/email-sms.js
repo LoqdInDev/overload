@@ -3,6 +3,7 @@ const router = express.Router();
 const { db, logActivity } = require('../../../db/database');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
+const pm = require('../../../services/platformManager');
 
 // POST /generate - SSE: generate email or SMS content
 router.post('/generate', async (req, res) => {
@@ -323,6 +324,84 @@ router.post('/templates', (req, res) => {
     res.status(201).json(template);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// ══════════════════════════════════════════════════════
+// Real Platform Integration Routes
+// ══════════════════════════════════════════════════════
+
+// GET /platforms/lists - get email lists from connected providers
+router.get('/platforms/lists', async (req, res) => {
+  try {
+    const { provider } = req.query;
+    const results = {};
+    const providers = provider ? [provider] : ['mailchimp', 'klaviyo'];
+
+    for (const pid of providers) {
+      if (!pm.isConnected(pid)) continue;
+      try {
+        results[pid] = await pm.emailLists(pid);
+      } catch (e) {
+        results[pid] = { error: e.message };
+      }
+    }
+
+    res.json({ success: true, data: results });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /platforms/campaigns - get campaigns from connected providers
+router.get('/platforms/campaigns', async (req, res) => {
+  try {
+    const { provider } = req.query;
+    const results = {};
+    const providers = provider ? [provider] : ['mailchimp', 'klaviyo'];
+
+    for (const pid of providers) {
+      if (!pm.isConnected(pid)) continue;
+      try {
+        results[pid] = await pm.emailCampaigns(pid);
+      } catch (e) {
+        results[pid] = { error: e.message };
+      }
+    }
+
+    res.json({ success: true, data: results });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /platforms/send - send a campaign through a connected provider
+router.post('/platforms/send', async (req, res) => {
+  try {
+    const { provider, listId, subject, fromName, fromEmail, replyTo, html, name } = req.body;
+    if (!provider || !listId) return res.status(400).json({ success: false, error: 'provider and listId required' });
+    if (!pm.isConnected(provider)) return res.status(400).json({ success: false, error: `${provider} not connected` });
+
+    const data = await pm.emailSend(provider, {
+      listId, subject, fromName, fromEmail, replyTo, html, name: name || subject,
+    });
+
+    logActivity('email-sms', 'send', `Sent campaign via ${provider}`, subject);
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('Platform send error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /platforms/connected - check which email providers are connected
+router.get('/platforms/connected', (req, res) => {
+  try {
+    const connected = pm.getConnectedProviders()
+      .filter(p => ['mailchimp', 'klaviyo'].includes(p.provider_id));
+    res.json({ success: true, data: connected });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

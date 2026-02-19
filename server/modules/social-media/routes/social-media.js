@@ -3,6 +3,7 @@ const router = express.Router();
 const { db, logActivity } = require('../../../db/database');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
+const pm = require('../../../services/platformManager');
 
 // POST /generate - SSE: generate social media content
 router.post('/generate', async (req, res) => {
@@ -318,6 +319,175 @@ router.delete('/calendar/:id', (req, res) => {
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// ══════════════════════════════════════════════════════
+// Real Platform Integration Routes
+// ══════════════════════════════════════════════════════
+
+// GET /accounts - list connected social media accounts
+router.get('/accounts', async (req, res) => {
+  try {
+    const socialProviders = ['twitter', 'linkedin', 'meta', 'google', 'tiktok', 'pinterest'];
+    const connected = pm.getConnectedProviders().filter(p => socialProviders.includes(p.provider_id));
+
+    // Enrich with cached account info from sm_accounts
+    const accounts = connected.map(c => {
+      const cached = db.prepare('SELECT * FROM sm_accounts WHERE provider_id = ? ORDER BY updated_at DESC LIMIT 1').get(c.provider_id);
+      return {
+        providerId: c.provider_id,
+        displayName: c.display_name,
+        accountName: c.account_name,
+        accountId: c.account_id,
+        username: cached?.username || null,
+        avatar: cached?.avatar_url || null,
+        followers: cached?.followers || 0,
+        connectedAt: c.connected_at,
+      };
+    });
+
+    res.json({ success: true, data: accounts });
+  } catch (error) {
+    console.error('Accounts error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /accounts/:providerId/sync - refresh account profile info
+router.post('/accounts/:providerId/sync', async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    if (!pm.isConnected(providerId)) {
+      return res.status(400).json({ success: false, error: `${providerId} is not connected` });
+    }
+
+    const profile = await pm.socialProfile(providerId);
+    if (!profile) return res.status(404).json({ success: false, error: 'Could not fetch profile' });
+
+    const existing = db.prepare('SELECT id FROM sm_accounts WHERE provider_id = ?').get(providerId);
+    if (existing) {
+      db.prepare(`UPDATE sm_accounts SET username = ?, display_name = ?, avatar_url = ?, followers = ?, account_id = ?, updated_at = datetime('now') WHERE id = ?`)
+        .run(profile.username || profile.name, profile.name, profile.avatar || null, profile.followers || 0, profile.id, existing.id);
+    } else {
+      db.prepare('INSERT INTO sm_accounts (provider_id, platform, account_id, username, display_name, avatar_url, followers) VALUES (?, ?, ?, ?, ?, ?, ?)')
+        .run(providerId, providerId, profile.id, profile.username || profile.name, profile.name, profile.avatar || null, profile.followers || 0);
+    }
+
+    res.json({ success: true, data: profile });
+  } catch (error) {
+    console.error('Account sync error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /publish - publish a post to a connected platform
+router.post('/publish', async (req, res) => {
+  try {
+    const { providerId, text, caption, mediaUrl, imageUrl, postId, pageId, pageToken, boardId, title, link } = req.body;
+
+    if (!pm.isConnected(providerId)) {
+      return res.status(400).json({ success: false, error: `${providerId} is not connected. Go to Integrations to connect.` });
+    }
+
+    const content = {};
+    const postText = text || caption || '';
+
+    switch (providerId) {
+      case 'twitter':
+        content.text = postText;
+        break;
+      case 'linkedin':
+        content.text = postText;
+        if (mediaUrl || imageUrl) content.mediaUrn = mediaUrl;
+        if (title) content.title = title;
+        break;
+      case 'meta':
+        content.message = postText;
+        if (pageId) content.pageId = pageId;
+        if (pageToken) content.pageToken = pageToken;
+        if (mediaUrl || imageUrl) content.mediaUrl = mediaUrl || imageUrl;
+        if (link) content.link = link;
+        break;
+      case 'pinterest':
+        content.boardId = boardId;
+        content.title = title || postText.slice(0, 100);
+        content.description = postText;
+        content.imageUrl = imageUrl || mediaUrl;
+        if (link) content.link = link;
+        break;
+      case 'tiktok':
+        content.title = title || postText.slice(0, 150);
+        break;
+      default:
+        return res.status(400).json({ success: false, error: `Publishing not supported for ${providerId}` });
+    }
+
+    const result = await pm.socialPost(providerId, content);
+
+    // Update post status in DB if postId provided
+    if (postId) {
+      db.prepare("UPDATE sm_posts SET status = 'published', published_at = datetime('now'), external_post_id = ?, updated_at = datetime('now') WHERE id = ?")
+        .run(result?.data?.id || result?.id || null, postId);
+    }
+
+    logActivity('social', 'publish', `Published to ${providerId}`, postText.slice(0, 80));
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('Publish error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /analytics/:providerId - get analytics for a connected platform
+router.get('/analytics/:providerId', async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    const { startDate, endDate, startTime, endTime, pageId, period } = req.query;
+
+    if (!pm.isConnected(providerId)) {
+      return res.status(400).json({ success: false, error: `${providerId} is not connected` });
+    }
+
+    const params = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (startTime) params.startTime = startTime;
+    if (endTime) params.endTime = endTime;
+    if (pageId) params.pageId = pageId;
+    if (period) params.period = period;
+
+    const data = await pm.socialAnalytics(providerId, params);
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('Analytics error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /pages/:providerId - get Facebook pages or similar sub-accounts
+router.get('/pages/:providerId', async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    if (!pm.isConnected(providerId)) {
+      return res.status(400).json({ success: false, error: `${providerId} is not connected` });
+    }
+
+    const token = await pm.getToken(providerId);
+    const platforms = require('../../../services/platforms');
+
+    let pages = [];
+    if (providerId === 'meta') {
+      pages = await platforms.facebook.getPages(token);
+    } else if (providerId === 'google') {
+      const profile = await platforms.youtube.getProfile(token);
+      pages = profile ? [profile] : [];
+    }
+
+    res.json({ success: true, data: pages });
+  } catch (error) {
+    console.error('Pages error:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

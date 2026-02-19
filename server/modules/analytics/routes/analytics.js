@@ -1,5 +1,6 @@
 const express = require('express');
 const { db } = require('../../../db/database');
+const pm = require('../../../services/platformManager');
 
 const router = express.Router();
 
@@ -90,6 +91,69 @@ router.get('/module/:moduleId', (req, res) => {
     actions,
     recent,
   });
+});
+
+// ══════════════════════════════════════════════════════
+// Real Platform Analytics Routes
+// ══════════════════════════════════════════════════════
+
+// GET /platforms - pull analytics from connected platforms
+router.get('/platforms', async (req, res) => {
+  try {
+    const { provider, startDate, endDate, period } = req.query;
+    const results = {};
+
+    const socialProviders = ['twitter', 'linkedin', 'meta', 'google', 'tiktok', 'pinterest'];
+    const providers = provider ? [provider] : socialProviders;
+
+    for (const pid of providers) {
+      if (!pm.isConnected(pid)) continue;
+      try {
+        results[pid] = await pm.socialAnalytics(pid, { startDate, endDate, period });
+      } catch (e) {
+        results[pid] = { error: e.message };
+      }
+    }
+
+    res.json({ success: true, data: results });
+  } catch (error) {
+    console.error('Platform analytics error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /platforms/ads - pull ad metrics from connected ad platforms
+router.get('/platforms/ads', async (req, res) => {
+  try {
+    const { startDate, endDate, customerId, adAccountId } = req.query;
+    const results = {};
+
+    if (pm.isConnected('google')) {
+      try {
+        results.google = await pm.adsCampaigns('google', { customerId });
+      } catch (e) { results.google = { error: e.message }; }
+    }
+
+    if (pm.isConnected('meta')) {
+      try {
+        results.meta = await pm.adsCampaigns('meta', { adAccountId });
+      } catch (e) { results.meta = { error: e.message }; }
+    }
+
+    res.json({ success: true, data: results });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /platforms/connected - list which platforms are connected
+router.get('/platforms/connected', (req, res) => {
+  try {
+    const connected = pm.getConnectedProviders();
+    res.json({ success: true, data: connected });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 module.exports = router;
