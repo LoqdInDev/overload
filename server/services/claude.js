@@ -18,19 +18,22 @@ function stripMarkdownJSON(text) {
   return cleaned;
 }
 
-async function generateWithClaude(prompt, { onChunk, temperature = 0.9, maxTokens = 8192 } = {}) {
+async function generateWithClaude(prompt, { onChunk, system, temperature = 0.9, maxTokens = 8192 } = {}) {
   let lastError;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
+      const params = {
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: maxTokens,
+        temperature,
+        messages: [{ role: 'user', content: prompt }],
+      };
+      if (system) params.system = system;
+
       if (onChunk) {
         let fullText = '';
-        const stream = await client.messages.stream({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: maxTokens,
-          temperature,
-          messages: [{ role: 'user', content: prompt }],
-        });
+        const stream = await client.messages.stream(params);
 
         for await (const event of stream) {
           if (event.type === 'content_block_delta' && event.delta?.text) {
@@ -42,12 +45,7 @@ async function generateWithClaude(prompt, { onChunk, temperature = 0.9, maxToken
         const cleaned = stripMarkdownJSON(fullText);
         return { parsed: JSON.parse(cleaned), raw: fullText };
       } else {
-        const response = await client.messages.create({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: maxTokens,
-          temperature,
-          messages: [{ role: 'user', content: prompt }],
-        });
+        const response = await client.messages.create(params);
 
         const raw = response.content[0].text;
         const cleaned = stripMarkdownJSON(raw);
@@ -69,19 +67,22 @@ async function generateWithClaude(prompt, { onChunk, temperature = 0.9, maxToken
   throw lastError;
 }
 
-async function generateTextWithClaude(prompt, { onChunk, temperature = 0.9, maxTokens = 4096 } = {}) {
+async function generateTextWithClaude(prompt, { onChunk, system, temperature = 0.9, maxTokens = 4096 } = {}) {
   let lastError;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
+      const params = {
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: maxTokens,
+        temperature,
+        messages: [{ role: 'user', content: prompt }],
+      };
+      if (system) params.system = system;
+
       if (onChunk) {
         let fullText = '';
-        const stream = await client.messages.stream({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: maxTokens,
-          temperature,
-          messages: [{ role: 'user', content: prompt }],
-        });
+        const stream = await client.messages.stream(params);
 
         for await (const event of stream) {
           if (event.type === 'content_block_delta' && event.delta?.text) {
@@ -92,12 +93,7 @@ async function generateTextWithClaude(prompt, { onChunk, temperature = 0.9, maxT
 
         return { text: fullText };
       } else {
-        const response = await client.messages.create({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: maxTokens,
-          temperature,
-          messages: [{ role: 'user', content: prompt }],
-        });
+        const response = await client.messages.create(params);
 
         return { text: response.content[0].text };
       }

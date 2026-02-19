@@ -838,6 +838,18 @@
 .stagger > *:nth-child(20) { animation-delay: 1140ms; }
 
 /* ═══════════════════════════════════════════
+   COMMAND CENTER PANELS — Staggered entrance
+   ═══════════════════════════════════════════ */
+.cc-panel {
+  opacity: 0;
+  animation: cc-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes cc-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════
    MODULE CARD ACTIVE DOT (dramatic)
    ═══════════════════════════════════════════ */
 .module-dot {
