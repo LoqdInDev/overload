@@ -11,34 +11,42 @@
   --neon-blue: #00d4ff;
   --neon-purple: #9b59b6;
   --neon-green: #00ff88;
-  --bg-deep: #050505;
+  --bg-deep: #FBF7F0;
   --bg-card: rgba(10, 10, 15, 0.75);
   --border-glow: rgba(0, 212, 255, 0.12);
+  /* Warm editorial palette */
+  --lp-cream: #FBF7F0;
+  --lp-dark: #2C2825;
+  --lp-ink: #332F2B;
+  --lp-terra: #C45D3E;
+  --lp-sage: #5E8E6E;
+  --lp-muted: #94908A;
+  --lp-sand: #EDE5DA;
 }
 
 @layer base {
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(0, 212, 255, 0.2) transparent;
+    scrollbar-color: rgba(196, 93, 62, 0.15) transparent;
   }
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(0, 212, 255, 0.2); border-radius: 10px; }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(0, 212, 255, 0.4); }
+  ::-webkit-scrollbar-thumb { background: rgba(196, 93, 62, 0.15); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(196, 93, 62, 0.3); }
 
   html {
-    font-size: 18px; /* 112.5% — scales all rem-based Tailwind utilities up */
+    font-size: 16px;
   }
 
   body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     background: var(--bg-deep);
   }
 
   ::selection {
-    background: rgba(0, 212, 255, 0.3);
-    color: #fff;
+    background: rgba(196, 93, 62, 0.15);
+    color: var(--lp-ink);
   }
 }
 
@@ -46,14 +54,14 @@
    LIGHT THEME
    ═══════════════════════════════════════════ */
 [data-theme="light"] {
-  scrollbar-color: rgba(99, 102, 241, 0.15) transparent;
+  scrollbar-color: rgba(196, 93, 62, 0.12) transparent;
 }
 [data-theme="light"] ::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.15);
+  background: rgba(196, 93, 62, 0.12);
 }
 [data-theme="light"] ::selection {
-  background: rgba(99, 102, 241, 0.2);
-  color: #1e1b4b;
+  background: rgba(196, 93, 62, 0.15);
+  color: #332F2B;
 }
 
 /* ═══════════════════════════════════════════
