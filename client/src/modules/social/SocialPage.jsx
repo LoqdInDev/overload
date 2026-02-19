@@ -67,6 +67,8 @@ export default function SocialPage() {
   const [connectedAccounts, setConnectedAccounts] = useState([]);
   const [allProviders, setAllProviders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [connectingId, setConnectingId] = useState(null);
+  const [disconnectingId, setDisconnectingId] = useState(null);
 
   // Publishing state
   const [publishing, setPublishing] = useState(false);
@@ -89,6 +91,54 @@ export default function SocialPage() {
   }, []);
 
   useEffect(() => { fetchAccounts(); }, [fetchAccounts]);
+
+  // Listen for OAuth popup callback
+  useEffect(() => {
+    const handler = (event) => {
+      if (event.data?.type === 'oauth-callback') {
+        setConnectingId(null);
+        fetchAccounts();
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, [fetchAccounts]);
+
+  const connectAccount = async (platform) => {
+    const providerId = platform.provider;
+    setConnectingId(providerId);
+    try {
+      const res = await fetch(`/api/integrations/oauth/authorize/${providerId}`);
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+
+      const popup = window.open(data.authUrl, 'oauth-connect', 'width=600,height=700,scrollbars=yes');
+
+      // Fallback: poll for popup close
+      const poll = setInterval(() => {
+        if (popup?.closed) {
+          clearInterval(poll);
+          setConnectingId(null);
+          fetchAccounts();
+        }
+      }, 1000);
+    } catch (err) {
+      console.error('OAuth error:', err);
+      setConnectingId(null);
+    }
+  };
+
+  const disconnectAccount = async (providerId) => {
+    setDisconnectingId(providerId);
+    try {
+      await fetch(`/api/integrations/connections/${providerId}`, { method: 'DELETE' });
+      fetchAccounts();
+    } catch (err) {
+      console.error('Disconnect error:', err);
+    } finally {
+      setDisconnectingId(null);
+    }
+  };
 
   const generate = async () => {
     if (!prompt.trim() || !activeType) return;
@@ -212,6 +262,8 @@ export default function SocialPage() {
             {SOCIAL_PLATFORMS.map(platform => {
               const isConnected = getProviderStatus(platform.provider);
               const acct = connectedAccounts.find(a => a.providerId === platform.provider);
+              const isConnecting = connectingId === platform.provider;
+              const isDisconnecting = disconnectingId === platform.provider;
               return (
                 <div key={platform.id} className={`${panelCls} rounded-xl p-4 transition-all`}>
                   <div className="flex items-center gap-3 mb-3">
@@ -237,13 +289,22 @@ export default function SocialPage() {
                       {acct?.followers > 0 && (
                         <span className={`text-[10px] font-mono ${dark ? 'text-gray-500' : 'text-gray-400'}`}>{Number(acct.followers).toLocaleString()} followers</span>
                       )}
+                      <button onClick={() => disconnectAccount(platform.provider)} disabled={isDisconnecting}
+                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-md transition-all ${dark ? 'text-red-400/60 hover:text-red-400 hover:bg-red-500/10' : 'text-red-400 hover:bg-red-50'} disabled:opacity-40`}>
+                        {isDisconnecting ? '...' : 'Disconnect'}
+                      </button>
                     </div>
                   ) : (
-                    <a href="/integrations"
-                      className="block text-center py-1.5 rounded-lg text-[10px] font-bold transition-all"
+                    <button onClick={() => connectAccount(platform)} disabled={isConnecting}
+                      className="w-full text-center py-1.5 rounded-lg text-[10px] font-bold transition-all disabled:opacity-50"
                       style={{ background: `${platform.color}15`, color: platform.color, border: `1px solid ${platform.color}25` }}>
-                      Connect in Integrations
-                    </a>
+                      {isConnecting ? (
+                        <span className="flex items-center justify-center gap-1.5">
+                          <span className="w-2.5 h-2.5 border-[1.5px] border-current border-t-transparent rounded-full animate-spin" />
+                          Connecting...
+                        </span>
+                      ) : 'Connect Account'}
+                    </button>
                   )}
                 </div>
               );
@@ -252,10 +313,7 @@ export default function SocialPage() {
 
           {socialConnected.length === 0 && (
             <div className={`${panelCls} rounded-xl p-8 text-center`}>
-              <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>No social accounts connected yet.</p>
-              <a href="/integrations" className="inline-block mt-3 px-4 py-2 rounded-lg text-xs font-bold text-white" style={{ background: MODULE_COLOR }}>
-                Go to Integrations
-              </a>
+              <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>No social accounts connected yet. Click "Connect Account" on any platform above.</p>
             </div>
           )}
         </div>
@@ -353,6 +411,12 @@ export default function SocialPage() {
                     {getProviderStatus(type.provider) ? 'Connected' : 'Not connected'}
                   </p>
                 </div>
+                {!getProviderStatus(type.provider) && (
+                  <p className="text-[9px] mt-1 font-semibold" style={{ color: type.color }}
+                    onClick={(e) => { e.stopPropagation(); setTab('accounts'); }}>
+                    Connect &rarr;
+                  </p>
+                )}
               </button>
             ))}
           </div>
