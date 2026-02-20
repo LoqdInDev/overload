@@ -87,7 +87,7 @@ function AnimatedNumber({ value, suffix = '' }) {
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
   }, [value]);
-  return <span ref={ref}>{display}{suffix}</span>;
+  return <span ref={ref}>{display}</span>;
 }
 
 /* ═══════════════════════════════════════════
@@ -290,7 +290,7 @@ export default function LandingPage() {
                   <div key={i} className="flex items-center">
                     <div className="text-center px-6 md:px-10">
                       <p style={{ fontSize: 36, fontWeight: 700, color: 'var(--lp-ink)', letterSpacing: '-0.04em', fontFamily: "'DM Sans', sans-serif" }}>
-                        {s.raw ? s.val : <AnimatedNumber value={s.val} suffix={s.suf} />}{!s.raw && s.suf}
+                        {s.raw ? s.val : <><AnimatedNumber value={s.val} />{s.suf}</>}
                       </p>
                       <p style={{ fontSize: 13, color: 'var(--lp-muted)', fontWeight: 500, marginTop: 4 }}>{s.label}</p>
                     </div>
