@@ -81,20 +81,38 @@ export default function VideoMarketingPage() {
     }
   };
 
+  const hasCampaigns = campaigns.length > 0;
+  const showingForm = currentStep === 0 || !activeCampaign;
+
+  // When no campaigns exist and no active campaign, show a full-width welcome layout
+  if (!hasCampaigns && showingForm) {
+    return (
+      <div className="h-full overflow-y-auto">
+        <div className="p-6 sm:p-10 lg:p-16 max-w-5xl mx-auto">
+          <ProductInput onSubmit={createCampaign} welcome />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full overflow-hidden">
       {/* Campaign sidebar */}
       <aside className={`${sidebarOpen ? 'w-64' : 'w-0'} transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] flex flex-col overflow-hidden flex-shrink-0 relative`}>
-        <div className={`absolute inset-0 ${dark ? 'bg-[#050508]' : 'bg-gray-50'}`} />
-        <div className={`absolute inset-y-0 right-0 w-px ${dark ? 'bg-indigo-500/[0.06]' : 'bg-gray-200'}`} />
+        <div className={`absolute inset-0 ${dark ? 'bg-[#050508]' : 'bg-white/60'}`} />
+        <div className={`absolute inset-y-0 right-0 w-px ${dark ? 'bg-indigo-500/[0.06]' : 'bg-[#e8e0d4]'}`} />
 
         <div className="relative px-3 py-3">
           <button
             onClick={handleNewCampaign}
-            className="btn-accent w-full py-2.5 rounded-lg text-xs"
-            style={{ background: '#8b5cf6', boxShadow: '0 4px 16px -4px rgba(139,92,246,0.3)' }}
+            className="w-full py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+            style={{
+              background: dark ? '#8b5cf6' : 'var(--lp-terra)',
+              color: '#fff',
+              boxShadow: dark ? '0 4px 16px -4px rgba(139,92,246,0.3)' : '0 4px 16px -4px rgba(196,93,62,0.25)',
+            }}
           >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
             New Campaign
@@ -113,12 +131,12 @@ export default function VideoMarketingPage() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Step nav */}
         {activeCampaign && (
-          <div className={`flex items-center gap-0.5 px-4 py-2 overflow-x-auto no-scrollbar flex-shrink-0 relative border-b ${dark ? 'border-indigo-500/[0.06]' : 'border-gray-200'}`}>
+          <div className={`flex items-center gap-0.5 px-6 py-2 overflow-x-auto no-scrollbar flex-shrink-0 relative border-b ${dark ? 'border-indigo-500/[0.06]' : 'border-[#e8e0d4]'}`}>
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className={`mr-2 p-1.5 rounded-md transition-all duration-300 flex-shrink-0 ${dark ? 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
+              className={`mr-2 p-1.5 rounded-md transition-all duration-300 flex-shrink-0 ${dark ? 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]' : 'text-[#94908A] hover:text-[#332F2B] hover:bg-[#EDE5DA]/60'}`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                 {sidebarOpen ? (
                   <path strokeLinecap="round" strokeLinejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
                 ) : (
@@ -128,13 +146,13 @@ export default function VideoMarketingPage() {
             </button>
 
             <div className="flex items-center gap-1.5 mr-3 flex-shrink-0">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" style={{ boxShadow: dark ? '0 0 6px rgba(74,222,128,0.5)' : 'none' }} />
-              <span className={`text-xs font-semibold truncate max-w-[120px] ${dark ? 'text-gray-300' : 'text-gray-700'}`}>
+              <div className="w-1.5 h-1.5 rounded-full" style={{ background: dark ? '#4ade80' : 'var(--lp-sage)', boxShadow: dark ? '0 0 6px rgba(74,222,128,0.5)' : 'none' }} />
+              <span className={`text-xs font-semibold truncate max-w-[120px] ${dark ? 'text-gray-300' : 'text-[#332F2B]'}`}>
                 {activeCampaign.product_name || activeCampaign.product_data?.name}
               </span>
             </div>
 
-            <div className={`flex-shrink-0 w-px h-4 mx-1 ${dark ? 'hud-line bg-indigo-500/10' : 'bg-gray-200'}`} />
+            <div className={`flex-shrink-0 w-px h-4 mx-1 ${dark ? 'bg-indigo-500/10' : 'bg-[#e8e0d4]'}`} />
 
             {STEPS.map((step, i) => (
               <button
@@ -142,22 +160,25 @@ export default function VideoMarketingPage() {
                 onClick={() => setCurrentStep(i)}
                 className={`group relative flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 ${
                   i === currentStep
-                    ? dark ? 'text-violet-300' : 'text-violet-700'
+                    ? dark ? 'text-violet-300' : 'text-[#C45D3E]'
                     : i < currentStep
-                      ? dark ? 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.03]' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                      : dark ? 'text-gray-600 hover:text-gray-400 hover:bg-white/[0.03]' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                      ? dark ? 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.03]' : 'text-[#332F2B] hover:text-[#C45D3E] hover:bg-[#EDE5DA]/60'
+                      : dark ? 'text-gray-600 hover:text-gray-400 hover:bg-white/[0.03]' : 'text-[#94908A] hover:text-[#332F2B] hover:bg-[#EDE5DA]/60'
                 }`}
                 title={step.key}
               >
                 {i === currentStep && (
-                  <div className="absolute inset-0 rounded-md" style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.15)' }} />
+                  <div className="absolute inset-0 rounded-md" style={{
+                    background: dark ? 'rgba(139,92,246,0.1)' : 'rgba(196,93,62,0.08)',
+                    border: dark ? '1px solid rgba(139,92,246,0.15)' : '1px solid rgba(196,93,62,0.15)',
+                  }} />
                 )}
-                <svg className="w-3 h-3 flex-shrink-0 relative" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <svg className="w-3.5 h-3.5 flex-shrink-0 relative" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d={step.icon} />
                 </svg>
                 <span className="hidden xl:inline relative">{step.key}</span>
                 {i === currentStep && (
-                  <span className="absolute -bottom-px left-2 right-2 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.5), transparent)' }} />
+                  <span className="absolute -bottom-px left-2 right-2 h-px" style={{ background: dark ? 'linear-gradient(90deg, transparent, rgba(139,92,246,0.5), transparent)' : 'linear-gradient(90deg, transparent, rgba(196,93,62,0.4), transparent)' }} />
                 )}
               </button>
             ))}
@@ -166,9 +187,11 @@ export default function VideoMarketingPage() {
 
         {/* Content area */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-6 animate-fade-in">
-            {currentStep === 0 || !activeCampaign ? (
-              <ProductInput onSubmit={createCampaign} />
+          <div className="p-4 sm:p-8">
+            {showingForm ? (
+              <div className="max-w-3xl mx-auto">
+                <ProductInput onSubmit={createCampaign} />
+              </div>
             ) : (
               <Dashboard
                 campaign={activeCampaign}
