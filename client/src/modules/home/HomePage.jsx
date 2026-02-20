@@ -101,12 +101,18 @@ const FEED = [
 ];
 
 const QUICK = [
-  { label: 'Create Video', path: '/video-marketing', icon: 'M15.75 10.5l4.72-2.36a.75.75 0 011.28.53v6.66a.75.75 0 01-1.28.53L15.75 13.5m-13.5-3h12a1.5 1.5 0 011.5 1.5v6a1.5 1.5 0 01-1.5 1.5h-12a1.5 1.5 0 01-1.5-1.5v-6a1.5 1.5 0 011.5-1.5z', color: '#C45D3E' },
-  { label: 'Write Content', path: '/content', icon: 'M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L11.828 15H9v-2.828l7.862-7.685z', color: '#D4915C' },
-  { label: 'Launch Ads', path: '/ads', icon: 'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75z', color: '#5E8E6E' },
-  { label: 'Send Email', path: '/email-sms', icon: 'M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25', color: '#8B7355' },
-  { label: 'Post Social', path: '/social', icon: 'M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314', color: '#9B6B6B' },
-  { label: 'Autopilot', path: '/autopilot', icon: 'M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z', color: '#C45D3E' },
+  { label: 'Create Video', sub: 'AI clips & reels', path: '/video-marketing', color: '#C45D3E', grad: '#D4735A',
+    icon: 'M15.75 10.5l4.72-2.36a.75.75 0 011.28.53v6.66a.75.75 0 01-1.28.53L15.75 13.5m-13.5-3h12a1.5 1.5 0 011.5 1.5v6a1.5 1.5 0 01-1.5 1.5h-12a1.5 1.5 0 01-1.5-1.5v-6a1.5 1.5 0 011.5-1.5z' },
+  { label: 'Write Content', sub: 'Blog, copy & more', path: '/content', color: '#D4915C', grad: '#E0A573',
+    icon: 'M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z' },
+  { label: 'Launch Ads', sub: 'Google & Meta', path: '/ads', color: '#5E8E6E', grad: '#76A685',
+    icon: 'M2.25 18L9 11.25l4.306 4.306a11.95 11.95 0 015.814-5.518l2.74-1.22m0 0l-5.94-2.281m5.94 2.28l-2.28 5.941' },
+  { label: 'Send Email', sub: 'Campaigns & drips', path: '/email-sms', color: '#8B7355', grad: '#A48B6B',
+    icon: 'M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0l-9.75 6.093L2.25 6.75' },
+  { label: 'Post Social', sub: '7 platforms', path: '/social', color: '#9B6B6B', grad: '#B38383',
+    icon: 'M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0-2.186a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093' },
+  { label: 'Autopilot', sub: 'Automated flows', path: '/autopilot', color: '#C45D3E', grad: '#D4735A',
+    icon: 'M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z' },
 ];
 
 function getGreeting() {
@@ -538,37 +544,49 @@ export default function HomePage() {
             Quick Actions
           </span>
         </div>
-        <div className="p-3.5 grid grid-cols-3 sm:grid-cols-6 gap-3">
+        <div className="p-4 grid grid-cols-3 sm:grid-cols-6 gap-3">
           {QUICK.map((q, i) => (
             <button key={i} onClick={() => nav(q.path)}
-              className="flex flex-col items-center gap-3 px-4 py-5 rounded-[18px] transition-all group/q"
+              className="group/q flex flex-col items-center gap-2.5 px-3 py-5 rounded-2xl transition-all duration-300 cursor-pointer"
               style={{
-                border: `1px solid ${dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)'}`,
+                background: dark ? 'rgba(255,255,255,0.02)' : 'rgba(44,40,37,0.02)',
+                border: `1px solid ${dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.05)'}`,
               }}
               onMouseEnter={e => {
-                e.currentTarget.style.background = dark ? `${q.color}0c` : `${q.color}06`;
-                e.currentTarget.style.borderColor = dark ? `${q.color}20` : `${q.color}15`;
-                e.currentTarget.style.transform = 'translateY(-3px)';
-                e.currentTarget.style.boxShadow = `0 12px 28px -8px ${q.color}18`;
+                e.currentTarget.style.background = dark ? `${q.color}10` : `${q.color}08`;
+                e.currentTarget.style.borderColor = dark ? `${q.color}25` : `${q.color}18`;
+                e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)';
+                e.currentTarget.style.boxShadow = `0 12px 24px -6px ${q.color}25`;
               }}
               onMouseLeave={e => {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.borderColor = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)';
-                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.02)' : 'rgba(44,40,37,0.02)';
+                e.currentTarget.style.borderColor = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.05)';
+                e.currentTarget.style.transform = 'translateY(0) scale(1)';
                 e.currentTarget.style.boxShadow = 'none';
               }}
             >
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover/q:scale-110" style={{
-                background: dark ? `${q.color}12` : `${q.color}08`,
-                border: `1px solid ${dark ? `${q.color}20` : `${q.color}12`}`,
-              }}>
-                <svg className="w-5 h-5" fill="none" stroke={q.color} viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d={q.icon} />
-                </svg>
+              <div className="relative">
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover/q:scale-110 group-hover/q:rotate-3" style={{
+                  background: `linear-gradient(135deg, ${q.color}, ${q.grad})`,
+                  boxShadow: `0 6px 16px -2px ${q.color}40`,
+                }}>
+                  <svg className="w-6 h-6 text-white drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d={q.icon} />
+                  </svg>
+                </div>
+                <div className="absolute -inset-1 rounded-2xl opacity-0 group-hover/q:opacity-100 transition-opacity duration-300 -z-10" style={{
+                  background: `linear-gradient(135deg, ${q.color}20, ${q.grad}20)`,
+                  filter: 'blur(8px)',
+                }} />
               </div>
-              <span className="text-[11px] font-bold whitespace-nowrap" style={{ color: dark ? '#B5B0AA' : '#4A4541' }}>
-                {q.label}
-              </span>
+              <div className="text-center">
+                <span className="block text-[11px] font-bold" style={{ color: dark ? '#B5B0AA' : '#4A4541' }}>
+                  {q.label}
+                </span>
+                <span className="block text-[9px] font-medium mt-0.5" style={{ color: dark ? '#6B6660' : '#94908A' }}>
+                  {q.sub}
+                </span>
+              </div>
             </button>
           ))}
         </div>
