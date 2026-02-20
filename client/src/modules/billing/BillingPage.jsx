@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useTheme } from '../../context/ThemeContext';
+import AIToolsTab from '../../components/shared/AIToolsTab';
 
 const MODULE_COLOR = '#64748b';
 
@@ -44,29 +46,48 @@ const AI_TEMPLATES = [
 ];
 
 export default function BillingPage() {
+  const { dark } = useTheme();
   const [tab, setTab] = useState('plan');
-  const [generating, setGenerating] = useState(false);
-  const [output, setOutput] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [planModal, setPlanModal] = useState(null); // 'free' | 'enterprise' | null
+  const [toast, setToast] = useState(null);
 
-  const generate = async (template) => {
-    setSelectedTemplate(template); setGenerating(true); setOutput('');
-    try {
-      const res = await fetch('/api/billing/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'content', prompt: template.prompt }) });
-      const reader = res.body.getReader(); const decoder = new TextDecoder();
-      while (true) { const { done, value } = await reader.read(); if (done) break; const lines = decoder.decode(value, { stream: true }).split('\n').filter(l => l.startsWith('data: ')); for (const line of lines) { try { const d = JSON.parse(line.slice(6)); if (d.type === 'chunk') setOutput(p => p + d.text); else if (d.type === 'result') setOutput(d.data.content); } catch {} } }
-    } catch (e) { console.error(e); } finally { setGenerating(false); }
+  const panelCls = dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm';
+  const textPrimary = dark ? 'text-white' : 'text-gray-900';
+  const textSecondary = dark ? 'text-gray-500' : 'text-gray-500';
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handlePlanAction = (planId) => {
+    setPlanModal(planId);
+  };
+
+  const confirmPlanChange = () => {
+    const plan = PLANS.find(p => p.id === planModal);
+    showToast(`Plan change to ${plan?.name} requested. Our team will reach out shortly.`);
+    setPlanModal(null);
   };
 
   return (
     <div className="p-6 lg:p-8 max-w-6xl mx-auto">
       <div className="mb-6 animate-fade-in">
         <p className="hud-label mb-2" style={{ color: MODULE_COLOR }}>BILLING & USAGE</p>
-        <h1 className="text-2xl font-bold text-white mb-1">Billing</h1>
+        <h1 className={`text-2xl font-bold mb-1 ${textPrimary}`}>Billing</h1>
       </div>
 
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl text-xs font-semibold shadow-lg animate-fade-in ${
+          dark ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+        }`}>
+          {toast}
+        </div>
+      )}
+
       {/* Current Plan Card */}
-      <div className="panel rounded-xl p-5 mb-6 animate-fade-in" style={{ borderColor: 'rgba(99,102,241,0.12)' }}>
+      <div className={`${panelCls} rounded-xl p-5 mb-6 animate-fade-in`} style={{ borderColor: 'rgba(99,102,241,0.12)' }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)' }}>
@@ -76,14 +97,14 @@ export default function BillingPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <p className="text-lg font-bold text-white">Pro Plan</p>
+                <p className={`text-lg font-bold ${textPrimary}`}>Pro Plan</p>
                 <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.25)' }}>CURRENT</span>
               </div>
-              <p className="text-[10px] text-gray-500 mt-0.5">Next billing: March 1, 2026</p>
+              <p className={`text-[10px] mt-0.5 ${textSecondary}`}>Next billing: March 1, 2026</p>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-bold text-white font-mono">$99<span className="text-sm text-gray-500">/mo</span></p>
+            <p className={`text-2xl font-bold font-mono ${textPrimary}`}>$99<span className={`text-sm ${textSecondary}`}>/mo</span></p>
             <div className="flex items-center gap-1.5 justify-end mt-1">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
               <span className="text-[10px] font-semibold text-emerald-400">Active</span>
@@ -95,7 +116,9 @@ export default function BillingPage() {
       {/* Tabs */}
       <div className="flex gap-1 mb-4">
         {['plan', 'invoices', 'usage', 'ai-tools'].map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: 'rgba(100,116,139,0.2)', borderColor: 'rgba(100,116,139,0.35)', color: '#94a3b8' } : {}}>
+          <button key={t} onClick={() => setTab(t)}
+            className={`chip text-xs ${tab === t ? 'active' : ''}`}
+            style={tab === t ? { background: dark ? 'rgba(100,116,139,0.2)' : 'rgba(100,116,139,0.1)', borderColor: 'rgba(100,116,139,0.35)', color: dark ? '#94a3b8' : '#475569' } : {}}>
             {t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
         ))}
@@ -105,21 +128,21 @@ export default function BillingPage() {
       {tab === 'plan' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 animate-fade-in stagger">
           {PLANS.map(plan => (
-            <div key={plan.id} className={`panel rounded-xl p-5 transition-all ${plan.current ? 'border-indigo-500/20' : 'hover:border-indigo-500/10'}`}
-              style={plan.current ? { background: 'rgba(99,102,241,0.03)' } : {}}>
+            <div key={plan.id} className={`${panelCls} rounded-xl p-5 transition-all ${plan.current ? 'border-indigo-500/20' : dark ? 'hover:border-indigo-500/10' : 'hover:shadow-md'}`}
+              style={plan.current ? { background: dark ? 'rgba(99,102,241,0.03)' : 'rgba(99,102,241,0.02)' } : {}}>
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-bold text-white">{plan.name}</p>
+                <p className={`text-sm font-bold ${textPrimary}`}>{plan.name}</p>
                 {plan.current && (
                   <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.25)' }}>CURRENT</span>
                 )}
               </div>
               <div className="mb-4">
-                <span className="text-3xl font-bold text-white font-mono">{plan.price}</span>
-                <span className="text-sm text-gray-500">{plan.period}</span>
+                <span className={`text-3xl font-bold font-mono ${textPrimary}`}>{plan.price}</span>
+                <span className={`text-sm ${textSecondary}`}>{plan.period}</span>
               </div>
               <div className="space-y-2 mb-5">
                 {plan.features.map((f, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs text-gray-400">
+                  <div key={i} className={`flex items-center gap-2 text-xs ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
                     <svg className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                     </svg>
@@ -128,13 +151,14 @@ export default function BillingPage() {
                 ))}
               </div>
               {plan.current ? (
-                <button className="w-full py-2.5 rounded-lg text-xs font-bold border border-indigo-500/15 text-gray-400 cursor-default">
+                <button className={`w-full py-2.5 rounded-lg text-xs font-bold border cursor-default ${dark ? 'border-indigo-500/15 text-gray-400' : 'border-gray-200 text-gray-400'}`}>
                   Current Plan
                 </button>
               ) : (
-                <button className="w-full py-2.5 rounded-lg text-xs font-bold transition-all"
+                <button onClick={() => handlePlanAction(plan.id)}
+                  className="w-full py-2.5 rounded-lg text-xs font-bold transition-all"
                   style={{
-                    background: plan.id === 'enterprise' ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'rgba(99,102,241,0.1)',
+                    background: plan.id === 'enterprise' ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : dark ? 'rgba(99,102,241,0.1)' : 'rgba(99,102,241,0.08)',
                     color: plan.id === 'enterprise' ? '#fff' : '#818cf8',
                     border: `1px solid ${plan.id === 'enterprise' ? 'transparent' : 'rgba(99,102,241,0.2)'}`,
                     boxShadow: plan.id === 'enterprise' ? '0 4px 20px -4px rgba(99,102,241,0.4)' : 'none',
@@ -150,19 +174,19 @@ export default function BillingPage() {
       {/* Invoices Tab */}
       {tab === 'invoices' && (
         <div className="animate-fade-in">
-          <div className="panel rounded-xl overflow-hidden">
-            <div className="grid grid-cols-4 px-4 py-3 border-b border-indigo-500/[0.04]">
-              <span className="text-[10px] font-bold text-gray-500">DATE</span>
-              <span className="text-[10px] font-bold text-gray-500">PERIOD</span>
-              <span className="text-[10px] font-bold text-gray-500">AMOUNT</span>
-              <span className="text-[10px] font-bold text-gray-500 text-right">STATUS</span>
+          <div className={`${panelCls} rounded-xl overflow-hidden`}>
+            <div className={`grid grid-cols-4 px-4 py-3 ${dark ? 'border-b border-indigo-500/[0.04]' : 'border-b border-gray-100'}`}>
+              <span className={`text-[10px] font-bold ${textSecondary}`}>DATE</span>
+              <span className={`text-[10px] font-bold ${textSecondary}`}>PERIOD</span>
+              <span className={`text-[10px] font-bold ${textSecondary}`}>AMOUNT</span>
+              <span className={`text-[10px] font-bold text-right ${textSecondary}`}>STATUS</span>
             </div>
-            <div className="divide-y divide-indigo-500/[0.04]">
+            <div className={`divide-y ${dark ? 'divide-indigo-500/[0.04]' : 'divide-gray-100'}`}>
               {MOCK_INVOICES.map(inv => (
-                <div key={inv.id} className="grid grid-cols-4 px-4 py-3 hover:bg-white/[0.01] transition-colors items-center">
-                  <span className="text-xs text-gray-300">{inv.date}</span>
-                  <span className="text-xs text-gray-400">{inv.period}</span>
-                  <span className="text-xs text-white font-mono font-bold">{inv.amount}</span>
+                <div key={inv.id} className={`grid grid-cols-4 px-4 py-3 items-center transition-colors ${dark ? 'hover:bg-white/[0.01]' : 'hover:bg-gray-50'}`}>
+                  <span className={`text-xs ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{inv.date}</span>
+                  <span className={`text-xs ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{inv.period}</span>
+                  <span className={`text-xs font-mono font-bold ${textPrimary}`}>{inv.amount}</span>
                   <div className="text-right">
                     <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: inv.status === 'paid' ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)', color: inv.status === 'paid' ? '#4ade80' : '#fbbf24', border: `1px solid ${inv.status === 'paid' ? 'rgba(34,197,94,0.25)' : 'rgba(245,158,11,0.25)'}` }}>
                       {inv.status}
@@ -178,7 +202,7 @@ export default function BillingPage() {
       {/* Usage Tab */}
       {tab === 'usage' && (
         <div className="animate-fade-in space-y-4">
-          <div className="panel rounded-xl p-5">
+          <div className={`${panelCls} rounded-xl p-5`}>
             <p className="hud-label mb-4" style={{ color: MODULE_COLOR }}>AI GENERATION USAGE</p>
             <div className="space-y-4">
               {MOCK_USAGE.map(u => (
@@ -186,26 +210,26 @@ export default function BillingPage() {
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full" style={{ background: u.color }} />
-                      <span className="text-xs font-semibold text-gray-300">{u.module}</span>
+                      <span className={`text-xs font-semibold ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{u.module}</span>
                     </div>
-                    <span className="text-xs text-gray-400 font-mono">
-                      <span className="text-white font-bold">{u.used}</span> / {u.limit} gens
+                    <span className={`text-xs font-mono ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <span className={`font-bold ${textPrimary}`}>{u.used}</span> / {u.limit} gens
                     </span>
                   </div>
-                  <div className="w-full h-2 rounded-full bg-white/[0.03] overflow-hidden">
+                  <div className={`w-full h-2 rounded-full overflow-hidden ${dark ? 'bg-white/[0.03]' : 'bg-gray-100'}`}>
                     <div className="h-full rounded-full transition-all" style={{ width: `${(u.used / u.limit) * 100}%`, background: u.color, boxShadow: `0 0 8px ${u.color}40` }} />
                   </div>
                 </div>
               ))}
             </div>
-            <div className="mt-5 pt-4 border-t border-indigo-500/[0.06]">
+            <div className={`mt-5 pt-4 ${dark ? 'border-t border-indigo-500/[0.06]' : 'border-t border-gray-100'}`}>
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-gray-400">Total Used</span>
-                <span className="text-sm text-white font-mono font-bold">
-                  {MOCK_USAGE.reduce((a, b) => a + b.used, 0).toLocaleString()} <span className="text-gray-500 font-normal">/ 5,000</span>
+                <span className={`text-xs font-semibold ${dark ? 'text-gray-400' : 'text-gray-500'}`}>Total Used</span>
+                <span className={`text-sm font-mono font-bold ${textPrimary}`}>
+                  {MOCK_USAGE.reduce((a, b) => a + b.used, 0).toLocaleString()} <span className={textSecondary}>/ 5,000</span>
                 </span>
               </div>
-              <div className="w-full h-2.5 rounded-full bg-white/[0.03] overflow-hidden mt-2">
+              <div className={`w-full h-2.5 rounded-full overflow-hidden mt-2 ${dark ? 'bg-white/[0.03]' : 'bg-gray-100'}`}>
                 <div className="h-full rounded-full transition-all" style={{ width: `${(MOCK_USAGE.reduce((a, b) => a + b.used, 0) / 5000) * 100}%`, background: 'linear-gradient(90deg, #6366f1, #8b5cf6)', boxShadow: '0 0 12px rgba(99,102,241,0.3)' }} />
               </div>
             </div>
@@ -215,24 +239,45 @@ export default function BillingPage() {
 
       {/* AI Tools Tab */}
       {tab === 'ai-tools' && (
-        <div className="animate-fade-in space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {AI_TEMPLATES.map(tool => (
-              <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 text-left ${selectedTemplate?.name === tool.name ? 'border-slate-500/20' : ''}`}>
-                <p className="text-xs font-bold text-gray-300">{tool.name}</p>
-                <p className="text-[10px] text-gray-600 mt-1 line-clamp-2">{tool.prompt}</p>
-              </button>
-            ))}
-          </div>
-          {(generating || output) && (
-            <div className="panel rounded-xl p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <div className={`w-2 h-2 rounded-full ${generating ? 'animate-pulse' : 'bg-emerald-400'}`} style={{ background: generating ? MODULE_COLOR : undefined }} />
-                <span className="hud-label" style={{ color: generating ? '#94a3b8' : '#4ade80' }}>{generating ? 'GENERATING...' : 'READY'}</span>
+        <AIToolsTab templates={AI_TEMPLATES} color={MODULE_COLOR} apiEndpoint="/api/billing/generate" />
+      )}
+
+      {/* Plan Change Modal */}
+      {planModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setPlanModal(null)}>
+          <div className={`${dark ? 'bg-[#0c0c14] border-white/[0.06]' : 'bg-white border-gray-200'} border rounded-2xl p-6 w-full max-w-sm mx-4`} onClick={e => e.stopPropagation()}>
+            <h3 className={`text-lg font-bold mb-1 ${textPrimary}`}>
+              {planModal === 'free' ? 'Downgrade to Free' : 'Upgrade to Enterprise'}
+            </h3>
+            <p className={`text-sm mb-5 ${textSecondary}`}>
+              {planModal === 'free'
+                ? 'You will lose access to premium features at the end of your current billing cycle.'
+                : 'Our team will reach out to set up your Enterprise account with custom onboarding.'}
+            </p>
+
+            {planModal === 'enterprise' && (
+              <div className={`${dark ? 'bg-indigo-500/5 border border-indigo-500/15' : 'bg-indigo-50 border border-indigo-100'} rounded-xl p-4 mb-5`}>
+                <p className={`text-xs font-semibold ${dark ? 'text-indigo-400' : 'text-indigo-600'}`}>Enterprise includes:</p>
+                <ul className={`text-[11px] mt-2 space-y-1 ${dark ? 'text-indigo-300/80' : 'text-indigo-500'}`}>
+                  <li>Unlimited AI generations</li>
+                  <li>Dedicated account manager</li>
+                  <li>Custom integrations & SSO</li>
+                </ul>
               </div>
-              <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
+            )}
+
+            <div className="flex gap-3">
+              <button onClick={() => setPlanModal(null)}
+                className={`flex-1 px-4 py-2.5 rounded-xl border text-sm ${dark ? 'border-white/[0.08] text-gray-400 hover:bg-white/[0.04]' : 'border-gray-200 text-gray-500 hover:bg-gray-50'} transition-colors`}>
+                Cancel
+              </button>
+              <button onClick={confirmPlanChange}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors"
+                style={{ background: planModal === 'free' ? '#ef4444' : '#6366f1' }}>
+                {planModal === 'free' ? 'Downgrade' : 'Contact Sales'}
+              </button>
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>

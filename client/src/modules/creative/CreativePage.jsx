@@ -88,10 +88,12 @@ export default function CreativePage() {
   const [quantity, setQuantity] = useState('4');
   const [generating, setGenerating] = useState(false);
   const [images, setImages] = useState([]);
+  const [error, setError] = useState(null);
 
   const generate = async () => {
     if (!prompt.trim() || !activeType) return;
     setGenerating(true);
+    setError(null);
     const selectedStyle = STYLES.find(s => s.id === style);
     const selectedDim = (DIMENSIONS[activeType] || []).find(d => d.id === dimension);
     const fullPrompt = `[Style: ${selectedStyle?.name}] [Dimensions: ${selectedDim?.label || 'Auto'}] [Palette: ${COLOR_PALETTES.find(p => p.id === palette)?.name}] [Quantity: ${quantity}]\n\n${prompt}`;
@@ -105,6 +107,7 @@ export default function CreativePage() {
       if (data.images) setImages(data.images);
     } catch (e) {
       console.error('Generation error:', e);
+      setError(e.message || 'Failed to generate creatives. Please try again.');
     } finally {
       setGenerating(false);
     }
@@ -286,6 +289,19 @@ export default function CreativePage() {
           </div>
         </div>
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="panel rounded-xl p-4 mt-4 animate-fade-up" style={{ borderColor: 'rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.05)' }}>
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
+            <p className="text-xs text-red-400 flex-1">{error}</p>
+            <button onClick={() => setError(null)} className="text-[10px] text-red-400/60 hover:text-red-400 font-semibold">Dismiss</button>
+          </div>
+        </div>
+      )}
 
       {/* Generation Loading */}
       {generating && (

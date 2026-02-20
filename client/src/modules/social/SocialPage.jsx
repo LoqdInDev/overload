@@ -62,6 +62,7 @@ export default function SocialPage() {
   const [result, setResult] = useState('');
   const [streamText, setStreamText] = useState('');
   const [copied, setCopied] = useState(false);
+  const [genError, setGenError] = useState(null);
 
   // Connected accounts state
   const [connectedAccounts, setConnectedAccounts] = useState([]);
@@ -161,6 +162,7 @@ export default function SocialPage() {
     setGenerating(true);
     setResult('');
     setStreamText('');
+    setGenError(null);
     const fullPrompt = `[Platform: ${activeType}] [Tone: ${tone}] [Length: ${postLength}] [Hashtags: ${includeHashtags ? 'Yes' : 'No'}] [Emojis: ${includeEmojis ? 'Yes' : 'No'}]\n\n${prompt}`;
     try {
       const res = await fetch('/api/social/generate', {
@@ -186,8 +188,10 @@ export default function SocialPage() {
         }
       }
       if (!result && fullText) setResult(fullText);
-    } catch (e) { console.error('Generation error:', e); }
-    finally { setGenerating(false); }
+    } catch (e) {
+      console.error('Generation error:', e);
+      setGenError(e.message || 'Failed to generate post. Please try again.');
+    } finally { setGenerating(false); }
   };
 
   const publishToProvider = async (providerId) => {
@@ -634,6 +638,19 @@ export default function SocialPage() {
                 )}
               </div>
             </div>
+
+            {/* Error */}
+            {genError && (
+              <div className={`${panelCls} rounded-xl p-4 mt-4 animate-fade-up`} style={{ borderColor: 'rgba(239,68,68,0.2)', background: dark ? 'rgba(239,68,68,0.05)' : 'rgba(239,68,68,0.04)' }}>
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                  </svg>
+                  <p className={`text-xs flex-1 ${dark ? 'text-red-400' : 'text-red-600'}`}>{genError}</p>
+                  <button onClick={() => setGenError(null)} className="text-[10px] text-red-400/60 hover:text-red-400 font-semibold">Dismiss</button>
+                </div>
+              </div>
+            )}
 
             {/* Streaming */}
             {(generating || streamText) && !result && (

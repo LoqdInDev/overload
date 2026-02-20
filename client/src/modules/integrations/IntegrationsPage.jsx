@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import AIToolsTab from '../../components/shared/AIToolsTab';
 
 const FALLBACK_CONNECTED = [
   { id: 'shopify', name: 'Shopify', description: 'Ecommerce platform for online stores', status: 'connected', category: 'ecommerce', lastSync: '2 min ago' },
@@ -70,10 +71,8 @@ export default function IntegrationsPage() {
   const [shopModal, setShopModal] = useState(false);
   const [shopName, setShopName] = useState('');
 
-  // AI tools state
-  const [generating, setGenerating] = useState(false);
-  const [output, setOutput] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  // OAuth error state
+  const [oauthError, setOauthError] = useState(null);
 
   const fetchProviders = useCallback(async () => {
     try {
@@ -135,6 +134,7 @@ export default function IntegrationsPage() {
       }, 1000);
     } catch (err) {
       console.error('OAuth error:', err);
+      setOauthError(err.message || 'Failed to connect. Please try again.');
       setConnectingId(null);
     }
   };
@@ -183,15 +183,6 @@ export default function IntegrationsPage() {
     } finally {
       setDisconnectingId(null);
     }
-  };
-
-  const generate = async (template) => {
-    setSelectedTemplate(template); setGenerating(true); setOutput('');
-    try {
-      const res = await fetch('/api/integrations/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'content', prompt: template.prompt }) });
-      const reader = res.body.getReader(); const decoder = new TextDecoder();
-      while (true) { const { done, value } = await reader.read(); if (done) break; const lines = decoder.decode(value, { stream: true }).split('\n').filter(l => l.startsWith('data: ')); for (const line of lines) { try { const d = JSON.parse(line.slice(6)); if (d.type === 'chunk') setOutput(p => p + d.text); else if (d.type === 'result') setOutput(d.data.content); } catch {} } }
-    } catch (e) { console.error(e); } finally { setGenerating(false); }
   };
 
   const connected = providers.filter(p => p.status === 'connected');
@@ -318,30 +309,22 @@ export default function IntegrationsPage() {
         </div>
       )}
 
+      {/* OAuth Error Banner */}
+      {oauthError && (
+        <div className="panel rounded-xl p-4 mb-4 animate-fade-up" style={{ borderColor: 'rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.05)' }}>
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
+            <p className="text-xs text-red-400 flex-1">{oauthError}</p>
+            <button onClick={() => setOauthError(null)} className="text-[10px] text-red-400/60 hover:text-red-400 font-semibold">Dismiss</button>
+          </div>
+        </div>
+      )}
+
       {/* AI Tools Tab */}
       {tab === 'ai-tools' && (
-        <div className="space-y-4 sm:space-y-6 animate-fade-in">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {AI_TEMPLATES.map(t => (
-              <button key={t.name} onClick={() => generate(t)} disabled={generating}
-                className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === t.name ? 'border-indigo-500/20' : ''}`}>
-                <p className="text-sm font-bold text-gray-300">{t.name}</p>
-                <p className="text-xs text-gray-600 mt-1 line-clamp-2">{t.prompt}</p>
-              </button>
-            ))}
-          </div>
-          {(generating || output) && (
-            <div className="panel rounded-2xl p-4 sm:p-7">
-              <div className="flex items-center gap-2 mb-3">
-                <div className={`w-2 h-2 rounded-full ${generating ? 'bg-indigo-400 animate-pulse' : 'bg-indigo-400'}`} />
-                <span className="hud-label text-[11px]" style={{ color: '#818cf8' }}>{generating ? 'GENERATING...' : 'READY'}</span>
-              </div>
-              <pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">
-                {output}{generating && <span className="inline-block w-1.5 h-4 bg-indigo-400 ml-0.5 animate-pulse" />}
-              </pre>
-            </div>
-          )}
-        </div>
+        <AIToolsTab templates={AI_TEMPLATES} color="#6366f1" apiEndpoint="/api/integrations/generate" />
       )}
 
       {/* API Key Modal */}
