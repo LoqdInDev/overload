@@ -2,6 +2,7 @@ import { useState, lazy, Suspense, useEffect, useMemo } from 'react';
 import { Routes, Route, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { MODULE_REGISTRY, CATEGORIES, getModulesByCategory } from './config/modules';
 import { ThemeContext, useTheme } from './context/ThemeContext';
+import { BrandProvider } from './context/BrandContext';
 
 export { useTheme };
 
@@ -64,6 +65,7 @@ function Loader() {
 export default function App() {
   const location = useLocation();
   const [navOpen, setNavOpen] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dark, setDark] = useState(false);
   const [pageKey, setPageKey] = useState(location.pathname);
   const navigate = useNavigate();
@@ -86,6 +88,7 @@ export default function App() {
 
   useEffect(() => {
     setSuppressActive(false);
+    setMobileMenuOpen(false);
   }, [location.pathname]);
 
   const toggleSection = (catId) => {
@@ -128,6 +131,7 @@ export default function App() {
 
   return (
     <ThemeContext.Provider value={{ dark, toggle }}>
+    <BrandProvider>
       <div data-theme={dark ? 'dark' : 'light'}
         className="flex h-screen overflow-hidden"
         style={{
@@ -147,51 +151,63 @@ export default function App() {
           </div>
         )}
 
-        {/* ═══════ LEFT NAV ═══════ */}
-        <nav className={`${navOpen ? 'w-64' : 'w-[52px]'} transition-all duration-300 flex flex-col flex-shrink-0 relative z-20`}>
+        {/* ═══════ MOBILE OVERLAY ═══════ */}
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 bg-black/40 z-30 md:hidden" onClick={() => setMobileMenuOpen(false)} />
+        )}
+
+        {/* ═══════ LEFT NAV — Warm Editorial ═══════ */}
+        <nav className={`
+          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
+          fixed md:relative inset-y-0 left-0 z-40 md:z-20
+          ${navOpen ? 'w-[260px]' : 'md:w-[56px] w-[260px]'}
+          transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] flex flex-col flex-shrink-0
+        `}>
           <div className="absolute inset-0"
             style={{
-              background: dark ? '#201D1B' : '#FFFFFF',
-              borderRight: `1px solid ${brd}`,
+              background: dark ? '#1E1B18' : '#FDFBF8',
+              borderRight: `1px solid ${dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.06)'}`,
             }} />
 
-          {/* Logo — matches LP exactly */}
-          <div className="relative flex items-center gap-3 px-3.5 h-14 flex-shrink-0">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-              style={{ background: terra }}>
-              <span className="text-white text-sm font-black">O</span>
+          {/* Logo */}
+          <div className="relative flex items-center gap-3 px-4 h-[60px] flex-shrink-0">
+            <div className="w-[34px] h-[34px] rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{
+                background: `linear-gradient(135deg, ${terra}, #A84D33)`,
+                boxShadow: '0 2px 8px rgba(196,93,62,0.25)',
+              }}>
+              <span className="text-white text-[13px] font-black tracking-tight">O</span>
             </div>
             {navOpen && (
-              <div>
-                <span style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 17, color: ink }}>
+              <div className="flex flex-col">
+                <span style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 18, fontWeight: 400, color: ink, letterSpacing: '-0.01em' }}>
                   Overload
                 </span>
-                <p className="text-[8px] font-semibold tracking-[0.16em] uppercase" style={{ color: muted }}>
+                <span className="text-[9px] font-semibold tracking-[0.14em] uppercase" style={{ color: muted, marginTop: -2 }}>
                   Marketing OS
-                </p>
+                </span>
               </div>
             )}
           </div>
 
-          <div className="relative mx-3.5 h-px" style={{ background: dark ? 'rgba(255,255,255,0.06)' : '#EDE5DA' }} />
+          {/* Divider */}
+          <div className="relative mx-4 h-px" style={{ background: dark ? 'rgba(255,255,255,0.05)' : '#EDE5DA' }} />
 
           {/* Navigation */}
-          <div className="relative flex-1 min-h-0 overflow-y-auto py-2.5 px-2.5 no-scrollbar">
+          <div className="relative flex-1 min-h-0 overflow-y-auto pt-4 pb-2 px-3 no-scrollbar">
             {/* Command Center */}
             <NavLink to="/dashboard"
-              className={`flex items-center gap-2.5 rounded-lg transition-all duration-200 group ${navOpen ? 'px-3 py-2.5' : 'px-2 py-2.5 justify-center'}`}
+              className={`flex items-center gap-3 rounded-xl transition-all duration-200 group ${navOpen ? 'px-3 py-2.5' : 'p-2.5 justify-center'}`}
               style={{
-                color: location.pathname === '/dashboard' ? terra : muted,
-                fontWeight: location.pathname === '/dashboard' ? 600 : undefined,
+                color: location.pathname === '/dashboard' ? (dark ? '#F5EDE6' : '#2C2825') : muted,
+                fontWeight: location.pathname === '/dashboard' ? 600 : 500,
                 background: location.pathname === '/dashboard'
-                  ? (dark ? 'rgba(196,93,62,0.08)' : 'rgba(196,93,62,0.05)')
+                  ? (dark ? 'rgba(196,93,62,0.12)' : 'rgba(196,93,62,0.07)')
                   : undefined,
-                borderLeft: location.pathname === '/dashboard'
-                  ? `2px solid ${terra}` : '2px solid transparent',
               }}
               onMouseEnter={e => {
                 if (location.pathname !== '/dashboard') {
-                  e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.03)' : 'rgba(44,40,37,0.02)';
+                  e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.03)';
                   e.currentTarget.style.color = ink;
                 }
               }}
@@ -202,13 +218,22 @@ export default function App() {
                 }
               }}
             >
-              <svg className="w-[16px] h-[16px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
-              </svg>
-              {navOpen && <span className="text-[12px] uppercase tracking-wider">Command Center</span>}
+              <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{
+                  background: location.pathname === '/dashboard'
+                    ? (dark ? 'rgba(196,93,62,0.2)' : 'rgba(196,93,62,0.1)')
+                    : (dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)'),
+                }}>
+                <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" strokeWidth={1.6}
+                  stroke={location.pathname === '/dashboard' ? terra : 'currentColor'}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+                </svg>
+              </div>
+              {navOpen && <span className="text-[12.5px]">Command Center</span>}
             </NavLink>
 
-            <div className="mt-3 space-y-0.5">
+            {/* Category sections */}
+            <div className="mt-4 space-y-1">
               {CATEGORIES.map(cat => {
                 const mods = getModulesByCategory(cat.id);
                 if (mods.length === 0) return null;
@@ -218,15 +243,14 @@ export default function App() {
                 return (
                   <div key={cat.id}>
                     {cat.id === 'settings' && (
-                      <div className="mx-1 my-3 h-px" style={{ background: dark ? 'rgba(255,255,255,0.06)' : '#EDE5DA' }} />
+                      <div className="mx-2 my-4 h-px" style={{ background: dark ? 'rgba(255,255,255,0.05)' : '#EDE5DA' }} />
                     )}
 
                     {/* Category header */}
                     <button onClick={() => toggleSection(cat.id)}
-                      className={`w-full flex items-center gap-2.5 rounded-lg text-[12px] font-semibold transition-all duration-200 ${navOpen ? 'px-3 py-2.5' : 'px-2 py-2.5 justify-center'}`}
+                      className={`w-full flex items-center gap-3 rounded-xl transition-all duration-200 ${navOpen ? 'px-3 py-2' : 'p-2.5 justify-center'}`}
                       style={{
-                        borderLeft: isLit ? `2px solid ${cat.color}` : '2px solid transparent',
-                        background: isLit ? (dark ? `${cat.color}08` : `${cat.color}04`) : undefined,
+                        background: isLit ? (dark ? 'rgba(255,255,255,0.03)' : 'rgba(44,40,37,0.02)') : undefined,
                       }}
                       onMouseEnter={e => {
                         if (!isLit) e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.03)' : 'rgba(44,40,37,0.02)';
@@ -237,31 +261,51 @@ export default function App() {
                     >
                       {navOpen ? (
                         <>
-                          <svg className="w-[16px] h-[16px] flex-shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" strokeWidth={1.5}
-                            stroke={isLit ? cat.color : muted}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d={cat.icon} />
-                          </svg>
-                          <span className="flex-1 text-left truncate uppercase tracking-wider"
+                          <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center flex-shrink-0 transition-colors"
+                            style={{
+                              background: isLit
+                                ? `${cat.color}${dark ? '18' : '10'}`
+                                : (dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)'),
+                            }}>
+                            <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" strokeWidth={1.6}
+                              stroke={isLit ? cat.color : muted}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d={cat.icon} />
+                            </svg>
+                          </div>
+                          <span className="flex-1 text-left text-[12.5px] font-medium truncate"
                             style={{ color: isLit ? ink : muted }}>
                             {cat.label}
                           </span>
-                          <span className="text-[10px] tabular-nums font-medium" style={{ color: dark ? '#3D3A37' : '#C8C3BC' }}>{mods.length}</span>
-                          <svg className={`w-3 h-3 sidebar-section-arrow ${isExpanded ? 'expanded' : ''} flex-shrink-0`}
-                            fill="none" stroke={dark ? '#3D3A37' : '#C8C3BC'} viewBox="0 0 24 24" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                          </svg>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] tabular-nums font-medium px-1.5 py-0.5 rounded-md"
+                              style={{
+                                color: dark ? '#4A4540' : '#B5B0A8',
+                                background: dark ? 'rgba(255,255,255,0.03)' : 'rgba(44,40,37,0.03)',
+                              }}>{mods.length}</span>
+                            <svg className={`w-3 h-3 sidebar-section-arrow ${isExpanded ? 'expanded' : ''} flex-shrink-0`}
+                              fill="none" stroke={dark ? '#4A4540' : '#C8C3BC'} viewBox="0 0 24 24" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                            </svg>
+                          </div>
                         </>
                       ) : (
-                        <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5}
-                          stroke={isLit ? cat.color : muted}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d={cat.icon} />
-                        </svg>
+                        <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center"
+                          style={{
+                            background: isLit
+                              ? `${cat.color}${dark ? '18' : '10'}`
+                              : (dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)'),
+                          }}>
+                          <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" strokeWidth={1.6}
+                            stroke={isLit ? cat.color : muted}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d={cat.icon} />
+                          </svg>
+                        </div>
                       )}
                     </button>
 
                     {/* Collapsible module items */}
                     <div className={`sidebar-section-items ${(!isExpanded && navOpen) ? 'collapsed' : ''}`}
-                      style={{ maxHeight: (isExpanded || !navOpen) ? `${mods.length * 40}px` : '0' }}>
+                      style={{ maxHeight: (isExpanded || !navOpen) ? `${mods.length * 38}px` : '0' }}>
                       {mods.map(mod => {
                         const isActive = !suppressActive && location.pathname.startsWith(mod.path);
                         const isAutopilot = mod.special === 'autopilot';
@@ -269,29 +313,28 @@ export default function App() {
                         const isSpecial = isAutopilot || isAdvisor;
                         return (
                           <NavLink key={mod.id} to={mod.path}
-                            className={`flex items-center gap-2.5 ${navOpen ? 'ml-3 pl-4 pr-2.5' : 'px-2 justify-center'} py-[7px] rounded-md text-[11.5px] transition-all duration-200 group`}
+                            className={`flex items-center gap-2.5 ${navOpen ? 'ml-[42px] px-2.5' : 'px-2 justify-center'} py-[6px] rounded-lg text-[12px] transition-all duration-200 group`}
                             style={{
-                              borderLeft: isActive ? `2px solid ${mod.color}` : '2px solid transparent',
-                              background: isActive ? (dark ? `${mod.color}0c` : `${mod.color}06`) : undefined,
-                              color: isActive ? ink
-                                : isSpecial ? (dark ? '#D97B5A' : '#B45309')
+                              background: isActive ? (dark ? `${mod.color}14` : `${mod.color}0a`) : undefined,
+                              color: isActive ? (dark ? '#F5EDE6' : '#2C2825')
+                                : isSpecial ? (dark ? '#D97B5A' : terra)
                                 : muted,
-                              fontWeight: isActive ? 600 : undefined,
+                              fontWeight: isActive ? 600 : 400,
                             }}
                             onMouseEnter={e => {
                               if (!isActive) {
-                                e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.02)' : 'rgba(44,40,37,0.02)';
+                                e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.03)' : 'rgba(44,40,37,0.025)';
                                 e.currentTarget.style.color = ink;
                               }
                             }}
                             onMouseLeave={e => {
                               if (!isActive) {
                                 e.currentTarget.style.background = 'transparent';
-                                e.currentTarget.style.color = isSpecial ? (dark ? '#D97B5A' : '#B45309') : muted;
+                                e.currentTarget.style.color = isSpecial ? (dark ? '#D97B5A' : terra) : muted;
                               }
                             }}
                           >
-                            <svg className="w-3.5 h-3.5 flex-shrink-0 transition-colors" fill={isAdvisor ? mod.color : 'none'} stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}
+                            <svg className="w-[14px] h-[14px] flex-shrink-0 transition-colors" fill={isAdvisor ? mod.color : 'none'} stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}
                               style={(isActive || isSpecial) ? { color: mod.color } : {}}>
                               <path strokeLinecap="round" strokeLinejoin="round" d={mod.icon} />
                             </svg>
@@ -300,7 +343,7 @@ export default function App() {
                               <div className="ml-auto w-[5px] h-[5px] rounded-full flex-shrink-0" style={{ background: mod.color }} />
                             )}
                             {isSpecial && !isActive && navOpen && (
-                              <div className="ml-auto w-[5px] h-[5px] rounded-full flex-shrink-0 animate-pulse" style={{ background: mod.color, opacity: 0.5 }} />
+                              <div className="ml-auto w-[5px] h-[5px] rounded-full flex-shrink-0 animate-pulse" style={{ background: mod.color, opacity: 0.6 }} />
                             )}
                           </NavLink>
                         );
@@ -313,12 +356,12 @@ export default function App() {
           </div>
 
           {/* Bottom controls */}
-          <div className="relative px-2.5 py-2.5 space-y-0.5" style={{ borderTop: `1px solid ${brd}` }}>
+          <div className="relative px-3 py-3 space-y-0.5" style={{ borderTop: `1px solid ${dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.06)'}` }}>
             <button onClick={toggle}
-              className={`w-full flex items-center ${navOpen ? 'justify-start px-3' : 'justify-center'} gap-2.5 py-2 rounded-lg transition-all text-[11px] font-medium`}
+              className={`w-full flex items-center ${navOpen ? 'justify-start px-3' : 'justify-center'} gap-2.5 py-2 rounded-xl transition-all duration-200 text-[11.5px] font-medium`}
               style={{ color: muted }}
               onMouseEnter={e => {
-                e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.03)' : 'rgba(44,40,37,0.02)';
+                e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.03)';
                 e.currentTarget.style.color = ink;
               }}
               onMouseLeave={e => {
@@ -338,10 +381,10 @@ export default function App() {
               {navOpen && <span>{dark ? 'Light Mode' : 'Dark Mode'}</span>}
             </button>
             <button onClick={() => setNavOpen(!navOpen)}
-              className={`w-full flex items-center ${navOpen ? 'justify-start px-3' : 'justify-center'} gap-2.5 py-2 rounded-lg transition-all text-[11px] font-medium`}
+              className={`hidden md:flex w-full items-center ${navOpen ? 'justify-start px-3' : 'justify-center'} gap-2.5 py-2 rounded-xl transition-all duration-200 text-[11.5px] font-medium`}
               style={{ color: muted }}
               onMouseEnter={e => {
-                e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.03)' : 'rgba(44,40,37,0.02)';
+                e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.03)';
                 e.currentTarget.style.color = ink;
               }}
               onMouseLeave={e => {
@@ -370,9 +413,21 @@ export default function App() {
               }} />
 
             <div className="relative flex items-center gap-2 text-xs">
+              {/* Mobile hamburger */}
+              <button onClick={() => setMobileMenuOpen(o => !o)}
+                className="md:hidden mr-1 p-1.5 rounded-lg transition-all duration-200"
+                style={{ color: muted }}
+                title="Menu">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                  {mobileMenuOpen
+                    ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    : <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                  }
+                </svg>
+              </button>
               {location.pathname !== '/dashboard' && (
                 <button onClick={() => navigate(-1)}
-                  className="mr-1 p-1.5 rounded-lg transition-all duration-200"
+                  className="hidden sm:block mr-1 p-1.5 rounded-lg transition-all duration-200"
                   style={{ color: muted }}
                   onMouseEnter={e => { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.06)' : 'rgba(44,40,37,0.06)'; e.currentTarget.style.color = terra; }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = muted; }}
@@ -396,11 +451,11 @@ export default function App() {
             <div className="relative ml-auto flex items-center gap-5">
               <div className="flex items-center gap-2">
                 <div className="w-[6px] h-[6px] rounded-full" style={{ background: sage }} />
-                <span className="font-semibold tracking-wider" style={{ fontSize: '9px', color: sage }}>
+                <span className="hidden sm:inline font-semibold tracking-wider" style={{ fontSize: '9px', color: sage }}>
                   SYSTEMS ONLINE
                 </span>
               </div>
-              <span className="text-[9px] font-medium tracking-wider" style={{ color: muted }}>
+              <span className="hidden sm:inline text-[9px] font-medium tracking-wider" style={{ color: muted }}>
                 {MODULE_REGISTRY.length} MODULES
               </span>
             </div>
@@ -461,6 +516,7 @@ export default function App() {
           </div>
         </main>
       </div>
+    </BrandProvider>
     </ThemeContext.Provider>
   );
 }

@@ -4,6 +4,7 @@ const { db, logActivity } = require('../../../db/database');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
 const pm = require('../../../services/platformManager');
+const { getBrandContext, buildBrandSystemPrompt } = require('../../../services/brandContext');
 
 // POST /generate - SSE: generate email or SMS content
 router.post('/generate', async (req, res) => {
@@ -170,6 +171,10 @@ METRICS PREDICTION:
 
 Format the output cleanly and professionally.`;
     }
+
+    // Inject brand context into prompt
+    const brandBlock = buildBrandSystemPrompt(getBrandContext());
+    if (brandBlock) prompt += brandBlock;
 
     const { text } = await generateTextWithClaude(prompt, {
       onChunk: (chunk) => sse.sendChunk(chunk),

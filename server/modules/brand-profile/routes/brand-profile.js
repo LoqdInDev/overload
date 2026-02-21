@@ -3,13 +3,17 @@ const router = express.Router();
 const { db, logActivity } = require('../../../db/database');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
+const { getBrandContext, buildBrandSystemPrompt, invalidateCache } = require('../../../services/brandContext');
 
 // Generate brand profile content with AI
 router.post('/generate', async (req, res) => {
   const sse = setupSSE(res);
   try {
     const { type, prompt } = req.body;
-    const { text } = await generateTextWithClaude(prompt || `Generate ${type || 'content'} for Brand Profile`, {
+    const brand = getBrandContext();
+    const brandBlock = buildBrandSystemPrompt(brand);
+    const fullPrompt = `${prompt || `Generate ${type || 'content'} for Brand Profile`}${brandBlock}`;
+    const { text } = await generateTextWithClaude(fullPrompt, {
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
     logActivity('brand-profile', 'generate', `Generated ${type || 'content'}`, 'AI generation');
@@ -37,22 +41,24 @@ router.post('/profile', (req, res) => {
     const {
       brand_name, tagline, mission, vision, values, voice_tone, voice_personality,
       target_audience, competitors, colors, fonts, logo_url, guidelines, keywords,
-      industry, website, social_links
+      industry, website, social_links, words_to_use, words_to_avoid
     } = req.body;
 
     const result = db.prepare(
       `INSERT INTO bp_profiles (brand_name, tagline, mission, vision, values, voice_tone, voice_personality,
-        target_audience, competitors, colors, fonts, logo_url, guidelines, keywords, industry, website, social_links)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        target_audience, competitors, colors, fonts, logo_url, guidelines, keywords, industry, website, social_links,
+        words_to_use, words_to_avoid)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       brand_name, tagline, mission, vision, JSON.stringify(values || []),
       voice_tone, voice_personality, JSON.stringify(target_audience || {}),
       JSON.stringify(competitors || []), JSON.stringify(colors || {}),
       JSON.stringify(fonts || {}), logo_url, guidelines,
       JSON.stringify(keywords || []), industry, website,
-      JSON.stringify(social_links || {})
+      JSON.stringify(social_links || {}), words_to_use, words_to_avoid
     );
 
+    invalidateCache();
     logActivity('brand-profile', 'create', `Created brand profile: ${brand_name}`, 'Profile');
     res.json({ id: result.lastInsertRowid, brand_name });
   } catch (error) {
@@ -72,14 +78,14 @@ router.put('/profile/:id', (req, res) => {
     const {
       brand_name, tagline, mission, vision, values, voice_tone, voice_personality,
       target_audience, competitors, colors, fonts, logo_url, guidelines, keywords,
-      industry, website, social_links
+      industry, website, social_links, words_to_use, words_to_avoid
     } = req.body;
 
     db.prepare(
       `UPDATE bp_profiles SET brand_name = ?, tagline = ?, mission = ?, vision = ?, values = ?,
         voice_tone = ?, voice_personality = ?, target_audience = ?, competitors = ?, colors = ?,
         fonts = ?, logo_url = ?, guidelines = ?, keywords = ?, industry = ?, website = ?,
-        social_links = ?, updated_at = datetime('now') WHERE id = ?`
+        social_links = ?, words_to_use = ?, words_to_avoid = ?, updated_at = datetime('now') WHERE id = ?`
     ).run(
       brand_name || profile.brand_name, tagline || profile.tagline,
       mission || profile.mission, vision || profile.vision,
@@ -93,9 +99,12 @@ router.put('/profile/:id', (req, res) => {
       keywords ? JSON.stringify(keywords) : profile.keywords,
       industry || profile.industry, website || profile.website,
       social_links ? JSON.stringify(social_links) : profile.social_links,
+      words_to_use !== undefined ? words_to_use : profile.words_to_use,
+      words_to_avoid !== undefined ? words_to_avoid : profile.words_to_avoid,
       req.params.id
     );
 
+    invalidateCache();
     logActivity('brand-profile', 'update', `Updated brand profile: ${brand_name || profile.brand_name}`, 'Profile');
     res.json({ id: req.params.id, updated: true });
   } catch (error) {

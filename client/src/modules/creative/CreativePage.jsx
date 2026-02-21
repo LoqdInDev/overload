@@ -115,20 +115,20 @@ export default function CreativePage() {
 
   if (!activeType) {
     return (
-      <div className="p-6 lg:p-8 max-w-6xl mx-auto">
-        <div className="mb-8 animate-fade-in">
-          <p className="hud-label mb-2" style={{ color: '#06b6d4' }}>AI CREATIVE STUDIO</p>
-          <h1 className="text-2xl font-bold text-white mb-1">What do you want to design?</h1>
-          <p className="text-sm text-gray-500">Select a creative type to start generating AI-powered visuals</p>
+      <div className="p-4 sm:p-6 lg:p-12">
+        <div className="mb-6 sm:mb-8 animate-fade-in">
+          <p className="hud-label text-[11px] mb-2" style={{ color: '#06b6d4' }}>AI CREATIVE STUDIO</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">What do you want to design?</h1>
+          <p className="text-base text-gray-500">Select a creative type to start generating AI-powered visuals</p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 stagger">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 stagger">
           {CREATIVE_TYPES.map(type => (
             <button key={type.id} onClick={() => { setActiveType(type.id); setDimension(DIMENSIONS[type.id]?.[0]?.id || null); }}
-              className="panel-interactive rounded-xl p-5 text-center group">
-              <div className="w-10 h-10 rounded-lg mx-auto mb-3 flex items-center justify-center transition-all duration-300 group-hover:scale-110"
+              className="panel-interactive rounded-2xl p-4 sm:p-7 text-center group">
+              <div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center transition-all duration-300 group-hover:scale-110"
                 style={{ background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.12)' }}>
-                <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <svg className="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d={type.icon} />
                 </svg>
               </div>
@@ -139,20 +139,20 @@ export default function CreativePage() {
 
         {/* Templates Preview */}
         <div className="mt-10">
-          <div className="flex items-center gap-3 mb-4">
-            <p className="hud-label">QUICK START TEMPLATES</p>
+          <div className="flex items-center gap-3 sm:gap-5 mb-4">
+            <p className="hud-label text-[11px]">QUICK START TEMPLATES</p>
             <div className="flex-1 hud-line" />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 stagger">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 stagger">
             {Object.entries(TEMPLATES).flatMap(([type, tmpls]) =>
               tmpls.slice(0, 1).map(t => {
                 const ct = CREATIVE_TYPES.find(c => c.id === type);
                 return (
                   <button key={`${type}-${t.name}`} onClick={() => { setActiveType(type); setPrompt(t.prompt); setDimension(DIMENSIONS[type]?.[0]?.id || null); }}
-                    className="panel-interactive rounded-lg p-4 text-left group">
-                    <p className="hud-label mb-1.5" style={{ color: '#06b6d4' }}>{ct?.name}</p>
-                    <p className="text-xs font-semibold text-gray-300 group-hover:text-white transition-colors">{t.name}</p>
-                    <p className="text-[10px] text-gray-600 mt-1 line-clamp-1">{t.prompt}</p>
+                    className="panel-interactive rounded-lg p-4 sm:p-6 text-left group">
+                    <p className="hud-label text-[11px] mb-1.5" style={{ color: '#06b6d4' }}>{ct?.name}</p>
+                    <p className="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">{t.name}</p>
+                    <p className="text-xs text-gray-600 mt-1 line-clamp-1">{t.prompt}</p>
                   </button>
                 );
               })
@@ -168,46 +168,46 @@ export default function CreativePage() {
   const dims = DIMENSIONS[activeType] || [];
 
   return (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto animate-fade-in">
+    <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 sm:gap-5 mb-6 sm:mb-8">
         <button onClick={() => { setActiveType(null); setImages([]); setPrompt(''); }}
           className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white hover:border-indigo-500/25 transition-all">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
           </svg>
         </button>
         <div>
-          <p className="hud-label" style={{ color: '#06b6d4' }}>{currentType?.name?.toUpperCase()} GENERATOR</p>
-          <h2 className="text-lg font-bold text-white">Create {currentType?.name}</h2>
+          <p className="hud-label text-[11px]" style={{ color: '#06b6d4' }}>{currentType?.name?.toUpperCase()} GENERATOR</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-white">Create {currentType?.name}</h2>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Left: Controls */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Templates */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">TEMPLATES</p>
-            <div className="grid grid-cols-2 gap-2">
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3">TEMPLATES</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {templates.map(t => (
                 <button key={t.name} onClick={() => setPrompt(t.prompt)}
-                  className={`text-left px-3 py-2.5 rounded-lg border text-xs transition-all ${
+                  className={`text-left px-4 py-3 rounded-lg border text-sm transition-all ${
                     prompt === t.prompt ? 'border-cyan-500/30 bg-cyan-500/8 text-cyan-300' : 'border-indigo-500/8 bg-white/[0.01] text-gray-400 hover:text-gray-200 hover:border-indigo-500/15'
                   }`}>
                   <p className="font-semibold">{t.name}</p>
-                  <p className="text-[10px] text-gray-600 mt-0.5 line-clamp-1">{t.prompt}</p>
+                  <p className="text-xs text-gray-600 mt-0.5 line-clamp-1">{t.prompt}</p>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Prompt */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">CREATIVE BRIEF</p>
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3">CREATIVE BRIEF</p>
             <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={4}
               placeholder="Describe your visual in detail — subject, composition, mood, lighting, colors, text overlays..."
-              className="w-full input-field rounded-lg px-4 py-3 text-sm resize-none" />
+              className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base resize-none" />
           </div>
 
           {/* Generate */}
@@ -224,10 +224,10 @@ export default function CreativePage() {
         </div>
 
         {/* Right: Settings */}
-        <div className="space-y-4">
+        <div className="space-y-4 sm:space-y-6">
           {/* Style */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">VISUAL STYLE</p>
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3">VISUAL STYLE</p>
             <div className="grid grid-cols-2 gap-1.5">
               {STYLES.map(s => (
                 <button key={s.id} onClick={() => setStyle(s.id)}
@@ -240,27 +240,27 @@ export default function CreativePage() {
           </div>
 
           {/* Dimensions */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">DIMENSIONS</p>
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3">DIMENSIONS</p>
             <div className="grid grid-cols-2 gap-1.5">
               {dims.map(d => (
                 <button key={d.id} onClick={() => setDimension(d.id)}
                   className={`chip text-[10px] justify-center flex-col items-center py-2 ${dimension === d.id ? 'active' : ''}`}
                   style={dimension === d.id ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
                   <span className="font-bold">{d.label}</span>
-                  <span className="text-[8px] opacity-60">{d.desc}</span>
+                  <span className="text-[10px] opacity-60">{d.desc}</span>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Color Palette */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">COLOR PALETTE</p>
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3">COLOR PALETTE</p>
             <div className="space-y-1.5">
               {COLOR_PALETTES.map(p => (
                 <button key={p.id} onClick={() => setPalette(p.id)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border text-xs transition-all ${
+                  className={`w-full flex items-center gap-2.5 px-4 py-3 rounded-lg border text-xs transition-all ${
                     palette === p.id ? 'border-cyan-500/30 bg-cyan-500/8 text-cyan-300' : 'border-indigo-500/8 bg-white/[0.01] text-gray-400 hover:text-gray-200'
                   }`}>
                   <div className="flex gap-1">
@@ -275,8 +275,8 @@ export default function CreativePage() {
           </div>
 
           {/* Quantity */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">QUANTITY</p>
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3">QUANTITY</p>
             <div className="grid grid-cols-3 gap-1.5">
               {['2', '4', '6'].map(q => (
                 <button key={q} onClick={() => setQuantity(q)}
@@ -305,10 +305,10 @@ export default function CreativePage() {
 
       {/* Generation Loading */}
       {generating && (
-        <div className="panel rounded-xl p-8 mt-4 animate-fade-up text-center">
-          <div className="flex items-center justify-center gap-3 mb-4">
+        <div className="panel rounded-2xl p-10 mt-6 animate-fade-up text-center">
+          <div className="flex items-center justify-center gap-3 sm:gap-5 mb-4">
             <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-            <span className="hud-label" style={{ color: '#06b6d4' }}>RENDERING VISUALS</span>
+            <span className="hud-label text-[11px]" style={{ color: '#06b6d4' }}>RENDERING VISUALS</span>
           </div>
           <div className="flex justify-center gap-1">
             {[0, 1, 2, 3, 4].map(i => (
@@ -323,17 +323,17 @@ export default function CreativePage() {
 
       {/* Output Gallery */}
       {images.length > 0 && (
-        <div className="mt-4 animate-fade-up">
+        <div className="mt-6 animate-fade-up">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span className="hud-label" style={{ color: '#4ade80' }}>GENERATED — {images.length} CREATIVES</span>
+              <span className="hud-label text-[11px]" style={{ color: '#4ade80' }}>GENERATED — {images.length} CREATIVES</span>
             </div>
             <button onClick={generate} className="chip text-[10px]">Regenerate</button>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">
             {images.map((img, i) => (
-              <div key={i} className="panel rounded-xl overflow-hidden group">
+              <div key={i} className="panel rounded-2xl overflow-hidden group">
                 <div className="relative">
                   <img src={img.url} alt={img.alt || 'Generated creative'} className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">

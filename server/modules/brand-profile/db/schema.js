@@ -20,9 +20,15 @@ function initDatabase() {
     industry TEXT,
     website TEXT,
     social_links TEXT,
+    words_to_use TEXT,
+    words_to_avoid TEXT,
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now'))
   )`);
+
+  // Migration for existing databases
+  try { db.exec('ALTER TABLE bp_profiles ADD COLUMN words_to_use TEXT'); } catch (e) { /* already exists */ }
+  try { db.exec('ALTER TABLE bp_profiles ADD COLUMN words_to_avoid TEXT'); } catch (e) { /* already exists */ }
 }
 
 module.exports = { initDatabase };

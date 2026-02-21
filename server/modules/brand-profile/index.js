@@ -3,10 +3,10 @@ const { initDatabase } = require('./db/schema');
 
 module.exports = {
   id: 'brand-profile',
-  name: 'Brand Profile',
-  description: 'Define and manage brand identity including voice, visuals, audience, and guidelines',
+  name: 'Brand Identity',
+  description: 'Your brand DNA — every AI module references this when generating content',
   icon: 'icon-brand',
-  color: '#64748b',
+  color: '#C45D3E',
   category: 'settings',
   apiPrefix: '/api/brand-profile',
   initDatabase() { initDatabase(); },

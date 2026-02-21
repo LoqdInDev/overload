@@ -48,31 +48,31 @@ export default function SupportCenterPage() {
   const statusColor = (s) => s === 'open' ? '#3b82f6' : s === 'in-progress' ? '#f59e0b' : s === 'waiting' ? '#8b5cf6' : '#22c55e';
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto">
-      <div className="mb-6 animate-fade-in">
-        <p className="hud-label mb-2" style={{ color: MODULE_COLOR }}>SUPPORT CENTER</p>
-        <h1 className="text-2xl font-bold text-white mb-1">Customer Support Hub</h1>
-        <p className="text-sm text-gray-500">Manage tickets, templates, and AI-powered responses</p>
+    <div className="p-4 sm:p-6 lg:p-12">
+      <div className="mb-6 sm:mb-8 animate-fade-in">
+        <p className="hud-label text-[11px] mb-2" style={{ color: MODULE_COLOR }}>SUPPORT CENTER</p>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Customer Support Hub</h1>
+        <p className="text-base text-gray-500">Manage tickets, templates, and AI-powered responses</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 stagger">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
         {[
           { label: 'OPEN TICKETS', value: '24', sub: '3 critical priority' },
           { label: 'RESOLVED TODAY', value: '18', sub: '75% resolution rate' },
           { label: 'AVG RESPONSE TIME', value: '14m', sub: '-3m vs last week' },
           { label: 'SATISFACTION', value: '94%', sub: 'Based on 847 ratings' },
         ].map((s, i) => (
-          <div key={i} className="panel rounded-xl p-4">
-            <p className="hud-label mb-1">{s.label}</p>
-            <p className="text-2xl font-bold text-white font-mono">{s.value}</p>
-            <p className="text-[10px] text-gray-500 mt-1">{s.sub}</p>
+          <div key={i} className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-1">{s.label}</p>
+            <p className="text-xl sm:text-2xl font-bold text-white font-mono">{s.value}</p>
+            <p className="text-xs text-gray-500 mt-1">{s.sub}</p>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6">
+      <div className="flex gap-1 mb-6 sm:mb-8">
         {['overview', 'tickets', 'templates', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
             {t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1).replace('-', ' ')}
@@ -82,11 +82,11 @@ export default function SupportCenterPage() {
 
       {/* Overview */}
       {tab === 'overview' && (
-        <div className="animate-fade-in space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="panel rounded-xl p-4">
-              <p className="hud-label mb-3" style={{ color: MODULE_COLOR }}>TICKETS BY PRIORITY</p>
-              <div className="space-y-3">
+        <div className="animate-fade-in space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <div className="panel rounded-2xl p-4 sm:p-6">
+              <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>TICKETS BY PRIORITY</p>
+              <div className="space-y-4">
                 {[
                   { priority: 'Critical', count: 3, pct: 12 },
                   { priority: 'High', count: 7, pct: 29 },
@@ -94,7 +94,7 @@ export default function SupportCenterPage() {
                   { priority: 'Low', count: 6, pct: 25 },
                 ].map((p, i) => (
                   <div key={i}>
-                    <div className="flex justify-between text-[10px] mb-1">
+                    <div className="flex justify-between text-xs mb-1">
                       <span className="font-semibold" style={{ color: priorityColor(p.priority.toLowerCase()) }}>{p.priority}</span>
                       <span className="text-gray-500 font-mono">{p.count} tickets ({p.pct}%)</span>
                     </div>
@@ -105,9 +105,9 @@ export default function SupportCenterPage() {
                 ))}
               </div>
             </div>
-            <div className="panel rounded-xl p-4">
-              <p className="hud-label mb-3" style={{ color: MODULE_COLOR }}>AGENT PERFORMANCE</p>
-              <div className="space-y-2">
+            <div className="panel rounded-2xl p-4 sm:p-6">
+              <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>AGENT PERFORMANCE</p>
+              <div className="space-y-3">
                 {[
                   { name: 'Sarah K.', resolved: 8, avgTime: '11m', satisfaction: '97%' },
                   { name: 'David R.', resolved: 6, avgTime: '16m', satisfaction: '92%' },
@@ -115,12 +115,12 @@ export default function SupportCenterPage() {
                 ].map((agent, i) => (
                   <div key={i} className="flex items-center justify-between py-1.5 border-b border-indigo-500/[0.04] last:border-0">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: `${MODULE_COLOR}15`, color: MODULE_COLOR }}>
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: `${MODULE_COLOR}15`, color: MODULE_COLOR }}>
                         {agent.name.split(' ').map(n => n[0]).join('')}
                       </div>
-                      <span className="text-xs text-gray-300">{agent.name}</span>
+                      <span className="text-sm text-gray-300">{agent.name}</span>
                     </div>
-                    <div className="flex items-center gap-4 text-[10px]">
+                    <div className="flex items-center gap-4 text-xs">
                       <span className="font-mono text-gray-400">{agent.resolved} resolved</span>
                       <span className="font-mono text-gray-500">{agent.avgTime} avg</span>
                       <span className="font-mono text-green-400">{agent.satisfaction}</span>
@@ -130,9 +130,9 @@ export default function SupportCenterPage() {
               </div>
             </div>
           </div>
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3" style={{ color: MODULE_COLOR }}>TICKET VOLUME (LAST 7 DAYS)</p>
-            <div className="flex items-end gap-2 h-24">
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>TICKET VOLUME (LAST 7 DAYS)</p>
+            <div className="flex items-end gap-3 h-24">
               {[18, 24, 31, 22, 28, 19, 24].map((v, i) => {
                 const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
                 return (
@@ -151,13 +151,13 @@ export default function SupportCenterPage() {
       {/* Tickets */}
       {tab === 'tickets' && (
         <div className="animate-fade-in">
-          <div className="panel rounded-xl overflow-hidden">
+          <div className="panel rounded-2xl overflow-hidden">
             <div className="divide-y divide-indigo-500/[0.04]">
               {MOCK_TICKETS.map(t => (
-                <div key={t.id} className="px-4 py-3 hover:bg-white/[0.01] transition-colors">
+                <div key={t.id} className="px-6 py-4 hover:bg-white/[0.01] transition-colors">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono text-gray-500">{t.id}</span>
+                      <span className="text-xs font-mono text-gray-500">{t.id}</span>
                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${priorityColor(t.priority)}15`, color: priorityColor(t.priority), border: `1px solid ${priorityColor(t.priority)}25` }}>
                         {t.priority}
                       </span>
@@ -165,10 +165,10 @@ export default function SupportCenterPage() {
                         {t.status}
                       </span>
                     </div>
-                    <span className="text-[10px] text-gray-600">{t.created}</span>
+                    <span className="text-xs text-gray-600">{t.created}</span>
                   </div>
-                  <p className="text-xs font-semibold text-gray-300">{t.subject}</p>
-                  <div className="flex items-center gap-3 mt-1 text-[10px] text-gray-500">
+                  <p className="text-sm font-semibold text-gray-300">{t.subject}</p>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
                     <span>{t.customer}</span>
                     <span>&middot;</span>
                     <span>{t.assignee}</span>
@@ -182,18 +182,18 @@ export default function SupportCenterPage() {
 
       {/* Templates */}
       {tab === 'templates' && (
-        <div className="animate-fade-in grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="animate-fade-in grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
           {MOCK_TEMPLATES_LIST.map(tmpl => (
-            <div key={tmpl.id} className="panel rounded-xl p-4 hover:border-orange-500/20 transition-all cursor-pointer">
+            <div key={tmpl.id} className="panel rounded-2xl p-4 sm:p-6 hover:border-orange-500/20 transition-all cursor-pointer">
               <div className="flex items-start justify-between mb-2">
                 <div>
-                  <p className="text-sm font-bold text-gray-200">{tmpl.name}</p>
+                  <p className="text-base font-bold text-gray-200">{tmpl.name}</p>
                   <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/[0.03] text-gray-500 border border-white/[0.04]">{tmpl.category}</span>
                 </div>
-                <span className="text-[10px] text-gray-600">Used {tmpl.usage}x</span>
+                <span className="text-xs text-gray-600">Used {tmpl.usage}x</span>
               </div>
               <p className="text-[11px] text-gray-500 mt-2 line-clamp-2">{tmpl.snippet}</p>
-              <p className="text-[10px] text-gray-600 mt-2">Last used: {tmpl.lastUsed}</p>
+              <p className="text-xs text-gray-600 mt-2">Last used: {tmpl.lastUsed}</p>
             </div>
           ))}
         </div>
@@ -201,22 +201,22 @@ export default function SupportCenterPage() {
 
       {/* AI Tools */}
       {tab === 'ai-tools' && (
-        <div className="animate-fade-in space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="animate-fade-in space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {AI_TEMPLATES.map(tool => (
-              <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 text-left ${selectedTemplate?.name === tool.name ? 'border-orange-500/30' : ''}`}>
-                <p className="text-xs font-bold text-gray-300">{tool.name}</p>
-                <p className="text-[10px] text-gray-600 mt-1 line-clamp-2">{tool.prompt}</p>
+              <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === tool.name ? 'border-orange-500/30' : ''}`}>
+                <p className="text-sm font-bold text-gray-300">{tool.name}</p>
+                <p className="text-xs text-gray-600 mt-1 line-clamp-2">{tool.prompt}</p>
               </button>
             ))}
           </div>
           {(generating || output) && (
-            <div className="panel rounded-xl p-5">
+            <div className="panel rounded-2xl p-4 sm:p-7">
               <div className="flex items-center gap-2 mb-3">
                 <div className={`w-2 h-2 rounded-full ${generating ? 'animate-pulse' : ''}`} style={{ background: generating ? MODULE_COLOR : '#4ade80' }} />
-                <span className="hud-label" style={{ color: generating ? MODULE_COLOR : '#4ade80' }}>{generating ? 'GENERATING...' : 'READY'}</span>
+                <span className="hud-label text-[11px]" style={{ color: generating ? MODULE_COLOR : '#4ade80' }}>{generating ? 'GENERATING...' : 'READY'}</span>
               </div>
-              <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
+              <pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
             </div>
           )}
         </div>

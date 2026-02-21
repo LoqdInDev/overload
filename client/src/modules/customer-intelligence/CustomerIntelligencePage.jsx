@@ -43,31 +43,31 @@ export default function CustomerIntelligencePage() {
   const severityColor = (s) => s === 'high' ? '#ef4444' : s === 'medium' ? '#f59e0b' : '#3b82f6';
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto">
-      <div className="mb-6 animate-fade-in">
-        <p className="hud-label mb-2" style={{ color: MODULE_COLOR }}>CUSTOMER INTELLIGENCE</p>
-        <h1 className="text-2xl font-bold text-white mb-1">Customer Intelligence</h1>
-        <p className="text-sm text-gray-500">Deep insights into customer behavior, segments, and lifetime value</p>
+    <div className="p-4 sm:p-6 lg:p-12">
+      <div className="mb-6 sm:mb-8 animate-fade-in">
+        <p className="hud-label text-[11px] mb-2" style={{ color: MODULE_COLOR }}>CUSTOMER INTELLIGENCE</p>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Customer Intelligence</h1>
+        <p className="text-base text-gray-500">Deep insights into customer behavior, segments, and lifetime value</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 stagger">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
         {[
           { label: 'TOTAL CUSTOMERS', value: '6,126', sub: '+890 this month' },
           { label: 'SEGMENTS', value: '5', sub: '2 need attention' },
           { label: 'AVG LTV', value: '$1,240', sub: '+$180 vs last quarter' },
           { label: 'CHURN RATE', value: '4.2%', sub: '-0.8% vs last month' },
         ].map((s, i) => (
-          <div key={i} className="panel rounded-xl p-4">
-            <p className="hud-label mb-1">{s.label}</p>
-            <p className="text-2xl font-bold text-white font-mono">{s.value}</p>
-            <p className="text-[10px] text-gray-500 mt-1">{s.sub}</p>
+          <div key={i} className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-1">{s.label}</p>
+            <p className="text-xl sm:text-2xl font-bold text-white font-mono">{s.value}</p>
+            <p className="text-xs text-gray-500 mt-1">{s.sub}</p>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6">
+      <div className="flex gap-1 mb-6 sm:mb-8">
         {['overview', 'segments', 'insights', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
             {t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1).replace('-', ' ')}
@@ -77,17 +77,17 @@ export default function CustomerIntelligencePage() {
 
       {/* Overview */}
       {tab === 'overview' && (
-        <div className="animate-fade-in space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="panel rounded-xl p-4">
-              <p className="hud-label mb-3" style={{ color: MODULE_COLOR }}>SEGMENT BREAKDOWN</p>
-              <div className="space-y-3">
+        <div className="animate-fade-in space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <div className="panel rounded-2xl p-4 sm:p-6">
+              <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>SEGMENT BREAKDOWN</p>
+              <div className="space-y-4">
                 {MOCK_SEGMENTS.map(seg => {
                   const total = MOCK_SEGMENTS.reduce((a, s) => a + s.size, 0);
                   const pct = ((seg.size / total) * 100).toFixed(0);
                   return (
                     <div key={seg.id}>
-                      <div className="flex justify-between text-[10px] mb-1">
+                      <div className="flex justify-between text-xs mb-1">
                         <span className="text-gray-300 font-semibold">{seg.name}</span>
                         <span className="text-gray-500 font-mono">{seg.size.toLocaleString()} ({pct}%)</span>
                       </div>
@@ -99,14 +99,14 @@ export default function CustomerIntelligencePage() {
                 })}
               </div>
             </div>
-            <div className="panel rounded-xl p-4">
-              <p className="hud-label mb-3" style={{ color: MODULE_COLOR }}>CHURN RISK OVERVIEW</p>
-              <div className="space-y-2">
+            <div className="panel rounded-2xl p-4 sm:p-6">
+              <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>CHURN RISK OVERVIEW</p>
+              <div className="space-y-3">
                 {MOCK_SEGMENTS.map(seg => (
                   <div key={seg.id} className="flex items-center justify-between py-1.5 border-b border-indigo-500/[0.04] last:border-0">
                     <span className="text-xs text-gray-300">{seg.name}</span>
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] font-mono text-gray-500">{seg.growth}</span>
+                      <span className="text-xs font-mono text-gray-500">{seg.growth}</span>
                       <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${churnColor(seg.churnRisk)}15`, color: churnColor(seg.churnRisk), border: `1px solid ${churnColor(seg.churnRisk)}25` }}>
                         {seg.churnRisk}
                       </span>
@@ -116,15 +116,15 @@ export default function CustomerIntelligencePage() {
               </div>
             </div>
           </div>
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3" style={{ color: MODULE_COLOR }}>TOP INSIGHTS</p>
-            <div className="space-y-2">
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>TOP INSIGHTS</p>
+            <div className="space-y-3">
               {MOCK_INSIGHTS.slice(0, 3).map(insight => (
                 <div key={insight.id} className="flex items-start gap-3 py-2 border-b border-indigo-500/[0.04] last:border-0">
                   <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: severityColor(insight.severity) }} />
                   <div>
                     <p className="text-xs font-semibold text-gray-300">{insight.title}</p>
-                    <p className="text-[10px] text-gray-500 mt-0.5">{insight.description}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{insight.description}</p>
                   </div>
                 </div>
               ))}
@@ -135,26 +135,26 @@ export default function CustomerIntelligencePage() {
 
       {/* Segments */}
       {tab === 'segments' && (
-        <div className="animate-fade-in grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="animate-fade-in grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
           {MOCK_SEGMENTS.map(seg => (
-            <div key={seg.id} className="panel rounded-xl p-4 hover:border-cyan-500/20 transition-all cursor-pointer">
+            <div key={seg.id} className="panel rounded-2xl p-4 sm:p-6 hover:border-cyan-500/20 transition-all cursor-pointer">
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <p className="text-sm font-bold text-gray-200">{seg.name}</p>
-                  <p className="text-[10px] text-gray-500 mt-0.5">{seg.size.toLocaleString()} customers</p>
+                  <p className="text-base font-bold text-gray-200">{seg.name}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{seg.size.toLocaleString()} customers</p>
                 </div>
                 <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${churnColor(seg.churnRisk)}15`, color: churnColor(seg.churnRisk), border: `1px solid ${churnColor(seg.churnRisk)}25` }}>
                   {seg.churnRisk} Risk
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-3 mb-3">
+              <div className="grid grid-cols-2 gap-3 sm:gap-5 mb-3">
                 <div>
-                  <p className="text-[10px] text-gray-500">Avg LTV</p>
-                  <p className="text-sm font-bold font-mono" style={{ color: MODULE_COLOR }}>{seg.avgLtv}</p>
+                  <p className="text-xs text-gray-500">Avg LTV</p>
+                  <p className="text-base font-bold font-mono" style={{ color: MODULE_COLOR }}>{seg.avgLtv}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-gray-500">Growth</p>
-                  <p className="text-sm font-bold font-mono" style={{ color: seg.growth.startsWith('+') ? '#22c55e' : '#ef4444' }}>{seg.growth}</p>
+                  <p className="text-xs text-gray-500">Growth</p>
+                  <p className="text-base font-bold font-mono" style={{ color: seg.growth.startsWith('+') ? '#22c55e' : '#ef4444' }}>{seg.growth}</p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-1">
@@ -169,22 +169,22 @@ export default function CustomerIntelligencePage() {
 
       {/* Insights */}
       {tab === 'insights' && (
-        <div className="animate-fade-in space-y-3">
+        <div className="animate-fade-in space-y-4">
           {MOCK_INSIGHTS.map(insight => (
-            <div key={insight.id} className="panel rounded-xl p-4">
+            <div key={insight.id} className="panel rounded-2xl p-4 sm:p-6">
               <div className="flex items-start gap-3">
                 <div className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ background: severityColor(insight.severity), boxShadow: `0 0 8px ${severityColor(insight.severity)}40` }} />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <p className="text-sm font-bold text-gray-200">{insight.title}</p>
+                    <p className="text-base font-bold text-gray-200">{insight.title}</p>
                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase" style={{ background: `${severityColor(insight.severity)}15`, color: severityColor(insight.severity) }}>
                       {insight.severity}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-400 mb-2">{insight.description}</p>
-                  <div className="bg-white/[0.02] rounded-lg p-3 border border-indigo-500/[0.06]">
-                    <p className="text-[10px] font-bold text-gray-400 mb-1">RECOMMENDATION</p>
-                    <p className="text-xs text-gray-300">{insight.recommendation}</p>
+                  <p className="text-sm text-gray-400 mb-2">{insight.description}</p>
+                  <div className="bg-white/[0.02] rounded-lg p-5 border border-indigo-500/[0.06]">
+                    <p className="text-xs font-bold text-gray-400 mb-1">RECOMMENDATION</p>
+                    <p className="text-sm text-gray-300">{insight.recommendation}</p>
                   </div>
                 </div>
               </div>
@@ -195,22 +195,22 @@ export default function CustomerIntelligencePage() {
 
       {/* AI Tools */}
       {tab === 'ai-tools' && (
-        <div className="animate-fade-in space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="animate-fade-in space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {AI_TEMPLATES.map(tool => (
-              <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 text-left ${selectedTemplate?.name === tool.name ? 'border-cyan-500/30' : ''}`}>
-                <p className="text-xs font-bold text-gray-300">{tool.name}</p>
-                <p className="text-[10px] text-gray-600 mt-1 line-clamp-2">{tool.prompt}</p>
+              <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === tool.name ? 'border-cyan-500/30' : ''}`}>
+                <p className="text-sm font-bold text-gray-300">{tool.name}</p>
+                <p className="text-xs text-gray-600 mt-1 line-clamp-2">{tool.prompt}</p>
               </button>
             ))}
           </div>
           {(generating || output) && (
-            <div className="panel rounded-xl p-5">
+            <div className="panel rounded-2xl p-4 sm:p-7">
               <div className="flex items-center gap-2 mb-3">
                 <div className={`w-2 h-2 rounded-full ${generating ? 'animate-pulse' : ''}`} style={{ background: generating ? MODULE_COLOR : '#4ade80' }} />
-                <span className="hud-label" style={{ color: generating ? MODULE_COLOR : '#4ade80' }}>{generating ? 'ANALYZING...' : 'READY'}</span>
+                <span className="hud-label text-[11px]" style={{ color: generating ? MODULE_COLOR : '#4ade80' }}>{generating ? 'ANALYZING...' : 'READY'}</span>
               </div>
-              <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
+              <pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
             </div>
           )}
         </div>

@@ -141,28 +141,28 @@ export default function BrandStrategyPage() {
   // Landing: tool selection
   if (!activeTool) {
     return (
-      <div className="p-6 lg:p-8 max-w-6xl mx-auto">
-        <div className="mb-8 animate-fade-in">
-          <p className="hud-label mb-2" style={{ color: COLOR }}>BRAND STRATEGY AI</p>
-          <h1 className={`text-2xl font-bold mb-1 ${dark ? 'text-white' : 'text-gray-900'}`}>Build Your Brand Identity</h1>
-          <p className={`text-sm ${dark ? 'text-gray-500' : 'text-gray-500'}`}>Select a strategy tool to develop your brand with AI</p>
+      <div className="p-4 sm:p-6 lg:p-12">
+        <div className="mb-6 sm:mb-8 animate-fade-in">
+          <p className="hud-label text-[11px] mb-2" style={{ color: COLOR }}>BRAND STRATEGY AI</p>
+          <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 ${dark ? 'text-white' : 'text-gray-900'}`}>Build Your Brand Identity</h1>
+          <p className={`text-base ${dark ? 'text-gray-500' : 'text-gray-500'}`}>Select a strategy tool to develop your brand with AI</p>
         </div>
 
         {/* Strategy Tools */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 stagger mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-5 stagger mb-6 sm:mb-10">
           {STRATEGY_TOOLS.map(tool => (
             <button key={tool.id} onClick={() => setActiveTool(tool.id)}
-              className="panel-interactive rounded-xl p-5 text-left group">
-              <div className="flex items-start gap-4">
-                <div className="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-110"
+              className="panel-interactive rounded-2xl p-4 sm:p-7 text-left group">
+              <div className="flex items-start gap-3 sm:gap-5">
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-110"
                   style={{ background: `${COLOR}12`, border: `1px solid ${COLOR}20` }}>
-                  <svg className="w-5 h-5" style={{ color: COLOR }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <svg className="w-6 h-6" style={{ color: COLOR }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d={tool.icon} />
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className={`text-sm font-bold mb-1 transition-colors ${dark ? 'text-gray-200 group-hover:text-white' : 'text-gray-700 group-hover:text-gray-900'}`}>{tool.name}</h3>
-                  <p className="text-[10px] text-gray-500 leading-relaxed">{tool.desc}</p>
+                  <h3 className={`text-base font-bold mb-1 transition-colors ${dark ? 'text-gray-200 group-hover:text-white' : 'text-gray-700 group-hover:text-gray-900'}`}>{tool.name}</h3>
+                  <p className="text-xs text-gray-500 leading-relaxed">{tool.desc}</p>
                 </div>
               </div>
             </button>
@@ -170,24 +170,24 @@ export default function BrandStrategyPage() {
         </div>
 
         {/* Archetype Templates */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <p className="hud-label">BRAND ARCHETYPE TEMPLATES</p>
+            <p className="hud-label text-[11px]">BRAND ARCHETYPE TEMPLATES</p>
             <div className="flex-1 hud-line" />
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 stagger">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 stagger">
             {ARCHETYPES.map(arc => (
               <button key={arc.id} onClick={() => { setArchetype(arc.id); setActiveTool('voice'); }}
-                className="panel-interactive rounded-lg p-3 text-left group">
+                className="panel-interactive rounded-lg p-5 text-left group">
                 <div className="flex items-center gap-2 mb-1.5">
-                  <div className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold"
+                  <div className="w-8 h-8 rounded-md flex items-center justify-center text-xs font-bold"
                     style={{ background: `${COLOR}12`, color: COLOR }}>
                     {arc.name.charAt(0)}
                   </div>
                   <p className={`text-xs font-bold ${dark ? 'text-gray-300 group-hover:text-white' : 'text-gray-700'} transition-colors`}>{arc.name}</p>
                 </div>
                 <p className="text-[9px] text-gray-500 leading-relaxed">{arc.desc}</p>
-                <span className="inline-block mt-1.5 text-[8px] px-1.5 py-0.5 rounded-full" style={{ background: `${COLOR}10`, color: COLOR, border: `1px solid ${COLOR}20` }}>{arc.emoji}</span>
+                <span className="inline-block mt-1.5 text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: `${COLOR}10`, color: COLOR, border: `1px solid ${COLOR}20` }}>{arc.emoji}</span>
               </button>
             ))}
           </div>
@@ -196,7 +196,7 @@ export default function BrandStrategyPage() {
         {/* Industry Quick Start */}
         <div>
           <div className="flex items-center gap-3 mb-4">
-            <p className="hud-label">QUICK START BY INDUSTRY</p>
+            <p className="hud-label text-[11px]">QUICK START BY INDUSTRY</p>
             <div className="flex-1 hud-line" />
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -216,42 +216,42 @@ export default function BrandStrategyPage() {
   const wordCount = (result || streamText).split(/\s+/).filter(Boolean).length;
 
   return (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto animate-fade-in">
+    <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-6 sm:mb-8">
         <button onClick={() => { setActiveTool(null); setResult(''); setStreamText(''); }}
           className={`p-2 rounded-md border transition-all ${dark ? 'border-indigo-500/10 text-gray-500 hover:text-white hover:border-indigo-500/25' : 'border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-300'}`}>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
           </svg>
         </button>
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${COLOR}15`, border: `1px solid ${COLOR}20` }}>
-            <svg className="w-4 h-4" style={{ color: COLOR }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: `${COLOR}15`, border: `1px solid ${COLOR}20` }}>
+            <svg className="w-5 h-5" style={{ color: COLOR }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d={currentTool?.icon} />
             </svg>
           </div>
           <div>
-            <p className="hud-label" style={{ color: COLOR }}>{currentTool?.name?.toUpperCase()}</p>
+            <p className="hud-label text-[11px]" style={{ color: COLOR }}>{currentTool?.name?.toUpperCase()}</p>
             <h2 className={`text-lg font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{currentTool?.name}</h2>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Left: Input */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Brand Name */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">BRAND NAME</p>
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3">BRAND NAME</p>
             <input type="text" value={brandName} onChange={(e) => setBrandName(e.target.value)}
               placeholder="Enter your brand name..."
-              className="w-full input-field rounded-lg px-4 py-3 text-sm" />
+              className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base" />
           </div>
 
           {/* Industry */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">INDUSTRY</p>
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3">INDUSTRY</p>
             <div className="flex flex-wrap gap-1.5 mb-3">
               {INDUSTRIES.map(ind => (
                 <button key={ind} onClick={() => setIndustry(ind)}
@@ -263,15 +263,15 @@ export default function BrandStrategyPage() {
             </div>
             <input type="text" value={industry} onChange={(e) => setIndustry(e.target.value)}
               placeholder="Or type your industry..."
-              className="w-full input-field rounded-lg px-4 py-2.5 text-sm" />
+              className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base" />
           </div>
 
           {/* Target Audience */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">TARGET AUDIENCE</p>
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3">TARGET AUDIENCE</p>
             <textarea value={targetAudience} onChange={(e) => setTargetAudience(e.target.value)} rows={3}
               placeholder="Describe your ideal customer... age, interests, pain points, goals..."
-              className="w-full input-field rounded-lg px-4 py-3 text-sm resize-none" />
+              className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base resize-none" />
           </div>
 
           {/* Generate */}
@@ -288,20 +288,20 @@ export default function BrandStrategyPage() {
         </div>
 
         {/* Right: Settings */}
-        <div className="space-y-4">
+        <div className="space-y-4 sm:space-y-6">
           {/* Tool Switcher */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">STRATEGY TOOL</p>
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3">STRATEGY TOOL</p>
             <div className="space-y-1.5">
               {STRATEGY_TOOLS.map(tool => (
                 <button key={tool.id} onClick={() => setActiveTool(tool.id)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border text-xs transition-all ${
+                  className={`w-full flex items-center gap-2.5 px-4 py-3 rounded-lg border text-xs transition-all ${
                     activeTool === tool.id
                       ? `border-[${COLOR}30]`
                       : dark ? 'border-indigo-500/8 bg-white/[0.01] text-gray-400 hover:text-gray-200' : 'border-gray-200 text-gray-500 hover:text-gray-700'
                   }`}
                   style={activeTool === tool.id ? { background: `${COLOR}10`, borderColor: `${COLOR}30`, color: COLOR } : {}}>
-                  <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d={tool.icon} />
                   </svg>
                   <span className="font-semibold">{tool.name}</span>
@@ -311,8 +311,8 @@ export default function BrandStrategyPage() {
           </div>
 
           {/* Brand Archetype */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">BRAND ARCHETYPE</p>
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3">BRAND ARCHETYPE</p>
             <div className="grid grid-cols-3 gap-1">
               {ARCHETYPES.map(arc => (
                 <button key={arc.id} onClick={() => setArchetype(arc.id)}
@@ -329,9 +329,9 @@ export default function BrandStrategyPage() {
           </div>
 
           {/* Tone Spectrum */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">TONE SPECTRUM</p>
-            <div className="space-y-3">
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3">TONE SPECTRUM</p>
+            <div className="space-y-4">
               {TONE_SPECTRUM.map(tone => (
                 <div key={tone.id}>
                   <div className="flex justify-between mb-1">
@@ -351,9 +351,9 @@ export default function BrandStrategyPage() {
 
           {/* Stats */}
           {(streamText || result) && (
-            <div className="panel rounded-xl p-4 animate-fade-up">
-              <p className="hud-label mb-3">OUTPUT STATS</p>
-              <div className="space-y-2">
+            <div className="panel rounded-2xl p-4 sm:p-6 animate-fade-up">
+              <p className="hud-label text-[11px] mb-3">OUTPUT STATS</p>
+              <div className="space-y-3">
                 <div className="flex justify-between text-xs">
                   <span className="text-gray-500">Words</span>
                   <span className={`font-mono font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{wordCount}</span>
@@ -380,12 +380,12 @@ export default function BrandStrategyPage() {
 
       {/* Streaming Output */}
       {(generating || streamText) && !result && (
-        <div className="panel rounded-xl p-5 mt-4 animate-fade-up">
+        <div className="panel rounded-2xl p-4 sm:p-7 mt-6 animate-fade-up">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: COLOR }} />
-            <span className="hud-label" style={{ color: COLOR }}>GENERATING</span>
+            <span className="hud-label text-[11px]" style={{ color: COLOR }}>GENERATING</span>
           </div>
-          <div className={`rounded-lg p-5 max-h-[50vh] overflow-y-auto text-sm whitespace-pre-wrap leading-relaxed font-[system-ui] ${dark ? 'bg-black/50 text-gray-300' : 'bg-gray-50 text-gray-700'}`}>
+          <div className={`rounded-lg p-4 sm:p-7 max-h-[50vh] overflow-y-auto text-base whitespace-pre-wrap leading-relaxed font-[system-ui] ${dark ? 'bg-black/50 text-gray-300' : 'bg-gray-50 text-gray-700'}`}>
             {streamText}<span className="inline-block w-[2px] h-4 ml-0.5 animate-pulse" style={{ background: COLOR }} />
           </div>
         </div>
@@ -393,11 +393,11 @@ export default function BrandStrategyPage() {
 
       {/* Final Result */}
       {result && (
-        <div className="panel rounded-xl p-5 mt-4 animate-fade-up">
+        <div className="panel rounded-2xl p-4 sm:p-7 mt-6 animate-fade-up">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span className="hud-label" style={{ color: '#4ade80' }}>COMPLETE</span>
+              <span className="hud-label text-[11px]" style={{ color: '#4ade80' }}>COMPLETE</span>
             </div>
             <div className="flex gap-2">
               <button onClick={copyToClipboard}
@@ -411,7 +411,7 @@ export default function BrandStrategyPage() {
               <button onClick={generate} className="chip text-[10px]">Regenerate</button>
             </div>
           </div>
-          <div className={`rounded-lg p-5 max-h-[60vh] overflow-y-auto text-sm whitespace-pre-wrap leading-relaxed ${dark ? 'bg-black/50 text-gray-200' : 'bg-gray-50 text-gray-700'}`}>
+          <div className={`rounded-lg p-4 sm:p-7 max-h-[60vh] overflow-y-auto text-base whitespace-pre-wrap leading-relaxed ${dark ? 'bg-black/50 text-gray-200' : 'bg-gray-50 text-gray-700'}`}>
             {result}
           </div>
         </div>

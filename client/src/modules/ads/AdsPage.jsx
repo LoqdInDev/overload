@@ -93,36 +93,36 @@ export default function AdsPage() {
 
   if (!activePlatform) {
     return (
-      <div className="p-6 lg:p-8 max-w-6xl mx-auto">
-        <div className="mb-8 animate-fade-in">
-          <p className="hud-label mb-2" style={{ color: '#10b981' }}>AD CAMPAIGN BUILDER</p>
-          <h1 className="text-2xl font-bold text-white mb-1">Choose your platform</h1>
-          <p className="text-sm text-gray-500">Select an advertising platform to build your AI-powered campaign</p>
+      <div className="p-4 sm:p-6 lg:p-12">
+        <div className="mb-6 sm:mb-10 animate-fade-in">
+          <p className="hud-label mb-3 text-[11px]" style={{ color: '#10b981' }}>AD CAMPAIGN BUILDER</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">Choose your platform</h1>
+          <p className="text-base text-gray-400">Select an advertising platform to build your AI-powered campaign</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 stagger">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-5 stagger">
           {PLATFORMS.map(p => (
             <button key={p.id} onClick={() => setActivePlatform(p.id)}
-              className="panel-interactive rounded-xl p-6 text-left group">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-110"
+              className="panel-interactive rounded-2xl p-5 sm:p-8 text-left group">
+              <div className="flex items-start gap-3 sm:gap-5">
+                <div className="w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-110"
                   style={{ background: `${p.color}15`, border: `1px solid ${p.color}20` }}>
-                  <svg className="w-6 h-6" style={{ color: p.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <svg className="w-8 h-8" style={{ color: p.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d={p.icon} />
                   </svg>
                 </div>
-                <div>
-                  <h3 className="text-sm font-bold text-gray-200 group-hover:text-white transition-colors mb-1">{p.name}</h3>
-                  <p className="text-[10px] text-gray-500">
+                <div className="pt-1">
+                  <h3 className="text-lg font-bold text-gray-200 group-hover:text-white transition-colors mb-1.5">{p.name}</h3>
+                  <p className="text-sm text-gray-500">
                     {p.id === 'google' && 'Search, Display, YouTube, Performance Max'}
                     {p.id === 'meta' && 'Facebook, Instagram, Messenger, Audience Network'}
                     {p.id === 'tiktok' && 'In-Feed, TopView, Spark Ads, Shop Ads'}
                   </p>
                 </div>
               </div>
-              <div className="mt-4 flex gap-1.5">
+              <div className="mt-6 flex flex-wrap gap-2">
                 {(CAMPAIGN_TEMPLATES[p.id] || []).map(t => (
-                  <span key={t.name} className="text-[8px] px-2 py-0.5 rounded-full bg-white/[0.03] text-gray-600 border border-white/[0.04]">{t.name}</span>
+                  <span key={t.name} className="text-xs px-3 py-1 rounded-full bg-white/[0.03] text-gray-500 border border-white/[0.04]">{t.name}</span>
                 ))}
               </div>
             </button>
@@ -130,12 +130,12 @@ export default function AdsPage() {
         </div>
 
         {/* Platform Highlights */}
-        <div className="mt-10">
-          <div className="flex items-center gap-3 mb-4">
-            <p className="hud-label">PLATFORM CAPABILITIES</p>
+        <div className="mt-14">
+          <div className="flex items-center gap-4 mb-6">
+            <p className="hud-label text-[11px]">PLATFORM CAPABILITIES</p>
             <div className="flex-1 hud-line" />
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
               { label: 'AI Headlines & Descriptions', platforms: 'All' },
               { label: 'Audience Targeting', platforms: 'All' },
@@ -144,9 +144,9 @@ export default function AdsPage() {
               { label: 'Lookalike Audiences', platforms: 'Meta' },
               { label: 'Hashtag Strategy', platforms: 'TikTok' },
             ].map((cap, i) => (
-              <div key={i} className="panel rounded-lg p-3">
-                <p className="text-[10px] font-semibold text-gray-400">{cap.label}</p>
-                <p className="text-[8px] text-gray-600 mt-0.5">{cap.platforms}</p>
+              <div key={i} className="panel rounded-xl p-4 sm:p-5">
+                <p className="text-sm font-semibold text-gray-400">{cap.label}</p>
+                <p className="text-xs text-gray-600 mt-1">{cap.platforms}</p>
               </div>
             ))}
           </div>
@@ -159,81 +159,81 @@ export default function AdsPage() {
   const templates = CAMPAIGN_TEMPLATES[activePlatform] || [];
 
   return (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto animate-fade-in">
+    <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-4 mb-6 sm:mb-8">
         <button onClick={() => { setActivePlatform(null); setResult(null); setCampaign({ name: '', objective: 'conversions', budget: '50', audience: '', template: '' }); setAudiencePreset(null); }}
-          className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white hover:border-indigo-500/25 transition-all">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          className="p-2.5 rounded-lg border border-indigo-500/10 text-gray-500 hover:text-white hover:border-indigo-500/25 transition-all">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
           </svg>
         </button>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${platform?.color}15`, border: `1px solid ${platform?.color}20` }}>
-            <svg className="w-4 h-4" style={{ color: platform?.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: `${platform?.color}15`, border: `1px solid ${platform?.color}20` }}>
+            <svg className="w-6 h-6" style={{ color: platform?.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d={platform?.icon} />
             </svg>
           </div>
           <div>
-            <p className="hud-label" style={{ color: '#10b981' }}>{platform?.name?.toUpperCase()} BUILDER</p>
-            <h2 className="text-lg font-bold text-white">Build {platform?.name} Campaign</h2>
+            <p className="hud-label text-[11px]" style={{ color: '#10b981' }}>{platform?.name?.toUpperCase()} BUILDER</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-white">Build {platform?.name} Campaign</h2>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Left: Campaign Config */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Campaign Templates */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">CAMPAIGN TEMPLATES</p>
-            <div className="grid grid-cols-2 gap-2">
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-4">CAMPAIGN TEMPLATES</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {templates.map(t => (
                 <button key={t.name} onClick={() => setCampaign({ ...campaign, template: t.prompt, name: campaign.name || t.name })}
-                  className={`text-left px-3 py-2.5 rounded-lg border text-xs transition-all ${
+                  className={`text-left px-4 py-3 sm:px-5 sm:py-4 rounded-xl border text-sm transition-all ${
                     campaign.template === t.prompt ? 'border-emerald-500/30 bg-emerald-500/8 text-emerald-300' : 'border-indigo-500/8 bg-white/[0.01] text-gray-400 hover:text-gray-200 hover:border-indigo-500/15'
                   }`}>
-                  <p className="font-semibold">{t.name}</p>
-                  <p className="text-[10px] text-gray-600 mt-0.5 line-clamp-1">{t.prompt}</p>
+                  <p className="font-semibold text-[15px]">{t.name}</p>
+                  <p className="text-xs text-gray-600 mt-1 line-clamp-2">{t.prompt}</p>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Campaign Name */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">CAMPAIGN NAME</p>
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-4">CAMPAIGN NAME</p>
             <input type="text" value={campaign.name} onChange={(e) => setCampaign({ ...campaign, name: e.target.value })}
               placeholder="e.g., Summer Sale 2026, Product Launch Q3..."
-              className="w-full input-field rounded-lg px-4 py-3 text-sm" />
+              className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base" />
           </div>
 
           {/* Audience */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">TARGET AUDIENCE</p>
-            <div className="grid grid-cols-3 gap-1.5 mb-3">
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-4">TARGET AUDIENCE</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-4">
               {AUDIENCE_PRESETS.map(a => (
                 <button key={a.id} onClick={() => { setAudiencePreset(a.id); setCampaign({ ...campaign, audience: a.desc }); }}
-                  className={`text-left px-2.5 py-2 rounded-lg border text-[10px] transition-all ${
+                  className={`text-left px-4 py-3 rounded-xl border text-xs transition-all ${
                     audiencePreset === a.id ? 'border-emerald-500/30 bg-emerald-500/8 text-emerald-300' : 'border-indigo-500/8 bg-white/[0.01] text-gray-400 hover:text-gray-200'
                   }`}>
-                  <p className="font-bold">{a.name}</p>
-                  <p className="text-[8px] opacity-60 mt-0.5">{a.desc}</p>
+                  <p className="font-bold text-sm">{a.name}</p>
+                  <p className="text-xs opacity-60 mt-1">{a.desc}</p>
                 </button>
               ))}
             </div>
-            <textarea value={campaign.audience} onChange={(e) => { setCampaign({ ...campaign, audience: e.target.value }); setAudiencePreset(null); }} rows={2}
+            <textarea value={campaign.audience} onChange={(e) => { setCampaign({ ...campaign, audience: e.target.value }); setAudiencePreset(null); }} rows={3}
               placeholder="Or describe your custom audience..."
-              className="w-full input-field rounded-lg px-4 py-2.5 text-sm resize-none" />
+              className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base resize-none" />
           </div>
 
           {/* Generate */}
           <button onClick={generateCampaign} disabled={!campaign.name.trim() || generating}
-            className="btn-accent w-full py-3 rounded-lg"
+            className="btn-accent w-full py-4 rounded-xl text-sm"
             style={{ background: generating ? '#1e1e2e' : '#10b981', boxShadow: generating ? 'none' : '0 4px 20px -4px rgba(16,185,129,0.4)' }}>
             {generating ? (
               <span className="flex items-center gap-2">
-                <span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />
+                <span className="w-4 h-4 border-2 border-gray-500 border-t-white rounded-full animate-spin" />
                 BUILDING CAMPAIGN...
               </span>
             ) : 'BUILD CAMPAIGN WITH AI'}
@@ -241,22 +241,22 @@ export default function AdsPage() {
         </div>
 
         {/* Right: Settings */}
-        <div className="space-y-4">
+        <div className="space-y-4 sm:space-y-6">
           {/* Objective */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">OBJECTIVE</p>
-            <div className="space-y-1.5">
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-4">OBJECTIVE</p>
+            <div className="space-y-2.5">
               {OBJECTIVES.map(o => (
                 <button key={o.id} onClick={() => setCampaign({ ...campaign, objective: o.id })}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg border text-xs transition-all ${
+                  className={`w-full flex items-center gap-3.5 px-4 py-4 rounded-xl border text-sm transition-all ${
                     campaign.objective === o.id ? 'border-emerald-500/30 bg-emerald-500/8 text-emerald-300' : 'border-indigo-500/8 bg-white/[0.01] text-gray-400 hover:text-gray-200'
                   }`}>
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d={o.icon} />
                   </svg>
                   <div className="text-left">
-                    <p className="font-semibold">{o.name}</p>
-                    <p className="text-[8px] opacity-60">{o.desc}</p>
+                    <p className="font-semibold text-[15px]">{o.name}</p>
+                    <p className="text-xs opacity-60 mt-0.5">{o.desc}</p>
                   </div>
                 </button>
               ))}
@@ -264,39 +264,39 @@ export default function AdsPage() {
           </div>
 
           {/* Budget */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">DAILY BUDGET</p>
-            <div className="grid grid-cols-2 gap-1.5 mb-3">
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-4">DAILY BUDGET</p>
+            <div className="grid grid-cols-2 gap-2.5 mb-4">
               {BUDGET_PRESETS.map(b => (
                 <button key={b.id} onClick={() => setCampaign({ ...campaign, budget: b.id })}
-                  className={`chip text-[10px] justify-center flex-col items-center py-2 ${campaign.budget === b.id ? 'active' : ''}`}
+                  className={`chip text-xs justify-center flex-col items-center py-3 ${campaign.budget === b.id ? 'active' : ''}`}
                   style={campaign.budget === b.id ? { background: 'rgba(16,185,129,0.15)', borderColor: 'rgba(16,185,129,0.3)', color: '#34d399' } : {}}>
-                  <span className="font-bold">{b.label}</span>
-                  <span className="text-[8px] opacity-60">{b.desc}</span>
+                  <span className="font-bold text-sm">{b.label}</span>
+                  <span className="text-[10px] opacity-60">{b.desc}</span>
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">$</span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-500">$</span>
               <input type="number" value={campaign.budget} onChange={(e) => setCampaign({ ...campaign, budget: e.target.value })}
-                className="flex-1 input-field rounded-lg px-3 py-2 text-sm" />
-              <span className="text-xs text-gray-500">/day</span>
+                className="flex-1 input-field rounded-xl px-4 py-3 text-base" />
+              <span className="text-sm text-gray-500">/day</span>
             </div>
           </div>
 
           {/* Estimated Reach */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">EST. DAILY REACH</p>
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs">
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-4">EST. DAILY REACH</p>
+            <div className="space-y-3.5">
+              <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Impressions</span>
                 <span className="text-white font-mono font-bold">{(Number(campaign.budget || 0) * 180).toLocaleString()}–{(Number(campaign.budget || 0) * 350).toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-xs">
+              <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Clicks</span>
                 <span className="text-white font-mono font-bold">{Math.round(Number(campaign.budget || 0) * 2.5)}–{Math.round(Number(campaign.budget || 0) * 6)}</span>
               </div>
-              <div className="flex justify-between text-xs">
+              <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Est. CPC</span>
                 <span className="text-emerald-400 font-mono font-bold">${(Number(campaign.budget || 0) > 0 ? (Number(campaign.budget) / (Number(campaign.budget) * 4)).toFixed(2) : '0.00')}</span>
               </div>
@@ -320,15 +320,15 @@ export default function AdsPage() {
 
       {/* Generation Loading */}
       {generating && (
-        <div className="panel rounded-xl p-5 mt-4 animate-fade-up">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="hud-label" style={{ color: '#10b981' }}>BUILDING CAMPAIGN</span>
+        <div className="panel rounded-2xl p-5 sm:p-8 mt-6 animate-fade-up">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="hud-label text-[11px]" style={{ color: '#10b981' }}>BUILDING CAMPAIGN</span>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {['Analyzing platform requirements', 'Generating headlines & copy', 'Building audience targeting', 'Optimizing budget allocation'].map((step, i) => (
-              <div key={i} className="flex items-center gap-2 text-xs text-gray-500" style={{ animation: `fade-in 0.4s ease-out ${i * 0.4}s both` }}>
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400/50 animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
+              <div key={i} className="flex items-center gap-3 text-sm text-gray-500" style={{ animation: `fade-in 0.4s ease-out ${i * 0.4}s both` }}>
+                <div className="w-2 h-2 rounded-full bg-emerald-400/50 animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
                 {step}...
               </div>
             ))}
@@ -338,73 +338,73 @@ export default function AdsPage() {
 
       {/* Results */}
       {result && !result.error && (
-        <div className="space-y-4 mt-4 animate-fade-up">
+        <div className="space-y-4 sm:space-y-6 mt-6 animate-fade-up">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span className="hud-label" style={{ color: '#4ade80' }}>CAMPAIGN READY</span>
+            <div className="flex items-center gap-3">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+              <span className="hud-label text-[11px]" style={{ color: '#4ade80' }}>CAMPAIGN READY</span>
             </div>
-            <div className="flex gap-2">
-              <button onClick={copyResult} className="chip text-[10px]" style={{ color: copied ? '#4ade80' : undefined }}>
+            <div className="flex gap-3">
+              <button onClick={copyResult} className="chip text-xs" style={{ color: copied ? '#4ade80' : undefined }}>
                 {copied ? 'Copied!' : 'Copy All'}
               </button>
-              <button onClick={generateCampaign} className="chip text-[10px]">Regenerate</button>
+              <button onClick={generateCampaign} className="chip text-xs">Regenerate</button>
             </div>
           </div>
 
           {result.ad_content && (
-            <div className="panel rounded-xl p-4">
-              <p className="hud-label mb-3">AD CONTENT</p>
+            <div className="panel rounded-2xl p-4 sm:p-6">
+              <p className="hud-label text-[11px] mb-4">AD CONTENT</p>
               {result.ad_content.headlines?.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-2">Headlines</p>
-                  <div className="space-y-1.5">{result.ad_content.headlines.map((h, i) => (
-                    <div key={i} className="bg-black/40 rounded-lg px-4 py-2.5 text-sm text-gray-200 border border-indigo-500/6">{h}</div>
+                <div className="mb-6">
+                  <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-3">Headlines</p>
+                  <div className="space-y-2">{result.ad_content.headlines.map((h, i) => (
+                    <div key={i} className="bg-black/40 rounded-xl px-5 py-3.5 text-base text-gray-200 border border-indigo-500/6">{h}</div>
                   ))}</div>
                 </div>
               )}
               {result.ad_content.descriptions?.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-2">Descriptions</p>
-                  <div className="space-y-1.5">{result.ad_content.descriptions.map((d, i) => (
-                    <div key={i} className="bg-black/40 rounded-lg px-4 py-2.5 text-sm text-gray-300 border border-indigo-500/6">{d}</div>
+                <div className="mb-6">
+                  <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-3">Descriptions</p>
+                  <div className="space-y-2">{result.ad_content.descriptions.map((d, i) => (
+                    <div key={i} className="bg-black/40 rounded-xl px-5 py-3.5 text-base text-gray-300 border border-indigo-500/6">{d}</div>
                   ))}</div>
                 </div>
               )}
               {result.ad_content.primary_texts?.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-2">Primary Text</p>
-                  <div className="space-y-1.5">{result.ad_content.primary_texts.map((t, i) => (
-                    <div key={i} className="bg-black/40 rounded-lg px-4 py-3 text-sm text-gray-300 whitespace-pre-wrap border border-indigo-500/6">{t}</div>
+                <div className="mb-6">
+                  <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-3">Primary Text</p>
+                  <div className="space-y-2">{result.ad_content.primary_texts.map((t, i) => (
+                    <div key={i} className="bg-black/40 rounded-xl px-5 py-4 text-base text-gray-300 whitespace-pre-wrap border border-indigo-500/6">{t}</div>
                   ))}</div>
                 </div>
               )}
               {result.ad_content.cta && (
                 <div>
-                  <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-2">Call to Action</p>
-                  <span className="inline-block chip" style={{ background: `${platform?.color}15`, borderColor: `${platform?.color}30`, color: platform?.color }}>{result.ad_content.cta}</span>
+                  <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-3">Call to Action</p>
+                  <span className="inline-block chip text-sm" style={{ background: `${platform?.color}15`, borderColor: `${platform?.color}30`, color: platform?.color }}>{result.ad_content.cta}</span>
                 </div>
               )}
             </div>
           )}
 
           {result.targeting && (
-            <div className="panel rounded-xl p-4">
-              <p className="hud-label mb-3">TARGETING STRATEGY</p>
-              <div className="grid grid-cols-2 gap-4">
+            <div className="panel rounded-2xl p-4 sm:p-6">
+              <p className="hud-label text-[11px] mb-4">TARGETING STRATEGY</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 {result.targeting.audience_segments?.length > 0 && (
                   <div>
-                    <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-2">Audience Segments</p>
-                    <div className="flex flex-wrap gap-1.5">{result.targeting.audience_segments.map((s, i) => (
-                      <span key={i} className="chip text-[9px]">{s}</span>
+                    <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-3">Audience Segments</p>
+                    <div className="flex flex-wrap gap-2">{result.targeting.audience_segments.map((s, i) => (
+                      <span key={i} className="chip text-xs">{s}</span>
                     ))}</div>
                   </div>
                 )}
                 {result.targeting.interests?.length > 0 && (
                   <div>
-                    <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-2">Interests</p>
-                    <div className="flex flex-wrap gap-1.5">{result.targeting.interests.map((s, i) => (
-                      <span key={i} className="chip text-[9px]">{s}</span>
+                    <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-3">Interests</p>
+                    <div className="flex flex-wrap gap-2">{result.targeting.interests.map((s, i) => (
+                      <span key={i} className="chip text-xs">{s}</span>
                     ))}</div>
                   </div>
                 )}
@@ -413,11 +413,11 @@ export default function AdsPage() {
           )}
 
           {result.strategy?.recommendations?.length > 0 && (
-            <div className="panel rounded-xl p-4">
-              <p className="hud-label mb-3">AI RECOMMENDATIONS</p>
-              <ul className="space-y-2">{result.strategy.recommendations.map((r, i) => (
-                <li key={i} className="flex items-start gap-2.5 text-xs text-gray-300">
-                  <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: platform?.color, boxShadow: `0 0 6px ${platform?.color}` }} />
+            <div className="panel rounded-2xl p-4 sm:p-6">
+              <p className="hud-label text-[11px] mb-4">AI RECOMMENDATIONS</p>
+              <ul className="space-y-3">{result.strategy.recommendations.map((r, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm text-gray-300">
+                  <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ background: platform?.color, boxShadow: `0 0 6px ${platform?.color}` }} />
                   {r}
                 </li>
               ))}</ul>

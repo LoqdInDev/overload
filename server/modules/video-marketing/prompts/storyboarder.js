@@ -1,5 +1,10 @@
+const { getBrandContext, buildBrandSystemPrompt } = require('../../../services/brandContext');
+
 function buildStoryboardPrompt(script) {
+  const brandBlock = buildBrandSystemPrompt(getBrandContext());
+
   return `You are a video storyboard artist for social media ads.
+${brandBlock}
 
 SCRIPT:
 ${JSON.stringify(script, null, 2)}

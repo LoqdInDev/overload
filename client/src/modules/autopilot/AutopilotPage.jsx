@@ -97,38 +97,38 @@ export default function AutopilotPage() {
   /* ---- SETUP MODE ---- */
   if (mode === 'setup') {
     return (
-      <div className="p-6 lg:p-8 max-w-4xl mx-auto">
+      <div className="p-4 sm:p-6 lg:p-12">
         {/* Hero */}
-        <div className="rounded-2xl p-8 mb-8 animate-fade-in text-center" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.02))', border: '1px solid rgba(245,158,11,0.12)' }}>
-          <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.25)' }}>
-            <svg className="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+        <div className="rounded-2xl p-5 sm:p-10 mb-6 sm:mb-10 animate-fade-in text-center" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.02))', border: '1px solid rgba(245,158,11,0.12)' }}>
+          <div className="w-20 h-20 rounded-2xl mx-auto mb-5 flex items-center justify-center" style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.25)' }}>
+            <svg className="w-10 h-10 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
             </svg>
           </div>
-          <p className="hud-label mb-3" style={{ color: MODULE_COLOR }}>THE CROWN JEWEL OF OVERLOAD</p>
-          <h1 className="text-3xl font-bold text-white mb-2">Autopilot Mode</h1>
-          <p className="text-gray-400 text-sm max-w-md mx-auto">Let AI run your entire marketing operation. Set your strategy, define guardrails, and watch Overload execute across every channel.</p>
+          <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>THE CROWN JEWEL OF OVERLOAD</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3">Autopilot Mode</h1>
+          <p className="text-gray-400 text-base max-w-md mx-auto">Let AI run your entire marketing operation. Set your strategy, define guardrails, and watch Overload execute across every channel.</p>
         </div>
 
         {/* Step 1: Select Modules */}
-        <div className="mb-8 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.25)' }}>1</div>
+        <div className="mb-6 sm:mb-10 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.25)' }}>1</div>
             <div>
-              <p className="text-sm font-bold text-white">Select Modules to Automate</p>
-              <p className="text-[10px] text-gray-500">Choose which marketing channels Autopilot controls</p>
+              <p className="text-base font-bold text-white">Select Modules to Automate</p>
+              <p className="text-xs text-gray-500">Choose which marketing channels Autopilot controls</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
             {MODULES_LIST.map(mod => (
               <button key={mod.id} onClick={() => toggleModule(mod.id)}
-                className={`rounded-xl p-4 text-left transition-all border ${
+                className={`rounded-xl p-5 text-left transition-all border ${
                   selectedModules.includes(mod.id)
                     ? 'bg-amber-500/10 border-amber-500/25'
                     : 'bg-white/[0.02] border-indigo-500/[0.08] hover:border-indigo-500/15'
                 }`}>
                 <div className="flex items-center gap-2 mb-1">
-                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
                     selectedModules.includes(mod.id) ? 'border-amber-500 bg-amber-500' : 'border-gray-600'
                   }`}>
                     {selectedModules.includes(mod.id) && (
@@ -137,61 +137,61 @@ export default function AutopilotPage() {
                       </svg>
                     )}
                   </div>
-                  <p className={`text-xs font-bold ${selectedModules.includes(mod.id) ? 'text-amber-300' : 'text-gray-300'}`}>{mod.name}</p>
+                  <p className={`text-sm font-bold ${selectedModules.includes(mod.id) ? 'text-amber-300' : 'text-gray-300'}`}>{mod.name}</p>
                 </div>
-                <p className="text-[9px] text-gray-500 ml-6">{mod.desc}</p>
+                <p className="text-[10px] text-gray-500 ml-7">{mod.desc}</p>
               </button>
             ))}
           </div>
         </div>
 
         {/* Step 2: Risk Level */}
-        <div className="mb-8 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.25)' }}>2</div>
+        <div className="mb-6 sm:mb-10 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.25)' }}>2</div>
             <div>
-              <p className="text-sm font-bold text-white">Set Risk Level</p>
-              <p className="text-[10px] text-gray-500">How much autonomy should AI have?</p>
+              <p className="text-base font-bold text-white">Set Risk Level</p>
+              <p className="text-xs text-gray-500">How much autonomy should AI have?</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {RISK_LEVELS.map(level => (
               <button key={level.id} onClick={() => setRiskLevel(level.id)}
-                className={`rounded-xl p-4 text-left transition-all border ${
+                className={`rounded-xl p-4 sm:p-6 text-left transition-all border ${
                   riskLevel === level.id
                     ? 'bg-amber-500/10 border-amber-500/25'
                     : 'bg-white/[0.02] border-indigo-500/[0.08] hover:border-indigo-500/15'
                 }`}>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                     riskLevel === level.id ? 'border-amber-500' : 'border-gray-600'
                   }`}>
-                    {riskLevel === level.id && <div className="w-2 h-2 rounded-full bg-amber-500" />}
+                    {riskLevel === level.id && <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />}
                   </div>
-                  <svg className={`w-5 h-5 ${riskLevel === level.id ? 'text-amber-400' : 'text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <svg className={`w-6 h-6 ${riskLevel === level.id ? 'text-amber-400' : 'text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d={level.icon} />
                   </svg>
-                  <p className={`text-sm font-bold ${riskLevel === level.id ? 'text-amber-300' : 'text-gray-300'}`}>{level.name}</p>
+                  <p className={`text-base font-bold ${riskLevel === level.id ? 'text-amber-300' : 'text-gray-300'}`}>{level.name}</p>
                 </div>
-                <p className="text-[10px] text-gray-500 ml-7">{level.desc}</p>
+                <p className="text-xs text-gray-500 ml-8">{level.desc}</p>
               </button>
             ))}
           </div>
         </div>
 
         {/* Step 3: Strategy */}
-        <div className="mb-8 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.25)' }}>3</div>
+        <div className="mb-6 sm:mb-10 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.25)' }}>3</div>
             <div>
-              <p className="text-sm font-bold text-white">Define Your Strategy</p>
-              <p className="text-[10px] text-gray-500">Tell Autopilot your brand goals and priorities</p>
+              <p className="text-base font-bold text-white">Define Your Strategy</p>
+              <p className="text-xs text-gray-500">Tell Autopilot your brand goals and priorities</p>
             </div>
           </div>
-          <div className="panel rounded-xl p-4">
+          <div className="panel rounded-2xl p-4 sm:p-6">
             <textarea value={strategy} onChange={e => setStrategy(e.target.value)} rows={4}
               placeholder="Describe your brand goals, target audience, key messaging, and priorities. e.g., 'We are a DTC skincare brand targeting millennials. Focus on educational content, build trust through transparency, and drive conversions through email sequences...'"
-              className="w-full bg-white/[0.03] border border-indigo-500/[0.08] rounded-lg px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-amber-500/30 resize-none" />
+              className="w-full bg-white/[0.03] border border-indigo-500/[0.08] rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base text-gray-200 focus:outline-none focus:border-amber-500/30 resize-none" />
             <button className="mt-2 chip text-[10px]" style={{ background: 'rgba(245,158,11,0.15)', borderColor: 'rgba(245,158,11,0.3)', color: '#fbbf24' }}>
               <svg className="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
@@ -204,19 +204,19 @@ export default function AutopilotPage() {
         {/* Activate Button */}
         <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
           <button onClick={activateAutopilot} disabled={selectedModules.length === 0}
-            className="w-full py-4 rounded-xl text-sm font-bold tracking-wide transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            className="w-full py-5 rounded-xl text-base font-bold tracking-wide transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             style={{
               background: selectedModules.length > 0 ? 'linear-gradient(135deg, #f59e0b, #d97706)' : '#1e1e2e',
               color: selectedModules.length > 0 ? '#000' : '#6b7280',
               boxShadow: selectedModules.length > 0 ? '0 0 20px rgba(245,158,11,0.3), 0 4px 20px -4px rgba(245,158,11,0.5)' : 'none',
             }}>
-            <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <svg className="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
             </svg>
             ACTIVATE AUTOPILOT
           </button>
           {selectedModules.length === 0 && (
-            <p className="text-[10px] text-gray-600 text-center mt-2">Select at least one module to activate</p>
+            <p className="text-xs text-gray-600 text-center mt-2">Select at least one module to activate</p>
           )}
         </div>
       </div>
@@ -225,17 +225,17 @@ export default function AutopilotPage() {
 
   /* ---- DASHBOARD MODE ---- */
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-12">
       {/* Status Banner */}
-      <div className="rounded-xl p-4 mb-6 flex items-center justify-between animate-fade-in" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.02))', border: '1px solid rgba(245,158,11,0.15)' }}>
+      <div className="rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 flex items-center justify-between animate-fade-in" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.02))', border: '1px solid rgba(245,158,11,0.15)' }}>
         <div className="flex items-center gap-3">
           <div className="relative">
             <div className="w-3 h-3 rounded-full bg-emerald-400" />
             <div className="w-3 h-3 rounded-full bg-emerald-400 absolute top-0 left-0 animate-ping opacity-50" />
           </div>
           <div>
-            <p className="text-sm font-bold text-amber-300 tracking-wide">AUTOPILOT ACTIVE</p>
-            <p className="text-[10px] text-gray-500">AI is managing your marketing operations</p>
+            <p className="text-base font-bold text-amber-300 tracking-wide">AUTOPILOT ACTIVE</p>
+            <p className="text-xs text-gray-500">AI is managing your marketing operations</p>
           </div>
         </div>
         <button onClick={() => setMode('setup')} className="chip text-[10px]" style={{ background: 'rgba(245,158,11,0.15)', borderColor: 'rgba(245,158,11,0.3)', color: '#fbbf24' }}>
@@ -244,23 +244,23 @@ export default function AutopilotPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 stagger">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
         {[
           { label: 'ACTIONS TODAY', value: '24', sub: 'Across all modules' },
           { label: 'PENDING APPROVAL', value: '3', sub: 'Needs your review' },
           { label: 'SUCCESS RATE', value: '96%', sub: '+4% vs last week' },
           { label: 'REVENUE IMPACT', value: '+$2.4K', sub: 'Estimated this week' },
         ].map((s, i) => (
-          <div key={i} className="panel rounded-xl p-4">
-            <p className="hud-label mb-1">{s.label}</p>
-            <p className="text-2xl font-bold text-white font-mono">{s.value}</p>
-            <p className="text-[10px] text-gray-500 mt-1">{s.sub}</p>
+          <div key={i} className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-1">{s.label}</p>
+            <p className="text-xl sm:text-2xl font-bold text-white font-mono">{s.value}</p>
+            <p className="text-xs text-gray-500 mt-1">{s.sub}</p>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-4">
+      <div className="flex gap-1 mb-6">
         {['actions', 'insights', 'settings'].map(t => (
           <button key={t} onClick={() => setDashTab(t)} className={`chip text-xs ${dashTab === t ? 'active' : ''}`} style={dashTab === t ? { background: 'rgba(245,158,11,0.15)', borderColor: 'rgba(245,158,11,0.3)', color: '#fbbf24' } : {}}>
             {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -270,18 +270,18 @@ export default function AutopilotPage() {
 
       {/* Actions Tab */}
       {dashTab === 'actions' && (
-        <div className="space-y-2 animate-fade-in">
+        <div className="space-y-3 animate-fade-in">
           {actions.map(a => (
-            <div key={a.id} className="panel rounded-xl p-4 flex items-center gap-4">
+            <div key={a.id} className="panel rounded-2xl p-4 sm:p-6 flex items-center gap-4 sm:gap-6">
               <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: statusColor(a.status) }} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
                   <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${moduleColor(a.module)}15`, color: moduleColor(a.module), border: `1px solid ${moduleColor(a.module)}25` }}>
                     {a.module}
                   </span>
-                  <span className="text-[10px] text-gray-600">{a.timestamp}</span>
+                  <span className="text-xs text-gray-600">{a.timestamp}</span>
                 </div>
-                <p className="text-xs text-gray-300">{a.action}</p>
+                <p className="text-sm text-gray-300">{a.action}</p>
               </div>
               {a.status === 'pending' ? (
                 <div className="flex gap-1.5 flex-shrink-0">
@@ -304,40 +304,40 @@ export default function AutopilotPage() {
 
       {/* Insights Tab */}
       {dashTab === 'insights' && (
-        <div className="animate-fade-in space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="animate-fade-in space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
             {MOCK_INSIGHTS.map((insight, i) => (
-              <div key={i} className="panel rounded-xl p-4" style={{ borderColor: insight.type === 'warning' ? 'rgba(245,158,11,0.15)' : 'rgba(34,197,94,0.1)' }}>
+              <div key={i} className="panel rounded-2xl p-4 sm:p-6" style={{ borderColor: insight.type === 'warning' ? 'rgba(245,158,11,0.15)' : 'rgba(34,197,94,0.1)' }}>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-2 h-2 rounded-full" style={{ background: insight.type === 'warning' ? '#f59e0b' : '#22c55e' }} />
-                  <p className="text-xs font-bold text-gray-200">{insight.title}</p>
+                  <p className="text-sm font-bold text-gray-200">{insight.title}</p>
                 </div>
-                <p className="text-[11px] text-gray-400 leading-relaxed">{insight.desc}</p>
+                <p className="text-sm text-gray-400 leading-relaxed">{insight.desc}</p>
               </div>
             ))}
           </div>
 
           {/* AI Templates in Insights */}
-          <div className="mt-6">
-            <div className="flex items-center gap-3 mb-3">
-              <p className="hud-label" style={{ color: MODULE_COLOR }}>AI ANALYSIS TOOLS</p>
+          <div className="mt-8">
+            <div className="flex items-center gap-3 mb-4">
+              <p className="hud-label text-[11px]" style={{ color: MODULE_COLOR }}>AI ANALYSIS TOOLS</p>
               <div className="flex-1 h-px bg-indigo-500/[0.06]" />
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {AI_TEMPLATES.map(tool => (
-                <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 text-left ${selectedTemplate?.name === tool.name ? 'border-amber-500/20' : ''}`}>
-                  <p className="text-xs font-bold text-gray-300">{tool.name}</p>
-                  <p className="text-[10px] text-gray-600 mt-1 line-clamp-2">{tool.prompt}</p>
+                <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === tool.name ? 'border-amber-500/20' : ''}`}>
+                  <p className="text-sm font-bold text-gray-300">{tool.name}</p>
+                  <p className="text-xs text-gray-600 mt-1 line-clamp-2">{tool.prompt}</p>
                 </button>
               ))}
             </div>
             {(generating || output) && (
-              <div className="panel rounded-xl p-5 mt-3">
-                <div className="flex items-center gap-2 mb-3">
+              <div className="panel rounded-2xl p-4 sm:p-7 mt-4">
+                <div className="flex items-center gap-3 mb-4">
                   <div className={`w-2 h-2 rounded-full ${generating ? 'animate-pulse' : 'bg-emerald-400'}`} style={{ background: generating ? MODULE_COLOR : undefined }} />
-                  <span className="hud-label" style={{ color: generating ? '#fbbf24' : '#4ade80' }}>{generating ? 'GENERATING...' : 'READY'}</span>
+                  <span className="hud-label text-[11px]" style={{ color: generating ? '#fbbf24' : '#4ade80' }}>{generating ? 'GENERATING...' : 'READY'}</span>
                 </div>
-                <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
+                <pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
               </div>
             )}
           </div>
@@ -346,20 +346,20 @@ export default function AutopilotPage() {
 
       {/* Settings Tab */}
       {dashTab === 'settings' && (
-        <div className="animate-fade-in space-y-6">
+        <div className="animate-fade-in space-y-4 sm:space-y-8">
           {/* Module Toggles */}
-          <div className="panel rounded-xl p-5">
-            <p className="hud-label mb-4" style={{ color: MODULE_COLOR }}>ACTIVE MODULES</p>
-            <div className="space-y-2">
+          <div className="panel rounded-2xl p-4 sm:p-7">
+            <p className="hud-label text-[11px] mb-5" style={{ color: MODULE_COLOR }}>ACTIVE MODULES</p>
+            <div className="space-y-3">
               {MODULES_LIST.map(mod => (
                 <button key={mod.id} onClick={() => setSettingsModules(prev => ({ ...prev, [mod.id]: !prev[mod.id] }))}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border text-xs transition-all ${
+                  className={`w-full flex items-center justify-between px-4 py-3 sm:px-5 sm:py-4 rounded-xl border text-sm transition-all ${
                     settingsModules[mod.id]
                       ? 'border-amber-500/20 bg-amber-500/5 text-amber-300'
                       : 'border-indigo-500/[0.08] bg-white/[0.01] text-gray-400'
                   }`}>
                   <div className="flex items-center gap-3">
-                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
                       settingsModules[mod.id] ? 'border-amber-500 bg-amber-500' : 'border-gray-600'
                     }`}>
                       {settingsModules[mod.id] && (
@@ -380,16 +380,16 @@ export default function AutopilotPage() {
           </div>
 
           {/* Risk Level */}
-          <div className="panel rounded-xl p-5">
-            <p className="hud-label mb-4" style={{ color: MODULE_COLOR }}>RISK LEVEL</p>
-            <div className="grid grid-cols-3 gap-2">
+          <div className="panel rounded-2xl p-4 sm:p-7">
+            <p className="hud-label text-[11px] mb-5" style={{ color: MODULE_COLOR }}>RISK LEVEL</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {RISK_LEVELS.map(level => (
                 <button key={level.id} onClick={() => setSettingsRisk(level.id)}
-                  className={`rounded-lg p-3 text-center transition-all border ${
+                  className={`rounded-lg p-4 sm:p-5 text-center transition-all border ${
                     settingsRisk === level.id ? 'bg-amber-500/10 border-amber-500/25' : 'bg-white/[0.02] border-indigo-500/[0.08]'
                   }`}>
-                  <p className={`text-xs font-bold ${settingsRisk === level.id ? 'text-amber-300' : 'text-gray-400'}`}>{level.name}</p>
-                  <p className="text-[9px] text-gray-600 mt-0.5">{level.desc}</p>
+                  <p className={`text-sm font-bold ${settingsRisk === level.id ? 'text-amber-300' : 'text-gray-400'}`}>{level.name}</p>
+                  <p className="text-[10px] text-gray-600 mt-0.5">{level.desc}</p>
                 </button>
               ))}
             </div>
@@ -397,9 +397,9 @@ export default function AutopilotPage() {
 
           {/* Pause Button */}
           <button onClick={() => setMode('setup')}
-            className="w-full py-3 rounded-xl text-sm font-bold tracking-wide transition-all"
+            className="w-full py-4 rounded-xl text-base font-bold tracking-wide transition-all"
             style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
-            <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <svg className="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
             </svg>
             PAUSE AUTOPILOT

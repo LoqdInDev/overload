@@ -40,30 +40,30 @@ export default function ReportsPage() {
   };
 
   if (!selectedType) return (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto">
-      <div className="mb-6 animate-fade-in"><p className="hud-label mb-2" style={{ color: '#f43f5e' }}>REPORTS</p><h1 className="text-2xl font-bold text-white mb-1">Report Generator</h1><p className="text-sm text-gray-500">AI-powered marketing reports and performance analysis</p></div>
+    <div className="p-4 sm:p-6 lg:p-12">
+      <div className="mb-6 sm:mb-8 animate-fade-in"><p className="hud-label text-[11px] mb-2" style={{ color: '#f43f5e' }}>REPORTS</p><h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Report Generator</h1><p className="text-base text-gray-500">AI-powered marketing reports and performance analysis</p></div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8 stagger">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
         {REPORT_TYPES.map(r => (
-          <button key={r.id} onClick={() => setSelectedType(r.id)} className="panel-interactive rounded-xl p-5 text-left group">
-            <div className="w-10 h-10 rounded-lg mb-3 flex items-center justify-center" style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.12)' }}>
-              <svg className="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={r.icon} /></svg>
+          <button key={r.id} onClick={() => setSelectedType(r.id)} className="panel-interactive rounded-2xl p-4 sm:p-7 text-left group">
+            <div className="w-12 h-12 rounded-lg mb-3 flex items-center justify-center" style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.12)' }}>
+              <svg className="w-6 h-6 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={r.icon} /></svg>
             </div>
-            <p className="text-sm font-bold text-gray-200 group-hover:text-white transition-colors">{r.name}</p>
-            <p className="text-[10px] text-gray-500 mt-1 leading-relaxed">{r.desc}</p>
+            <p className="text-base font-bold text-gray-200 group-hover:text-white transition-colors">{r.name}</p>
+            <p className="text-xs text-gray-500 mt-1 leading-relaxed">{r.desc}</p>
           </button>
         ))}
       </div>
 
-      <p className="hud-label mb-3" style={{ color: '#f43f5e' }}>RECENT REPORTS</p>
-      <div className="panel rounded-xl overflow-hidden">
+      <p className="hud-label text-[11px] mb-3" style={{ color: '#f43f5e' }}>RECENT REPORTS</p>
+      <div className="panel rounded-2xl overflow-hidden">
         <div className="divide-y divide-indigo-500/[0.04]">
           {MOCK_REPORTS.map(r => (
-            <div key={r.id} className="flex items-center gap-4 px-4 py-3 hover:bg-white/[0.01] transition-colors">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(244,63,94,0.08)' }}>
-                <svg className="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={REPORT_TYPES.find(t => t.id === r.type)?.icon || REPORT_TYPES[0].icon} /></svg>
+            <div key={r.id} className="flex items-center gap-6 px-6 py-4 hover:bg-white/[0.01] transition-colors">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(244,63,94,0.08)' }}>
+                <svg className="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={REPORT_TYPES.find(t => t.id === r.type)?.icon || REPORT_TYPES[0].icon} /></svg>
               </div>
-              <div className="flex-1 min-w-0"><p className="text-xs font-semibold text-gray-200 truncate">{r.name}</p><p className="text-[10px] text-gray-500">{r.date}</p></div>
+              <div className="flex-1 min-w-0"><p className="text-sm font-semibold text-gray-200 truncate">{r.name}</p><p className="text-xs text-gray-500">{r.date}</p></div>
               <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${r.status === 'ready' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20 animate-pulse'}`}>{r.status}</span>
             </div>
           ))}
@@ -74,38 +74,38 @@ export default function ReportsPage() {
 
   const type = REPORT_TYPES.find(r => r.id === selectedType);
   return (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto animate-fade-in">
-      <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => { setSelectedType(null); setOutput(''); }} className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white transition-all"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg></button>
-        <div><p className="hud-label" style={{ color: '#f43f5e' }}>{type?.name?.toUpperCase()}</p><h2 className="text-lg font-bold text-white">{type?.name}</h2></div>
+    <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
+      <div className="flex items-center gap-3 mb-6 sm:mb-8">
+        <button onClick={() => { setSelectedType(null); setOutput(''); }} className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg></button>
+        <div><p className="hud-label text-[11px]" style={{ color: '#f43f5e' }}>{type?.name?.toUpperCase()}</p><h2 className="text-lg font-bold text-white">{type?.name}</h2></div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 space-y-4">
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">REPORT DETAILS</p>
-            <textarea value={customPrompt} onChange={e => setCustomPrompt(e.target.value)} rows={4} placeholder={`Describe what you want in your ${type?.name}... Leave blank for a comprehensive default report.`} className="w-full input-field rounded-lg px-4 py-3 text-sm resize-none" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3">REPORT DETAILS</p>
+            <textarea value={customPrompt} onChange={e => setCustomPrompt(e.target.value)} rows={4} placeholder={`Describe what you want in your ${type?.name}... Leave blank for a comprehensive default report.`} className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base resize-none" />
           </div>
           <button onClick={generate} disabled={generating} className="btn-accent w-full py-3 rounded-lg" style={{ background: generating ? '#1e1e2e' : '#f43f5e', boxShadow: generating ? 'none' : '0 4px 20px -4px rgba(244,63,94,0.4)' }}>
             {generating ? <span className="flex items-center gap-2"><span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />GENERATING REPORT...</span> : 'GENERATE REPORT'}
           </button>
         </div>
-        <div className="space-y-4">
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">TIME PERIOD</p>
+        <div className="space-y-4 sm:space-y-6">
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3">TIME PERIOD</p>
             <div className="space-y-1.5">{PERIODS.map(p => (<button key={p} onClick={() => setPeriod(p)} className={`w-full chip text-[10px] justify-center ${period === p ? 'active' : ''}`} style={period === p ? { background: 'rgba(244,63,94,0.15)', borderColor: 'rgba(244,63,94,0.3)', color: '#fb7185' } : {}}>{p}</button>))}</div>
           </div>
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">EXPORT FORMAT</p>
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3">EXPORT FORMAT</p>
             <div className="grid grid-cols-2 gap-1.5">{FORMATS.map(f => (<button key={f} onClick={() => setFormat(f)} className={`chip text-[10px] justify-center ${format === f ? 'active' : ''}`} style={format === f ? { background: 'rgba(244,63,94,0.15)', borderColor: 'rgba(244,63,94,0.3)', color: '#fb7185' } : {}}>{f}</button>))}</div>
           </div>
         </div>
       </div>
 
       {output && (
-        <div className="mt-4 animate-fade-up">
-          <div className="flex items-center gap-2 mb-3"><div className={`w-2 h-2 rounded-full ${generating ? 'bg-rose-400 animate-pulse' : 'bg-emerald-400'}`} /><span className="hud-label" style={{ color: generating ? '#fb7185' : '#4ade80' }}>{generating ? 'GENERATING REPORT...' : 'REPORT READY'}</span></div>
-          <div className="panel rounded-xl p-5"><pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-rose-400 ml-0.5 animate-pulse" />}</pre></div>
+        <div className="mt-6 animate-fade-up">
+          <div className="flex items-center gap-2 mb-3"><div className={`w-2 h-2 rounded-full ${generating ? 'bg-rose-400 animate-pulse' : 'bg-emerald-400'}`} /><span className="hud-label text-[11px]" style={{ color: generating ? '#fb7185' : '#4ade80' }}>{generating ? 'GENERATING REPORT...' : 'REPORT READY'}</span></div>
+          <div className="panel rounded-2xl p-4 sm:p-7"><pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-rose-400 ml-0.5 animate-pulse" />}</pre></div>
         </div>
       )}
     </div>

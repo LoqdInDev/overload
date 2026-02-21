@@ -51,31 +51,31 @@ export default function KnowledgeBasePage() {
   const avgHelpful = (MOCK_ARTICLES.filter(a => a.helpful > 0).reduce((a, ar) => a + ar.helpful, 0) / MOCK_ARTICLES.filter(a => a.helpful > 0).length).toFixed(0);
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto">
-      <div className="mb-6 animate-fade-in">
-        <p className="hud-label mb-2" style={{ color: MODULE_COLOR }}>KNOWLEDGE BASE</p>
-        <h1 className="text-2xl font-bold text-white mb-1">Knowledge Base</h1>
-        <p className="text-sm text-gray-500">Create and manage help articles, guides, and documentation</p>
+    <div className="p-4 sm:p-6 lg:p-12">
+      <div className="mb-6 sm:mb-8 animate-fade-in">
+        <p className="hud-label text-[11px] mb-2" style={{ color: MODULE_COLOR }}>KNOWLEDGE BASE</p>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Knowledge Base</h1>
+        <p className="text-base text-gray-500">Create and manage help articles, guides, and documentation</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 stagger">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
         {[
           { label: 'TOTAL ARTICLES', value: MOCK_ARTICLES.length.toString(), sub: `${MOCK_ARTICLES.filter(a => a.status === 'published').length} published` },
           { label: 'CATEGORIES', value: MOCK_CATEGORIES.length.toString(), sub: `${MOCK_CATEGORIES.reduce((a, c) => a + c.articles, 0)} total articles` },
           { label: 'TOTAL VIEWS', value: `${(totalViews / 1000).toFixed(1)}K`, sub: 'Last 30 days' },
           { label: 'HELPFUL RATING', value: `${avgHelpful}%`, sub: 'Average across articles' },
         ].map((s, i) => (
-          <div key={i} className="panel rounded-xl p-4">
-            <p className="hud-label mb-1">{s.label}</p>
-            <p className="text-2xl font-bold text-white font-mono">{s.value}</p>
-            <p className="text-[10px] text-gray-500 mt-1">{s.sub}</p>
+          <div key={i} className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-1">{s.label}</p>
+            <p className="text-xl sm:text-2xl font-bold text-white font-mono">{s.value}</p>
+            <p className="text-xs text-gray-500 mt-1">{s.sub}</p>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6">
+      <div className="flex gap-1 mb-6 sm:mb-8">
         {['overview', 'articles', 'categories', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
             {t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1).replace('-', ' ')}
@@ -85,25 +85,25 @@ export default function KnowledgeBasePage() {
 
       {/* Overview */}
       {tab === 'overview' && (
-        <div className="animate-fade-in space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="panel rounded-xl p-4">
-              <p className="hud-label mb-3" style={{ color: MODULE_COLOR }}>MOST VIEWED ARTICLES</p>
-              <div className="space-y-2">
+        <div className="animate-fade-in space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <div className="panel rounded-2xl p-4 sm:p-6">
+              <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>MOST VIEWED ARTICLES</p>
+              <div className="space-y-3">
                 {MOCK_ARTICLES.filter(a => a.views > 0).sort((a, b) => b.views - a.views).slice(0, 5).map((a, i) => (
                   <div key={a.id} className="flex items-center justify-between py-1.5 border-b border-indigo-500/[0.04] last:border-0">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <span className="text-[10px] font-bold text-gray-600 w-4">{i + 1}.</span>
-                      <span className="text-xs text-gray-300 truncate">{a.title}</span>
+                      <span className="text-xs font-bold text-gray-600 w-4">{i + 1}.</span>
+                      <span className="text-sm text-gray-300 truncate">{a.title}</span>
                     </div>
-                    <span className="text-[10px] font-mono text-gray-500 ml-2">{a.views.toLocaleString()}</span>
+                    <span className="text-xs font-mono text-gray-500 ml-2">{a.views.toLocaleString()}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="panel rounded-xl p-4">
-              <p className="hud-label mb-3" style={{ color: MODULE_COLOR }}>ARTICLES BY STATUS</p>
-              <div className="space-y-3">
+            <div className="panel rounded-2xl p-4 sm:p-6">
+              <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>ARTICLES BY STATUS</p>
+              <div className="space-y-4">
                 {[
                   { status: 'Published', count: MOCK_ARTICLES.filter(a => a.status === 'published').length, color: '#22c55e' },
                   { status: 'Draft', count: MOCK_ARTICLES.filter(a => a.status === 'draft').length, color: '#6b7280' },
@@ -112,24 +112,24 @@ export default function KnowledgeBasePage() {
                   <div key={i} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full" style={{ background: s.color }} />
-                      <span className="text-xs text-gray-300">{s.status}</span>
+                      <span className="text-sm text-gray-300">{s.status}</span>
                     </div>
-                    <span className="text-sm font-bold font-mono text-white">{s.count}</span>
+                    <span className="text-base font-bold font-mono text-white">{s.count}</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3" style={{ color: MODULE_COLOR }}>POPULAR CATEGORIES</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>POPULAR CATEGORIES</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {MOCK_CATEGORIES.slice(0, 4).map(cat => (
-                <div key={cat.id} className="bg-white/[0.02] rounded-lg p-3 border border-indigo-500/[0.06] text-center">
-                  <svg className="w-5 h-5 mx-auto mb-2" style={{ color: MODULE_COLOR }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <div key={cat.id} className="bg-white/[0.02] rounded-lg p-4 sm:p-5 border border-indigo-500/[0.06] text-center">
+                  <svg className="w-6 h-6 mx-auto mb-2" style={{ color: MODULE_COLOR }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d={cat.icon} />
                   </svg>
-                  <p className="text-xs font-bold text-gray-300">{cat.name}</p>
-                  <p className="text-[10px] text-gray-500">{cat.articles} articles</p>
+                  <p className="text-sm font-bold text-gray-300">{cat.name}</p>
+                  <p className="text-xs text-gray-500">{cat.articles} articles</p>
                 </div>
               ))}
             </div>
@@ -140,15 +140,15 @@ export default function KnowledgeBasePage() {
       {/* Articles */}
       {tab === 'articles' && (
         <div className="animate-fade-in">
-          <div className="panel rounded-xl overflow-hidden">
+          <div className="panel rounded-2xl overflow-hidden">
             <div className="divide-y divide-indigo-500/[0.04]">
               {MOCK_ARTICLES.map(a => (
-                <div key={a.id} className="flex items-center gap-4 px-4 py-3 hover:bg-white/[0.01] transition-colors">
+                <div key={a.id} className="flex items-center gap-6 px-6 py-4 hover:bg-white/[0.01] transition-colors">
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-gray-300">{a.title}</p>
+                    <p className="text-sm font-semibold text-gray-300">{a.title}</p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] text-gray-500">{a.category}</span>
-                      <span className="text-[10px] text-gray-600">&middot; Updated {a.updated}</span>
+                      <span className="text-xs text-gray-500">{a.category}</span>
+                      <span className="text-xs text-gray-600">&middot; Updated {a.updated}</span>
                     </div>
                   </div>
                   <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${statusColor(a.status)}15`, color: statusColor(a.status), border: `1px solid ${statusColor(a.status)}25` }}>
@@ -156,13 +156,13 @@ export default function KnowledgeBasePage() {
                   </span>
                   {a.views > 0 && (
                     <div className="text-right hidden md:block">
-                      <p className="text-[10px] font-mono text-gray-400">{a.views.toLocaleString()}</p>
+                      <p className="text-xs font-mono text-gray-400">{a.views.toLocaleString()}</p>
                       <p className="text-[9px] text-gray-600">views</p>
                     </div>
                   )}
                   {a.helpful > 0 && (
                     <div className="text-right hidden md:block">
-                      <p className="text-[10px] font-mono" style={{ color: a.helpful > 85 ? '#22c55e' : '#f59e0b' }}>{a.helpful}%</p>
+                      <p className="text-xs font-mono" style={{ color: a.helpful > 85 ? '#22c55e' : '#f59e0b' }}>{a.helpful}%</p>
                       <p className="text-[9px] text-gray-600">helpful</p>
                     </div>
                   )}
@@ -175,16 +175,16 @@ export default function KnowledgeBasePage() {
 
       {/* Categories */}
       {tab === 'categories' && (
-        <div className="animate-fade-in grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="animate-fade-in grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5">
           {MOCK_CATEGORIES.map(cat => (
-            <div key={cat.id} className="panel rounded-xl p-4 hover:border-blue-500/20 transition-all cursor-pointer text-center">
-              <div className="w-10 h-10 rounded-lg mx-auto mb-3 flex items-center justify-center" style={{ background: `${MODULE_COLOR}15`, border: `1px solid ${MODULE_COLOR}20` }}>
-                <svg className="w-5 h-5" style={{ color: MODULE_COLOR }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <div key={cat.id} className="panel rounded-2xl p-4 sm:p-6 hover:border-blue-500/20 transition-all cursor-pointer text-center">
+              <div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center" style={{ background: `${MODULE_COLOR}15`, border: `1px solid ${MODULE_COLOR}20` }}>
+                <svg className="w-6 h-6" style={{ color: MODULE_COLOR }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d={cat.icon} />
                 </svg>
               </div>
-              <p className="text-sm font-bold text-gray-200">{cat.name}</p>
-              <p className="text-[10px] text-gray-500 mt-1">{cat.articles} articles</p>
+              <p className="text-base font-bold text-gray-200">{cat.name}</p>
+              <p className="text-xs text-gray-500 mt-1">{cat.articles} articles</p>
             </div>
           ))}
         </div>
@@ -192,22 +192,22 @@ export default function KnowledgeBasePage() {
 
       {/* AI Tools */}
       {tab === 'ai-tools' && (
-        <div className="animate-fade-in space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="animate-fade-in space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {AI_TEMPLATES.map(tool => (
-              <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 text-left ${selectedTemplate?.name === tool.name ? 'border-blue-500/30' : ''}`}>
-                <p className="text-xs font-bold text-gray-300">{tool.name}</p>
-                <p className="text-[10px] text-gray-600 mt-1 line-clamp-2">{tool.prompt}</p>
+              <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === tool.name ? 'border-blue-500/30' : ''}`}>
+                <p className="text-sm font-bold text-gray-300">{tool.name}</p>
+                <p className="text-xs text-gray-600 mt-1 line-clamp-2">{tool.prompt}</p>
               </button>
             ))}
           </div>
           {(generating || output) && (
-            <div className="panel rounded-xl p-5">
+            <div className="panel rounded-2xl p-4 sm:p-7">
               <div className="flex items-center gap-2 mb-3">
                 <div className={`w-2 h-2 rounded-full ${generating ? 'animate-pulse' : ''}`} style={{ background: generating ? MODULE_COLOR : '#4ade80' }} />
-                <span className="hud-label" style={{ color: generating ? MODULE_COLOR : '#4ade80' }}>{generating ? 'GENERATING...' : 'READY'}</span>
+                <span className="hud-label text-[11px]" style={{ color: generating ? MODULE_COLOR : '#4ade80' }}>{generating ? 'GENERATING...' : 'READY'}</span>
               </div>
-              <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
+              <pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
             </div>
           )}
         </div>

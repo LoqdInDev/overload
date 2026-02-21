@@ -62,21 +62,21 @@ export default function CrmPage() {
   const statusColor = (s) => s === 'customer' ? '#22c55e' : s === 'prospect' ? '#3b82f6' : '#f59e0b';
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto">
-      <div className="mb-6 animate-fade-in">
-        <p className="hud-label mb-2" style={{ color: '#6366f1' }}>CRM DASHBOARD</p>
-        <h1 className="text-2xl font-bold text-white mb-1">Customer Relationships</h1>
+    <div className="p-4 sm:p-6 lg:p-12">
+      <div className="mb-6 sm:mb-8 animate-fade-in">
+        <p className="hud-label text-[11px] mb-2" style={{ color: '#6366f1' }}>CRM DASHBOARD</p>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Customer Relationships</h1>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 stagger">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
         {[{ label: 'TOTAL CONTACTS', value: '847', sub: '+12 this week' }, { label: 'ACTIVE DEALS', value: '23', sub: '$142.5K pipeline' }, { label: 'PIPELINE VALUE', value: '$142.5K', sub: '6 deals closing soon' }, { label: 'WIN RATE', value: '34%', sub: '+5% vs last month' }].map((s, i) => (
-          <div key={i} className="panel rounded-xl p-4"><p className="hud-label mb-1">{s.label}</p><p className="text-2xl font-bold text-white font-mono">{s.value}</p><p className="text-[10px] text-gray-500 mt-1">{s.sub}</p></div>
+          <div key={i} className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-1">{s.label}</p><p className="text-xl sm:text-2xl font-bold text-white font-mono">{s.value}</p><p className="text-[10px] text-gray-500 mt-1">{s.sub}</p></div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-4">
+      <div className="flex gap-1 mb-4 sm:mb-6">
         {['pipeline', 'contacts', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: 'rgba(99,102,241,0.15)', borderColor: 'rgba(99,102,241,0.3)', color: '#818cf8' } : {}}>{t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1)}</button>
         ))}
@@ -84,12 +84,12 @@ export default function CrmPage() {
 
       {/* Pipeline */}
       {tab === 'pipeline' && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 animate-fade-in">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 animate-fade-in">
           {PIPELINE_STAGES.map(stage => {
             const deals = MOCK_DEALS.filter(d => d.stage === stage.id);
             const total = deals.reduce((a, b) => a + b.value, 0);
             return (
-              <div key={stage.id} className="space-y-2">
+              <div key={stage.id} className="space-y-3">
                 <div className="flex items-center justify-between px-1">
                   <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full" style={{ background: stage.color }} /><span className="text-[10px] font-bold text-gray-400">{stage.name}</span></div>
                   <span className="text-[9px] text-gray-600 font-mono">{deals.length}</span>
@@ -97,7 +97,7 @@ export default function CrmPage() {
                 <div className="text-[9px] text-gray-600 px-1 font-mono">${(total / 1000).toFixed(1)}K</div>
                 <div className="space-y-1.5">
                   {deals.map(deal => (
-                    <div key={deal.id} className="panel rounded-lg p-2.5 cursor-pointer hover:border-indigo-500/20 transition-all">
+                    <div key={deal.id} className="panel rounded-lg p-3 cursor-pointer hover:border-indigo-500/20 transition-all">
                       <p className="text-[11px] font-semibold text-gray-300 truncate">{deal.name}</p>
                       <p className="text-[10px] text-gray-500 mt-0.5">{deal.contact}</p>
                       <p className="text-xs font-bold mt-1" style={{ color: stage.color }}>${deal.value.toLocaleString()}</p>
@@ -113,20 +113,20 @@ export default function CrmPage() {
 
       {/* Contacts */}
       {tab === 'contacts' && (
-        <div className="animate-fade-in space-y-3">
-          <div className="flex gap-2 items-center">
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search contacts..." className="flex-1 input-field rounded-lg px-4 py-2 text-sm" />
+        <div className="animate-fade-in space-y-4">
+          <div className="flex gap-3 items-center">
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search contacts..." className="flex-1 input-field rounded-xl px-5 py-3 text-base" />
             <div className="flex gap-1">{['all', 'lead', 'prospect', 'customer'].map(s => (<button key={s} onClick={() => setStatusFilter(s)} className={`chip text-[10px] ${statusFilter === s ? 'active' : ''}`}>{s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}</button>))}</div>
           </div>
-          <div className="panel rounded-xl overflow-hidden">
+          <div className="panel rounded-2xl overflow-hidden">
             <div className="divide-y divide-indigo-500/[0.04]">
               {filteredContacts.map(c => (
-                <div key={c.id} className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.01] transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-indigo-500/10 flex items-center justify-center text-xs font-bold text-indigo-400 flex-shrink-0">{c.name.split(' ').map(n => n[0]).join('')}</div>
+                <div key={c.id} className="flex items-center gap-3 px-5 py-4 hover:bg-white/[0.01] transition-colors">
+                  <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-xs font-bold text-indigo-400 flex-shrink-0">{c.name.split(' ').map(n => n[0]).join('')}</div>
                   <div className="flex-1 min-w-0"><p className="text-xs font-semibold text-gray-300 truncate">{c.name}</p><p className="text-[10px] text-gray-500">{c.email}</p></div>
                   <span className="text-[10px] text-gray-500 hidden md:block">{c.company}</span>
                   <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${statusColor(c.status)}15`, color: statusColor(c.status), border: `1px solid ${statusColor(c.status)}25` }}>{c.status}</span>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: c.score > 75 ? 'rgba(34,197,94,0.1)' : c.score > 50 ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)', color: c.score > 75 ? '#22c55e' : c.score > 50 ? '#f59e0b' : '#ef4444' }}>{c.score}</div>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: c.score > 75 ? 'rgba(34,197,94,0.1)' : c.score > 50 ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)', color: c.score > 75 ? '#22c55e' : c.score > 50 ? '#f59e0b' : '#ef4444' }}>{c.score}</div>
                 </div>
               ))}
             </div>
@@ -136,19 +136,19 @@ export default function CrmPage() {
 
       {/* AI Tools */}
       {tab === 'ai-tools' && (
-        <div className="animate-fade-in space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="animate-fade-in space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {AI_TOOLS.map(tool => (
-              <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 text-left ${selectedTool?.name === tool.name ? 'border-indigo-500/20' : ''}`}>
+              <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-2xl p-4 sm:p-6 text-left ${selectedTool?.name === tool.name ? 'border-indigo-500/20' : ''}`}>
                 <p className="text-xs font-bold text-gray-300">{tool.name}</p>
                 <p className="text-[10px] text-gray-600 mt-1 line-clamp-2">{tool.prompt}</p>
               </button>
             ))}
           </div>
           {(generating || output) && (
-            <div className="panel rounded-xl p-5">
-              <div className="flex items-center gap-2 mb-3"><div className={`w-2 h-2 rounded-full ${generating ? 'bg-indigo-400 animate-pulse' : 'bg-emerald-400'}`} /><span className="hud-label" style={{ color: generating ? '#818cf8' : '#4ade80' }}>{generating ? 'GENERATING...' : 'READY'}</span></div>
-              <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-indigo-400 ml-0.5 animate-pulse" />}</pre>
+            <div className="panel rounded-2xl p-4 sm:p-7">
+              <div className="flex items-center gap-2 mb-3"><div className={`w-2 h-2 rounded-full ${generating ? 'bg-indigo-400 animate-pulse' : 'bg-emerald-400'}`} /><span className="hud-label text-[11px]" style={{ color: generating ? '#818cf8' : '#4ade80' }}>{generating ? 'GENERATING...' : 'READY'}</span></div>
+              <pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-indigo-400 ml-0.5 animate-pulse" />}</pre>
             </div>
           )}
         </div>

@@ -51,20 +51,20 @@ export default function FunnelsPage() {
   };
 
   if (!activeType) return (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto">
-      <div className="mb-8 animate-fade-in">
-        <p className="hud-label mb-2" style={{ color: '#7c3aed' }}>FUNNEL BUILDER</p>
-        <h1 className="text-2xl font-bold text-white mb-1">Choose your funnel type</h1>
-        <p className="text-sm text-gray-500">AI generates high-converting copy for every stage of your funnel</p>
+    <div className="p-4 sm:p-6 lg:p-12">
+      <div className="mb-6 sm:mb-8 animate-fade-in">
+        <p className="hud-label text-[11px] mb-2" style={{ color: '#7c3aed' }}>FUNNEL BUILDER</p>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Choose your funnel type</h1>
+        <p className="text-base text-gray-500">AI generates high-converting copy for every stage of your funnel</p>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 stagger">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 stagger">
         {FUNNEL_TYPES.map(f => (
-          <button key={f.id} onClick={() => setActiveType(f.id)} className="panel-interactive rounded-xl p-5 text-left group">
-            <div className="w-10 h-10 rounded-lg mb-3 flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.12)' }}>
-              <svg className="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={f.icon} /></svg>
+          <button key={f.id} onClick={() => setActiveType(f.id)} className="panel-interactive rounded-2xl p-4 sm:p-7 text-left group">
+            <div className="w-12 h-12 rounded-lg mb-3 flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.12)' }}>
+              <svg className="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={f.icon} /></svg>
             </div>
             <p className="text-xs font-bold text-gray-300 group-hover:text-white transition-colors mb-2">{f.name}</p>
-            <div className="flex gap-1 flex-wrap">{f.stages.map((s, i) => (<span key={i} className="text-[8px] px-1.5 py-0.5 rounded bg-white/[0.03] text-gray-600 border border-white/[0.04]">{s}</span>))}</div>
+            <div className="flex gap-1 flex-wrap">{f.stages.map((s, i) => (<span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.03] text-gray-600 border border-white/[0.04]">{s}</span>))}</div>
           </button>
         ))}
       </div>
@@ -75,42 +75,42 @@ export default function FunnelsPage() {
   const templates = TEMPLATES[activeType] || TEMPLATES['product-launch'];
 
   return (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto animate-fade-in">
-      <div className="flex items-center gap-3 mb-6">
+    <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
+      <div className="flex items-center gap-3 sm:gap-5 mb-6 sm:mb-8">
         <button onClick={() => { setActiveType(null); setOutput(''); setPrompt(''); }} className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white transition-all">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
         </button>
-        <div><p className="hud-label" style={{ color: '#7c3aed' }}>{funnel?.name?.toUpperCase()} FUNNEL</p><h2 className="text-lg font-bold text-white">{funnel?.name} Funnel Builder</h2></div>
+        <div><p className="hud-label text-[11px]" style={{ color: '#7c3aed' }}>{funnel?.name?.toUpperCase()} FUNNEL</p><h2 className="text-lg font-bold text-white">{funnel?.name} Funnel Builder</h2></div>
       </div>
 
       {/* Funnel stages pipeline */}
-      <div className="panel rounded-xl p-4 mb-4">
-        <p className="hud-label mb-3">FUNNEL STAGES</p>
+      <div className="panel rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6">
+        <p className="hud-label text-[11px] mb-3">FUNNEL STAGES</p>
         <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
           {funnel?.stages.map((stage, i) => (
             <div key={i} className="flex items-center flex-shrink-0">
               <button onClick={() => setActiveStage(i)} className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${i === activeStage ? 'bg-violet-500/15 border border-violet-500/30 text-violet-300' : 'border border-indigo-500/8 text-gray-500 hover:text-gray-300 hover:border-indigo-500/15'}`}>
-                <span className="text-[8px] block opacity-50 mb-0.5">STEP {i + 1}</span>{stage}
+                <span className="text-[10px] block opacity-50 mb-0.5">STEP {i + 1}</span>{stage}
               </button>
-              {i < funnel.stages.length - 1 && <svg className="w-4 h-4 text-gray-700 mx-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>}
+              {i < funnel.stages.length - 1 && <svg className="w-5 h-5 text-gray-700 mx-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>}
             </div>
           ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 space-y-4">
-          <div className="panel rounded-xl p-4"><p className="hud-label mb-3">TEMPLATES</p><div className="grid grid-cols-2 gap-2">{templates.map(t => (<button key={t.name} onClick={() => setPrompt(t.prompt)} className={`text-left px-3 py-2.5 rounded-lg border text-xs transition-all ${prompt === t.prompt ? 'border-violet-500/30 bg-violet-500/8 text-violet-300' : 'border-indigo-500/8 bg-white/[0.01] text-gray-400 hover:text-gray-200'}`}><p className="font-semibold">{t.name}</p><p className="text-[10px] text-gray-600 mt-0.5 line-clamp-1">{t.prompt}</p></button>))}</div></div>
-          <div className="panel rounded-xl p-4"><p className="hud-label mb-3">CUSTOM BRIEF</p><textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={3} placeholder={`Describe what you want for the ${funnel?.stages[activeStage]} page...`} className="w-full input-field rounded-lg px-4 py-3 text-sm resize-none" /></div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+          <div className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-3">TEMPLATES</p><div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{templates.map(t => (<button key={t.name} onClick={() => setPrompt(t.prompt)} className={`text-left px-4 py-3 rounded-lg border text-xs transition-all ${prompt === t.prompt ? 'border-violet-500/30 bg-violet-500/8 text-violet-300' : 'border-indigo-500/8 bg-white/[0.01] text-gray-400 hover:text-gray-200'}`}><p className="font-semibold">{t.name}</p><p className="text-xs text-gray-600 mt-0.5 line-clamp-1">{t.prompt}</p></button>))}</div></div>
+          <div className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-3">CUSTOM BRIEF</p><textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={3} placeholder={`Describe what you want for the ${funnel?.stages[activeStage]} page...`} className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base resize-none" /></div>
           <button onClick={generate} disabled={generating} className="btn-accent w-full py-3 rounded-lg" style={{ background: generating ? '#1e1e2e' : '#7c3aed', boxShadow: generating ? 'none' : '0 4px 20px -4px rgba(124,58,237,0.4)' }}>{generating ? <span className="flex items-center gap-2"><span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />GENERATING...</span> : `GENERATE ${funnel?.stages[activeStage]?.toUpperCase()} COPY`}</button>
         </div>
-        <div className="space-y-4">
-          <div className="panel rounded-xl p-4"><p className="hud-label mb-3">INDUSTRY</p><div className="grid grid-cols-2 gap-1.5">{INDUSTRIES.map(i => (<button key={i} onClick={() => setIndustry(i)} className={`chip text-[10px] justify-center ${industry === i ? 'active' : ''}`} style={industry === i ? { background: 'rgba(124,58,237,0.15)', borderColor: 'rgba(124,58,237,0.3)', color: '#a78bfa' } : {}}>{i}</button>))}</div></div>
-          <div className="panel rounded-xl p-4"><p className="hud-label mb-3">PRICE POINT</p><div className="grid grid-cols-2 gap-1.5">{PRICE_POINTS.map(p => (<button key={p} onClick={() => setPrice(p)} className={`chip text-[10px] justify-center ${price === p ? 'active' : ''}`} style={price === p ? { background: 'rgba(124,58,237,0.15)', borderColor: 'rgba(124,58,237,0.3)', color: '#a78bfa' } : {}}>{p}</button>))}</div></div>
-          <div className="panel rounded-xl p-4"><p className="hud-label mb-3">URGENCY LEVEL</p><div className="grid grid-cols-3 gap-1.5">{URGENCY.map(u => (<button key={u} onClick={() => setUrgency(u)} className={`chip text-[10px] justify-center ${urgency === u ? 'active' : ''}`} style={urgency === u ? { background: 'rgba(124,58,237,0.15)', borderColor: 'rgba(124,58,237,0.3)', color: '#a78bfa' } : {}}>{u}</button>))}</div></div>
+        <div className="space-y-4 sm:space-y-6">
+          <div className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-3">INDUSTRY</p><div className="grid grid-cols-2 gap-1.5">{INDUSTRIES.map(i => (<button key={i} onClick={() => setIndustry(i)} className={`chip text-[10px] justify-center ${industry === i ? 'active' : ''}`} style={industry === i ? { background: 'rgba(124,58,237,0.15)', borderColor: 'rgba(124,58,237,0.3)', color: '#a78bfa' } : {}}>{i}</button>))}</div></div>
+          <div className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-3">PRICE POINT</p><div className="grid grid-cols-2 gap-1.5">{PRICE_POINTS.map(p => (<button key={p} onClick={() => setPrice(p)} className={`chip text-[10px] justify-center ${price === p ? 'active' : ''}`} style={price === p ? { background: 'rgba(124,58,237,0.15)', borderColor: 'rgba(124,58,237,0.3)', color: '#a78bfa' } : {}}>{p}</button>))}</div></div>
+          <div className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-3">URGENCY LEVEL</p><div className="grid grid-cols-3 gap-1.5">{URGENCY.map(u => (<button key={u} onClick={() => setUrgency(u)} className={`chip text-[10px] justify-center ${urgency === u ? 'active' : ''}`} style={urgency === u ? { background: 'rgba(124,58,237,0.15)', borderColor: 'rgba(124,58,237,0.3)', color: '#a78bfa' } : {}}>{u}</button>))}</div></div>
         </div>
       </div>
-      {output && <div className="mt-4 animate-fade-up"><div className="flex items-center gap-2 mb-3"><div className="w-2 h-2 rounded-full bg-violet-400" /><span className="hud-label" style={{ color: '#a78bfa' }}>{generating ? 'GENERATING...' : `${funnel?.stages[activeStage]} COPY READY`}</span></div><div className="panel rounded-xl p-5"><pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-violet-400 ml-0.5 animate-pulse" />}</pre></div></div>}
+      {output && <div className="mt-6 animate-fade-up"><div className="flex items-center gap-2 mb-3"><div className="w-2 h-2 rounded-full bg-violet-400" /><span className="hud-label text-[11px]" style={{ color: '#a78bfa' }}>{generating ? 'GENERATING...' : `${funnel?.stages[activeStage]} COPY READY`}</span></div><div className="panel rounded-2xl p-4 sm:p-7"><pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-violet-400 ml-0.5 animate-pulse" />}</pre></div></div>}
     </div>
   );
 }

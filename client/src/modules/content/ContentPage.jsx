@@ -102,20 +102,20 @@ export default function ContentPage() {
 
   if (!activeType) {
     return (
-      <div className="p-6 lg:p-8 max-w-6xl mx-auto">
-        <div className="mb-8 animate-fade-in">
-          <p className="hud-label mb-2" style={{ color: '#f97316' }}>AI CONTENT ENGINE</p>
-          <h1 className="text-2xl font-bold text-white mb-1">What do you want to write?</h1>
-          <p className="text-sm text-gray-500">Select a content type to get started with AI-powered generation</p>
+      <div className="p-4 sm:p-6 lg:p-12">
+        <div className="mb-6 sm:mb-8 animate-fade-in">
+          <p className="hud-label text-[11px] mb-2" style={{ color: '#f97316' }}>AI CONTENT ENGINE</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">What do you want to write?</h1>
+          <p className="text-base text-gray-500">Select a content type to get started with AI-powered generation</p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 stagger">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 stagger">
           {CONTENT_TYPES.map(type => (
             <button key={type.id} onClick={() => setActiveType(type.id)}
-              className="panel-interactive rounded-xl p-5 text-center group">
-              <div className="w-10 h-10 rounded-lg mx-auto mb-3 flex items-center justify-center transition-all duration-300 group-hover:scale-110"
+              className="panel-interactive rounded-2xl p-4 sm:p-7 text-center group">
+              <div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center transition-all duration-300 group-hover:scale-110"
                 style={{ background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.12)' }}>
-                <svg className="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <svg className="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d={type.icon} />
                 </svg>
               </div>
@@ -126,20 +126,20 @@ export default function ContentPage() {
 
         {/* Templates Preview */}
         <div className="mt-10">
-          <div className="flex items-center gap-3 mb-4">
-            <p className="hud-label">POPULAR TEMPLATES</p>
+          <div className="flex items-center gap-3 sm:gap-5 mb-4">
+            <p className="hud-label text-[11px]">POPULAR TEMPLATES</p>
             <div className="flex-1 hud-line" />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 stagger">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 stagger">
             {Object.entries(TEMPLATES).flatMap(([type, tmpls]) =>
               tmpls.slice(0, 1).map(t => {
                 const ct = CONTENT_TYPES.find(c => c.id === type);
                 return (
                   <button key={`${type}-${t.name}`} onClick={() => { setActiveType(type); setPrompt(t.prompt); }}
-                    className="panel-interactive rounded-lg p-4 text-left group">
-                    <p className="hud-label mb-1.5" style={{ color: '#f97316' }}>{ct?.name}</p>
-                    <p className="text-xs font-semibold text-gray-300 group-hover:text-white transition-colors">{t.name}</p>
-                    <p className="text-[10px] text-gray-600 mt-1 line-clamp-1">{t.prompt}</p>
+                    className="panel-interactive rounded-lg p-4 sm:p-6 text-left group">
+                    <p className="hud-label text-[11px] mb-1.5" style={{ color: '#f97316' }}>{ct?.name}</p>
+                    <p className="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">{t.name}</p>
+                    <p className="text-xs text-gray-600 mt-1 line-clamp-1">{t.prompt}</p>
                   </button>
                 );
               })
@@ -155,31 +155,31 @@ export default function ContentPage() {
   const wordCount = (result || streamText).split(/\s+/).filter(Boolean).length;
 
   return (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto animate-fade-in">
+    <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 sm:gap-5 mb-6 sm:mb-8">
         <button onClick={() => { setActiveType(null); setResult(''); setStreamText(''); setPrompt(''); }}
           className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white hover:border-indigo-500/25 transition-all">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
           </svg>
         </button>
         <div>
-          <p className="hud-label" style={{ color: '#f97316' }}>{currentType?.name?.toUpperCase()} GENERATOR</p>
-          <h2 className="text-lg font-bold text-white">Create {currentType?.name}</h2>
+          <p className="hud-label text-[11px]" style={{ color: '#f97316' }}>{currentType?.name?.toUpperCase()} GENERATOR</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-white">Create {currentType?.name}</h2>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Left: Controls */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Templates */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">TEMPLATES</p>
-            <div className="grid grid-cols-2 gap-2">
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3">TEMPLATES</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {templates.map(t => (
                 <button key={t.name} onClick={() => selectTemplate(t)}
-                  className={`text-left px-3 py-2.5 rounded-lg border text-xs transition-all ${
+                  className={`text-left px-4 py-3 rounded-lg border text-sm transition-all ${
                     prompt === t.prompt ? 'border-orange-500/30 bg-orange-500/8 text-orange-300' : 'border-indigo-500/8 bg-white/[0.01] text-gray-400 hover:text-gray-200 hover:border-indigo-500/15'
                   }`}>
                   <p className="font-semibold">{t.name}</p>
@@ -189,11 +189,11 @@ export default function ContentPage() {
           </div>
 
           {/* Prompt */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">YOUR BRIEF</p>
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3">YOUR BRIEF</p>
             <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={5}
               placeholder="Describe exactly what you want. Include topic, key points, target audience, and any specific requirements..."
-              className="w-full input-field rounded-lg px-4 py-3 text-sm resize-none" />
+              className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base resize-none" />
           </div>
 
           {/* Generate */}
@@ -210,10 +210,10 @@ export default function ContentPage() {
         </div>
 
         {/* Right: Settings */}
-        <div className="space-y-4">
+        <div className="space-y-4 sm:space-y-6">
           {/* Tone */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">TONE</p>
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3">TONE</p>
             <div className="grid grid-cols-2 gap-1.5">
               {TONES.map(t => (
                 <button key={t} onClick={() => setTone(t)}
@@ -226,8 +226,8 @@ export default function ContentPage() {
           </div>
 
           {/* Length */}
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3">TARGET LENGTH</p>
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3">TARGET LENGTH</p>
             <div className="grid grid-cols-3 gap-1.5">
               {['400', '800', '1200'].map(w => (
                 <button key={w} onClick={() => setWordTarget(w)}
@@ -241,9 +241,9 @@ export default function ContentPage() {
 
           {/* Stats */}
           {(streamText || result) && (
-            <div className="panel rounded-xl p-4 animate-fade-up">
-              <p className="hud-label mb-3">OUTPUT STATS</p>
-              <div className="space-y-2">
+            <div className="panel rounded-2xl p-4 sm:p-6 animate-fade-up">
+              <p className="hud-label text-[11px] mb-3">OUTPUT STATS</p>
+              <div className="space-y-3">
                 <div className="flex justify-between text-xs">
                   <span className="text-gray-500">Words</span>
                   <span className="text-white font-mono font-bold">{wordCount}</span>
@@ -277,23 +277,23 @@ export default function ContentPage() {
 
       {/* Output */}
       {(generating || streamText) && !result && (
-        <div className="panel rounded-xl p-5 mt-4 animate-fade-up">
-          <div className="flex items-center gap-2 mb-3">
+        <div className="panel rounded-2xl p-4 sm:p-7 mt-6 animate-fade-up">
+          <div className="flex items-center gap-3 mb-3">
             <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
-            <span className="hud-label" style={{ color: '#f97316' }}>GENERATING</span>
+            <span className="hud-label text-[11px]" style={{ color: '#f97316' }}>GENERATING</span>
           </div>
-          <div className="bg-black/50 rounded-lg p-5 max-h-[50vh] overflow-y-auto text-sm text-gray-300 whitespace-pre-wrap leading-relaxed font-[system-ui]">
+          <div className="bg-black/50 rounded-lg p-4 sm:p-7 max-h-[50vh] overflow-y-auto text-base text-gray-300 whitespace-pre-wrap leading-relaxed font-[system-ui]">
             {streamText}<span className="inline-block w-[2px] h-4 bg-orange-400 ml-0.5 animate-pulse" />
           </div>
         </div>
       )}
 
       {result && (
-        <div className="panel rounded-xl p-5 mt-4 animate-fade-up">
+        <div className="panel rounded-2xl p-4 sm:p-7 mt-6 animate-fade-up">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span className="hud-label" style={{ color: '#4ade80' }}>COMPLETE</span>
+              <span className="hud-label text-[11px]" style={{ color: '#4ade80' }}>COMPLETE</span>
             </div>
             <div className="flex gap-2">
               <button onClick={copyToClipboard}
@@ -303,7 +303,7 @@ export default function ContentPage() {
               <button onClick={generate} className="chip text-[10px]">Regenerate</button>
             </div>
           </div>
-          <div className="bg-black/50 rounded-lg p-5 max-h-[60vh] overflow-y-auto text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">
+          <div className="bg-black/50 rounded-lg p-4 sm:p-7 max-h-[60vh] overflow-y-auto text-base text-gray-200 whitespace-pre-wrap leading-relaxed">
             {result}
           </div>
         </div>

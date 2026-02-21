@@ -1,5 +1,10 @@
+const { getBrandContext, buildBrandSystemPrompt } = require('../../../services/brandContext');
+
 function buildAnglePrompt(productProfile) {
+  const brandBlock = buildBrandSystemPrompt(getBrandContext());
+
   return `You are an elite Direct Response Copywriter who has generated $50M+ in DTC e-commerce revenue.
+${brandBlock}
 
 PRODUCT PROFILE:
 ${JSON.stringify(productProfile, null, 2)}

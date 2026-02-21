@@ -61,14 +61,14 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-12">
       {/* Header */}
-      <div className="mb-8 animate-fade-in">
+      <div className="mb-6 sm:mb-8 animate-fade-in">
         <div className="flex items-end justify-between">
           <div>
-            <p className="hud-label mb-2" style={{ color: '#f43f5e' }}>ANALYTICS DASHBOARD</p>
-            <h1 className="text-2xl font-bold text-white mb-1">System Overview</h1>
-            <p className="text-sm text-gray-500">Unified reporting across all modules</p>
+            <p className="hud-label text-[11px] mb-2" style={{ color: '#f43f5e' }}>ANALYTICS DASHBOARD</p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">System Overview</h1>
+            <p className="text-base text-gray-500">Unified reporting across all modules</p>
           </div>
           <div className="flex gap-1">
             {['24h', '7d', '30d', 'All'].map(r => (
@@ -83,21 +83,21 @@ export default function AnalyticsPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 stagger">
-        <div className="panel rounded-xl p-4 relative">
-          <p className="hud-label mb-2">TOTAL ACTIONS</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
+        <div className="panel rounded-2xl p-4 sm:p-6 relative">
+          <p className="hud-label text-[11px] mb-2">TOTAL ACTIONS</p>
           <p className="text-3xl font-bold text-white font-mono tabular-nums">
             <AnimatedNumber value={totalActions} />
           </p>
-          <div className="absolute top-4 right-4">
-            <svg className="w-5 h-5 text-rose-400/40" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <div className="absolute top-6 right-6">
+            <svg className="w-6 h-6 text-rose-400/40" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
             </svg>
           </div>
         </div>
 
-        <div className="panel rounded-xl p-4 relative">
-          <p className="hud-label mb-2">ACTIVE MODULES</p>
+        <div className="panel rounded-2xl p-4 sm:p-6 relative">
+          <p className="hud-label text-[11px] mb-2">ACTIVE MODULES</p>
           <p className="text-3xl font-bold text-white font-mono tabular-nums">
             <AnimatedNumber value={MODULE_REGISTRY.length} />
           </p>
@@ -108,15 +108,15 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        <div className="panel rounded-xl p-4 relative">
-          <p className="hud-label mb-2">TOP MODULE</p>
+        <div className="panel rounded-2xl p-4 sm:p-6 relative">
+          <p className="hud-label text-[11px] mb-2">TOP MODULE</p>
           <p className="text-lg font-bold text-white truncate">{topModule?.name}</p>
           <p className="text-xs text-gray-500 mt-0.5">{topModule?.count} actions</p>
-          <div className="absolute top-4 right-4 w-2 h-2 rounded-full" style={{ background: topModule?.color, boxShadow: `0 0 8px ${topModule?.color}` }} />
+          <div className="absolute top-6 right-6 w-2 h-2 rounded-full" style={{ background: topModule?.color, boxShadow: `0 0 8px ${topModule?.color}` }} />
         </div>
 
-        <div className="panel rounded-xl p-4 relative">
-          <p className="hud-label mb-2">ACTIVITY FEED</p>
+        <div className="panel rounded-2xl p-4 sm:p-6 relative">
+          <p className="hud-label text-[11px] mb-2">ACTIVITY FEED</p>
           <p className="text-3xl font-bold text-white font-mono tabular-nums">
             <AnimatedNumber value={activity.length} />
           </p>
@@ -125,24 +125,24 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Module Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
         {/* Usage Bars */}
-        <div className="panel rounded-xl p-4 animate-fade-up">
+        <div className="panel rounded-2xl p-4 sm:p-6 animate-fade-up">
           <div className="flex items-center justify-between mb-4">
-            <p className="hud-label">MODULE USAGE</p>
-            <p className="hud-label">{totalActions} TOTAL</p>
+            <p className="hud-label text-[11px]">MODULE USAGE</p>
+            <p className="hud-label text-[11px]">{totalActions} TOTAL</p>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {moduleStats.map(mod => {
               const pct = totalActions > 0 ? (mod.count / totalActions) * 100 : 0;
               return (
                 <div key={mod.id}>
                   <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <div className="w-1.5 h-1.5 rounded-full" style={{ background: mod.color }} />
                       <span className="text-xs text-gray-400">{mod.name}</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <span className="text-xs text-gray-500 font-mono">{Math.round(pct)}%</span>
                       <span className="text-xs text-white font-mono font-bold">{mod.count}</span>
                     </div>
@@ -158,19 +158,19 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Module Cards with Sparklines */}
-        <div className="panel rounded-xl p-4 animate-fade-up">
-          <p className="hud-label mb-4">7-DAY TREND</p>
-          <div className="grid grid-cols-2 gap-3">
+        <div className="panel rounded-2xl p-4 sm:p-6 animate-fade-up">
+          <p className="hud-label text-[11px] mb-4">7-DAY TREND</p>
+          <div className="grid grid-cols-2 gap-3 sm:gap-5">
             {moduleStats.map(mod => (
-              <div key={mod.id} className="bg-black/30 rounded-lg p-3 border border-indigo-500/6">
+              <div key={mod.id} className="bg-black/30 rounded-lg p-3 sm:p-5 border border-indigo-500/6">
                 <div className="flex items-center gap-1.5 mb-2">
                   <div className="w-1.5 h-1.5 rounded-full" style={{ background: mod.color }} />
                   <span className="text-[10px] font-semibold text-gray-400">{mod.name}</span>
                 </div>
                 <MiniBarChart data={mockSparkline(mod.count)} color={mod.color} />
                 <div className="flex justify-between mt-1.5">
-                  <span className="text-[8px] text-gray-600">7d ago</span>
-                  <span className="text-[8px] text-gray-600">Today</span>
+                  <span className="text-[10px] text-gray-600">7d ago</span>
+                  <span className="text-[10px] text-gray-600">Today</span>
                 </div>
               </div>
             ))}
@@ -179,18 +179,18 @@ export default function AnalyticsPage() {
       </div>
 
       {/* System Status */}
-      <div className="panel rounded-xl p-4 mb-6 animate-fade-up">
-        <p className="hud-label mb-4">SYSTEM STATUS</p>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="panel rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 animate-fade-up">
+        <p className="hud-label text-[11px] mb-4">SYSTEM STATUS</p>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-5">
           {MODULE_REGISTRY.map(mod => (
-            <div key={mod.id} className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-black/30 border border-indigo-500/6">
+            <div key={mod.id} className="flex items-center gap-2.5 px-4 py-3 rounded-lg bg-black/30 border border-indigo-500/6">
               <div className="relative">
                 <div className="w-2 h-2 rounded-full" style={{ background: '#4ade80' }} />
                 <div className="absolute inset-0 rounded-full animate-ping" style={{ background: '#4ade80', opacity: 0.3 }} />
               </div>
               <div>
                 <p className="text-[10px] font-semibold text-gray-300">{mod.name}</p>
-                <p className="text-[8px] text-emerald-400">OPERATIONAL</p>
+                <p className="text-[10px] text-emerald-400">OPERATIONAL</p>
               </div>
             </div>
           ))}
@@ -198,25 +198,25 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Activity Timeline */}
-      <div className="panel rounded-xl p-4 animate-fade-up">
+      <div className="panel rounded-2xl p-4 sm:p-6 animate-fade-up">
         <div className="flex items-center justify-between mb-4">
-          <p className="hud-label">ACTIVITY LOG</p>
-          <p className="hud-label">{activity.length} EVENTS</p>
+          <p className="hud-label text-[11px]">ACTIVITY LOG</p>
+          <p className="hud-label text-[11px]">{activity.length} EVENTS</p>
         </div>
         {activity.length === 0 ? (
           <div className="py-12 text-center">
-            <svg className="w-8 h-8 text-gray-700 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
+            <svg className="w-10 h-10 text-gray-700 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-xs text-gray-600">No activity recorded yet</p>
-            <p className="text-[10px] text-gray-700 mt-1">Start using modules to see data here</p>
+            <p className="text-sm text-gray-600">No activity recorded yet</p>
+            <p className="text-xs text-gray-700 mt-1">Start using modules to see data here</p>
           </div>
         ) : (
           <div className="divide-y divide-indigo-500/[0.04]">
             {activity.slice(0, 20).map((item, i) => {
               const mod = MODULE_REGISTRY.find(m => m.id === item.module_id);
               return (
-                <div key={item.id || i} className="flex items-center gap-3 px-2 py-2.5 hover:bg-white/[0.01] transition-colors">
+                <div key={item.id || i} className="flex items-center gap-3 sm:gap-5 px-3 py-3 hover:bg-white/[0.01] transition-colors">
                   <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: mod?.color || '#6b7280' }} />
                   <span className="text-xs text-gray-400 flex-1 truncate">{item.title}</span>
                   <span className="hud-label flex-shrink-0" style={{ color: mod?.color }}>{mod?.name || item.module_id}</span>
@@ -228,7 +228,7 @@ export default function AnalyticsPage() {
             })}
             {activity.length > 20 && (
               <div className="py-3 text-center">
-                <span className="text-[10px] text-gray-600">+{activity.length - 20} more events</span>
+                <span className="text-xs text-gray-600">+{activity.length - 20} more events</span>
               </div>
             )}
           </div>

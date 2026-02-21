@@ -1,3 +1,5 @@
+const { getBrandContext, buildBrandSystemPrompt } = require('../../../services/brandContext');
+
 function buildAdCampaignPrompt(platform, campaign) {
   const platformInstructions = {
     google: `Generate a complete Google Ads campaign with:
@@ -27,7 +29,10 @@ function buildAdCampaignPrompt(platform, campaign) {
 
   const instruction = platformInstructions[platform] || platformInstructions.meta;
 
+  const brandBlock = buildBrandSystemPrompt(getBrandContext());
+
   return `You are an expert paid media strategist. ${instruction}
+${brandBlock}
 
 CAMPAIGN DETAILS:
 - Campaign Name: ${campaign.name}

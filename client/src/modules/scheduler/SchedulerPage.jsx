@@ -55,30 +55,30 @@ export default function SchedulerPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto">
-      <div className="mb-6 animate-fade-in">
-        <p className="hud-label mb-2" style={{ color: MODULE_COLOR }}>SCHEDULER</p>
-        <h1 className="text-2xl font-bold text-white mb-1">Task Scheduler</h1>
+    <div className="p-4 sm:p-6 lg:p-12">
+      <div className="mb-6 sm:mb-8 animate-fade-in">
+        <p className="hud-label text-[11px] mb-2" style={{ color: MODULE_COLOR }}>SCHEDULER</p>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Task Scheduler</h1>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 stagger">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
         {[
           { label: 'SCHEDULED', value: '18', sub: 'Across all modules' },
           { label: "TODAY'S TASKS", value: '5', sub: '3 remaining' },
           { label: 'COMPLETED', value: '142', sub: 'Last 30 days' },
           { label: 'UPCOMING', value: '12', sub: 'Next 7 days' },
         ].map((s, i) => (
-          <div key={i} className="panel rounded-xl p-4">
-            <p className="hud-label mb-1">{s.label}</p>
-            <p className="text-2xl font-bold text-white font-mono">{s.value}</p>
-            <p className="text-[10px] text-gray-500 mt-1">{s.sub}</p>
+          <div key={i} className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-1">{s.label}</p>
+            <p className="text-xl sm:text-2xl font-bold text-white font-mono">{s.value}</p>
+            <p className="text-xs text-gray-500 mt-1">{s.sub}</p>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-4">
+      <div className="flex gap-1 mb-6">
         {['upcoming', 'history', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: 'rgba(59,130,246,0.15)', borderColor: 'rgba(59,130,246,0.3)', color: '#60a5fa' } : {}}>
             {t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1)}
@@ -88,26 +88,26 @@ export default function SchedulerPage() {
 
       {/* Upcoming Tab */}
       {tab === 'upcoming' && (
-        <div className="space-y-2 animate-fade-in">
+        <div className="space-y-3 animate-fade-in">
           {MOCK_UPCOMING.map(task => (
-            <div key={task.id} className="panel rounded-xl p-4 flex items-center gap-4 hover:border-indigo-500/15 transition-all">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${moduleColor(task.module)}15`, border: `1px solid ${moduleColor(task.module)}20` }}>
-                <svg className="w-5 h-5" style={{ color: moduleColor(task.module) }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <div key={task.id} className="panel rounded-2xl p-4 sm:p-6 flex items-center gap-4 sm:gap-6 hover:border-indigo-500/15 transition-all">
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${moduleColor(task.module)}15`, border: `1px solid ${moduleColor(task.module)}20` }}>
+                <svg className="w-6 h-6" style={{ color: moduleColor(task.module) }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-200">{task.name}</p>
+                <p className="text-base font-semibold text-gray-200">{task.name}</p>
                 <div className="flex items-center gap-3 mt-1">
                   <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${moduleColor(task.module)}15`, color: moduleColor(task.module), border: `1px solid ${moduleColor(task.module)}25` }}>
                     {task.module}
                   </span>
-                  <span className="text-[10px] text-gray-500">{task.action}</span>
+                  <span className="text-xs text-gray-500">{task.action}</span>
                 </div>
               </div>
               <div className="text-right flex-shrink-0">
-                <p className="text-xs font-semibold text-gray-300">{task.scheduledFor}</p>
-                <p className="text-[9px] text-gray-600 mt-0.5">{frequencyLabel(task.frequency)}</p>
+                <p className="text-sm font-semibold text-gray-300">{task.scheduledFor}</p>
+                <p className="text-[10px] text-gray-600 mt-0.5">{frequencyLabel(task.frequency)}</p>
               </div>
             </div>
           ))}
@@ -117,19 +117,19 @@ export default function SchedulerPage() {
       {/* History Tab */}
       {tab === 'history' && (
         <div className="animate-fade-in">
-          <div className="panel rounded-xl overflow-hidden">
+          <div className="panel rounded-2xl overflow-hidden">
             <div className="divide-y divide-indigo-500/[0.04]">
               {MOCK_HISTORY.map(task => (
-                <div key={task.id} className="flex items-center gap-4 px-4 py-3 hover:bg-white/[0.01] transition-colors">
+                <div key={task.id} className="flex items-center gap-4 sm:gap-6 px-4 sm:px-6 py-4 hover:bg-white/[0.01] transition-colors">
                   <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: task.status === 'completed' ? '#22c55e' : '#ef4444' }} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-gray-300">{task.name}</p>
-                    <p className="text-[10px] text-gray-500 mt-0.5">{task.action}</p>
+                    <p className="text-sm font-semibold text-gray-300">{task.name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{task.action}</p>
                   </div>
                   <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${moduleColor(task.module)}15`, color: moduleColor(task.module), border: `1px solid ${moduleColor(task.module)}25` }}>
                     {task.module}
                   </span>
-                  <span className="text-[10px] text-gray-500 w-32 text-right">{task.completedAt}</span>
+                  <span className="text-xs text-gray-500 w-32 text-right">{task.completedAt}</span>
                 </div>
               ))}
             </div>
@@ -139,22 +139,22 @@ export default function SchedulerPage() {
 
       {/* AI Tools Tab */}
       {tab === 'ai-tools' && (
-        <div className="animate-fade-in space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="animate-fade-in space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {AI_TEMPLATES.map(tool => (
-              <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 text-left ${selectedTemplate?.name === tool.name ? 'border-blue-500/20' : ''}`}>
-                <p className="text-xs font-bold text-gray-300">{tool.name}</p>
-                <p className="text-[10px] text-gray-600 mt-1 line-clamp-2">{tool.prompt}</p>
+              <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === tool.name ? 'border-blue-500/20' : ''}`}>
+                <p className="text-sm font-bold text-gray-300">{tool.name}</p>
+                <p className="text-xs text-gray-600 mt-1 line-clamp-2">{tool.prompt}</p>
               </button>
             ))}
           </div>
           {(generating || output) && (
-            <div className="panel rounded-xl p-5">
-              <div className="flex items-center gap-2 mb-3">
+            <div className="panel rounded-2xl p-4 sm:p-7">
+              <div className="flex items-center gap-3 mb-4">
                 <div className={`w-2 h-2 rounded-full ${generating ? 'animate-pulse' : 'bg-emerald-400'}`} style={{ background: generating ? MODULE_COLOR : undefined }} />
-                <span className="hud-label" style={{ color: generating ? '#60a5fa' : '#4ade80' }}>{generating ? 'GENERATING...' : 'READY'}</span>
+                <span className="hud-label text-[11px]" style={{ color: generating ? '#60a5fa' : '#4ade80' }}>{generating ? 'GENERATING...' : 'READY'}</span>
               </div>
-              <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
+              <pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
             </div>
           )}
         </div>

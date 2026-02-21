@@ -4,6 +4,7 @@ const { db, logActivity } = require('../../../db/database');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
 const pm = require('../../../services/platformManager');
+const { getBrandContext, buildBrandSystemPrompt } = require('../../../services/brandContext');
 
 // POST /generate - SSE: generate social media content
 router.post('/generate', async (req, res) => {
@@ -140,6 +141,10 @@ Separate each post with "---".
 
 Make each post feel authentic and native to the platform, not like AI-generated content.`;
     }
+
+    // Inject brand context into prompt
+    const brandBlock = buildBrandSystemPrompt(getBrandContext());
+    if (brandBlock) prompt += brandBlock;
 
     const { text } = await generateTextWithClaude(prompt, {
       onChunk: (chunk) => sse.sendChunk(chunk),

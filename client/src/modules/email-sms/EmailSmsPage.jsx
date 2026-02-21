@@ -115,25 +115,25 @@ export default function EmailSmsPage() {
   /* ---- LANDING SCREEN ---- */
   if (!activeType) {
     return (
-      <div className="p-6 lg:p-8 max-w-6xl mx-auto">
-        <div className="mb-8 animate-fade-in">
-          <p className="hud-label mb-2" style={{ color: MODULE_COLOR }}>EMAIL & SMS ENGINE</p>
-          <h1 className={`text-2xl font-bold mb-1 ${dark ? 'text-white' : 'text-gray-900'}`}>What do you want to create?</h1>
-          <p className={`text-sm ${dark ? 'text-gray-500' : 'text-gray-500'}`}>Select a message type to start generating with AI</p>
+      <div className="p-4 sm:p-6 lg:p-12">
+        <div className="mb-6 sm:mb-8 animate-fade-in">
+          <p className="hud-label text-[11px] mb-2" style={{ color: MODULE_COLOR }}>EMAIL & SMS ENGINE</p>
+          <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 ${dark ? 'text-white' : 'text-gray-900'}`}>What do you want to create?</h1>
+          <p className={`text-base ${dark ? 'text-gray-500' : 'text-gray-500'}`}>Select a message type to start generating with AI</p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 stagger">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 stagger">
           {EMAIL_TYPES.map(type => (
             <button key={type.id} onClick={() => setActiveType(type.id)}
-              className={`${dark ? 'panel-interactive' : 'bg-white border border-gray-200 shadow-sm hover:shadow-md hover:-translate-y-0.5'} rounded-xl p-5 text-center group transition-all`}>
-              <div className="w-10 h-10 rounded-lg mx-auto mb-3 flex items-center justify-center transition-all duration-300 group-hover:scale-110"
+              className={`${dark ? 'panel-interactive' : 'bg-white border border-gray-200 shadow-sm hover:shadow-md hover:-translate-y-0.5'} rounded-2xl p-4 sm:p-7 text-center group transition-all`}>
+              <div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center transition-all duration-300 group-hover:scale-110"
                 style={{ background: `${MODULE_COLOR}15`, border: `1px solid ${MODULE_COLOR}20` }}>
-                <svg className="w-5 h-5" style={{ color: MODULE_COLOR }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <svg className="w-6 h-6" style={{ color: MODULE_COLOR }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d={type.icon} />
                 </svg>
               </div>
-              <p className={`text-xs font-bold transition-colors ${dark ? 'text-gray-300 group-hover:text-white' : 'text-gray-700 group-hover:text-gray-900'}`}>{type.name}</p>
-              <p className={`text-[10px] mt-1 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{type.desc}</p>
+              <p className={`text-sm font-bold transition-colors ${dark ? 'text-gray-300 group-hover:text-white' : 'text-gray-700 group-hover:text-gray-900'}`}>{type.name}</p>
+              <p className={`text-xs mt-1 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{type.desc}</p>
             </button>
           ))}
         </div>
@@ -141,19 +141,19 @@ export default function EmailSmsPage() {
         {/* Popular templates */}
         <div className="mt-10">
           <div className="flex items-center gap-3 mb-4">
-            <p className="hud-label">POPULAR TEMPLATES</p>
+            <p className="hud-label text-[11px]">POPULAR TEMPLATES</p>
             <div className="flex-1 hud-line" />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 stagger">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 stagger">
             {Object.entries(TEMPLATES).flatMap(([type, tmpls]) =>
               tmpls.slice(0, 1).map(t => {
                 const ct = EMAIL_TYPES.find(c => c.id === type);
                 return (
                   <button key={`${type}-${t.name}`} onClick={() => { setActiveType(type); setPrompt(t.prompt); }}
-                    className={`${dark ? 'panel-interactive' : 'bg-white border border-gray-200 shadow-sm hover:shadow-md'} rounded-lg p-4 text-left group transition-all`}>
-                    <p className="hud-label mb-1.5" style={{ color: MODULE_COLOR }}>{ct?.name}</p>
-                    <p className={`text-xs font-semibold transition-colors ${dark ? 'text-gray-300 group-hover:text-white' : 'text-gray-700 group-hover:text-gray-900'}`}>{t.name}</p>
-                    <p className={`text-[10px] mt-1 line-clamp-2 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{t.prompt}</p>
+                    className={`${dark ? 'panel-interactive' : 'bg-white border border-gray-200 shadow-sm hover:shadow-md'} rounded-lg p-4 sm:p-6 text-left group transition-all`}>
+                    <p className="hud-label text-[11px] mb-1.5" style={{ color: MODULE_COLOR }}>{ct?.name}</p>
+                    <p className={`text-sm font-semibold transition-colors ${dark ? 'text-gray-300 group-hover:text-white' : 'text-gray-700 group-hover:text-gray-900'}`}>{t.name}</p>
+                    <p className={`text-xs mt-1 line-clamp-2 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{t.prompt}</p>
                   </button>
                 );
               })
@@ -164,13 +164,13 @@ export default function EmailSmsPage() {
         {/* Quick stats */}
         <div className="mt-8">
           <div className="flex items-center gap-3 mb-4">
-            <p className="hud-label">CAPABILITIES</p>
+            <p className="hud-label text-[11px]">CAPABILITIES</p>
             <div className="flex-1 hud-line" />
           </div>
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-2 stagger">
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-3 stagger">
             {['Subject Lines', 'Body Copy', 'CTAs', 'Drip Flows', 'SMS Copy', 'A/B Variants'].map((cap, i) => (
-              <div key={i} className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-lg p-3 text-center`}>
-                <p className={`text-[10px] font-semibold ${dark ? 'text-gray-400' : 'text-gray-600'}`}>{cap}</p>
+              <div key={i} className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-lg p-4 sm:p-5 text-center`}>
+                <p className={`text-xs font-semibold ${dark ? 'text-gray-400' : 'text-gray-600'}`}>{cap}</p>
               </div>
             ))}
           </div>
@@ -185,31 +185,31 @@ export default function EmailSmsPage() {
   const wordCount = (result || streamText).split(/\s+/).filter(Boolean).length;
 
   return (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto animate-fade-in">
+    <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-6 sm:mb-8">
         <button onClick={() => { setActiveType(null); setResult(''); setStreamText(''); setPrompt(''); setSubjectLine(''); }}
           className={`p-2 rounded-md border transition-all ${dark ? 'border-indigo-500/10 text-gray-500 hover:text-white hover:border-indigo-500/25' : 'border-gray-300 text-gray-400 hover:text-gray-700 hover:border-gray-400'}`}>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
           </svg>
         </button>
         <div>
-          <p className="hud-label" style={{ color: MODULE_COLOR }}>{currentType?.name?.toUpperCase()} GENERATOR</p>
+          <p className="hud-label text-[11px]" style={{ color: MODULE_COLOR }}>{currentType?.name?.toUpperCase()} GENERATOR</p>
           <h2 className={`text-lg font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>Create {currentType?.name}</h2>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Left: Controls */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Templates */}
-          <div className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-xl p-4`}>
-            <p className="hud-label mb-3">TEMPLATES</p>
-            <div className="grid grid-cols-2 gap-2">
+          <div className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-2xl p-4 sm:p-6`}>
+            <p className="hud-label text-[11px] mb-3">TEMPLATES</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {templates.map(t => (
                 <button key={t.name} onClick={() => selectTemplate(t)}
-                  className={`text-left px-3 py-2.5 rounded-lg border text-xs transition-all ${
+                  className={`text-left px-4 py-3 rounded-lg border text-xs transition-all ${
                     prompt === t.prompt
                       ? `border-amber-500/30 bg-amber-500/10 ${dark ? 'text-amber-300' : 'text-amber-700'}`
                       : `${dark ? 'border-indigo-500/8 bg-white/[0.01] text-gray-400 hover:text-gray-200 hover:border-indigo-500/15' : 'border-gray-200 bg-gray-50 text-gray-600 hover:text-gray-800 hover:border-gray-300'}`
@@ -223,20 +223,20 @@ export default function EmailSmsPage() {
 
           {/* Subject line (for email types) */}
           {activeType !== 'sms' && (
-            <div className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-xl p-4`}>
-              <p className="hud-label mb-3">SUBJECT LINE (OPTIONAL)</p>
+            <div className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-2xl p-4 sm:p-6`}>
+              <p className="hud-label text-[11px] mb-3">SUBJECT LINE (OPTIONAL)</p>
               <input type="text" value={subjectLine} onChange={(e) => setSubjectLine(e.target.value)}
                 placeholder="Leave blank for AI to generate, or provide your own..."
-                className="w-full input-field rounded-lg px-4 py-3 text-sm" />
+                className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base" />
             </div>
           )}
 
           {/* Prompt */}
-          <div className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-xl p-4`}>
-            <p className="hud-label mb-3">YOUR BRIEF</p>
+          <div className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-2xl p-4 sm:p-6`}>
+            <p className="hud-label text-[11px] mb-3">YOUR BRIEF</p>
             <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={5}
               placeholder="Describe your product/service, target audience, key message, and any specific requirements..."
-              className="w-full input-field rounded-lg px-4 py-3 text-sm resize-none" />
+              className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base resize-none" />
           </div>
 
           {/* Generate button */}
@@ -253,10 +253,10 @@ export default function EmailSmsPage() {
         </div>
 
         {/* Right: Settings sidebar */}
-        <div className="space-y-4">
+        <div className="space-y-4 sm:space-y-6">
           {/* Tone */}
-          <div className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-xl p-4`}>
-            <p className="hud-label mb-3">TONE</p>
+          <div className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-2xl p-4 sm:p-6`}>
+            <p className="hud-label text-[11px] mb-3">TONE</p>
             <div className="grid grid-cols-2 gap-1.5">
               {TONES.map(t => (
                 <button key={t} onClick={() => setTone(t)}
@@ -269,8 +269,8 @@ export default function EmailSmsPage() {
           </div>
 
           {/* Length */}
-          <div className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-xl p-4`}>
-            <p className="hud-label mb-3">LENGTH</p>
+          <div className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-2xl p-4 sm:p-6`}>
+            <p className="hud-label text-[11px] mb-3">LENGTH</p>
             <div className="grid grid-cols-3 gap-1.5">
               {LENGTHS.map(l => (
                 <button key={l} onClick={() => setLength(l)}
@@ -283,10 +283,10 @@ export default function EmailSmsPage() {
           </div>
 
           {/* CTA toggle */}
-          <div className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-xl p-4`}>
-            <p className="hud-label mb-3">OPTIONS</p>
+          <div className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-2xl p-4 sm:p-6`}>
+            <p className="hud-label text-[11px] mb-3">OPTIONS</p>
             <button onClick={() => setIncludeCta(!includeCta)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg border text-xs transition-all ${
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border text-xs transition-all ${
                 includeCta
                   ? `border-amber-500/30 bg-amber-500/10 ${dark ? 'text-amber-300' : 'text-amber-700'}`
                   : `${dark ? 'border-indigo-500/8 bg-white/[0.01] text-gray-400' : 'border-gray-200 bg-gray-50 text-gray-500'}`
@@ -301,9 +301,9 @@ export default function EmailSmsPage() {
 
           {/* Stats */}
           {(streamText || result) && (
-            <div className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-xl p-4 animate-fade-up`}>
-              <p className="hud-label mb-3">OUTPUT STATS</p>
-              <div className="space-y-2">
+            <div className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-2xl p-4 sm:p-6 animate-fade-up`}>
+              <p className="hud-label text-[11px] mb-3">OUTPUT STATS</p>
+              <div className="space-y-3">
                 <div className="flex justify-between text-xs">
                   <span className={dark ? 'text-gray-500' : 'text-gray-400'}>Words</span>
                   <span className={`font-mono font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{wordCount}</span>
@@ -328,12 +328,12 @@ export default function EmailSmsPage() {
 
       {/* Streaming output */}
       {(generating || streamText) && !result && (
-        <div className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-xl p-5 mt-4 animate-fade-up`}>
+        <div className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-2xl p-4 sm:p-7 mt-6 animate-fade-up`}>
           <div className="flex items-center gap-2 mb-3">
             <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: MODULE_COLOR }} />
-            <span className="hud-label" style={{ color: MODULE_COLOR }}>GENERATING</span>
+            <span className="hud-label text-[11px]" style={{ color: MODULE_COLOR }}>GENERATING</span>
           </div>
-          <div className={`${dark ? 'bg-black/50' : 'bg-gray-50'} rounded-lg p-5 max-h-[50vh] overflow-y-auto text-sm whitespace-pre-wrap leading-relaxed ${dark ? 'text-gray-300' : 'text-gray-700'}`}>
+          <div className={`${dark ? 'bg-black/50' : 'bg-gray-50'} rounded-lg p-4 sm:p-7 max-h-[50vh] overflow-y-auto text-base whitespace-pre-wrap leading-relaxed ${dark ? 'text-gray-300' : 'text-gray-700'}`}>
             {streamText}<span className="inline-block w-[2px] h-4 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />
           </div>
         </div>
@@ -341,11 +341,11 @@ export default function EmailSmsPage() {
 
       {/* Final result */}
       {result && (
-        <div className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-xl p-5 mt-4 animate-fade-up`}>
+        <div className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-2xl p-4 sm:p-7 mt-6 animate-fade-up`}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span className="hud-label" style={{ color: '#4ade80' }}>COMPLETE</span>
+              <span className="hud-label text-[11px]" style={{ color: '#4ade80' }}>COMPLETE</span>
             </div>
             <div className="flex gap-2">
               <button onClick={copyToClipboard} className="chip text-[10px]" style={{ color: copied ? '#4ade80' : undefined }}>
@@ -355,7 +355,7 @@ export default function EmailSmsPage() {
               <button onClick={generate} className="chip text-[10px]">Regenerate</button>
             </div>
           </div>
-          <div className={`${dark ? 'bg-black/50' : 'bg-gray-50'} rounded-lg p-5 max-h-[60vh] overflow-y-auto text-sm whitespace-pre-wrap leading-relaxed ${dark ? 'text-gray-200' : 'text-gray-800'}`}>
+          <div className={`${dark ? 'bg-black/50' : 'bg-gray-50'} rounded-lg p-4 sm:p-7 max-h-[60vh] overflow-y-auto text-base whitespace-pre-wrap leading-relaxed ${dark ? 'text-gray-200' : 'text-gray-800'}`}>
             {result}
           </div>
         </div>

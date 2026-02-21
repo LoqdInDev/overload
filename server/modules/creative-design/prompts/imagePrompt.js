@@ -1,3 +1,5 @@
+const { getBrandContext, buildBrandSystemPrompt } = require('../../../services/brandContext');
+
 function buildImagePromptOptimizer(type, userPrompt) {
   const typeContext = {
     'ad-creative': 'high-converting social media advertisement image',
@@ -8,9 +10,12 @@ function buildImagePromptOptimizer(type, userPrompt) {
 
   const context = typeContext[type] || 'marketing visual';
 
+  const brandBlock = buildBrandSystemPrompt(getBrandContext());
+
   return `You are an expert AI image prompt engineer. Convert the user's description into an optimized image generation prompt.
 
 TYPE: ${context}
+${brandBlock}
 
 USER DESCRIPTION:
 ${userPrompt}

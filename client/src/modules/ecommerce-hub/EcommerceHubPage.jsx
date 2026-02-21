@@ -35,31 +35,31 @@ export default function EcommerceHubPage() {
   const platformColor = (p) => p === 'Shopify' ? '#95bf47' : p === 'WooCommerce' ? '#9b5c8f' : p === 'Amazon' ? '#ff9900' : '#f2581e';
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto">
-      <div className="mb-6 animate-fade-in">
-        <p className="hud-label mb-2" style={{ color: MODULE_COLOR }}>ECOMMERCE HUB</p>
-        <h1 className="text-2xl font-bold text-white mb-1">E-Commerce Command Center</h1>
-        <p className="text-sm text-gray-500">Manage all your stores, orders, and products in one place</p>
+    <div className="p-4 sm:p-6 lg:p-12">
+      <div className="mb-6 sm:mb-8 animate-fade-in">
+        <p className="hud-label text-[11px] mb-2" style={{ color: MODULE_COLOR }}>ECOMMERCE HUB</p>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">E-Commerce Command Center</h1>
+        <p className="text-base text-gray-500">Manage all your stores, orders, and products in one place</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 stagger">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
         {[
           { label: 'CONNECTED STORES', value: '3', sub: '1 disconnected' },
           { label: 'TOTAL ORDERS', value: '2,650', sub: '+142 this week' },
           { label: 'REVENUE', value: '$220.6K', sub: '+18.3% this month' },
           { label: 'TOP PRODUCT', value: 'Water Bottle', sub: '4,200 units sold' },
         ].map((s, i) => (
-          <div key={i} className="panel rounded-xl p-4">
-            <p className="hud-label mb-1">{s.label}</p>
-            <p className="text-2xl font-bold text-white font-mono">{s.value}</p>
-            <p className="text-[10px] text-gray-500 mt-1">{s.sub}</p>
+          <div key={i} className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-1">{s.label}</p>
+            <p className="text-xl sm:text-2xl font-bold text-white font-mono">{s.value}</p>
+            <p className="text-xs text-gray-500 mt-1">{s.sub}</p>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6">
+      <div className="flex gap-1 mb-6 sm:mb-8">
         {['overview', 'stores', 'orders', 'products'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
             {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -69,18 +69,18 @@ export default function EcommerceHubPage() {
 
       {/* Overview */}
       {tab === 'overview' && (
-        <div className="animate-fade-in space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="panel rounded-xl p-4">
-              <p className="hud-label mb-3" style={{ color: MODULE_COLOR }}>REVENUE BY STORE</p>
-              <div className="space-y-3">
+        <div className="animate-fade-in space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <div className="panel rounded-2xl p-4 sm:p-6">
+              <p className="hud-label text-[11px] mb-4" style={{ color: MODULE_COLOR }}>REVENUE BY STORE</p>
+              <div className="space-y-4">
                 {MOCK_STORES.filter(s => s.status === 'connected').map(store => {
                   const rev = parseFloat(store.revenue.replace(/[$,]/g, ''));
                   const total = 220600;
                   const pct = ((rev / total) * 100).toFixed(0);
                   return (
                     <div key={store.id}>
-                      <div className="flex justify-between text-[10px] mb-1">
+                      <div className="flex justify-between text-xs mb-1">
                         <span className="font-semibold" style={{ color: platformColor(store.platform) }}>{store.platform}</span>
                         <span className="text-gray-500 font-mono">{store.revenue} ({pct}%)</span>
                       </div>
@@ -92,17 +92,17 @@ export default function EcommerceHubPage() {
                 })}
               </div>
             </div>
-            <div className="panel rounded-xl p-4">
-              <p className="hud-label mb-3" style={{ color: MODULE_COLOR }}>RECENT ORDERS</p>
-              <div className="space-y-2">
+            <div className="panel rounded-2xl p-4 sm:p-6">
+              <p className="hud-label text-[11px] mb-4" style={{ color: MODULE_COLOR }}>RECENT ORDERS</p>
+              <div className="space-y-3">
                 {MOCK_ORDERS.slice(0, 5).map(o => (
-                  <div key={o.id} className="flex items-center justify-between py-1 border-b border-indigo-500/[0.04] last:border-0">
+                  <div key={o.id} className="flex items-center justify-between py-1.5 border-b border-indigo-500/[0.04] last:border-0">
                     <div>
-                      <p className="text-xs text-gray-300">{o.id}</p>
-                      <p className="text-[10px] text-gray-600">{o.customer}</p>
+                      <p className="text-sm text-gray-300">{o.id}</p>
+                      <p className="text-xs text-gray-600">{o.customer}</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono font-bold text-gray-200">${o.total.toFixed(2)}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-mono font-bold text-gray-200">${o.total.toFixed(2)}</span>
                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${orderStatusColor(o.status)}15`, color: orderStatusColor(o.status) }}>
                         {o.status}
                       </span>
@@ -112,14 +112,14 @@ export default function EcommerceHubPage() {
               </div>
             </div>
           </div>
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3" style={{ color: MODULE_COLOR }}>LOW STOCK ALERTS</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-4" style={{ color: MODULE_COLOR }}>LOW STOCK ALERTS</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {MOCK_PRODUCTS.filter(p => p.stock < 50).map(p => (
-                <div key={p.id} className="bg-red-500/[0.05] rounded-lg p-3 border border-red-500/10">
-                  <p className="text-xs font-semibold text-gray-300">{p.name}</p>
-                  <p className="text-[10px] text-gray-500">{p.sku}</p>
-                  <p className="text-sm font-bold font-mono text-red-400 mt-1">{p.stock} left</p>
+                <div key={p.id} className="bg-red-500/[0.05] rounded-lg p-5 border border-red-500/10">
+                  <p className="text-sm font-semibold text-gray-300">{p.name}</p>
+                  <p className="text-xs text-gray-500">{p.sku}</p>
+                  <p className="text-base font-bold font-mono text-red-400 mt-1">{p.stock} left</p>
                 </div>
               ))}
             </div>
@@ -129,33 +129,33 @@ export default function EcommerceHubPage() {
 
       {/* Stores */}
       {tab === 'stores' && (
-        <div className="animate-fade-in grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="animate-fade-in grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
           {MOCK_STORES.map(store => (
-            <div key={store.id} className="panel rounded-xl p-4 hover:border-violet-500/20 transition-all cursor-pointer">
-              <div className="flex items-start justify-between mb-3">
+            <div key={store.id} className="panel rounded-2xl p-4 sm:p-6 hover:border-violet-500/20 transition-all cursor-pointer">
+              <div className="flex items-start justify-between mb-4">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full" style={{ background: store.status === 'connected' ? '#22c55e' : '#ef4444' }} />
-                    <p className="text-sm font-bold text-gray-200">{store.name}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: store.status === 'connected' ? '#22c55e' : '#ef4444' }} />
+                    <p className="text-base font-bold text-gray-200">{store.name}</p>
                   </div>
-                  <p className="text-[10px] text-gray-500 mt-0.5 ml-4">{store.platform} &middot; Last sync: {store.sync}</p>
+                  <p className="text-xs text-gray-500 mt-0.5 ml-5.5">{store.platform} &middot; Last sync: {store.sync}</p>
                 </div>
                 <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${platformColor(store.platform)}15`, color: platformColor(store.platform), border: `1px solid ${platformColor(store.platform)}25` }}>
                   {store.platform}
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="grid grid-cols-3 gap-3 sm:gap-5 text-center">
                 <div>
-                  <p className="text-lg font-bold font-mono text-white">{store.products}</p>
-                  <p className="text-[10px] text-gray-500">Products</p>
+                  <p className="text-xl font-bold font-mono text-white">{store.products}</p>
+                  <p className="text-xs text-gray-500">Products</p>
                 </div>
                 <div>
-                  <p className="text-lg font-bold font-mono text-white">{store.orders.toLocaleString()}</p>
-                  <p className="text-[10px] text-gray-500">Orders</p>
+                  <p className="text-xl font-bold font-mono text-white">{store.orders.toLocaleString()}</p>
+                  <p className="text-xs text-gray-500">Orders</p>
                 </div>
                 <div>
-                  <p className="text-lg font-bold font-mono" style={{ color: MODULE_COLOR }}>{store.revenue}</p>
-                  <p className="text-[10px] text-gray-500">Revenue</p>
+                  <p className="text-xl font-bold font-mono" style={{ color: MODULE_COLOR }}>{store.revenue}</p>
+                  <p className="text-xs text-gray-500">Revenue</p>
                 </div>
               </div>
             </div>
@@ -166,16 +166,16 @@ export default function EcommerceHubPage() {
       {/* Orders */}
       {tab === 'orders' && (
         <div className="animate-fade-in">
-          <div className="panel rounded-xl overflow-hidden">
+          <div className="panel rounded-2xl overflow-hidden">
             <div className="divide-y divide-indigo-500/[0.04]">
               {MOCK_ORDERS.map(o => (
-                <div key={o.id} className="flex items-center gap-4 px-4 py-3 hover:bg-white/[0.01] transition-colors">
+                <div key={o.id} className="flex items-center gap-6 px-6 py-4 hover:bg-white/[0.01] transition-colors">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs font-semibold text-gray-300">{o.id}</p>
+                    <div className="flex items-center gap-3">
+                      <p className="text-sm font-semibold text-gray-300">{o.id}</p>
                       <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/[0.03] text-gray-500 border border-white/[0.04]">{o.store}</span>
                     </div>
-                    <p className="text-[10px] text-gray-500 mt-0.5">{o.customer} &middot; {o.items} item{o.items > 1 ? 's' : ''} &middot; {o.date}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{o.customer} &middot; {o.items} item{o.items > 1 ? 's' : ''} &middot; {o.date}</p>
                   </div>
                   <span className="text-sm font-mono font-bold text-white">${o.total.toFixed(2)}</span>
                   <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${orderStatusColor(o.status)}15`, color: orderStatusColor(o.status), border: `1px solid ${orderStatusColor(o.status)}25` }}>
@@ -191,22 +191,22 @@ export default function EcommerceHubPage() {
       {/* Products */}
       {tab === 'products' && (
         <div className="animate-fade-in">
-          <div className="panel rounded-xl overflow-hidden">
+          <div className="panel rounded-2xl overflow-hidden">
             <div className="divide-y divide-indigo-500/[0.04]">
               {MOCK_PRODUCTS.map(p => (
-                <div key={p.id} className="flex items-center gap-4 px-4 py-3 hover:bg-white/[0.01] transition-colors">
+                <div key={p.id} className="flex items-center gap-6 px-6 py-4 hover:bg-white/[0.01] transition-colors">
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-gray-300">{p.name}</p>
-                    <p className="text-[10px] text-gray-500">{p.sku} &middot; {p.store}</p>
+                    <p className="text-sm font-semibold text-gray-300">{p.name}</p>
+                    <p className="text-xs text-gray-500">{p.sku} &middot; {p.store}</p>
                   </div>
-                  <span className="text-xs font-mono font-bold text-white">${p.price.toFixed(2)}</span>
+                  <span className="text-sm font-mono font-bold text-white">${p.price.toFixed(2)}</span>
                   <div className="text-right">
-                    <p className="text-xs font-mono" style={{ color: p.stock < 50 ? '#ef4444' : '#22c55e' }}>{p.stock}</p>
-                    <p className="text-[9px] text-gray-600">in stock</p>
+                    <p className="text-sm font-mono" style={{ color: p.stock < 50 ? '#ef4444' : '#22c55e' }}>{p.stock}</p>
+                    <p className="text-[10px] text-gray-600">in stock</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs font-mono" style={{ color: MODULE_COLOR }}>{p.sold.toLocaleString()}</p>
-                    <p className="text-[9px] text-gray-600">sold</p>
+                    <p className="text-sm font-mono" style={{ color: MODULE_COLOR }}>{p.sold.toLocaleString()}</p>
+                    <p className="text-[10px] text-gray-600">sold</p>
                   </div>
                 </div>
               ))}

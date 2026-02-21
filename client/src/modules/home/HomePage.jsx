@@ -185,7 +185,7 @@ export default function HomePage() {
     <div className="p-5 md:p-7 lg:p-9 max-w-[1440px] mx-auto space-y-4" style={{ fontFamily: dmSans }}>
 
       {/* ═══ STATUS RIBBON ═══ */}
-      <div className="cc-panel flex items-center gap-3 px-4 py-2.5 rounded-2xl" style={{
+      <div className="cc-panel flex items-center flex-wrap gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 rounded-2xl" style={{
         background: dark ? 'rgba(255,255,255,0.02)' : 'rgba(196,93,62,0.03)',
         border: `1px solid ${brd}`,
       }}>
@@ -206,7 +206,7 @@ export default function HomePage() {
           ))}
         </div>
         <div className="flex-1" />
-        <span className="text-[10px] font-medium tabular-nums" style={{ color: t3 }}>
+        <span className="hidden sm:inline text-[10px] font-medium tabular-nums" style={{ color: t3 }}>
           {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
         </span>
       </div>

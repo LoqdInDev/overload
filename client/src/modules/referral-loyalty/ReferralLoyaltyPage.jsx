@@ -44,31 +44,31 @@ export default function ReferralLoyaltyPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto">
-      <div className="mb-6 animate-fade-in">
-        <p className="hud-label mb-2" style={{ color: MODULE_COLOR }}>REFERRAL & LOYALTY</p>
-        <h1 className="text-2xl font-bold text-white mb-1">Loyalty & Referral Programs</h1>
-        <p className="text-sm text-gray-500">Build and manage customer loyalty programs and referral campaigns</p>
+    <div className="p-4 sm:p-6 lg:p-12">
+      <div className="mb-6 sm:mb-8 animate-fade-in">
+        <p className="hud-label text-[11px] mb-2" style={{ color: MODULE_COLOR }}>REFERRAL & LOYALTY</p>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Loyalty & Referral Programs</h1>
+        <p className="text-base text-gray-500">Build and manage customer loyalty programs and referral campaigns</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 stagger">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
         {[
           { label: 'ACTIVE PROGRAMS', value: '3', sub: '1 paused' },
           { label: 'TOTAL MEMBERS', value: '6,990', sub: '+340 this month' },
           { label: 'REFERRALS THIS MONTH', value: '127', sub: '28% conversion rate' },
           { label: 'POINTS ISSUED', value: '1.2M', sub: '34% redeemed' },
         ].map((s, i) => (
-          <div key={i} className="panel rounded-xl p-4">
-            <p className="hud-label mb-1">{s.label}</p>
-            <p className="text-2xl font-bold text-white font-mono">{s.value}</p>
-            <p className="text-[10px] text-gray-500 mt-1">{s.sub}</p>
+          <div key={i} className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-1">{s.label}</p>
+            <p className="text-xl sm:text-2xl font-bold text-white font-mono">{s.value}</p>
+            <p className="text-xs text-gray-500 mt-1">{s.sub}</p>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6">
+      <div className="flex gap-1 mb-6 sm:mb-8">
         {['overview', 'programs', 'members', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
             {t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1).replace('-', ' ')}
@@ -78,11 +78,11 @@ export default function ReferralLoyaltyPage() {
 
       {/* Overview */}
       {tab === 'overview' && (
-        <div className="animate-fade-in space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="panel rounded-xl p-4">
-              <p className="hud-label mb-3" style={{ color: MODULE_COLOR }}>TIER DISTRIBUTION</p>
-              <div className="space-y-3">
+        <div className="animate-fade-in space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <div className="panel rounded-2xl p-4 sm:p-6">
+              <p className="hud-label text-[11px] mb-4" style={{ color: MODULE_COLOR }}>TIER DISTRIBUTION</p>
+              <div className="space-y-4">
                 {[
                   { tier: 'Platinum', count: 420, pct: 6, color: '#a78bfa' },
                   { tier: 'Gold', count: 1380, pct: 20, color: '#f59e0b' },
@@ -90,7 +90,7 @@ export default function ReferralLoyaltyPage() {
                   { tier: 'Bronze', count: 2550, pct: 36, color: '#d97706' },
                 ].map((t, i) => (
                   <div key={i}>
-                    <div className="flex justify-between text-[10px] mb-1">
+                    <div className="flex justify-between text-xs mb-1">
                       <span className="font-semibold" style={{ color: t.color }}>{t.tier}</span>
                       <span className="text-gray-500 font-mono">{t.count.toLocaleString()} ({t.pct}%)</span>
                     </div>
@@ -101,9 +101,9 @@ export default function ReferralLoyaltyPage() {
                 ))}
               </div>
             </div>
-            <div className="panel rounded-xl p-4">
-              <p className="hud-label mb-3" style={{ color: MODULE_COLOR }}>REFERRAL PERFORMANCE</p>
-              <div className="space-y-2">
+            <div className="panel rounded-2xl p-4 sm:p-6">
+              <p className="hud-label text-[11px] mb-4" style={{ color: MODULE_COLOR }}>REFERRAL PERFORMANCE</p>
+              <div className="space-y-3">
                 {[
                   { metric: 'Invites Sent', value: '1,842' },
                   { metric: 'Clicks', value: '634' },
@@ -111,7 +111,7 @@ export default function ReferralLoyaltyPage() {
                   { metric: 'First Purchase', value: '127' },
                   { metric: 'Referral Revenue', value: '$18,420' },
                 ].map((m, i) => (
-                  <div key={i} className="flex justify-between text-xs py-1 border-b border-indigo-500/[0.04] last:border-0">
+                  <div key={i} className="flex justify-between text-sm py-1.5 border-b border-indigo-500/[0.04] last:border-0">
                     <span className="text-gray-400">{m.metric}</span>
                     <span className="font-mono font-bold text-gray-200">{m.value}</span>
                   </div>
@@ -119,20 +119,20 @@ export default function ReferralLoyaltyPage() {
               </div>
             </div>
           </div>
-          <div className="panel rounded-xl p-4">
-            <p className="hud-label mb-3" style={{ color: MODULE_COLOR }}>TOP REWARDS REDEEMED</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-4" style={{ color: MODULE_COLOR }}>TOP REWARDS REDEEMED</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
                 { reward: '$10 Store Credit', redeemed: 890, points: 1000 },
                 { reward: 'Free Shipping', redeemed: 1240, points: 500 },
                 { reward: '20% Off Coupon', redeemed: 456, points: 2000 },
                 { reward: 'Exclusive Product', redeemed: 78, points: 5000 },
               ].map((r, i) => (
-                <div key={i} className="bg-white/[0.02] rounded-lg p-3 border border-indigo-500/[0.06]">
-                  <p className="text-xs font-semibold text-gray-300">{r.reward}</p>
-                  <p className="text-[10px] text-gray-500 mt-1">{r.points} pts required</p>
-                  <p className="text-sm font-bold font-mono mt-2" style={{ color: MODULE_COLOR }}>{r.redeemed}</p>
-                  <p className="text-[10px] text-gray-600">times redeemed</p>
+                <div key={i} className="bg-white/[0.02] rounded-lg p-5 border border-indigo-500/[0.06]">
+                  <p className="text-sm font-semibold text-gray-300">{r.reward}</p>
+                  <p className="text-xs text-gray-500 mt-1">{r.points} pts required</p>
+                  <p className="text-base font-bold font-mono mt-3" style={{ color: MODULE_COLOR }}>{r.redeemed}</p>
+                  <p className="text-xs text-gray-600">times redeemed</p>
                 </div>
               ))}
             </div>
@@ -142,21 +142,21 @@ export default function ReferralLoyaltyPage() {
 
       {/* Programs */}
       {tab === 'programs' && (
-        <div className="animate-fade-in grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="animate-fade-in grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
           {MOCK_PROGRAMS.map(prog => (
-            <div key={prog.id} className="panel rounded-xl p-4 hover:border-rose-600/20 transition-all cursor-pointer">
-              <div className="flex items-start justify-between mb-3">
+            <div key={prog.id} className="panel rounded-2xl p-4 sm:p-6 hover:border-rose-600/20 transition-all cursor-pointer">
+              <div className="flex items-start justify-between mb-4">
                 <div>
-                  <p className="text-sm font-bold text-gray-200">{prog.name}</p>
-                  <p className="text-[10px] text-gray-500 mt-0.5">{prog.type} Program</p>
+                  <p className="text-base font-bold text-gray-200">{prog.name}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{prog.type} Program</p>
                 </div>
                 <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: prog.status === 'active' ? 'rgba(34,197,94,0.15)' : 'rgba(107,114,128,0.15)', color: prog.status === 'active' ? '#22c55e' : '#6b7280', border: `1px solid ${prog.status === 'active' ? 'rgba(34,197,94,0.25)' : 'rgba(107,114,128,0.25)'}` }}>
                   {prog.status}
                 </span>
               </div>
               <p className="text-xl font-bold font-mono text-white">{prog.members.toLocaleString()}</p>
-              <p className="text-[10px] text-gray-500 mb-3">members enrolled</p>
-              <div className="grid grid-cols-2 gap-2 text-[10px]">
+              <p className="text-xs text-gray-500 mb-4">members enrolled</p>
+              <div className="grid grid-cols-2 gap-3 text-xs">
                 {prog.type === 'Points' && (
                   <>
                     <div><span className="text-gray-500">Points Issued</span><p className="font-mono font-bold text-gray-300">{prog.pointsIssued}</p></div>
@@ -190,27 +190,27 @@ export default function ReferralLoyaltyPage() {
       {/* Members */}
       {tab === 'members' && (
         <div className="animate-fade-in">
-          <div className="panel rounded-xl overflow-hidden">
+          <div className="panel rounded-2xl overflow-hidden">
             <div className="divide-y divide-indigo-500/[0.04]">
               {MOCK_MEMBERS.map(m => (
-                <div key={m.id} className="flex items-center gap-4 px-4 py-3 hover:bg-white/[0.01] transition-colors">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: `${TIER_COLORS[m.tier]}15`, color: TIER_COLORS[m.tier] }}>
+                <div key={m.id} className="flex items-center gap-6 px-6 py-4 hover:bg-white/[0.01] transition-colors">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{ background: `${TIER_COLORS[m.tier]}15`, color: TIER_COLORS[m.tier] }}>
                     {m.name.split(' ').map(n => n[0]).join('')}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-gray-300 truncate">{m.name}</p>
-                    <p className="text-[10px] text-gray-500">{m.email}</p>
+                    <p className="text-sm font-semibold text-gray-300 truncate">{m.name}</p>
+                    <p className="text-xs text-gray-500">{m.email}</p>
                   </div>
                   <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${TIER_COLORS[m.tier]}15`, color: TIER_COLORS[m.tier], border: `1px solid ${TIER_COLORS[m.tier]}25` }}>
                     {m.tier}
                   </span>
                   <div className="text-right hidden md:block">
-                    <p className="text-xs font-mono font-bold text-gray-300">{m.points.toLocaleString()}</p>
-                    <p className="text-[10px] text-gray-600">points</p>
+                    <p className="text-sm font-mono font-bold text-gray-300">{m.points.toLocaleString()}</p>
+                    <p className="text-xs text-gray-600">points</p>
                   </div>
                   <div className="text-right hidden md:block">
-                    <p className="text-xs font-mono font-bold" style={{ color: MODULE_COLOR }}>{m.referrals}</p>
-                    <p className="text-[10px] text-gray-600">referrals</p>
+                    <p className="text-sm font-mono font-bold" style={{ color: MODULE_COLOR }}>{m.referrals}</p>
+                    <p className="text-xs text-gray-600">referrals</p>
                   </div>
                 </div>
               ))}
@@ -221,22 +221,22 @@ export default function ReferralLoyaltyPage() {
 
       {/* AI Tools */}
       {tab === 'ai-tools' && (
-        <div className="animate-fade-in space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="animate-fade-in space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {AI_TEMPLATES.map(tool => (
-              <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 text-left ${selectedTemplate?.name === tool.name ? 'border-rose-600/30' : ''}`}>
-                <p className="text-xs font-bold text-gray-300">{tool.name}</p>
-                <p className="text-[10px] text-gray-600 mt-1 line-clamp-2">{tool.prompt}</p>
+              <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === tool.name ? 'border-rose-600/30' : ''}`}>
+                <p className="text-sm font-bold text-gray-300">{tool.name}</p>
+                <p className="text-xs text-gray-600 mt-1 line-clamp-2">{tool.prompt}</p>
               </button>
             ))}
           </div>
           {(generating || output) && (
-            <div className="panel rounded-xl p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <div className={`w-2 h-2 rounded-full ${generating ? 'animate-pulse' : ''}`} style={{ background: generating ? MODULE_COLOR : '#4ade80' }} />
-                <span className="hud-label" style={{ color: generating ? MODULE_COLOR : '#4ade80' }}>{generating ? 'GENERATING...' : 'READY'}</span>
+            <div className="panel rounded-2xl p-4 sm:p-7">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`w-2.5 h-2.5 rounded-full ${generating ? 'animate-pulse' : ''}`} style={{ background: generating ? MODULE_COLOR : '#4ade80' }} />
+                <span className="hud-label text-[11px]" style={{ color: generating ? MODULE_COLOR : '#4ade80' }}>{generating ? 'GENERATING...' : 'READY'}</span>
               </div>
-              <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
+              <pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
             </div>
           )}
         </div>

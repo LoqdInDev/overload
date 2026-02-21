@@ -1,3 +1,5 @@
+const { getBrandContext, buildBrandSystemPrompt } = require('../../../services/brandContext');
+
 function buildContentPrompt(type, prompt) {
   const typeInstructions = {
     blog: `You are an expert SEO blog writer. Write a comprehensive, engaging blog post based on the user's request. Include:
@@ -46,8 +48,10 @@ Each should match the platform's voice and best practices.`,
   };
 
   const instruction = typeInstructions[type] || typeInstructions.blog;
+  const brandBlock = buildBrandSystemPrompt(getBrandContext());
 
   return `${instruction}
+${brandBlock}
 
 USER REQUEST:
 ${prompt}

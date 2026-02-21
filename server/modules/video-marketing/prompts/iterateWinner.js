@@ -1,5 +1,10 @@
+const { getBrandContext, buildBrandSystemPrompt } = require('../../../services/brandContext');
+
 function buildIteratePrompt(winners, productProfile) {
+  const brandBlock = buildBrandSystemPrompt(getBrandContext());
+
   return `You are an ad creative iteration specialist. Your job: take what's working and multiply it.
+${brandBlock}
 
 WINNING CONCEPTS (user selected these as best):
 ${JSON.stringify(winners, null, 2)}

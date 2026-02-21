@@ -45,31 +45,31 @@ export default function PrPressPage() {
   const contactStatusColor = (s) => s === 'active' ? '#22c55e' : s === 'pitched' ? '#f59e0b' : '#3b82f6';
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto">
-      <div className="mb-6 animate-fade-in">
-        <p className="hud-label mb-2" style={{ color: MODULE_COLOR }}>PR & PRESS</p>
-        <h1 className="text-2xl font-bold text-white mb-1">Public Relations Hub</h1>
-        <p className="text-sm text-gray-500">Manage press releases, media contacts, and PR campaigns</p>
+    <div className="p-4 sm:p-6 lg:p-12">
+      <div className="mb-6 sm:mb-8 animate-fade-in">
+        <p className="hud-label text-[11px] mb-2" style={{ color: MODULE_COLOR }}>PR & PRESS</p>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Public Relations Hub</h1>
+        <p className="text-base text-gray-500">Manage press releases, media contacts, and PR campaigns</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 stagger">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
         {[
           { label: 'ACTIVE RELEASES', value: '12', sub: '3 published this month' },
           { label: 'MEDIA CONTACTS', value: '284', sub: '+18 new this week' },
           { label: 'PITCHES SENT', value: '47', sub: '68% open rate' },
           { label: 'COVERAGE SCORE', value: '8.4', sub: '+1.2 vs last month' },
         ].map((s, i) => (
-          <div key={i} className="panel rounded-xl p-4">
-            <p className="hud-label mb-1">{s.label}</p>
-            <p className="text-2xl font-bold text-white font-mono">{s.value}</p>
-            <p className="text-[10px] text-gray-500 mt-1">{s.sub}</p>
+          <div key={i} className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-1">{s.label}</p>
+            <p className="text-xl sm:text-2xl font-bold text-white font-mono">{s.value}</p>
+            <p className="text-xs text-gray-500 mt-1">{s.sub}</p>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6">
+      <div className="flex gap-1 mb-6 sm:mb-8">
         {['overview', 'releases', 'contacts', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
             {t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1).replace('-', ' ')}
@@ -79,45 +79,45 @@ export default function PrPressPage() {
 
       {/* Overview */}
       {tab === 'overview' && (
-        <div className="animate-fade-in space-y-4">
-          <div className="panel rounded-xl p-4">
-            <div className="flex items-center gap-3 mb-4">
-              <p className="hud-label" style={{ color: MODULE_COLOR }}>RECENT ACTIVITY</p>
+        <div className="animate-fade-in space-y-4 sm:space-y-6">
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <div className="flex items-center gap-3 sm:gap-5 mb-4 sm:mb-6">
+              <p className="hud-label text-[11px]" style={{ color: MODULE_COLOR }}>RECENT ACTIVITY</p>
               <div className="flex-1 hud-line" />
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {[
                 { text: 'Press release "Q1 Product Launch" published on PR Newswire', time: '2 hours ago' },
                 { text: 'Rachel Kim (The Verge) opened your pitch email', time: '5 hours ago' },
                 { text: 'Marcus Johnson (Bloomberg) replied to outreach', time: '1 day ago' },
                 { text: 'New media contact added: Tom Nakamura, Reuters', time: '2 days ago' },
               ].map((a, i) => (
-                <div key={i} className="flex items-start gap-3">
+                <div key={i} className="flex items-start gap-4">
                   <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: MODULE_COLOR }} />
                   <div className="flex-1">
-                    <p className="text-xs text-gray-300">{a.text}</p>
-                    <p className="text-[10px] text-gray-600 mt-0.5">{a.time}</p>
+                    <p className="text-sm text-gray-300">{a.text}</p>
+                    <p className="text-xs text-gray-600 mt-0.5">{a.time}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="panel rounded-xl p-4">
-              <p className="hud-label mb-3" style={{ color: MODULE_COLOR }}>TOP PERFORMING RELEASES</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <div className="panel rounded-2xl p-4 sm:p-6">
+              <p className="hud-label text-[11px] mb-4" style={{ color: MODULE_COLOR }}>TOP PERFORMING RELEASES</p>
               {MOCK_RELEASES.filter(r => r.status === 'published').map(r => (
-                <div key={r.id} className="flex items-center justify-between py-2 border-b border-indigo-500/[0.04] last:border-0">
-                  <p className="text-xs text-gray-300 truncate flex-1">{r.title}</p>
+                <div key={r.id} className="flex items-center justify-between py-3 border-b border-indigo-500/[0.04] last:border-0">
+                  <p className="text-sm text-gray-300 truncate flex-1">{r.title}</p>
                   <span className="text-xs font-mono font-bold" style={{ color: MODULE_COLOR }}>{r.views.toLocaleString()} views</span>
                 </div>
               ))}
             </div>
-            <div className="panel rounded-xl p-4">
-              <p className="hud-label mb-3" style={{ color: MODULE_COLOR }}>PITCH PIPELINE</p>
-              <div className="space-y-2">
+            <div className="panel rounded-2xl p-4 sm:p-6">
+              <p className="hud-label text-[11px] mb-4" style={{ color: MODULE_COLOR }}>PITCH PIPELINE</p>
+              <div className="space-y-3">
                 {[{ stage: 'Sent', count: 47, pct: 100 }, { stage: 'Opened', count: 32, pct: 68 }, { stage: 'Replied', count: 14, pct: 30 }, { stage: 'Published', count: 8, pct: 17 }].map((p, i) => (
                   <div key={i}>
-                    <div className="flex justify-between text-[10px] mb-1">
+                    <div className="flex justify-between text-xs mb-1">
                       <span className="text-gray-400">{p.stage}</span>
                       <span className="text-gray-500 font-mono">{p.count}</span>
                     </div>
@@ -135,18 +135,18 @@ export default function PrPressPage() {
       {/* Releases */}
       {tab === 'releases' && (
         <div className="animate-fade-in">
-          <div className="panel rounded-xl overflow-hidden">
+          <div className="panel rounded-2xl overflow-hidden">
             <div className="divide-y divide-indigo-500/[0.04]">
               {MOCK_RELEASES.map(r => (
-                <div key={r.id} className="flex items-center gap-4 px-4 py-3 hover:bg-white/[0.01] transition-colors">
+                <div key={r.id} className="flex items-center gap-6 px-6 py-4 hover:bg-white/[0.01] transition-colors">
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-gray-300 truncate">{r.title}</p>
-                    <p className="text-[10px] text-gray-500 mt-0.5">{r.outlet} &middot; {r.date}</p>
+                    <p className="text-sm font-semibold text-gray-300 truncate">{r.title}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{r.outlet} &middot; {r.date}</p>
                   </div>
                   <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${statusColor(r.status)}15`, color: statusColor(r.status), border: `1px solid ${statusColor(r.status)}25` }}>
                     {r.status}
                   </span>
-                  {r.views > 0 && <span className="text-[10px] font-mono text-gray-500">{r.views.toLocaleString()} views</span>}
+                  {r.views > 0 && <span className="text-xs font-mono text-gray-500">{r.views.toLocaleString()} views</span>}
                 </div>
               ))}
             </div>
@@ -157,19 +157,19 @@ export default function PrPressPage() {
       {/* Contacts */}
       {tab === 'contacts' && (
         <div className="animate-fade-in">
-          <div className="panel rounded-xl overflow-hidden">
-            <div className="grid grid-cols-[1fr_120px_120px_100px_60px] gap-2 px-4 py-2 border-b border-indigo-500/[0.06]">
+          <div className="panel rounded-2xl overflow-hidden">
+            <div className="grid grid-cols-[1fr_120px_120px_100px_60px] gap-3 px-6 py-3 border-b border-indigo-500/[0.06]">
               {['Name', 'Outlet', 'Beat', 'Email', 'Status'].map(h => (
                 <p key={h} className="text-[9px] font-bold text-gray-600 uppercase tracking-wider">{h}</p>
               ))}
             </div>
             <div className="divide-y divide-indigo-500/[0.04]">
               {MOCK_CONTACTS.map(c => (
-                <div key={c.id} className="grid grid-cols-[1fr_120px_120px_100px_60px] gap-2 items-center px-4 py-3 hover:bg-white/[0.01] transition-colors">
-                  <p className="text-xs font-semibold text-gray-300 truncate">{c.name}</p>
-                  <p className="text-[10px] text-gray-400 truncate">{c.outlet}</p>
-                  <p className="text-[10px] text-gray-500 truncate">{c.beat}</p>
-                  <p className="text-[10px] text-gray-600 truncate">{c.email}</p>
+                <div key={c.id} className="grid grid-cols-[1fr_120px_120px_100px_60px] gap-3 items-center px-6 py-4 hover:bg-white/[0.01] transition-colors">
+                  <p className="text-sm font-semibold text-gray-300 truncate">{c.name}</p>
+                  <p className="text-xs text-gray-400 truncate">{c.outlet}</p>
+                  <p className="text-xs text-gray-500 truncate">{c.beat}</p>
+                  <p className="text-xs text-gray-600 truncate">{c.email}</p>
                   <span className="text-[9px] font-bold px-2 py-0.5 rounded-full text-center" style={{ background: `${contactStatusColor(c.status)}15`, color: contactStatusColor(c.status), border: `1px solid ${contactStatusColor(c.status)}25` }}>
                     {c.status}
                   </span>
@@ -182,22 +182,22 @@ export default function PrPressPage() {
 
       {/* AI Tools */}
       {tab === 'ai-tools' && (
-        <div className="animate-fade-in space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="animate-fade-in space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {AI_TEMPLATES.map(tool => (
-              <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 text-left ${selectedTemplate?.name === tool.name ? 'border-pink-700/30' : ''}`}>
-                <p className="text-xs font-bold text-gray-300">{tool.name}</p>
-                <p className="text-[10px] text-gray-600 mt-1 line-clamp-2">{tool.prompt}</p>
+              <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === tool.name ? 'border-pink-700/30' : ''}`}>
+                <p className="text-sm font-bold text-gray-300">{tool.name}</p>
+                <p className="text-xs text-gray-600 mt-1 line-clamp-2">{tool.prompt}</p>
               </button>
             ))}
           </div>
           {(generating || output) && (
-            <div className="panel rounded-xl p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <div className={`w-2 h-2 rounded-full ${generating ? 'animate-pulse' : ''}`} style={{ background: generating ? MODULE_COLOR : '#4ade80' }} />
-                <span className="hud-label" style={{ color: generating ? MODULE_COLOR : '#4ade80' }}>{generating ? 'GENERATING...' : 'READY'}</span>
+            <div className="panel rounded-2xl p-4 sm:p-7">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`w-2.5 h-2.5 rounded-full ${generating ? 'animate-pulse' : ''}`} style={{ background: generating ? MODULE_COLOR : '#4ade80' }} />
+                <span className="hud-label text-[11px]" style={{ color: generating ? MODULE_COLOR : '#4ade80' }}>{generating ? 'GENERATING...' : 'READY'}</span>
               </div>
-              <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
+              <pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
             </div>
           )}
         </div>

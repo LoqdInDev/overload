@@ -36,32 +36,32 @@ export default function CompetitorsPage() {
   };
 
   if (!activeTool) return (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto">
-      <div className="mb-8 animate-fade-in"><p className="hud-label mb-2" style={{ color: '#ef4444' }}>COMPETITOR INTEL</p><h1 className="text-2xl font-bold text-white mb-1">Competitor Intelligence</h1><p className="text-sm text-gray-500">AI-powered competitive analysis, ad spying, and market intelligence</p></div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 stagger">
-        {TOOLS.map(t => (<button key={t.id} onClick={() => setActiveTool(t.id)} className="panel-interactive rounded-xl p-5 text-center group"><div className="w-10 h-10 rounded-lg mx-auto mb-3 flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.12)' }}><svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={t.icon} /></svg></div><p className="text-xs font-bold text-gray-300 group-hover:text-white transition-colors">{t.name}</p></button>))}
+    <div className="p-4 sm:p-6 lg:p-12">
+      <div className="mb-6 sm:mb-8 animate-fade-in"><p className="hud-label text-[11px] mb-2" style={{ color: '#ef4444' }}>COMPETITOR INTEL</p><h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Competitor Intelligence</h1><p className="text-base text-gray-500">AI-powered competitive analysis, ad spying, and market intelligence</p></div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 stagger">
+        {TOOLS.map(t => (<button key={t.id} onClick={() => setActiveTool(t.id)} className="panel-interactive rounded-2xl p-4 sm:p-7 text-center group"><div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.12)' }}><svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={t.icon} /></svg></div><p className="text-sm font-bold text-gray-300 group-hover:text-white transition-colors">{t.name}</p></button>))}
       </div>
     </div>
   );
 
   const templates = TEMPLATES[activeTool] || TEMPLATES['swot'];
   return (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto animate-fade-in">
-      <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => { setActiveTool(null); setOutput(''); }} className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white transition-all"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg></button>
-        <div><p className="hud-label" style={{ color: '#ef4444' }}>{TOOLS.find(t => t.id === activeTool)?.name?.toUpperCase()}</p><h2 className="text-lg font-bold text-white">{TOOLS.find(t => t.id === activeTool)?.name}</h2></div>
+    <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
+      <div className="flex items-center gap-3 sm:gap-5 mb-6 sm:mb-8">
+        <button onClick={() => { setActiveTool(null); setOutput(''); }} className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg></button>
+        <div><p className="hud-label text-[11px]" style={{ color: '#ef4444' }}>{TOOLS.find(t => t.id === activeTool)?.name?.toUpperCase()}</p><h2 className="text-lg font-bold text-white">{TOOLS.find(t => t.id === activeTool)?.name}</h2></div>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 space-y-4">
-          <div className="panel rounded-xl p-4"><p className="hud-label mb-3">TEMPLATES</p><div className="grid grid-cols-2 gap-2">{templates.map(t => (<button key={t.name} onClick={() => setPrompt(t.prompt)} className={`text-left px-3 py-2.5 rounded-lg border text-xs transition-all ${prompt === t.prompt ? 'border-red-500/30 bg-red-500/8 text-red-300' : 'border-indigo-500/8 text-gray-400 hover:text-gray-200'}`}><p className="font-semibold">{t.name}</p></button>))}</div></div>
-          <div className="panel rounded-xl p-4"><p className="hud-label mb-3">COMPETITOR INFO</p><div className="space-y-3"><input value={competitorName} onChange={e => setCompetitorName(e.target.value)} placeholder="Competitor name" className="w-full input-field rounded-lg px-4 py-2.5 text-sm" /><input value={competitorUrl} onChange={e => setCompetitorUrl(e.target.value)} placeholder="Competitor website URL (optional)" className="w-full input-field rounded-lg px-4 py-2.5 text-sm" /><input value={myCompany} onChange={e => setMyCompany(e.target.value)} placeholder="Your company (for comparison)" className="w-full input-field rounded-lg px-4 py-2.5 text-sm" /></div></div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+          <div className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-3">TEMPLATES</p><div className="grid grid-cols-2 gap-3">{templates.map(t => (<button key={t.name} onClick={() => setPrompt(t.prompt)} className={`text-left px-3 py-2.5 rounded-lg border text-xs transition-all ${prompt === t.prompt ? 'border-red-500/30 bg-red-500/8 text-red-300' : 'border-indigo-500/8 text-gray-400 hover:text-gray-200'}`}><p className="font-semibold">{t.name}</p></button>))}</div></div>
+          <div className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-3">COMPETITOR INFO</p><div className="space-y-4"><input value={competitorName} onChange={e => setCompetitorName(e.target.value)} placeholder="Competitor name" className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base" /><input value={competitorUrl} onChange={e => setCompetitorUrl(e.target.value)} placeholder="Competitor website URL (optional)" className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base" /><input value={myCompany} onChange={e => setMyCompany(e.target.value)} placeholder="Your company (for comparison)" className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base" /></div></div>
           <button onClick={generate} disabled={generating || !competitorName.trim()} className="btn-accent w-full py-3 rounded-lg" style={{ background: generating ? '#1e1e2e' : '#ef4444' }}>{generating ? <span className="flex items-center gap-2"><span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />ANALYZING...</span> : 'ANALYZE COMPETITOR'}</button>
         </div>
-        <div className="space-y-4">
-          <div className="panel rounded-xl p-4"><p className="hud-label mb-3">ANALYSIS DEPTH</p><div className="space-y-1.5">{DEPTHS.map(d => (<button key={d} onClick={() => setDepth(d)} className={`w-full chip text-[10px] justify-center ${depth === d ? 'active' : ''}`} style={depth === d ? { background: 'rgba(239,68,68,0.15)', borderColor: 'rgba(239,68,68,0.3)', color: '#f87171' } : {}}>{d}</button>))}</div></div>
+        <div className="space-y-4 sm:space-y-6">
+          <div className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-3">ANALYSIS DEPTH</p><div className="space-y-1.5">{DEPTHS.map(d => (<button key={d} onClick={() => setDepth(d)} className={`w-full chip text-xs justify-center ${depth === d ? 'active' : ''}`} style={depth === d ? { background: 'rgba(239,68,68,0.15)', borderColor: 'rgba(239,68,68,0.3)', color: '#f87171' } : {}}>{d}</button>))}</div></div>
         </div>
       </div>
-      {output && <div className="mt-4 animate-fade-up"><div className="flex items-center gap-2 mb-3"><div className={`w-2 h-2 rounded-full ${generating ? 'bg-red-400 animate-pulse' : 'bg-emerald-400'}`} /><span className="hud-label" style={{ color: generating ? '#f87171' : '#4ade80' }}>{generating ? 'ANALYZING...' : 'ANALYSIS COMPLETE'}</span></div><div className="panel rounded-xl p-5"><pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-red-400 ml-0.5 animate-pulse" />}</pre></div></div>}
+      {output && <div className="mt-6 animate-fade-up"><div className="flex items-center gap-2 mb-3"><div className={`w-2 h-2 rounded-full ${generating ? 'bg-red-400 animate-pulse' : 'bg-emerald-400'}`} /><span className="hud-label text-[11px]" style={{ color: generating ? '#f87171' : '#4ade80' }}>{generating ? 'ANALYZING...' : 'ANALYSIS COMPLETE'}</span></div><div className="panel rounded-2xl p-4 sm:p-7"><pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-red-400 ml-0.5 animate-pulse" />}</pre></div></div>}
     </div>
   );
 }

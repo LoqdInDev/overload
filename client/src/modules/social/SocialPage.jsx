@@ -243,16 +243,16 @@ export default function SocialPage() {
   // TABS
   // ════════════════════════════════════════════════════
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-12">
       {/* Header */}
-      <div className="mb-6 animate-fade-in">
-        <p className="hud-label mb-2" style={{ color: MODULE_COLOR }}>SOCIAL MEDIA ENGINE</p>
-        <h1 className={`text-2xl font-bold mb-1 ${dark ? 'text-white' : 'text-gray-900'}`}>Social Media</h1>
-        <p className={`text-sm ${dark ? 'text-gray-500' : 'text-gray-500'}`}>Create, publish, and track your social media content</p>
+      <div className="mb-6 sm:mb-8 animate-fade-in">
+        <p className="hud-label text-[11px] mb-2" style={{ color: MODULE_COLOR }}>SOCIAL MEDIA ENGINE</p>
+        <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 ${dark ? 'text-white' : 'text-gray-900'}`}>Social Media</h1>
+        <p className={`text-base ${dark ? 'text-gray-500' : 'text-gray-500'}`}>Create, publish, and track your social media content</p>
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1 mb-6">
+      <div className="flex gap-1 mb-6 sm:mb-8">
         {[
           { id: 'create', label: 'Create Content', count: null },
           { id: 'accounts', label: 'Connected Accounts', count: socialConnected.length },
@@ -265,36 +265,36 @@ export default function SocialPage() {
                 : `${dark ? 'text-gray-500 hover:text-gray-300 border border-transparent' : 'text-gray-500 hover:text-gray-700 border border-transparent'}`
             }`}>
             {t.label}
-            {t.count !== null && <span className="ml-1.5 text-[10px] font-mono opacity-60">{t.count}</span>}
+            {t.count !== null && <span className="ml-1.5 text-xs font-mono opacity-60">{t.count}</span>}
           </button>
         ))}
       </div>
 
       {/* ═══ ACCOUNTS TAB ═══ */}
       {tab === 'accounts' && (
-        <div className="space-y-4 animate-fade-in">
+        <div className="space-y-4 sm:space-y-6 animate-fade-in">
           <div className="flex items-center gap-3 mb-2">
-            <p className="hud-label">SOCIAL PLATFORMS</p>
+            <p className="hud-label text-[11px]">SOCIAL PLATFORMS</p>
             <div className="flex-1 hud-line" />
           </div>
 
           {/* Error banner */}
           {connectError && (
-            <div className={`rounded-xl p-4 flex items-start gap-3 ${dark ? 'bg-red-500/10 border border-red-500/20' : 'bg-red-50 border border-red-200'}`}>
-              <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <div className={`rounded-xl p-4 sm:p-6 flex items-start gap-3 ${dark ? 'bg-red-500/10 border border-red-500/20' : 'bg-red-50 border border-red-200'}`}>
+              <svg className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
               </svg>
               <div className="flex-1 min-w-0">
-                <p className={`text-xs font-semibold ${dark ? 'text-red-300' : 'text-red-700'}`}>Connection Error</p>
+                <p className={`text-sm font-semibold ${dark ? 'text-red-300' : 'text-red-700'}`}>Connection Error</p>
                 <p className={`text-[11px] mt-0.5 ${dark ? 'text-red-400/80' : 'text-red-600'}`}>{connectError.message}</p>
               </div>
-              <button onClick={() => setConnectError(null)} className={`text-[10px] font-semibold px-2 py-1 rounded-md ${dark ? 'text-red-400/60 hover:text-red-400' : 'text-red-400 hover:text-red-600'}`}>
+              <button onClick={() => setConnectError(null)} className={`text-xs font-semibold px-2 py-1 rounded-md ${dark ? 'text-red-400/60 hover:text-red-400' : 'text-red-400 hover:text-red-600'}`}>
                 Dismiss
               </button>
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
             {SOCIAL_PLATFORMS.map(platform => {
               const isConnected = getProviderStatus(platform.provider);
               const acct = connectedAccounts.find(a => a.providerId === platform.provider);
@@ -303,21 +303,21 @@ export default function SocialPage() {
               const provConfig = getProviderConfig(platform.provider);
               const isConfigured = provConfig?.configured !== false;
               return (
-                <div key={platform.id} className={`${panelCls} rounded-xl p-4 transition-all`}>
+                <div key={platform.id} className={`${panelCls} rounded-2xl p-4 sm:p-6 transition-all`}>
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: `${platform.color}15`, border: `1px solid ${platform.color}30` }}>
-                      <svg className="w-5 h-5" style={{ color: platform.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                    <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ background: `${platform.color}15`, border: `1px solid ${platform.color}30` }}>
+                      <svg className="w-6 h-6" style={{ color: platform.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d={platform.icon} />
                       </svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{platform.name}</p>
+                      <p className={`text-base font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{platform.name}</p>
                       {isConnected && acct ? (
-                        <p className={`text-[10px] truncate ${dark ? 'text-gray-500' : 'text-gray-400'}`}>{acct.accountName || acct.username || 'Connected'}</p>
+                        <p className={`text-xs truncate ${dark ? 'text-gray-500' : 'text-gray-400'}`}>{acct.accountName || acct.username || 'Connected'}</p>
                       ) : !isConfigured ? (
-                        <p className={`text-[10px] ${dark ? 'text-amber-500/70' : 'text-amber-600'}`}>API keys not configured</p>
+                        <p className={`text-xs ${dark ? 'text-amber-500/70' : 'text-amber-600'}`}>API keys not configured</p>
                       ) : (
-                        <p className={`text-[10px] ${dark ? 'text-gray-600' : 'text-gray-400'}`}>Not connected</p>
+                        <p className={`text-xs ${dark ? 'text-gray-600' : 'text-gray-400'}`}>Not connected</p>
                       )}
                     </div>
                     <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-400' : !isConfigured ? 'bg-amber-400' : dark ? 'bg-gray-700' : 'bg-gray-300'}`} />
@@ -325,18 +325,18 @@ export default function SocialPage() {
 
                   {isConnected ? (
                     <div className="flex items-center gap-2">
-                      <span className={`flex-1 text-[10px] font-semibold ${dark ? 'text-emerald-400/70' : 'text-emerald-600'}`}>Connected</span>
+                      <span className={`flex-1 text-xs font-semibold ${dark ? 'text-emerald-400/70' : 'text-emerald-600'}`}>Connected</span>
                       {acct?.followers > 0 && (
-                        <span className={`text-[10px] font-mono ${dark ? 'text-gray-500' : 'text-gray-400'}`}>{Number(acct.followers).toLocaleString()} followers</span>
+                        <span className={`text-xs font-mono ${dark ? 'text-gray-500' : 'text-gray-400'}`}>{Number(acct.followers).toLocaleString()} followers</span>
                       )}
                       <button onClick={() => disconnectAccount(platform.provider)} disabled={isDisconnecting}
-                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-md transition-all ${dark ? 'text-red-400/60 hover:text-red-400 hover:bg-red-500/10' : 'text-red-400 hover:bg-red-50'} disabled:opacity-40`}>
+                        className={`text-xs font-semibold px-2 py-0.5 rounded-md transition-all ${dark ? 'text-red-400/60 hover:text-red-400 hover:bg-red-500/10' : 'text-red-400 hover:bg-red-50'} disabled:opacity-40`}>
                         {isDisconnecting ? '...' : 'Disconnect'}
                       </button>
                     </div>
                   ) : (
                     <button onClick={() => connectAccount(platform)} disabled={isConnecting}
-                      className="w-full text-center py-1.5 rounded-lg text-[10px] font-bold transition-all disabled:opacity-50"
+                      className="w-full text-center py-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
                       style={{ background: `${platform.color}15`, color: platform.color, border: `1px solid ${platform.color}25` }}>
                       {isConnecting ? (
                         <span className="flex items-center justify-center gap-1.5">
@@ -352,13 +352,13 @@ export default function SocialPage() {
           </div>
 
           {socialConnected.length === 0 && !connectError && (
-            <div className={`${panelCls} rounded-xl p-6 text-center`}>
-              <svg className="w-8 h-8 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
+            <div className={`${panelCls} rounded-2xl p-5 sm:p-8 text-center`}>
+              <svg className="w-10 h-10 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
               </svg>
-              <p className={`text-sm font-semibold mb-1 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>No accounts connected yet</p>
-              <p className={`text-xs ${dark ? 'text-gray-500' : 'text-gray-400'}`}>
-                To connect accounts, add your API credentials to the <code className={`px-1 py-0.5 rounded text-[10px] ${dark ? 'bg-white/5' : 'bg-gray-100'}`}>.env</code> file and click "Connect Account" above.
+              <p className={`text-base font-semibold mb-1 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>No accounts connected yet</p>
+              <p className={`text-sm ${dark ? 'text-gray-500' : 'text-gray-400'}`}>
+                To connect accounts, add your API credentials to the <code className={`px-1 py-0.5 rounded text-xs ${dark ? 'bg-white/5' : 'bg-gray-100'}`}>.env</code> file and click "Connect Account" above.
               </p>
             </div>
           )}
@@ -367,53 +367,53 @@ export default function SocialPage() {
 
       {/* ═══ PUBLISH TAB ═══ */}
       {tab === 'publish' && (
-        <div className="space-y-4 animate-fade-in">
-          <div className={`${panelCls} rounded-xl p-5`}>
-            <p className="hud-label mb-3">COMPOSE POST</p>
+        <div className="space-y-4 sm:space-y-6 animate-fade-in">
+          <div className={`${panelCls} rounded-2xl p-4 sm:p-7`}>
+            <p className="hud-label text-[11px] mb-3">COMPOSE POST</p>
             <textarea value={publishText} onChange={(e) => setPublishText(e.target.value)} rows={5}
               placeholder="Write your post content here... (or create content in the Create tab and come back)"
-              className="w-full input-field rounded-lg px-4 py-3 text-sm resize-none" />
+              className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base resize-none" />
 
             {(result || streamText) && !publishText && (
               <button onClick={() => setPublishText(result || streamText)}
-                className={`mt-2 text-[10px] font-semibold px-3 py-1 rounded-lg ${dark ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-blue-50 text-blue-600 border border-blue-200'}`}>
+                className={`mt-2 text-xs font-semibold px-3 py-1 rounded-lg ${dark ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-blue-50 text-blue-600 border border-blue-200'}`}>
                 Use generated content
               </button>
             )}
           </div>
 
           {publishStatus && (
-            <div className={`${panelCls} rounded-xl p-4 ${publishStatus.type === 'success' ? 'border-emerald-500/30' : 'border-red-500/30'}`}>
-              <p className={`text-sm font-semibold ${publishStatus.type === 'success' ? 'text-emerald-400' : 'text-red-400'}`}>{publishStatus.msg}</p>
+            <div className={`${panelCls} rounded-2xl p-4 sm:p-6 ${publishStatus.type === 'success' ? 'border-emerald-500/30' : 'border-red-500/30'}`}>
+              <p className={`text-base font-semibold ${publishStatus.type === 'success' ? 'text-emerald-400' : 'text-red-400'}`}>{publishStatus.msg}</p>
             </div>
           )}
 
           <div className="flex items-center gap-3 mb-2">
-            <p className="hud-label">PUBLISH TO</p>
+            <p className="hud-label text-[11px]">PUBLISH TO</p>
             <div className="flex-1 hud-line" />
           </div>
 
           {socialConnected.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
               {socialConnected.map(platform => (
                 <button key={platform.id} onClick={() => publishToProvider(platform.provider)}
                   disabled={publishing || !publishText.trim()}
-                  className={`${panelCls} rounded-xl p-4 text-center transition-all hover:scale-[1.02] disabled:opacity-40 disabled:hover:scale-100`}>
-                  <div className="w-10 h-10 rounded-lg mx-auto mb-2 flex items-center justify-center" style={{ background: `${platform.color}15`, border: `1px solid ${platform.color}30` }}>
-                    <svg className="w-5 h-5" style={{ color: platform.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  className={`${panelCls} rounded-2xl p-4 sm:p-6 text-center transition-all hover:scale-[1.02] disabled:opacity-40 disabled:hover:scale-100`}>
+                  <div className="w-12 h-12 rounded-lg mx-auto mb-2 flex items-center justify-center" style={{ background: `${platform.color}15`, border: `1px solid ${platform.color}30` }}>
+                    <svg className="w-6 h-6" style={{ color: platform.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d={platform.icon} />
                     </svg>
                   </div>
-                  <p className={`text-xs font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{platform.name}</p>
-                  <p className={`text-[10px] mt-0.5 ${dark ? 'text-gray-500' : 'text-gray-400'}`}>
+                  <p className={`text-sm font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{platform.name}</p>
+                  <p className={`text-xs mt-0.5 ${dark ? 'text-gray-500' : 'text-gray-400'}`}>
                     {publishing && publishTarget === platform.provider ? 'Publishing...' : 'Publish'}
                   </p>
                 </button>
               ))}
             </div>
           ) : (
-            <div className={`${panelCls} rounded-xl p-8 text-center`}>
-              <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>Connect social accounts in the Accounts tab first.</p>
+            <div className={`${panelCls} rounded-2xl p-5 sm:p-8 text-center`}>
+              <p className={`text-base ${dark ? 'text-gray-400' : 'text-gray-500'}`}>Connect social accounts in the Accounts tab first.</p>
             </div>
           )}
         </div>
@@ -424,13 +424,13 @@ export default function SocialPage() {
         <div className="animate-fade-in">
           {/* Connected accounts strip */}
           {socialConnected.length > 0 && (
-            <div className="mb-6">
+            <div className="mb-6 sm:mb-8">
               <div className="flex items-center gap-2 mb-2">
-                <p className="hud-label">CONNECTED</p>
+                <p className="hud-label text-[11px]">CONNECTED</p>
                 <div className="flex gap-1.5">
                   {socialConnected.map(p => (
-                    <div key={p.id} className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: `${p.color}20`, border: `1px solid ${p.color}30` }}>
-                      <svg className="w-3 h-3" style={{ color: p.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <div key={p.id} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: `${p.color}20`, border: `1px solid ${p.color}30` }}>
+                      <svg className="w-4 h-4" style={{ color: p.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d={p.icon} />
                       </svg>
                     </div>
@@ -440,20 +440,20 @@ export default function SocialPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 stagger">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 stagger">
             {SOCIAL_PLATFORMS.filter(p => p.id !== 'youtube' && p.id !== 'pinterest').map(type => (
               <button key={type.id} onClick={() => setActiveType(type.id)}
-                className={`${dark ? 'panel-interactive' : 'bg-white border border-gray-200 shadow-sm hover:shadow-md hover:-translate-y-0.5'} rounded-xl p-5 text-center group transition-all`}>
-                <div className="w-10 h-10 rounded-lg mx-auto mb-3 flex items-center justify-center transition-all duration-300 group-hover:scale-110"
+                className={`${dark ? 'panel-interactive' : 'bg-white border border-gray-200 shadow-sm hover:shadow-md hover:-translate-y-0.5'} rounded-2xl p-4 sm:p-7 text-center group transition-all`}>
+                <div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center transition-all duration-300 group-hover:scale-110"
                   style={{ background: `${type.color}15`, border: `1px solid ${type.color}20` }}>
-                  <svg className="w-5 h-5" style={{ color: type.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <svg className="w-6 h-6" style={{ color: type.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d={type.icon} />
                   </svg>
                 </div>
-                <p className={`text-xs font-bold transition-colors ${dark ? 'text-gray-300 group-hover:text-white' : 'text-gray-700 group-hover:text-gray-900'}`}>{type.name}</p>
+                <p className={`text-sm font-bold transition-colors ${dark ? 'text-gray-300 group-hover:text-white' : 'text-gray-700 group-hover:text-gray-900'}`}>{type.name}</p>
                 <div className="flex items-center justify-center gap-1 mt-1">
                   <div className={`w-1.5 h-1.5 rounded-full ${getProviderStatus(type.provider) ? 'bg-emerald-400' : dark ? 'bg-gray-700' : 'bg-gray-300'}`} />
-                  <p className={`text-[10px] ${getProviderStatus(type.provider) ? 'text-emerald-400/70' : dark ? 'text-gray-600' : 'text-gray-400'}`}>
+                  <p className={`text-xs ${getProviderStatus(type.provider) ? 'text-emerald-400/70' : dark ? 'text-gray-600' : 'text-gray-400'}`}>
                     {getProviderStatus(type.provider) ? 'Connected' : 'Not connected'}
                   </p>
                 </div>
@@ -469,20 +469,20 @@ export default function SocialPage() {
 
           {/* Templates preview */}
           <div className="mt-10">
-            <div className="flex items-center gap-3 mb-4">
-              <p className="hud-label">POPULAR TEMPLATES</p>
+            <div className="flex items-center gap-3 mb-6">
+              <p className="hud-label text-[11px]">POPULAR TEMPLATES</p>
               <div className="flex-1 hud-line" />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 stagger">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 stagger">
               {Object.entries(TEMPLATES).slice(0, 4).map(([type, tmpls]) => {
                 const ct = SOCIAL_PLATFORMS.find(c => c.id === type);
                 const t = tmpls[0];
                 return (
                   <button key={`${type}-${t.name}`} onClick={() => { setActiveType(type); setPrompt(t.prompt); }}
-                    className={`${dark ? 'panel-interactive' : 'bg-white border border-gray-200 shadow-sm hover:shadow-md'} rounded-lg p-4 text-left group transition-all`}>
-                    <p className="hud-label mb-1.5" style={{ color: ct?.color || MODULE_COLOR }}>{ct?.name}</p>
-                    <p className={`text-xs font-semibold transition-colors ${dark ? 'text-gray-300 group-hover:text-white' : 'text-gray-700'}`}>{t.name}</p>
-                    <p className={`text-[10px] mt-1 line-clamp-2 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{t.prompt}</p>
+                    className={`${dark ? 'panel-interactive' : 'bg-white border border-gray-200 shadow-sm hover:shadow-md'} rounded-lg p-4 sm:p-6 text-left group transition-all`}>
+                    <p className="hud-label text-[11px] mb-1.5" style={{ color: ct?.color || MODULE_COLOR }}>{ct?.name}</p>
+                    <p className={`text-sm font-semibold transition-colors ${dark ? 'text-gray-300 group-hover:text-white' : 'text-gray-700'}`}>{t.name}</p>
+                    <p className={`text-xs mt-1 line-clamp-2 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{t.prompt}</p>
                   </button>
                 );
               })}
@@ -502,52 +502,52 @@ export default function SocialPage() {
         return (
           <div className="animate-fade-in">
             {/* Header */}
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-6 sm:mb-8">
               <button onClick={() => { setActiveType(null); setResult(''); setStreamText(''); setPrompt(''); }}
                 className={`p-2 rounded-md border transition-all ${dark ? 'border-indigo-500/10 text-gray-500 hover:text-white hover:border-indigo-500/25' : 'border-gray-300 text-gray-400 hover:text-gray-700 hover:border-gray-400'}`}>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
                 </svg>
               </button>
               <div className="flex-1">
-                <p className="hud-label" style={{ color: currentType?.color || MODULE_COLOR }}>{currentType?.name?.toUpperCase()} GENERATOR</p>
+                <p className="hud-label text-[11px]" style={{ color: currentType?.color || MODULE_COLOR }}>{currentType?.name?.toUpperCase()} GENERATOR</p>
                 <h2 className={`text-lg font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>Create {currentType?.name} Post</h2>
               </div>
               {isConnected && (
                 <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg" style={{ background: `${currentType?.color}10`, border: `1px solid ${currentType?.color}20` }}>
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  <span className={`text-[10px] font-semibold ${dark ? 'text-emerald-400/80' : 'text-emerald-600'}`}>Connected</span>
+                  <span className={`text-xs font-semibold ${dark ? 'text-emerald-400/80' : 'text-emerald-600'}`}>Connected</span>
                 </div>
               )}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
               {/* Left */}
-              <div className="lg:col-span-2 space-y-4">
+              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
                 {/* Templates */}
-                <div className={`${panelCls} rounded-xl p-4`}>
-                  <p className="hud-label mb-3">TEMPLATES</p>
-                  <div className="grid grid-cols-2 gap-2">
+                <div className={`${panelCls} rounded-2xl p-4 sm:p-6`}>
+                  <p className="hud-label text-[11px] mb-3">TEMPLATES</p>
+                  <div className="grid grid-cols-2 gap-3">
                     {templates.map(t => (
                       <button key={t.name} onClick={() => setPrompt(t.prompt)}
-                        className={`text-left px-3 py-2.5 rounded-lg border text-xs transition-all ${
+                        className={`text-left px-4 py-3 rounded-xl border text-sm transition-all ${
                           prompt === t.prompt
                             ? `border-blue-500/30 bg-blue-500/10 ${dark ? 'text-blue-300' : 'text-blue-700'}`
                             : `${dark ? 'border-indigo-500/8 bg-white/[0.01] text-gray-400 hover:text-gray-200' : 'border-gray-200 bg-gray-50 text-gray-600 hover:text-gray-800'}`
                         }`}>
                         <p className="font-semibold">{t.name}</p>
-                        <p className={`text-[10px] mt-0.5 line-clamp-1 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{t.prompt}</p>
+                        <p className={`text-xs mt-0.5 line-clamp-1 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{t.prompt}</p>
                       </button>
                     ))}
                   </div>
                 </div>
 
                 {/* Prompt */}
-                <div className={`${panelCls} rounded-xl p-4`}>
-                  <p className="hud-label mb-3">YOUR BRIEF</p>
+                <div className={`${panelCls} rounded-2xl p-4 sm:p-6`}>
+                  <p className="hud-label text-[11px] mb-3">YOUR BRIEF</p>
                   <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={5}
                     placeholder="Describe your content: topic, key message, target audience, any specific angles or hooks..."
-                    className="w-full input-field rounded-lg px-4 py-3 text-sm resize-none" />
+                    className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base resize-none" />
                 </div>
 
                 {/* Generate */}
@@ -564,10 +564,10 @@ export default function SocialPage() {
               </div>
 
               {/* Right: Settings */}
-              <div className="space-y-4">
+              <div className="space-y-4 sm:space-y-6">
                 {/* Tone */}
-                <div className={`${panelCls} rounded-xl p-4`}>
-                  <p className="hud-label mb-3">TONE</p>
+                <div className={`${panelCls} rounded-2xl p-4 sm:p-6`}>
+                  <p className="hud-label text-[11px] mb-3">TONE</p>
                   <div className="grid grid-cols-2 gap-1.5">
                     {TONES.map(t => (
                       <button key={t} onClick={() => setTone(t)}
@@ -580,8 +580,8 @@ export default function SocialPage() {
                 </div>
 
                 {/* Post length */}
-                <div className={`${panelCls} rounded-xl p-4`}>
-                  <p className="hud-label mb-3">POST LENGTH</p>
+                <div className={`${panelCls} rounded-2xl p-4 sm:p-6`}>
+                  <p className="hud-label text-[11px] mb-3">POST LENGTH</p>
                   <div className="grid grid-cols-3 gap-1.5">
                     {['Short', 'Medium', 'Long'].map(l => (
                       <button key={l} onClick={() => setPostLength(l)}
@@ -594,15 +594,15 @@ export default function SocialPage() {
                 </div>
 
                 {/* Toggles */}
-                <div className={`${panelCls} rounded-xl p-4`}>
-                  <p className="hud-label mb-3">OPTIONS</p>
-                  <div className="space-y-2">
+                <div className={`${panelCls} rounded-2xl p-4 sm:p-6`}>
+                  <p className="hud-label text-[11px] mb-3">OPTIONS</p>
+                  <div className="space-y-3">
                     {[
                       { label: 'Include Hashtags', value: includeHashtags, setter: setIncludeHashtags },
                       { label: 'Include Emojis', value: includeEmojis, setter: setIncludeEmojis },
                     ].map(opt => (
                       <button key={opt.label} onClick={() => opt.setter(!opt.value)}
-                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg border text-xs transition-all ${
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border text-sm transition-all ${
                           opt.value
                             ? `border-blue-500/30 bg-blue-500/10 ${dark ? 'text-blue-300' : 'text-blue-700'}`
                             : `${dark ? 'border-indigo-500/8 bg-white/[0.01] text-gray-400' : 'border-gray-200 bg-gray-50 text-gray-500'}`
@@ -619,17 +619,17 @@ export default function SocialPage() {
 
                 {/* Stats */}
                 {(streamText || result) && (
-                  <div className={`${panelCls} rounded-xl p-4 animate-fade-up`}>
-                    <p className="hud-label mb-3">OUTPUT STATS</p>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-xs">
+                  <div className={`${panelCls} rounded-2xl p-4 sm:p-6 animate-fade-up`}>
+                    <p className="hud-label text-[11px] mb-3">OUTPUT STATS</p>
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm">
                         <span className={dark ? 'text-gray-500' : 'text-gray-400'}>Characters</span>
                         <span className={`font-mono font-bold ${charCount > maxChars ? 'text-red-400' : dark ? 'text-white' : 'text-gray-900'}`}>{charCount}/{maxChars}</span>
                       </div>
                       <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: dark ? '#1a1a2e' : '#e5e7eb' }}>
                         <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(100, (charCount / maxChars) * 100)}%`, background: charCount > maxChars ? '#ef4444' : (currentType?.color || MODULE_COLOR) }} />
                       </div>
-                      <div className="flex justify-between text-xs">
+                      <div className="flex justify-between text-sm">
                         <span className={dark ? 'text-gray-500' : 'text-gray-400'}>Words</span>
                         <span className={`font-mono font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{(result || streamText).split(/\s+/).filter(Boolean).length}</span>
                       </div>
@@ -654,12 +654,12 @@ export default function SocialPage() {
 
             {/* Streaming */}
             {(generating || streamText) && !result && (
-              <div className={`${panelCls} rounded-xl p-5 mt-4 animate-fade-up`}>
+              <div className={`${panelCls} rounded-2xl p-4 sm:p-7 mt-6 animate-fade-up`}>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: currentType?.color || MODULE_COLOR }} />
-                  <span className="hud-label" style={{ color: currentType?.color || MODULE_COLOR }}>GENERATING</span>
+                  <span className="hud-label text-[11px]" style={{ color: currentType?.color || MODULE_COLOR }}>GENERATING</span>
                 </div>
-                <div className={`${dark ? 'bg-black/50' : 'bg-gray-50'} rounded-lg p-5 max-h-[50vh] overflow-y-auto text-sm whitespace-pre-wrap leading-relaxed ${dark ? 'text-gray-300' : 'text-gray-700'}`}>
+                <div className={`${dark ? 'bg-black/50' : 'bg-gray-50'} rounded-lg p-4 sm:p-7 max-h-[50vh] overflow-y-auto text-base whitespace-pre-wrap leading-relaxed ${dark ? 'text-gray-300' : 'text-gray-700'}`}>
                   {streamText}<span className="inline-block w-[2px] h-4 ml-0.5 animate-pulse" style={{ background: currentType?.color || MODULE_COLOR }} />
                 </div>
               </div>
@@ -667,11 +667,11 @@ export default function SocialPage() {
 
             {/* Result */}
             {result && (
-              <div className={`${panelCls} rounded-xl p-5 mt-4 animate-fade-up`}>
+              <div className={`${panelCls} rounded-2xl p-4 sm:p-7 mt-6 animate-fade-up`}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                    <span className="hud-label" style={{ color: '#4ade80' }}>COMPLETE</span>
+                    <span className="hud-label text-[11px]" style={{ color: '#4ade80' }}>COMPLETE</span>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={copyToClipboard} className="chip text-[10px]" style={{ color: copied ? '#4ade80' : undefined }}>
@@ -687,7 +687,7 @@ export default function SocialPage() {
                     )}
                   </div>
                 </div>
-                <div className={`${dark ? 'bg-black/50' : 'bg-gray-50'} rounded-lg p-5 max-h-[60vh] overflow-y-auto text-sm whitespace-pre-wrap leading-relaxed ${dark ? 'text-gray-200' : 'text-gray-800'}`}>
+                <div className={`${dark ? 'bg-black/50' : 'bg-gray-50'} rounded-lg p-4 sm:p-7 max-h-[60vh] overflow-y-auto text-base whitespace-pre-wrap leading-relaxed ${dark ? 'text-gray-200' : 'text-gray-800'}`}>
                   {result}
                 </div>
               </div>
