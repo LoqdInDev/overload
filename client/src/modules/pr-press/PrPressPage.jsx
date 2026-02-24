@@ -45,7 +45,7 @@ export default function PrPressPage() {
   const contactStatusColor = (s) => s === 'active' ? '#22c55e' : s === 'pitched' ? '#f59e0b' : '#3b82f6';
 
   return (
-    <div className="p-4 sm:p-6 lg:p-12">
+    <div className="p-4 sm:p-6 lg:p-10">
       <div className="mb-6 sm:mb-8 animate-fade-in">
         <p className="hud-label text-[11px] mb-2" style={{ color: MODULE_COLOR }}>PR & PRESS</p>
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Public Relations Hub</h1>
@@ -69,7 +69,7 @@ export default function PrPressPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 sm:mb-8">
+      <div className="flex flex-wrap gap-1 mb-6 sm:mb-8">
         {['overview', 'releases', 'contacts', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
             {t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1).replace('-', ' ')}
@@ -138,15 +138,17 @@ export default function PrPressPage() {
           <div className="panel rounded-2xl overflow-hidden">
             <div className="divide-y divide-indigo-500/[0.04]">
               {MOCK_RELEASES.map(r => (
-                <div key={r.id} className="flex items-center gap-6 px-6 py-4 hover:bg-white/[0.01] transition-colors">
+                <div key={r.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 px-4 sm:px-6 py-3 sm:py-4 hover:bg-white/[0.01] transition-colors">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-300 truncate">{r.title}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{r.outlet} &middot; {r.date}</p>
                   </div>
-                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${statusColor(r.status)}15`, color: statusColor(r.status), border: `1px solid ${statusColor(r.status)}25` }}>
-                    {r.status}
-                  </span>
-                  {r.views > 0 && <span className="text-xs font-mono text-gray-500">{r.views.toLocaleString()} views</span>}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${statusColor(r.status)}15`, color: statusColor(r.status), border: `1px solid ${statusColor(r.status)}25` }}>
+                      {r.status}
+                    </span>
+                    {r.views > 0 && <span className="text-xs font-mono text-gray-500">{r.views.toLocaleString()} views</span>}
+                  </div>
                 </div>
               ))}
             </div>
@@ -158,21 +160,36 @@ export default function PrPressPage() {
       {tab === 'contacts' && (
         <div className="animate-fade-in">
           <div className="panel rounded-2xl overflow-hidden">
-            <div className="grid grid-cols-[1fr_120px_120px_100px_60px] gap-3 px-6 py-3 border-b border-indigo-500/[0.06]">
+            {/* Desktop table header */}
+            <div className="hidden md:grid grid-cols-[1fr_120px_120px_1fr_80px] gap-3 px-4 sm:px-6 py-3 border-b border-indigo-500/[0.06]">
               {['Name', 'Outlet', 'Beat', 'Email', 'Status'].map(h => (
                 <p key={h} className="text-[9px] font-bold text-gray-600 uppercase tracking-wider">{h}</p>
               ))}
             </div>
             <div className="divide-y divide-indigo-500/[0.04]">
               {MOCK_CONTACTS.map(c => (
-                <div key={c.id} className="grid grid-cols-[1fr_120px_120px_100px_60px] gap-3 items-center px-6 py-4 hover:bg-white/[0.01] transition-colors">
-                  <p className="text-sm font-semibold text-gray-300 truncate">{c.name}</p>
-                  <p className="text-xs text-gray-400 truncate">{c.outlet}</p>
-                  <p className="text-xs text-gray-500 truncate">{c.beat}</p>
-                  <p className="text-xs text-gray-600 truncate">{c.email}</p>
-                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full text-center" style={{ background: `${contactStatusColor(c.status)}15`, color: contactStatusColor(c.status), border: `1px solid ${contactStatusColor(c.status)}25` }}>
-                    {c.status}
-                  </span>
+                <div key={c.id} className="hover:bg-white/[0.01] transition-colors">
+                  {/* Desktop row */}
+                  <div className="hidden md:grid grid-cols-[1fr_120px_120px_1fr_80px] gap-3 items-center px-4 sm:px-6 py-4">
+                    <p className="text-sm font-semibold text-gray-300 truncate">{c.name}</p>
+                    <p className="text-xs text-gray-400 truncate">{c.outlet}</p>
+                    <p className="text-xs text-gray-500 truncate">{c.beat}</p>
+                    <p className="text-xs text-gray-600 truncate">{c.email}</p>
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full text-center" style={{ background: `${contactStatusColor(c.status)}15`, color: contactStatusColor(c.status), border: `1px solid ${contactStatusColor(c.status)}25` }}>
+                      {c.status}
+                    </span>
+                  </div>
+                  {/* Mobile card */}
+                  <div className="md:hidden px-4 py-3 space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-gray-300 truncate">{c.name}</p>
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: `${contactStatusColor(c.status)}15`, color: contactStatusColor(c.status), border: `1px solid ${contactStatusColor(c.status)}25` }}>
+                        {c.status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400">{c.outlet} &middot; {c.beat}</p>
+                    <p className="text-xs text-gray-600 truncate">{c.email}</p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -183,7 +200,7 @@ export default function PrPressPage() {
       {/* AI Tools */}
       {tab === 'ai-tools' && (
         <div className="animate-fade-in space-y-4 sm:space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             {AI_TEMPLATES.map(tool => (
               <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === tool.name ? 'border-pink-700/30' : ''}`}>
                 <p className="text-sm font-bold text-gray-300">{tool.name}</p>

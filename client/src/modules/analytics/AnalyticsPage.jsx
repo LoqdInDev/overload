@@ -64,13 +64,13 @@ export default function AnalyticsPage() {
     <div className="p-4 sm:p-6 lg:p-12">
       {/* Header */}
       <div className="mb-6 sm:mb-8 animate-fade-in">
-        <div className="flex items-end justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
             <p className="hud-label text-[11px] mb-2" style={{ color: '#f43f5e' }}>ANALYTICS DASHBOARD</p>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">System Overview</h1>
             <p className="text-base text-gray-500">Unified reporting across all modules</p>
           </div>
-          <div className="flex gap-1">
+          <div className="flex flex-wrap gap-1">
             {['24h', '7d', '30d', 'All'].map(r => (
               <button key={r} onClick={() => setTimeRange(r)}
                 className={`chip text-[10px] ${timeRange === r ? 'active' : ''}`}
@@ -101,9 +101,9 @@ export default function AnalyticsPage() {
           <p className="text-3xl font-bold text-white font-mono tabular-nums">
             <AnimatedNumber value={MODULE_REGISTRY.length} />
           </p>
-          <div className="flex gap-1 mt-2">
+          <div className="flex flex-wrap gap-1 mt-2">
             {MODULE_REGISTRY.map(m => (
-              <div key={m.id} className="w-2 h-2 rounded-full" style={{ background: m.color }} />
+              <div key={m.id} className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: m.color }} />
             ))}
           </div>
         </div>
@@ -160,7 +160,7 @@ export default function AnalyticsPage() {
         {/* Module Cards with Sparklines */}
         <div className="panel rounded-2xl p-4 sm:p-6 animate-fade-up">
           <p className="hud-label text-[11px] mb-4">7-DAY TREND</p>
-          <div className="grid grid-cols-2 gap-3 sm:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
             {moduleStats.map(mod => (
               <div key={mod.id} className="bg-black/30 rounded-lg p-3 sm:p-5 border border-indigo-500/6">
                 <div className="flex items-center gap-1.5 mb-2">
@@ -181,7 +181,7 @@ export default function AnalyticsPage() {
       {/* System Status */}
       <div className="panel rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 animate-fade-up">
         <p className="hud-label text-[11px] mb-4">SYSTEM STATUS</p>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 sm:gap-5">
           {MODULE_REGISTRY.map(mod => (
             <div key={mod.id} className="flex items-center gap-2.5 px-4 py-3 rounded-lg bg-black/30 border border-indigo-500/6">
               <div className="relative">
@@ -216,10 +216,10 @@ export default function AnalyticsPage() {
             {activity.slice(0, 20).map((item, i) => {
               const mod = MODULE_REGISTRY.find(m => m.id === item.module_id);
               return (
-                <div key={item.id || i} className="flex items-center gap-3 sm:gap-5 px-3 py-3 hover:bg-white/[0.01] transition-colors">
+                <div key={item.id || i} className="flex items-center gap-2 sm:gap-5 px-2 sm:px-3 py-3 hover:bg-white/[0.01] transition-colors">
                   <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: mod?.color || '#6b7280' }} />
-                  <span className="text-xs text-gray-400 flex-1 truncate">{item.title}</span>
-                  <span className="hud-label flex-shrink-0" style={{ color: mod?.color }}>{mod?.name || item.module_id}</span>
+                  <span className="text-xs text-gray-400 flex-1 min-w-0 truncate">{item.title}</span>
+                  <span className="hud-label flex-shrink-0 hidden sm:inline" style={{ color: mod?.color }}>{mod?.name || item.module_id}</span>
                   <span className="text-[9px] text-gray-700 font-mono flex-shrink-0">
                     {new Date(item.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </span>

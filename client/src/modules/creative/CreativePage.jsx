@@ -305,7 +305,7 @@ export default function CreativePage() {
 
       {/* Generation Loading */}
       {generating && (
-        <div className="panel rounded-2xl p-10 mt-6 animate-fade-up text-center">
+        <div className="panel rounded-2xl p-6 sm:p-10 mt-6 animate-fade-up text-center">
           <div className="flex items-center justify-center gap-3 sm:gap-5 mb-4">
             <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
             <span className="hud-label text-[11px]" style={{ color: '#06b6d4' }}>RENDERING VISUALS</span>
@@ -324,19 +324,19 @@ export default function CreativePage() {
       {/* Output Gallery */}
       {images.length > 0 && (
         <div className="mt-6 animate-fade-up">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-emerald-400" />
               <span className="hud-label text-[11px]" style={{ color: '#4ade80' }}>GENERATED — {images.length} CREATIVES</span>
             </div>
-            <button onClick={generate} className="chip text-[10px]">Regenerate</button>
+            <button onClick={generate} className="chip text-[10px] self-start sm:self-auto">Regenerate</button>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">
             {images.map((img, i) => (
               <div key={i} className="panel rounded-2xl overflow-hidden group">
                 <div className="relative">
                   <img src={img.url} alt={img.alt || 'Generated creative'} className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-wrap items-end justify-center pb-4 gap-2">
                     <a href={img.url} download className="chip text-[10px]" style={{ background: 'rgba(6,182,212,0.2)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' }}>
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />

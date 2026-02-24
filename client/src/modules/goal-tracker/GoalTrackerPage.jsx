@@ -82,7 +82,7 @@ export default function GoalTrackerPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 sm:mb-8">
+      <div className="flex flex-wrap gap-1 mb-6 sm:mb-8">
         {['overview', 'goals', 'milestones', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
             {t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1).replace('-', ' ')}
@@ -100,8 +100,8 @@ export default function GoalTrackerPage() {
                 const pct = getProgress(goal);
                 return (
                   <div key={goal.id}>
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                         <span className="text-sm font-semibold text-gray-300">{goal.title}</span>
                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${statusColor(goal.status)}15`, color: statusColor(goal.status), border: `1px solid ${statusColor(goal.status)}25` }}>
                           {goal.status.replace('-', ' ')}
@@ -172,7 +172,7 @@ export default function GoalTrackerPage() {
                 <p className="text-base font-bold text-gray-200 mt-2">{goal.title}</p>
                 <p className="text-xs text-gray-500 mt-0.5">Deadline: {goal.deadline}</p>
                 <div className="mt-4">
-                  <div className="flex justify-between text-xs mb-1">
+                  <div className="flex flex-wrap justify-between text-xs mb-1 gap-1">
                     <span className="text-gray-400">Progress</span>
                     <span className="font-mono text-gray-300">{formatValue(goal.current, goal.unit)} / {formatValue(goal.target, goal.unit)}</span>
                   </div>
@@ -199,9 +199,9 @@ export default function GoalTrackerPage() {
                   {i < MOCK_MILESTONES.length - 1 && <div className="w-0.5 h-8 mt-1" style={{ background: `${milestoneStatusColor(m.status)}30` }} />}
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     <p className="text-sm font-semibold text-gray-300">{m.title}</p>
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${milestoneStatusColor(m.status)}15`, color: milestoneStatusColor(m.status), border: `1px solid ${milestoneStatusColor(m.status)}25` }}>
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap" style={{ background: `${milestoneStatusColor(m.status)}15`, color: milestoneStatusColor(m.status), border: `1px solid ${milestoneStatusColor(m.status)}25` }}>
                       {m.status.replace('-', ' ')}
                     </span>
                   </div>
@@ -216,7 +216,7 @@ export default function GoalTrackerPage() {
       {/* AI Tools */}
       {tab === 'ai-tools' && (
         <div className="animate-fade-in space-y-4 sm:space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             {AI_TEMPLATES.map(tool => (
               <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === tool.name ? 'border-amber-500/30' : ''}`}>
                 <p className="text-sm font-bold text-gray-300">{tool.name}</p>

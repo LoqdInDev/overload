@@ -60,6 +60,9 @@ app.get('/api/activity', (req, res) => {
 // Serve generated videos
 app.use('/videos', express.static(path.join(process.cwd(), 'videos')));
 
+// Serve brand media uploads
+app.use('/uploads/brand-media', express.static(path.join(process.cwd(), 'uploads', 'brand-media')));
+
 // Serve static frontend in production
 const clientDist = path.join(__dirname, '..', 'client', 'dist');
 app.use(express.static(clientDist));

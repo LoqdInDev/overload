@@ -75,7 +75,7 @@ export default function KnowledgeBasePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 sm:mb-8">
+      <div className="flex flex-wrap gap-1 mb-6 sm:mb-8">
         {['overview', 'articles', 'categories', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
             {t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1).replace('-', ' ')}
@@ -122,7 +122,7 @@ export default function KnowledgeBasePage() {
           </div>
           <div className="panel rounded-2xl p-4 sm:p-6">
             <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>POPULAR CATEGORIES</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               {MOCK_CATEGORIES.slice(0, 4).map(cat => (
                 <div key={cat.id} className="bg-white/[0.02] rounded-lg p-4 sm:p-5 border border-indigo-500/[0.06] text-center">
                   <svg className="w-6 h-6 mx-auto mb-2" style={{ color: MODULE_COLOR }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
@@ -143,15 +143,20 @@ export default function KnowledgeBasePage() {
           <div className="panel rounded-2xl overflow-hidden">
             <div className="divide-y divide-indigo-500/[0.04]">
               {MOCK_ARTICLES.map(a => (
-                <div key={a.id} className="flex items-center gap-6 px-6 py-4 hover:bg-white/[0.01] transition-colors">
+                <div key={a.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 px-4 sm:px-6 py-3 sm:py-4 hover:bg-white/[0.01] transition-colors">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-300">{a.title}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-semibold text-gray-300">{a.title}</p>
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full sm:hidden" style={{ background: `${statusColor(a.status)}15`, color: statusColor(a.status), border: `1px solid ${statusColor(a.status)}25` }}>
+                        {a.status}
+                      </span>
+                    </div>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-xs text-gray-500">{a.category}</span>
                       <span className="text-xs text-gray-600">&middot; Updated {a.updated}</span>
                     </div>
                   </div>
-                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${statusColor(a.status)}15`, color: statusColor(a.status), border: `1px solid ${statusColor(a.status)}25` }}>
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full hidden sm:inline-block flex-shrink-0" style={{ background: `${statusColor(a.status)}15`, color: statusColor(a.status), border: `1px solid ${statusColor(a.status)}25` }}>
                     {a.status}
                   </span>
                   {a.views > 0 && (
@@ -175,7 +180,7 @@ export default function KnowledgeBasePage() {
 
       {/* Categories */}
       {tab === 'categories' && (
-        <div className="animate-fade-in grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5">
+        <div className="animate-fade-in grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5">
           {MOCK_CATEGORIES.map(cat => (
             <div key={cat.id} className="panel rounded-2xl p-4 sm:p-6 hover:border-blue-500/20 transition-all cursor-pointer text-center">
               <div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center" style={{ background: `${MODULE_COLOR}15`, border: `1px solid ${MODULE_COLOR}20` }}>
@@ -193,7 +198,7 @@ export default function KnowledgeBasePage() {
       {/* AI Tools */}
       {tab === 'ai-tools' && (
         <div className="animate-fade-in space-y-4 sm:space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             {AI_TEMPLATES.map(tool => (
               <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === tool.name ? 'border-blue-500/30' : ''}`}>
                 <p className="text-sm font-bold text-gray-300">{tool.name}</p>

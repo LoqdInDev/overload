@@ -58,7 +58,7 @@ export default function WebsiteBuilderPage() {
   if (!pageType) return (
     <div className="p-4 sm:p-6 lg:p-12">
       <div className="mb-6 sm:mb-8 animate-fade-in"><p className="hud-label text-[11px] mb-2" style={{ color: '#d946ef' }}>WEBSITE BUILDER</p><h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">AI Website Builder</h1><p className="text-base text-gray-500">Generate production-ready pages, sections, and components with AI</p></div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
         {PAGE_TYPES.map(p => (
           <button key={p.id} onClick={() => setPageType(p.id)} className="panel-interactive rounded-2xl p-4 sm:p-7 text-left group">
             <p className="text-base font-bold text-gray-200 group-hover:text-white transition-colors mb-1">{p.name}</p>
@@ -111,8 +111,8 @@ export default function WebsiteBuilderPage() {
             </div>
           </div>
 
-          <button onClick={() => generate()} disabled={generating} className="btn-accent w-full py-3 rounded-lg" style={{ background: generating ? '#1e1e2e' : '#d946ef', boxShadow: generating ? 'none' : '0 4px 20px -4px rgba(217,70,239,0.4)' }}>
-            {generating ? <span className="flex items-center gap-2"><span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />GENERATING CODE...</span> : 'GENERATE PAGE'}
+          <button onClick={() => generate()} disabled={generating} className="btn-accent w-full py-3 sm:py-4 rounded-lg text-sm sm:text-base" style={{ background: generating ? '#1e1e2e' : '#d946ef', boxShadow: generating ? 'none' : '0 4px 20px -4px rgba(217,70,239,0.4)' }}>
+            {generating ? <span className="flex items-center justify-center gap-2"><span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />GENERATING CODE...</span> : 'GENERATE PAGE'}
           </button>
         </div>
 
@@ -130,14 +130,14 @@ export default function WebsiteBuilderPage() {
 
       {output && (
         <div className="mt-6 animate-fade-up">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
             <div className="flex items-center gap-2"><div className={`w-2 h-2 rounded-full ${generating ? 'bg-fuchsia-400 animate-pulse' : 'bg-emerald-400'}`} /><span className="hud-label text-[11px]" style={{ color: generating ? '#e879f9' : '#4ade80' }}>{generating ? 'GENERATING...' : 'CODE READY'}</span></div>
-            <div className="flex gap-1">
+            <div className="flex flex-wrap gap-1">
               {['code', 'preview'].map(t => (<button key={t} onClick={() => setActiveTab(t)} className={`chip text-[9px] ${activeTab === t ? 'active' : ''}`} style={activeTab === t ? { background: 'rgba(217,70,239,0.15)', borderColor: 'rgba(217,70,239,0.3)', color: '#e879f9' } : {}}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>))}
             </div>
           </div>
-          <div className="panel rounded-2xl p-4 sm:p-7">
-            <pre className="text-base text-gray-300 whitespace-pre-wrap font-mono leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-fuchsia-400 ml-0.5 animate-pulse" />}</pre>
+          <div className="panel rounded-2xl p-4 sm:p-7 overflow-x-auto">
+            <pre className="text-sm sm:text-base text-gray-300 whitespace-pre-wrap font-mono leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-fuchsia-400 ml-0.5 animate-pulse" />}</pre>
           </div>
         </div>
       )}

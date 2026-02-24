@@ -26,6 +26,17 @@ function initDatabase() {
     updated_at TEXT DEFAULT (datetime('now'))
   )`);
 
+  // Media assets table
+  db.exec(`CREATE TABLE IF NOT EXISTS bp_media (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    filename TEXT NOT NULL,
+    original_name TEXT NOT NULL,
+    category TEXT DEFAULT 'other',
+    mimetype TEXT,
+    size INTEGER,
+    created_at TEXT DEFAULT (datetime('now'))
+  )`);
+
   // Migration for existing databases
   try { db.exec('ALTER TABLE bp_profiles ADD COLUMN words_to_use TEXT'); } catch (e) { /* already exists */ }
   try { db.exec('ALTER TABLE bp_profiles ADD COLUMN words_to_avoid TEXT'); } catch (e) { /* already exists */ }

@@ -144,9 +144,9 @@ export default function App() {
         {/* Subtle warm ambient glow */}
         {!dark && (
           <div className="fixed inset-0 pointer-events-none z-0">
-            <div className="absolute top-[-5%] right-[20%] w-[500px] h-[500px] rounded-full"
+            <div className="absolute top-[-5%] right-[20%] w-[70vw] max-w-[500px] h-[70vw] max-h-[500px] rounded-full"
               style={{ background: 'radial-gradient(circle, rgba(196,93,62,0.025) 0%, transparent 70%)', filter: 'blur(80px)' }} />
-            <div className="absolute bottom-[-5%] left-[30%] w-[400px] h-[400px] rounded-full"
+            <div className="absolute bottom-[-5%] left-[30%] w-[60vw] max-w-[400px] h-[60vw] max-h-[400px] rounded-full"
               style={{ background: 'radial-gradient(circle, rgba(94,142,110,0.025) 0%, transparent 70%)', filter: 'blur(80px)' }} />
           </div>
         )}

@@ -182,7 +182,7 @@ export default function HomePage() {
   });
 
   return (
-    <div className="p-5 md:p-7 lg:p-9 max-w-[1440px] mx-auto space-y-4" style={{ fontFamily: dmSans }}>
+    <div className="p-4 sm:p-5 md:p-7 lg:p-9 max-w-[1440px] mx-auto space-y-4" style={{ fontFamily: dmSans }}>
 
       {/* ═══ STATUS RIBBON ═══ */}
       <div className="cc-panel flex items-center flex-wrap gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 rounded-2xl" style={{
@@ -213,7 +213,7 @@ export default function HomePage() {
 
       {/* ═══ GREETING ═══ */}
       <div className="cc-panel px-1 pt-3 pb-4" style={{ animationDelay: '30ms' }}>
-        <h1 className="text-[26px] md:text-[32px] leading-tight" style={{
+        <h1 className="text-[22px] sm:text-[26px] md:text-[32px] leading-tight" style={{
           fontFamily: fraunces,
           fontStyle: 'italic',
           color: ink,
@@ -233,9 +233,9 @@ export default function HomePage() {
       </div>
 
       {/* ═══ KPI CARDS ═══ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {KPI.map((k, i) => (
-          <div key={i} className="cc-panel rounded-[22px] p-5 relative overflow-hidden group/kpi transition-all duration-300 hover:-translate-y-0.5"
+          <div key={i} className="cc-panel rounded-[22px] p-4 sm:p-5 relative overflow-hidden group/kpi transition-all duration-300 hover:-translate-y-0.5"
             style={{
               ...card(60 + i * 35),
               borderLeft: `3px solid ${k.color}${dark ? '60' : '40'}`,
@@ -252,7 +252,7 @@ export default function HomePage() {
                 <div className="text-[10px] font-semibold tracking-[0.1em] uppercase" style={{ color: t3 }}>
                   {k.label}
                 </div>
-                <div className="text-[24px] md:text-[28px] font-bold tabular-nums leading-none tracking-tight" style={{
+                <div className="text-[20px] sm:text-[24px] md:text-[28px] font-bold tabular-nums leading-none tracking-tight" style={{
                   color: ink,
                   fontFamily: dmSans,
                 }}>
@@ -286,7 +286,7 @@ export default function HomePage() {
 
         {/* Revenue Chart — 3 cols */}
         <div className="lg:col-span-3 cc-panel overflow-hidden" style={card(200)}>
-          <div className="flex items-center justify-between px-5 py-3.5" style={{ borderBottom: `1px solid ${brd}` }}>
+          <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5" style={{ borderBottom: `1px solid ${brd}` }}>
             <div className="flex items-center gap-2.5">
               <div className="w-[3px] h-4 rounded-full" style={{ background: terra }} />
               <span className="text-[11px] font-bold tracking-[0.08em] uppercase" style={{ color: ink }}>
@@ -304,8 +304,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="px-3 py-4">
-            <svg viewBox={`0 0 ${cW} ${cH}`} className="w-full" preserveAspectRatio="xMidYMid meet">
+          <div className="px-2 sm:px-3 py-4 w-full overflow-x-auto">
+            <svg viewBox={`0 0 ${cW} ${cH}`} className="w-full min-w-[320px]" preserveAspectRatio="xMidYMid meet">
               <defs>
                 <linearGradient id="ccRevGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={terra} stopOpacity={dark ? 0.15 : 0.1} />
@@ -376,14 +376,14 @@ export default function HomePage() {
 
         {/* Channel Mix — 2 cols */}
         <div className="lg:col-span-2 cc-panel overflow-hidden" style={card(240)}>
-          <div className="flex items-center gap-2.5 px-5 py-3.5" style={{ borderBottom: `1px solid ${brd}` }}>
+          <div className="flex items-center gap-2.5 px-4 sm:px-5 py-3 sm:py-3.5" style={{ borderBottom: `1px solid ${brd}` }}>
             <div className="w-[3px] h-4 rounded-full" style={{ background: sage }} />
             <span className="text-[11px] font-bold tracking-[0.08em] uppercase" style={{ color: ink }}>
               Channel Performance
             </span>
           </div>
 
-          <div className="p-5">
+          <div className="p-4 sm:p-5">
             {/* Donut chart */}
             <div className="flex items-center justify-center mb-5">
               <div className="relative">
@@ -442,7 +442,7 @@ export default function HomePage() {
 
         {/* Operations Feed — 3 cols */}
         <div className="lg:col-span-3 cc-panel overflow-hidden" style={card(280)}>
-          <div className="flex items-center gap-2.5 px-5 py-3.5" style={{ borderBottom: `1px solid ${brd}` }}>
+          <div className="flex items-center gap-2.5 px-4 sm:px-5 py-3 sm:py-3.5" style={{ borderBottom: `1px solid ${brd}` }}>
             <div className="w-[6px] h-[6px] rounded-full" style={{ background: sage }} />
             <span className="text-[11px] font-bold tracking-[0.08em] uppercase" style={{ color: ink }}>
               Operations Feed
@@ -452,11 +452,11 @@ export default function HomePage() {
           </div>
 
           <div className="relative">
-            <div className="absolute left-[28px] top-0 bottom-0 w-px" style={{ background: brd }} />
+            <div className="absolute left-[20px] sm:left-[28px] top-0 bottom-0 w-px" style={{ background: brd }} />
 
             {FEED.map((item, i) => (
               <div key={i}
-                className="flex items-start gap-3 px-5 py-3.5 relative transition-colors cursor-default"
+                className="flex items-start gap-2.5 sm:gap-3 px-3 sm:px-5 py-3 sm:py-3.5 relative transition-colors cursor-default"
                 onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.015)' : 'rgba(44,40,37,0.015)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
@@ -485,7 +485,7 @@ export default function HomePage() {
 
         {/* Priority Actions — 2 cols */}
         <div className="lg:col-span-2 cc-panel overflow-hidden" style={card(320)}>
-          <div className="flex items-center gap-2.5 px-5 py-3.5" style={{ borderBottom: `1px solid ${brd}` }}>
+          <div className="flex items-center gap-2.5 px-4 sm:px-5 py-3 sm:py-3.5" style={{ borderBottom: `1px solid ${brd}` }}>
             <svg className="w-3.5 h-3.5" fill="none" stroke={terra} viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
             </svg>
@@ -542,7 +542,7 @@ export default function HomePage() {
 
       {/* ═══ QUICK ACTIONS ═══ */}
       <div className="cc-panel overflow-hidden" style={card(360)}>
-        <div className="flex items-center gap-2.5 px-5 py-3.5" style={{ borderBottom: `1px solid ${brd}` }}>
+        <div className="flex items-center gap-2.5 px-4 sm:px-5 py-3 sm:py-3.5" style={{ borderBottom: `1px solid ${brd}` }}>
           <svg className="w-3.5 h-3.5" fill="none" stroke={terra} viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
           </svg>
@@ -550,10 +550,10 @@ export default function HomePage() {
             Quick Actions
           </span>
         </div>
-        <div className="p-4 grid grid-cols-3 sm:grid-cols-6 gap-3">
+        <div className="p-3 sm:p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
           {QUICK.map((q, i) => (
             <button key={i} onClick={() => nav(q.path)}
-              className="group/q flex flex-col items-center gap-2.5 px-3 py-5 rounded-2xl transition-all duration-300 cursor-pointer"
+              className="group/q flex flex-col items-center gap-2 sm:gap-2.5 px-2 sm:px-3 py-4 sm:py-5 rounded-2xl transition-all duration-300 cursor-pointer"
               style={{
                 background: dark ? 'rgba(255,255,255,0.02)' : 'rgba(44,40,37,0.02)',
                 border: `1px solid ${dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.05)'}`,
@@ -572,16 +572,16 @@ export default function HomePage() {
               }}
             >
               <div className="relative">
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover/q:scale-110 group-hover/q:rotate-3" style={{
+                <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 group-hover/q:scale-110 group-hover/q:rotate-3" style={{
                   background: `linear-gradient(135deg, ${q.color}, ${q.grad})`,
                   boxShadow: `0 6px 16px -2px ${q.color}40`,
                 }}>
                   {q.filled ? (
-                    <svg className="w-6 h-6 text-white drop-shadow-sm" fill="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white drop-shadow-sm" fill="currentColor" viewBox="0 0 24 24">
                       <path fillRule="evenodd" clipRule="evenodd" d={q.icon} />
                     </svg>
                   ) : (
-                    <svg className="w-6 h-6 text-white drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
                       <path strokeLinecap="round" strokeLinejoin="round" d={q.icon} />
                     </svg>
                   )}

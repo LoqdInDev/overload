@@ -67,7 +67,7 @@ export default function CheckoutOptimizerPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 sm:mb-8">
+      <div className="flex flex-wrap gap-1 mb-6 sm:mb-8">
         {['overview', 'flows', 'tests', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
             {t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1).replace('-', ' ')}
@@ -111,7 +111,7 @@ export default function CheckoutOptimizerPage() {
                   { reason: 'Payment security concerns', pct: 12 },
                   { reason: 'Slow page load time', pct: 10 },
                 ].map((r, i) => (
-                  <div key={i} className="flex items-center gap-5">
+                  <div key={i} className="flex items-center gap-3 sm:gap-5">
                     <div className="flex-1">
                       <p className="text-sm text-gray-300">{r.reason}</p>
                     </div>
@@ -181,26 +181,28 @@ export default function CheckoutOptimizerPage() {
       {tab === 'tests' && (
         <div className="animate-fade-in">
           <div className="panel rounded-2xl overflow-hidden">
-            <div className="divide-y divide-indigo-500/[0.04]">
-              {MOCK_TESTS.map(test => (
-                <div key={test.id} className="px-6 py-4 hover:bg-white/[0.01] transition-colors">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-4">
-                      <p className="text-sm font-semibold text-gray-300">{test.name}</p>
-                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${testStatusColor(test.status)}15`, color: testStatusColor(test.status), border: `1px solid ${testStatusColor(test.status)}25` }}>
-                        {test.status}
-                      </span>
+            <div className="overflow-x-auto">
+              <div className="divide-y divide-indigo-500/[0.04] min-w-[480px]">
+                {MOCK_TESTS.map(test => (
+                  <div key={test.id} className="px-4 sm:px-6 py-4 hover:bg-white/[0.01] transition-colors">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <p className="text-sm font-semibold text-gray-300">{test.name}</p>
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${testStatusColor(test.status)}15`, color: testStatusColor(test.status), border: `1px solid ${testStatusColor(test.status)}25` }}>
+                          {test.status}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-600">{test.days} days</span>
                     </div>
-                    <span className="text-xs text-gray-600">{test.days} days</span>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6 text-xs">
+                      <div><span className="text-gray-500">Control</span><p className="font-mono font-bold text-gray-400 mt-0.5">{test.control}%</p></div>
+                      <div><span className="text-gray-500">Variant</span><p className="font-mono font-bold text-gray-300 mt-0.5">{test.variant}%</p></div>
+                      <div><span className="text-gray-500">Lift</span><p className="font-mono font-bold mt-0.5" style={{ color: test.lift.startsWith('+') ? '#22c55e' : '#ef4444' }}>{test.lift}</p></div>
+                      <div><span className="text-gray-500">Confidence</span><p className="font-mono font-bold text-gray-400 mt-0.5">{test.confidence}</p></div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-4 gap-4 sm:gap-6 text-xs">
-                    <div><span className="text-gray-500">Control</span><p className="font-mono font-bold text-gray-400 mt-0.5">{test.control}%</p></div>
-                    <div><span className="text-gray-500">Variant</span><p className="font-mono font-bold text-gray-300 mt-0.5">{test.variant}%</p></div>
-                    <div><span className="text-gray-500">Lift</span><p className="font-mono font-bold mt-0.5" style={{ color: test.lift.startsWith('+') ? '#22c55e' : '#ef4444' }}>{test.lift}</p></div>
-                    <div><span className="text-gray-500">Confidence</span><p className="font-mono font-bold text-gray-400 mt-0.5">{test.confidence}</p></div>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -209,7 +211,7 @@ export default function CheckoutOptimizerPage() {
       {/* AI Tools */}
       {tab === 'ai-tools' && (
         <div className="animate-fade-in space-y-4 sm:space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {AI_TEMPLATES.map(tool => (
               <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === tool.name ? 'border-green-600/30' : ''}`}>
                 <p className="text-sm font-bold text-gray-300">{tool.name}</p>

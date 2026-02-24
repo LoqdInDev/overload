@@ -252,7 +252,7 @@ export default function SocialPage() {
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1 mb-6 sm:mb-8">
+      <div className="flex flex-wrap gap-1 mb-6 sm:mb-8">
         {[
           { id: 'create', label: 'Create Content', count: null },
           { id: 'accounts', label: 'Connected Accounts', count: socialConnected.length },
@@ -394,7 +394,7 @@ export default function SocialPage() {
           </div>
 
           {socialConnected.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
               {socialConnected.map(platform => (
                 <button key={platform.id} onClick={() => publishToProvider(platform.provider)}
                   disabled={publishing || !publishText.trim()}
@@ -425,9 +425,9 @@ export default function SocialPage() {
           {/* Connected accounts strip */}
           {socialConnected.length > 0 && (
             <div className="mb-6 sm:mb-8">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
                 <p className="hud-label text-[11px]">CONNECTED</p>
-                <div className="flex gap-1.5">
+                <div className="flex flex-wrap gap-1.5">
                   {socialConnected.map(p => (
                     <div key={p.id} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: `${p.color}20`, border: `1px solid ${p.color}30` }}>
                       <svg className="w-4 h-4" style={{ color: p.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -502,14 +502,14 @@ export default function SocialPage() {
         return (
           <div className="animate-fade-in">
             {/* Header */}
-            <div className="flex items-center gap-3 mb-6 sm:mb-8">
+            <div className="flex flex-wrap items-center gap-3 mb-6 sm:mb-8">
               <button onClick={() => { setActiveType(null); setResult(''); setStreamText(''); setPrompt(''); }}
                 className={`p-2 rounded-md border transition-all ${dark ? 'border-indigo-500/10 text-gray-500 hover:text-white hover:border-indigo-500/25' : 'border-gray-300 text-gray-400 hover:text-gray-700 hover:border-gray-400'}`}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
                 </svg>
               </button>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className="hud-label text-[11px]" style={{ color: currentType?.color || MODULE_COLOR }}>{currentType?.name?.toUpperCase()} GENERATOR</p>
                 <h2 className={`text-lg font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>Create {currentType?.name} Post</h2>
               </div>
@@ -527,7 +527,7 @@ export default function SocialPage() {
                 {/* Templates */}
                 <div className={`${panelCls} rounded-2xl p-4 sm:p-6`}>
                   <p className="hud-label text-[11px] mb-3">TEMPLATES</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {templates.map(t => (
                       <button key={t.name} onClick={() => setPrompt(t.prompt)}
                         className={`text-left px-4 py-3 rounded-xl border text-sm transition-all ${
@@ -668,12 +668,12 @@ export default function SocialPage() {
             {/* Result */}
             {result && (
               <div className={`${panelCls} rounded-2xl p-4 sm:p-7 mt-6 animate-fade-up`}>
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-emerald-400" />
                     <span className="hud-label text-[11px]" style={{ color: '#4ade80' }}>COMPLETE</span>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button onClick={copyToClipboard} className="chip text-[10px]" style={{ color: copied ? '#4ade80' : undefined }}>
                       {copied ? 'Copied!' : 'Copy'}
                     </button>

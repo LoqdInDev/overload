@@ -72,7 +72,7 @@ export default function SupportCenterPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 sm:mb-8">
+      <div className="flex flex-wrap gap-1 mb-6 sm:mb-8">
         {['overview', 'tickets', 'templates', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
             {t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1).replace('-', ' ')}
@@ -113,14 +113,14 @@ export default function SupportCenterPage() {
                   { name: 'David R.', resolved: 6, avgTime: '16m', satisfaction: '92%' },
                   { name: 'Maria L.', resolved: 4, avgTime: '19m', satisfaction: '95%' },
                 ].map((agent, i) => (
-                  <div key={i} className="flex items-center justify-between py-1.5 border-b border-indigo-500/[0.04] last:border-0">
+                  <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 py-2 sm:py-1.5 border-b border-indigo-500/[0.04] last:border-0">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: `${MODULE_COLOR}15`, color: MODULE_COLOR }}>
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0" style={{ background: `${MODULE_COLOR}15`, color: MODULE_COLOR }}>
                         {agent.name.split(' ').map(n => n[0]).join('')}
                       </div>
                       <span className="text-sm text-gray-300">{agent.name}</span>
                     </div>
-                    <div className="flex items-center gap-4 text-xs">
+                    <div className="flex items-center gap-3 sm:gap-4 text-xs sm:ml-0 ml-10">
                       <span className="font-mono text-gray-400">{agent.resolved} resolved</span>
                       <span className="font-mono text-gray-500">{agent.avgTime} avg</span>
                       <span className="font-mono text-green-400">{agent.satisfaction}</span>
@@ -132,7 +132,7 @@ export default function SupportCenterPage() {
           </div>
           <div className="panel rounded-2xl p-4 sm:p-6">
             <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>TICKET VOLUME (LAST 7 DAYS)</p>
-            <div className="flex items-end gap-3 h-24">
+            <div className="flex items-end gap-1.5 sm:gap-3 h-24">
               {[18, 24, 31, 22, 28, 19, 24].map((v, i) => {
                 const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
                 return (
@@ -154,9 +154,9 @@ export default function SupportCenterPage() {
           <div className="panel rounded-2xl overflow-hidden">
             <div className="divide-y divide-indigo-500/[0.04]">
               {MOCK_TICKETS.map(t => (
-                <div key={t.id} className="px-6 py-4 hover:bg-white/[0.01] transition-colors">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
+                <div key={t.id} className="px-4 sm:px-6 py-3 sm:py-4 hover:bg-white/[0.01] transition-colors">
+                  <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                       <span className="text-xs font-mono text-gray-500">{t.id}</span>
                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${priorityColor(t.priority)}15`, color: priorityColor(t.priority), border: `1px solid ${priorityColor(t.priority)}25` }}>
                         {t.priority}
@@ -168,7 +168,7 @@ export default function SupportCenterPage() {
                     <span className="text-xs text-gray-600">{t.created}</span>
                   </div>
                   <p className="text-sm font-semibold text-gray-300">{t.subject}</p>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-3 mt-1 text-xs text-gray-500">
                     <span>{t.customer}</span>
                     <span>&middot;</span>
                     <span>{t.assignee}</span>
@@ -202,7 +202,7 @@ export default function SupportCenterPage() {
       {/* AI Tools */}
       {tab === 'ai-tools' && (
         <div className="animate-fade-in space-y-4 sm:space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             {AI_TEMPLATES.map(tool => (
               <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === tool.name ? 'border-orange-500/30' : ''}`}>
                 <p className="text-sm font-bold text-gray-300">{tool.name}</p>

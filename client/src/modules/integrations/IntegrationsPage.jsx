@@ -191,7 +191,7 @@ export default function IntegrationsPage() {
 
   if (loading) {
     return (
-      <div className="p-4 sm:p-6 lg:p-12">
+      <div className="p-4 sm:p-6 lg:p-10">
         <div className="flex items-center justify-center h-64 gap-3">
           <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#6366f1', animationDelay: '0ms' }} />
           <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#818cf8', animationDelay: '150ms' }} />
@@ -202,12 +202,14 @@ export default function IntegrationsPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-12">
+    <div className="p-4 sm:p-6 lg:p-10">
       {/* Header */}
-      <div className="mb-6 sm:mb-8 animate-fade-in">
-        <p className="hud-label text-[11px] mb-2" style={{ color: '#6366f1' }}>INTEGRATIONS</p>
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Integrations Hub</h1>
-        <p className="text-base text-gray-500">Connect your platforms and sync data across your marketing stack</p>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6 sm:mb-8 animate-fade-in">
+        <div>
+          <p className="hud-label text-[11px] mb-2" style={{ color: '#6366f1' }}>INTEGRATIONS</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Integrations Hub</h1>
+          <p className="text-sm sm:text-base text-gray-500">Connect your platforms and sync data across your marketing stack</p>
+        </div>
       </div>
 
       {/* Stats */}
@@ -226,7 +228,7 @@ export default function IntegrationsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6">
+      <div className="flex flex-wrap gap-1 mb-6">
         {['connected', 'available', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={`chip text-xs ${tab === t ? 'active' : ''}`}
@@ -247,29 +249,33 @@ export default function IntegrationsPage() {
               </button>
             </div>
           ) : connected.map(p => (
-            <div key={p.id} className="panel rounded-2xl p-4 sm:p-6 flex items-center gap-4 sm:gap-6">
-              <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-sm font-bold text-indigo-400 flex-shrink-0">
-                {p.name.charAt(0)}
+            <div key={p.id} className="panel rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+              <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-sm font-bold text-indigo-400 flex-shrink-0">
+                  {p.name.charAt(0)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-semibold text-gray-200">{p.name}</p>
+                  <p className="text-xs text-gray-500 mt-0.5 truncate">
+                    {p.accountName ? `${p.accountName} · ` : ''}{p.description}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-base font-semibold text-gray-200">{p.name}</p>
-                <p className="text-xs text-gray-500 mt-0.5 truncate">
-                  {p.accountName ? `${p.accountName} · ` : ''}{p.description}
-                </p>
+              <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${TYPE_COLORS[p.category] || TYPE_COLORS.data}`}>
+                  {p.category}
+                </span>
+                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${STATUS_STYLES[p.status]}`}>
+                  {p.status}
+                </span>
+                <button
+                  onClick={() => disconnect(p.id)}
+                  disabled={disconnectingId === p.id}
+                  className="text-xs font-bold px-4 py-2 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50 ml-auto sm:ml-0"
+                >
+                  {disconnectingId === p.id ? 'Disconnecting...' : 'Disconnect'}
+                </button>
               </div>
-              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${TYPE_COLORS[p.category] || TYPE_COLORS.data}`}>
-                {p.category}
-              </span>
-              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${STATUS_STYLES[p.status]}`}>
-                {p.status}
-              </span>
-              <button
-                onClick={() => disconnect(p.id)}
-                disabled={disconnectingId === p.id}
-                className="text-xs font-bold px-4 py-2 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
-              >
-                {disconnectingId === p.id ? 'Disconnecting...' : 'Disconnect'}
-              </button>
             </div>
           ))}
         </div>
@@ -277,33 +283,37 @@ export default function IntegrationsPage() {
 
       {/* Available Tab */}
       {tab === 'available' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 animate-fade-in">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 animate-fade-in">
           {available.map(p => (
-            <div key={p.id} className="panel rounded-2xl p-4 sm:p-6 flex items-center gap-4 sm:gap-6">
-              <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-sm font-bold text-indigo-400 flex-shrink-0">
-                {p.name.charAt(0)}
+            <div key={p.id} className="panel rounded-2xl p-4 sm:p-6 flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-sm font-bold text-indigo-400 flex-shrink-0">
+                  {p.name.charAt(0)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-semibold text-gray-200">{p.name}</p>
+                  <p className="text-xs text-gray-500 mt-0.5 truncate">{p.description}</p>
+                </div>
+                <span className="text-[9px] text-gray-500 font-mono flex-shrink-0">{p.category}</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-base font-semibold text-gray-200">{p.name}</p>
-                <p className="text-xs text-gray-500 mt-0.5 truncate">{p.description}</p>
+              <div className="flex flex-wrap gap-2">
+                {p.authType === 'oauth2' ? (
+                  <button
+                    onClick={() => connectOAuth(p)}
+                    disabled={connectingId === p.id || (!p.configured && p.authType === 'oauth2')}
+                    className="text-xs font-bold px-4 py-2 rounded-xl border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/10 transition-colors disabled:opacity-50 w-full sm:w-auto"
+                  >
+                    {connectingId === p.id ? 'Connecting...' : !p.configured ? 'Not Configured' : 'Connect'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => connectApiKey(p)}
+                    className="text-xs font-bold px-4 py-2 rounded-xl border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/10 transition-colors w-full sm:w-auto"
+                  >
+                    Enter Key
+                  </button>
+                )}
               </div>
-              <span className="text-[9px] text-gray-500 font-mono">{p.category}</span>
-              {p.authType === 'oauth2' ? (
-                <button
-                  onClick={() => connectOAuth(p)}
-                  disabled={connectingId === p.id || (!p.configured && p.authType === 'oauth2')}
-                  className="text-xs font-bold px-4 py-2 rounded-xl border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/10 transition-colors disabled:opacity-50 flex-shrink-0"
-                >
-                  {connectingId === p.id ? 'Connecting...' : !p.configured ? 'Not Configured' : 'Connect'}
-                </button>
-              ) : (
-                <button
-                  onClick={() => connectApiKey(p)}
-                  className="text-xs font-bold px-4 py-2 rounded-xl border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/10 transition-colors flex-shrink-0"
-                >
-                  Enter Key
-                </button>
-              )}
             </div>
           ))}
         </div>

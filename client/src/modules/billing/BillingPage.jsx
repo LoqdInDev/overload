@@ -59,7 +59,7 @@ export default function BillingPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-12">
+    <div className="p-4 sm:p-6 lg:p-10">
       <div className="mb-6 sm:mb-8 animate-fade-in">
         <p className="hud-label text-[11px] mb-2" style={{ color: MODULE_COLOR }}>BILLING & USAGE</p>
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Billing</h1>
@@ -67,9 +67,9 @@ export default function BillingPage() {
 
       {/* Current Plan Card */}
       <div className="panel rounded-2xl p-4 sm:p-7 mb-6 sm:mb-8 animate-fade-in" style={{ borderColor: 'rgba(99,102,241,0.12)' }}>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-4 sm:gap-6">
-            <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)' }}>
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)' }}>
               <svg className="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
               </svg>
@@ -82,9 +82,9 @@ export default function BillingPage() {
               <p className="text-xs text-gray-500 mt-0.5">Next billing: March 1, 2026</p>
             </div>
           </div>
-          <div className="text-right">
+          <div className="text-left sm:text-right">
             <p className="text-2xl font-bold text-white font-mono">$99<span className="text-sm text-gray-500">/mo</span></p>
-            <div className="flex items-center gap-1.5 justify-end mt-1">
+            <div className="flex items-center gap-1.5 sm:justify-end mt-1">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
               <span className="text-xs font-semibold text-emerald-400">Active</span>
             </div>
@@ -93,7 +93,7 @@ export default function BillingPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-4">
+      <div className="flex flex-wrap gap-1 mb-4">
         {['plan', 'invoices', 'usage', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: 'rgba(100,116,139,0.2)', borderColor: 'rgba(100,116,139,0.35)', color: '#94a3b8' } : {}}>
             {t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1)}
@@ -103,7 +103,7 @@ export default function BillingPage() {
 
       {/* Plan Tab */}
       {tab === 'plan' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-5 animate-fade-in stagger">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 animate-fade-in stagger">
           {PLANS.map(plan => (
             <div key={plan.id} className={`panel rounded-2xl p-4 sm:p-7 transition-all ${plan.current ? 'border-indigo-500/20' : 'hover:border-indigo-500/10'}`}
               style={plan.current ? { background: 'rgba(99,102,241,0.03)' } : {}}>
@@ -151,25 +151,29 @@ export default function BillingPage() {
       {tab === 'invoices' && (
         <div className="animate-fade-in">
           <div className="panel rounded-2xl overflow-hidden">
-            <div className="grid grid-cols-4 px-6 py-4 border-b border-indigo-500/[0.04]">
-              <span className="text-xs font-bold text-gray-500">DATE</span>
-              <span className="text-xs font-bold text-gray-500">PERIOD</span>
-              <span className="text-xs font-bold text-gray-500">AMOUNT</span>
-              <span className="text-xs font-bold text-gray-500 text-right">STATUS</span>
-            </div>
-            <div className="divide-y divide-indigo-500/[0.04]">
-              {MOCK_INVOICES.map(inv => (
-                <div key={inv.id} className="grid grid-cols-4 px-6 py-4 hover:bg-white/[0.01] transition-colors items-center">
-                  <span className="text-sm text-gray-300">{inv.date}</span>
-                  <span className="text-sm text-gray-400">{inv.period}</span>
-                  <span className="text-sm text-white font-mono font-bold">{inv.amount}</span>
-                  <div className="text-right">
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: inv.status === 'paid' ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)', color: inv.status === 'paid' ? '#4ade80' : '#fbbf24', border: `1px solid ${inv.status === 'paid' ? 'rgba(34,197,94,0.25)' : 'rgba(245,158,11,0.25)'}` }}>
-                      {inv.status}
-                    </span>
-                  </div>
+            <div className="overflow-x-auto">
+              <div className="min-w-[500px]">
+                <div className="grid grid-cols-4 px-4 sm:px-6 py-4 border-b border-indigo-500/[0.04]">
+                  <span className="text-xs font-bold text-gray-500">DATE</span>
+                  <span className="text-xs font-bold text-gray-500">PERIOD</span>
+                  <span className="text-xs font-bold text-gray-500">AMOUNT</span>
+                  <span className="text-xs font-bold text-gray-500 text-right">STATUS</span>
                 </div>
-              ))}
+                <div className="divide-y divide-indigo-500/[0.04]">
+                  {MOCK_INVOICES.map(inv => (
+                    <div key={inv.id} className="grid grid-cols-4 px-4 sm:px-6 py-4 hover:bg-white/[0.01] transition-colors items-center">
+                      <span className="text-sm text-gray-300">{inv.date}</span>
+                      <span className="text-sm text-gray-400">{inv.period}</span>
+                      <span className="text-sm text-white font-mono font-bold">{inv.amount}</span>
+                      <div className="text-right">
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: inv.status === 'paid' ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)', color: inv.status === 'paid' ? '#4ade80' : '#fbbf24', border: `1px solid ${inv.status === 'paid' ? 'rgba(34,197,94,0.25)' : 'rgba(245,158,11,0.25)'}` }}>
+                          {inv.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>

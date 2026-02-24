@@ -63,7 +63,7 @@ export default function ClientManagerPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 sm:mb-8">
+      <div className="flex flex-wrap gap-1 mb-6 sm:mb-8">
         {['overview', 'clients', 'projects'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
             {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -122,16 +122,16 @@ export default function ClientManagerPage() {
               {MOCK_PROJECTS.filter(p => p.status === 'active').sort((a, b) => new Date(a.deadline) - new Date(b.deadline)).slice(0, 4).map(p => {
                 const daysLeft = Math.ceil((new Date(p.deadline) - new Date()) / (1000 * 60 * 60 * 24));
                 return (
-                  <div key={p.id} className="flex items-center justify-between py-2 border-b border-indigo-500/[0.04] last:border-0">
-                    <div>
-                      <p className="text-sm font-semibold text-gray-300">{p.name}</p>
+                  <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-2 border-b border-indigo-500/[0.04] last:border-0">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-300 truncate">{p.name}</p>
                       <p className="text-xs text-gray-500">{p.client}</p>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-20 h-1.5 bg-white/[0.03] rounded-full overflow-hidden">
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <div className="w-16 sm:w-20 h-1.5 bg-white/[0.03] rounded-full overflow-hidden">
                         <div className="h-full rounded-full" style={{ width: `${p.progress}%`, background: p.progress > 80 ? '#22c55e' : p.progress > 50 ? '#3b82f6' : '#f59e0b' }} />
                       </div>
-                      <span className="text-xs font-mono" style={{ color: daysLeft < 14 ? '#f59e0b' : '#6b7280' }}>
+                      <span className="text-xs font-mono whitespace-nowrap" style={{ color: daysLeft < 14 ? '#f59e0b' : '#6b7280' }}>
                         {daysLeft}d left
                       </span>
                     </div>
@@ -148,32 +148,32 @@ export default function ClientManagerPage() {
         <div className="animate-fade-in grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
           {MOCK_CLIENTS.map(c => (
             <div key={c.id} className="panel rounded-2xl p-4 sm:p-6 hover:border-slate-500/20 transition-all cursor-pointer">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center text-sm font-bold" style={{ background: `${MODULE_COLOR}15`, color: MODULE_COLOR }}>
+              <div className="flex items-start justify-between gap-2 mb-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-sm font-bold flex-shrink-0" style={{ background: `${MODULE_COLOR}15`, color: MODULE_COLOR }}>
                     {c.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                   </div>
-                  <div>
-                    <p className="text-base font-bold text-gray-200">{c.name}</p>
-                    <p className="text-xs text-gray-500">{c.contact} &middot; Since {c.since}</p>
+                  <div className="min-w-0">
+                    <p className="text-sm sm:text-base font-bold text-gray-200 truncate">{c.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{c.contact} &middot; Since {c.since}</p>
                   </div>
                 </div>
-                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${clientStatusColor(c.status)}15`, color: clientStatusColor(c.status), border: `1px solid ${clientStatusColor(c.status)}25` }}>
+                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0" style={{ background: `${clientStatusColor(c.status)}15`, color: clientStatusColor(c.status), border: `1px solid ${clientStatusColor(c.status)}25` }}>
                   {c.status}
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
                 <div>
-                  <p className="text-base font-bold font-mono" style={{ color: MODULE_COLOR }}>{c.revenue}</p>
-                  <p className="text-xs text-gray-500">Revenue</p>
+                  <p className="text-sm sm:text-base font-bold font-mono" style={{ color: MODULE_COLOR }}>{c.revenue}</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500">Revenue</p>
                 </div>
                 <div>
-                  <p className="text-base font-bold font-mono text-white">{c.projects}</p>
-                  <p className="text-xs text-gray-500">Projects</p>
+                  <p className="text-sm sm:text-base font-bold font-mono text-white">{c.projects}</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500">Projects</p>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-400 truncate">{c.email}</p>
-                  <p className="text-xs text-gray-600">Email</p>
+                <div className="min-w-0">
+                  <p className="text-[10px] sm:text-xs text-gray-400 truncate">{c.email}</p>
+                  <p className="text-[10px] sm:text-xs text-gray-600">Email</p>
                 </div>
               </div>
             </div>
@@ -187,13 +187,13 @@ export default function ClientManagerPage() {
           <div className="panel rounded-2xl overflow-hidden">
             <div className="divide-y divide-indigo-500/[0.04]">
               {MOCK_PROJECTS.map(p => (
-                <div key={p.id} className="px-6 py-4 hover:bg-white/[0.01] transition-colors">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
+                <div key={p.id} className="px-4 sm:px-6 py-4 hover:bg-white/[0.01] transition-colors">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <div className="min-w-0">
                       <p className="text-sm font-semibold text-gray-300">{p.name}</p>
                       <p className="text-xs text-gray-500">{p.client} &middot; Due {p.deadline}</p>
                     </div>
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${projectStatusColor(p.status)}15`, color: projectStatusColor(p.status), border: `1px solid ${projectStatusColor(p.status)}25` }}>
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0" style={{ background: `${projectStatusColor(p.status)}15`, color: projectStatusColor(p.status), border: `1px solid ${projectStatusColor(p.status)}25` }}>
                       {p.status}
                     </span>
                   </div>

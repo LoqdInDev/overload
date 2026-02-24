@@ -149,7 +149,7 @@ export default function BrandStrategyPage() {
         </div>
 
         {/* Strategy Tools */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-5 stagger mb-6 sm:mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 stagger mb-6 sm:mb-10">
           {STRATEGY_TOOLS.map(tool => (
             <button key={tool.id} onClick={() => setActiveTool(tool.id)}
               className="panel-interactive rounded-2xl p-4 sm:p-7 text-left group">
@@ -218,22 +218,22 @@ export default function BrandStrategyPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6 sm:mb-8">
+      <div className="flex flex-wrap items-center gap-3 mb-6 sm:mb-8">
         <button onClick={() => { setActiveTool(null); setResult(''); setStreamText(''); }}
-          className={`p-2 rounded-md border transition-all ${dark ? 'border-indigo-500/10 text-gray-500 hover:text-white hover:border-indigo-500/25' : 'border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-300'}`}>
+          className={`p-2 rounded-md border transition-all flex-shrink-0 ${dark ? 'border-indigo-500/10 text-gray-500 hover:text-white hover:border-indigo-500/25' : 'border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-300'}`}>
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
           </svg>
         </button>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: `${COLOR}15`, border: `1px solid ${COLOR}20` }}>
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${COLOR}15`, border: `1px solid ${COLOR}20` }}>
             <svg className="w-5 h-5" style={{ color: COLOR }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d={currentTool?.icon} />
             </svg>
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="hud-label text-[11px]" style={{ color: COLOR }}>{currentTool?.name?.toUpperCase()}</p>
-            <h2 className={`text-lg font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{currentTool?.name}</h2>
+            <h2 className={`text-base sm:text-lg font-bold truncate ${dark ? 'text-white' : 'text-gray-900'}`}>{currentTool?.name}</h2>
           </div>
         </div>
       </div>
@@ -276,12 +276,12 @@ export default function BrandStrategyPage() {
 
           {/* Generate */}
           <button onClick={generate} disabled={!brandName.trim() || generating}
-            className="btn-accent w-full py-3 rounded-lg"
+            className="btn-accent w-full py-3 rounded-lg text-sm sm:text-base"
             style={{ background: generating ? '#1e1e2e' : COLOR, boxShadow: generating ? 'none' : `0 4px 20px -4px ${COLOR}66` }}>
             {generating ? (
-              <span className="flex items-center gap-2">
-                <span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />
-                GENERATING {currentTool?.name?.toUpperCase()}...
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin flex-shrink-0" />
+                <span className="truncate">GENERATING {currentTool?.name?.toUpperCase()}...</span>
               </span>
             ) : `GENERATE ${currentTool?.name?.toUpperCase()}`}
           </button>
@@ -313,7 +313,7 @@ export default function BrandStrategyPage() {
           {/* Brand Archetype */}
           <div className="panel rounded-2xl p-4 sm:p-6">
             <p className="hud-label text-[11px] mb-3">BRAND ARCHETYPE</p>
-            <div className="grid grid-cols-3 gap-1">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
               {ARCHETYPES.map(arc => (
                 <button key={arc.id} onClick={() => setArchetype(arc.id)}
                   className={`text-center px-1.5 py-2 rounded-lg border text-[9px] transition-all ${
@@ -394,12 +394,12 @@ export default function BrandStrategyPage() {
       {/* Final Result */}
       {result && (
         <div className="panel rounded-2xl p-4 sm:p-7 mt-6 animate-fade-up">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-400" />
               <span className="hud-label text-[11px]" style={{ color: '#4ade80' }}>COMPLETE</span>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button onClick={copyToClipboard}
                 className="chip text-[10px]" style={{ color: copied ? '#4ade80' : undefined }}>
                 {copied ? 'Copied!' : 'Copy'}

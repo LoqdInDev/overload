@@ -67,7 +67,7 @@ export default function CustomerIntelligencePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 sm:mb-8">
+      <div className="flex flex-wrap gap-1 mb-6 sm:mb-8">
         {['overview', 'segments', 'insights', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
             {t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1).replace('-', ' ')}
@@ -175,14 +175,14 @@ export default function CustomerIntelligencePage() {
               <div className="flex items-start gap-3">
                 <div className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ background: severityColor(insight.severity), boxShadow: `0 0 8px ${severityColor(insight.severity)}40` }} />
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-base font-bold text-gray-200">{insight.title}</p>
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <p className="text-sm sm:text-base font-bold text-gray-200">{insight.title}</p>
                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase" style={{ background: `${severityColor(insight.severity)}15`, color: severityColor(insight.severity) }}>
                       {insight.severity}
                     </span>
                   </div>
                   <p className="text-sm text-gray-400 mb-2">{insight.description}</p>
-                  <div className="bg-white/[0.02] rounded-lg p-5 border border-indigo-500/[0.06]">
+                  <div className="bg-white/[0.02] rounded-lg p-4 sm:p-5 border border-indigo-500/[0.06]">
                     <p className="text-xs font-bold text-gray-400 mb-1">RECOMMENDATION</p>
                     <p className="text-sm text-gray-300">{insight.recommendation}</p>
                   </div>
@@ -196,7 +196,7 @@ export default function CustomerIntelligencePage() {
       {/* AI Tools */}
       {tab === 'ai-tools' && (
         <div className="animate-fade-in space-y-4 sm:space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             {AI_TEMPLATES.map(tool => (
               <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === tool.name ? 'border-cyan-500/30' : ''}`}>
                 <p className="text-sm font-bold text-gray-300">{tool.name}</p>

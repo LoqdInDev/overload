@@ -83,7 +83,7 @@ export default function WorkflowBuilderPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6">
+      <div className="flex flex-wrap gap-1 mb-6">
         {['workflows', 'runs', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: 'rgba(139,92,246,0.15)', borderColor: 'rgba(139,92,246,0.3)', color: '#a78bfa' } : {}}>
             {t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1)}
@@ -95,15 +95,15 @@ export default function WorkflowBuilderPage() {
       {tab === 'workflows' && (
         <div className="space-y-3 animate-fade-in">
           {MOCK_WORKFLOWS.map(wf => (
-            <div key={wf.id} className="panel rounded-2xl p-4 sm:p-6 flex items-center gap-4 sm:gap-6 hover:border-indigo-500/15 transition-all cursor-pointer">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${MODULE_COLOR}15`, border: `1px solid ${MODULE_COLOR}20` }}>
+            <div key={wf.id} className="panel rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 hover:border-indigo-500/15 transition-all cursor-pointer">
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 hidden sm:flex" style={{ background: `${MODULE_COLOR}15`, border: `1px solid ${MODULE_COLOR}20` }}>
                 <svg className="w-6 h-6" style={{ color: MODULE_COLOR }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-base font-semibold text-gray-200">{wf.name}</p>
-                <div className="flex items-center gap-3 mt-1">
+                <div className="flex items-center gap-2 sm:gap-3 mt-1 flex-wrap">
                   <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${triggerColor(wf.trigger)}15`, color: triggerColor(wf.trigger), border: `1px solid ${triggerColor(wf.trigger)}25` }}>
                     {triggerLabel(wf.trigger)}
                   </span>
@@ -111,7 +111,7 @@ export default function WorkflowBuilderPage() {
                   <span className="text-xs text-gray-600">Last run: {wf.lastRun}</span>
                 </div>
               </div>
-              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${statusColor(wf.status)}15`, color: statusColor(wf.status), border: `1px solid ${statusColor(wf.status)}25` }}>
+              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full self-start sm:self-auto" style={{ background: `${statusColor(wf.status)}15`, color: statusColor(wf.status), border: `1px solid ${statusColor(wf.status)}25` }}>
                 {wf.status}
               </span>
             </div>
@@ -123,7 +123,8 @@ export default function WorkflowBuilderPage() {
       {tab === 'runs' && (
         <div className="animate-fade-in">
           <div className="panel rounded-2xl overflow-hidden">
-            <div className="divide-y divide-indigo-500/[0.04]">
+            <div className="overflow-x-auto">
+            <div className="divide-y divide-indigo-500/[0.04] min-w-[500px]">
               {MOCK_RUNS.map(run => (
                 <div key={run.id} className="flex items-center gap-4 sm:gap-6 px-4 sm:px-6 py-4 hover:bg-white/[0.01] transition-colors">
                   <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: statusColor(run.status), boxShadow: run.status === 'running' ? `0 0 8px ${statusColor(run.status)}` : 'none' }} />
@@ -138,6 +139,7 @@ export default function WorkflowBuilderPage() {
                 </div>
               ))}
             </div>
+            </div>
           </div>
         </div>
       )}
@@ -145,7 +147,7 @@ export default function WorkflowBuilderPage() {
       {/* AI Tools Tab */}
       {tab === 'ai-tools' && (
         <div className="animate-fade-in space-y-4 sm:space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {AI_TEMPLATES.map(tool => (
               <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === tool.name ? 'border-purple-500/20' : ''}`}>
                 <p className="text-sm font-bold text-gray-300">{tool.name}</p>

@@ -66,33 +66,35 @@ export default function ProductFeedsPage() {
         ))}
       </div>
 
-      <div className="flex gap-1 mb-6">
+      <div className="flex flex-wrap gap-1 mb-6">
         {['products', 'channels', 'ai-optimize'].map(t => (<button key={t} onClick={() => setTab(t)} className={`chip text-[10px] ${tab === t ? 'active' : ''}`} style={tab === t ? { background: 'rgba(100,116,139,0.15)', borderColor: 'rgba(100,116,139,0.3)', color: '#94a3b8' } : {}}>{t === 'ai-optimize' ? 'AI Optimize' : t.charAt(0).toUpperCase() + t.slice(1)}</button>))}
       </div>
 
       {tab === 'products' && (
         <div className="animate-fade-in">
-          <div className="flex gap-3 sm:gap-5 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-5 mb-6">
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search products..." className="input-field rounded-xl px-5 py-3 text-base flex-1" />
-            <div className="flex gap-1">
+            <div className="flex flex-wrap gap-1">
               <button onClick={() => setSelectedChannel(null)} className={`chip text-[9px] ${!selectedChannel ? 'active' : ''}`} style={!selectedChannel ? { background: 'rgba(100,116,139,0.15)', borderColor: 'rgba(100,116,139,0.3)', color: '#94a3b8' } : {}}>All</button>
               {CHANNELS.map(c => (<button key={c.id} onClick={() => setSelectedChannel(selectedChannel === c.id ? null : c.id)} className={`chip text-[9px] ${selectedChannel === c.id ? 'active' : ''}`} style={selectedChannel === c.id ? { background: `${c.color}15`, borderColor: `${c.color}30`, color: c.color } : {}}>{c.name.split(' ')[0]}</button>))}
             </div>
           </div>
-          <div className="panel rounded-2xl overflow-hidden">
-            <div className="grid grid-cols-[1fr_80px_80px_60px_auto_80px] px-6 py-3 border-b border-indigo-500/[0.06] text-xs font-bold text-gray-500">
-              <span>PRODUCT</span><span>SKU</span><span className="text-right">PRICE</span><span className="text-right">STOCK</span><span className="text-center">CHANNELS</span><span className="text-center">STATUS</span>
-            </div>
-            {filtered.map(p => (
-              <div key={p.id} className="grid grid-cols-[1fr_80px_80px_60px_auto_80px] items-center px-6 py-4 border-b border-indigo-500/[0.03] hover:bg-white/[0.01] transition-colors">
-                <span className="text-sm font-semibold text-gray-200 truncate">{p.name}</span>
-                <span className="text-xs text-gray-500 font-mono">{p.sku}</span>
-                <span className="text-sm text-gray-300 font-mono text-right">${p.price}</span>
-                <span className={`text-sm font-mono text-right ${p.stock === 0 ? 'text-red-400' : p.stock < 20 ? 'text-yellow-400' : 'text-gray-400'}`}>{p.stock}</span>
-                <div className="flex gap-1 justify-center">{p.channels.map(c => { const ch = CHANNELS.find(x => x.id === c); return <div key={c} className="w-2 h-2 rounded-full" title={ch?.name} style={{ background: ch?.color }} />; })}</div>
-                <div className="text-center">{statusBadge(p.status)}</div>
+          <div className="panel rounded-2xl overflow-hidden overflow-x-auto">
+            <div className="min-w-[600px]">
+              <div className="grid grid-cols-[1fr_80px_80px_60px_auto_80px] px-4 sm:px-6 py-3 border-b border-indigo-500/[0.06] text-xs font-bold text-gray-500">
+                <span>PRODUCT</span><span>SKU</span><span className="text-right">PRICE</span><span className="text-right">STOCK</span><span className="text-center">CHANNELS</span><span className="text-center">STATUS</span>
               </div>
-            ))}
+              {filtered.map(p => (
+                <div key={p.id} className="grid grid-cols-[1fr_80px_80px_60px_auto_80px] items-center px-4 sm:px-6 py-4 border-b border-indigo-500/[0.03] hover:bg-white/[0.01] transition-colors">
+                  <span className="text-sm font-semibold text-gray-200 truncate">{p.name}</span>
+                  <span className="text-xs text-gray-500 font-mono">{p.sku}</span>
+                  <span className="text-sm text-gray-300 font-mono text-right">${p.price}</span>
+                  <span className={`text-sm font-mono text-right ${p.stock === 0 ? 'text-red-400' : p.stock < 20 ? 'text-yellow-400' : 'text-gray-400'}`}>{p.stock}</span>
+                  <div className="flex gap-1 justify-center">{p.channels.map(c => { const ch = CHANNELS.find(x => x.id === c); return <div key={c} className="w-2 h-2 rounded-full" title={ch?.name} style={{ background: ch?.color }} />; })}</div>
+                  <div className="text-center">{statusBadge(p.status)}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

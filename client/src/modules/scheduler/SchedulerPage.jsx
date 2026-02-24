@@ -78,7 +78,7 @@ export default function SchedulerPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6">
+      <div className="flex flex-wrap gap-1 mb-6">
         {['upcoming', 'history', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: 'rgba(59,130,246,0.15)', borderColor: 'rgba(59,130,246,0.3)', color: '#60a5fa' } : {}}>
             {t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1)}
@@ -90,24 +90,27 @@ export default function SchedulerPage() {
       {tab === 'upcoming' && (
         <div className="space-y-3 animate-fade-in">
           {MOCK_UPCOMING.map(task => (
-            <div key={task.id} className="panel rounded-2xl p-4 sm:p-6 flex items-center gap-4 sm:gap-6 hover:border-indigo-500/15 transition-all">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${moduleColor(task.module)}15`, border: `1px solid ${moduleColor(task.module)}20` }}>
-                <svg className="w-6 h-6" style={{ color: moduleColor(task.module) }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+            <div key={task.id} className="panel rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 hover:border-indigo-500/15 transition-all">
+              <div className="flex items-center gap-3 sm:gap-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${moduleColor(task.module)}15`, border: `1px solid ${moduleColor(task.module)}20` }}>
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: moduleColor(task.module) }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <p className="text-base font-semibold text-gray-200 sm:hidden">{task.name}</p>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-base font-semibold text-gray-200">{task.name}</p>
-                <div className="flex items-center gap-3 mt-1">
+                <p className="text-base font-semibold text-gray-200 hidden sm:block">{task.name}</p>
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 sm:mt-1">
                   <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${moduleColor(task.module)}15`, color: moduleColor(task.module), border: `1px solid ${moduleColor(task.module)}25` }}>
                     {task.module}
                   </span>
                   <span className="text-xs text-gray-500">{task.action}</span>
                 </div>
               </div>
-              <div className="text-right flex-shrink-0">
+              <div className="flex items-center justify-between sm:block sm:text-right flex-shrink-0">
                 <p className="text-sm font-semibold text-gray-300">{task.scheduledFor}</p>
-                <p className="text-[10px] text-gray-600 mt-0.5">{frequencyLabel(task.frequency)}</p>
+                <p className="text-[10px] text-gray-600 sm:mt-0.5">{frequencyLabel(task.frequency)}</p>
               </div>
             </div>
           ))}
@@ -117,19 +120,25 @@ export default function SchedulerPage() {
       {/* History Tab */}
       {tab === 'history' && (
         <div className="animate-fade-in">
-          <div className="panel rounded-2xl overflow-hidden">
+          <div className="panel rounded-2xl overflow-hidden overflow-x-auto">
             <div className="divide-y divide-indigo-500/[0.04]">
               {MOCK_HISTORY.map(task => (
-                <div key={task.id} className="flex items-center gap-4 sm:gap-6 px-4 sm:px-6 py-4 hover:bg-white/[0.01] transition-colors">
-                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: task.status === 'completed' ? '#22c55e' : '#ef4444' }} />
-                  <div className="flex-1 min-w-0">
+                <div key={task.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 px-4 sm:px-6 py-4 hover:bg-white/[0.01] transition-colors">
+                  <div className="flex items-center gap-3 sm:contents">
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: task.status === 'completed' ? '#22c55e' : '#ef4444' }} />
+                    <p className="text-sm font-semibold text-gray-300 sm:hidden">{task.name}</p>
+                  </div>
+                  <div className="flex-1 min-w-0 hidden sm:block">
                     <p className="text-sm font-semibold text-gray-300">{task.name}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{task.action}</p>
                   </div>
-                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${moduleColor(task.module)}15`, color: moduleColor(task.module), border: `1px solid ${moduleColor(task.module)}25` }}>
-                    {task.module}
-                  </span>
-                  <span className="text-xs text-gray-500 w-32 text-right">{task.completedAt}</span>
+                  <p className="text-xs text-gray-500 sm:hidden">{task.action}</p>
+                  <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4">
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${moduleColor(task.module)}15`, color: moduleColor(task.module), border: `1px solid ${moduleColor(task.module)}25` }}>
+                      {task.module}
+                    </span>
+                    <span className="text-xs text-gray-500 sm:w-32 text-right">{task.completedAt}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -140,7 +149,7 @@ export default function SchedulerPage() {
       {/* AI Tools Tab */}
       {tab === 'ai-tools' && (
         <div className="animate-fade-in space-y-4 sm:space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {AI_TEMPLATES.map(tool => (
               <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === tool.name ? 'border-blue-500/20' : ''}`}>
                 <p className="text-sm font-bold text-gray-300">{tool.name}</p>

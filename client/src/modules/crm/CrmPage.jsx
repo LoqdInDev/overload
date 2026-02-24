@@ -76,7 +76,7 @@ export default function CrmPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-4 sm:mb-6">
+      <div className="flex flex-wrap gap-1 mb-4 sm:mb-6">
         {['pipeline', 'contacts', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: 'rgba(99,102,241,0.15)', borderColor: 'rgba(99,102,241,0.3)', color: '#818cf8' } : {}}>{t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1)}</button>
         ))}
@@ -114,19 +114,19 @@ export default function CrmPage() {
       {/* Contacts */}
       {tab === 'contacts' && (
         <div className="animate-fade-in space-y-4">
-          <div className="flex gap-3 items-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search contacts..." className="flex-1 input-field rounded-xl px-5 py-3 text-base" />
-            <div className="flex gap-1">{['all', 'lead', 'prospect', 'customer'].map(s => (<button key={s} onClick={() => setStatusFilter(s)} className={`chip text-[10px] ${statusFilter === s ? 'active' : ''}`}>{s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}</button>))}</div>
+            <div className="flex flex-wrap gap-1">{['all', 'lead', 'prospect', 'customer'].map(s => (<button key={s} onClick={() => setStatusFilter(s)} className={`chip text-[10px] ${statusFilter === s ? 'active' : ''}`}>{s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}</button>))}</div>
           </div>
           <div className="panel rounded-2xl overflow-hidden">
             <div className="divide-y divide-indigo-500/[0.04]">
               {filteredContacts.map(c => (
-                <div key={c.id} className="flex items-center gap-3 px-5 py-4 hover:bg-white/[0.01] transition-colors">
+                <div key={c.id} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-3 sm:py-4 hover:bg-white/[0.01] transition-colors">
                   <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-xs font-bold text-indigo-400 flex-shrink-0">{c.name.split(' ').map(n => n[0]).join('')}</div>
                   <div className="flex-1 min-w-0"><p className="text-xs font-semibold text-gray-300 truncate">{c.name}</p><p className="text-[10px] text-gray-500">{c.email}</p></div>
                   <span className="text-[10px] text-gray-500 hidden md:block">{c.company}</span>
                   <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${statusColor(c.status)}15`, color: statusColor(c.status), border: `1px solid ${statusColor(c.status)}25` }}>{c.status}</span>
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: c.score > 75 ? 'rgba(34,197,94,0.1)' : c.score > 50 ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)', color: c.score > 75 ? '#22c55e' : c.score > 50 ? '#f59e0b' : '#ef4444' }}>{c.score}</div>
+                  <div className="w-10 h-10 rounded-full hidden sm:flex items-center justify-center text-[10px] font-bold" style={{ background: c.score > 75 ? 'rgba(34,197,94,0.1)' : c.score > 50 ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)', color: c.score > 75 ? '#22c55e' : c.score > 50 ? '#f59e0b' : '#ef4444' }}>{c.score}</div>
                 </div>
               ))}
             </div>

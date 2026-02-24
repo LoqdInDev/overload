@@ -88,7 +88,7 @@ export default function TheAdvisorPage() {
 
       {/* Generate Button */}
       <div className="mb-6 sm:mb-8">
-        <button onClick={generateBriefing} disabled={generating} className="btn-accent px-6 py-3 rounded-lg flex items-center gap-2" style={{ background: generating ? '#1e1e2e' : MODULE_COLOR, boxShadow: generating ? 'none' : `0 4px 20px -4px ${MODULE_COLOR}60` }}>
+        <button onClick={generateBriefing} disabled={generating} className="btn-accent px-4 sm:px-6 py-3 rounded-lg flex items-center gap-2 text-sm sm:text-base w-full sm:w-auto justify-center" style={{ background: generating ? '#1e1e2e' : MODULE_COLOR, boxShadow: generating ? 'none' : `0 4px 20px -4px ${MODULE_COLOR}60` }}>
           {generating ? (
             <>
               <span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />
@@ -160,20 +160,20 @@ export default function TheAdvisorPage() {
 
       {/* Today's Recommendations */}
       <div className="mb-6">
-        <div className="flex items-center gap-3 mb-6">
-          <svg className="w-5 h-5" style={{ color: MODULE_COLOR }} fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-          <p className="hud-label text-[11px]" style={{ color: MODULE_COLOR }}>TODAY&apos;S RECOMMENDATIONS</p>
-          <div className="flex-1 hud-line" />
+        <div className="flex items-center gap-3 mb-4 sm:mb-6">
+          <svg className="w-5 h-5 flex-shrink-0" style={{ color: MODULE_COLOR }} fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+          <p className="hud-label text-[11px] flex-shrink-0" style={{ color: MODULE_COLOR }}>TODAY&apos;S RECOMMENDATIONS</p>
+          <div className="flex-1 hud-line hidden sm:block" />
         </div>
         <div className="space-y-4">
           {MOCK_RECOMMENDATIONS.map((rec, i) => (
             <div key={rec.id} className="panel rounded-2xl p-4 sm:p-6 animate-fade-in" style={{ animationDelay: `${i * 0.1}s` }}>
-              <div className="flex items-start gap-4 sm:gap-6">
+              <div className="flex items-start gap-3 sm:gap-6">
                 <div className="flex flex-col items-center flex-shrink-0 pt-0.5">
-                  <span className="text-lg font-bold font-mono" style={{ color: MODULE_COLOR }}>#{i + 1}</span>
+                  <span className="text-base sm:text-lg font-bold font-mono" style={{ color: MODULE_COLOR }}>#{i + 1}</span>
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
                     <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${priorityColor(rec.priority)}15`, color: priorityColor(rec.priority), border: `1px solid ${priorityColor(rec.priority)}25` }}>
                       {rec.priority}
                     </span>
@@ -206,8 +206,8 @@ export default function TheAdvisorPage() {
           ].map((metric, i) => (
             <div key={i} className="bg-white/[0.02] rounded-lg p-4 sm:p-6 border border-indigo-500/[0.06]">
               <p className="text-xs font-bold text-gray-400 mb-2">{metric.label}</p>
-              <p className="text-xl font-bold font-mono" style={{ color: MODULE_COLOR }}>{metric.value}</p>
-              <div className="flex items-center gap-1 mt-1">
+              <p className="text-lg sm:text-xl font-bold font-mono" style={{ color: MODULE_COLOR }}>{metric.value}</p>
+              <div className="flex flex-wrap items-center gap-1 mt-1">
                 <span className="text-xs font-mono" style={{ color: metric.positive ? '#22c55e' : '#ef4444' }}>{metric.change}</span>
                 <span className="text-xs text-gray-600">{metric.detail}</span>
               </div>
@@ -224,19 +224,19 @@ export default function TheAdvisorPage() {
         </div>
         <div className="space-y-3">
           {MOCK_ACTIONS.map(action => (
-            <div key={action.id} className="flex items-center gap-3 py-2 border-b border-indigo-500/[0.04] last:border-0">
-              <div className="w-6 h-6 rounded border flex items-center justify-center flex-shrink-0" style={{ borderColor: `${actionStatusColor(action.status)}40`, background: action.status === 'completed' ? `${actionStatusColor(action.status)}20` : 'transparent' }}>
+            <div key={action.id} className="flex items-start sm:items-center gap-3 py-3 sm:py-2 border-b border-indigo-500/[0.04] last:border-0">
+              <div className="w-6 h-6 rounded border flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-0" style={{ borderColor: `${actionStatusColor(action.status)}40`, background: action.status === 'completed' ? `${actionStatusColor(action.status)}20` : 'transparent' }}>
                 {action.status === 'completed' && (
                   <svg className="w-4 h-4" style={{ color: actionStatusColor(action.status) }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 )}
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className={`text-sm ${action.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-300'}`}>{action.text}</p>
                 <p className="text-xs text-gray-600">{action.source}</p>
               </div>
-              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${actionStatusColor(action.status)}15`, color: actionStatusColor(action.status), border: `1px solid ${actionStatusColor(action.status)}25` }}>
+              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: `${actionStatusColor(action.status)}15`, color: actionStatusColor(action.status), border: `1px solid ${actionStatusColor(action.status)}25` }}>
                 {action.status}
               </span>
             </div>

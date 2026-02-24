@@ -59,7 +59,7 @@ export default function EcommerceHubPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 sm:mb-8">
+      <div className="flex flex-wrap gap-1 mb-6 sm:mb-8">
         {['overview', 'stores', 'orders', 'products'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
             {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -114,7 +114,7 @@ export default function EcommerceHubPage() {
           </div>
           <div className="panel rounded-2xl p-4 sm:p-6">
             <p className="hud-label text-[11px] mb-4" style={{ color: MODULE_COLOR }}>LOW STOCK ALERTS</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {MOCK_PRODUCTS.filter(p => p.stock < 50).map(p => (
                 <div key={p.id} className="bg-red-500/[0.05] rounded-lg p-5 border border-red-500/10">
                   <p className="text-sm font-semibold text-gray-300">{p.name}</p>
@@ -169,7 +169,7 @@ export default function EcommerceHubPage() {
           <div className="panel rounded-2xl overflow-hidden">
             <div className="divide-y divide-indigo-500/[0.04]">
               {MOCK_ORDERS.map(o => (
-                <div key={o.id} className="flex items-center gap-6 px-6 py-4 hover:bg-white/[0.01] transition-colors">
+                <div key={o.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 px-4 sm:px-6 py-4 hover:bg-white/[0.01] transition-colors">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3">
                       <p className="text-sm font-semibold text-gray-300">{o.id}</p>
@@ -177,10 +177,12 @@ export default function EcommerceHubPage() {
                     </div>
                     <p className="text-xs text-gray-500 mt-0.5">{o.customer} &middot; {o.items} item{o.items > 1 ? 's' : ''} &middot; {o.date}</p>
                   </div>
-                  <span className="text-sm font-mono font-bold text-white">${o.total.toFixed(2)}</span>
-                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${orderStatusColor(o.status)}15`, color: orderStatusColor(o.status), border: `1px solid ${orderStatusColor(o.status)}25` }}>
-                    {o.status}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-mono font-bold text-white">${o.total.toFixed(2)}</span>
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${orderStatusColor(o.status)}15`, color: orderStatusColor(o.status), border: `1px solid ${orderStatusColor(o.status)}25` }}>
+                      {o.status}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -194,19 +196,21 @@ export default function EcommerceHubPage() {
           <div className="panel rounded-2xl overflow-hidden">
             <div className="divide-y divide-indigo-500/[0.04]">
               {MOCK_PRODUCTS.map(p => (
-                <div key={p.id} className="flex items-center gap-6 px-6 py-4 hover:bg-white/[0.01] transition-colors">
+                <div key={p.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 px-4 sm:px-6 py-4 hover:bg-white/[0.01] transition-colors">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-300">{p.name}</p>
                     <p className="text-xs text-gray-500">{p.sku} &middot; {p.store}</p>
                   </div>
-                  <span className="text-sm font-mono font-bold text-white">${p.price.toFixed(2)}</span>
-                  <div className="text-right">
-                    <p className="text-sm font-mono" style={{ color: p.stock < 50 ? '#ef4444' : '#22c55e' }}>{p.stock}</p>
-                    <p className="text-[10px] text-gray-600">in stock</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-mono" style={{ color: MODULE_COLOR }}>{p.sold.toLocaleString()}</p>
-                    <p className="text-[10px] text-gray-600">sold</p>
+                  <div className="flex items-center gap-4 sm:gap-6">
+                    <span className="text-sm font-mono font-bold text-white">${p.price.toFixed(2)}</span>
+                    <div className="text-right">
+                      <p className="text-sm font-mono" style={{ color: p.stock < 50 ? '#ef4444' : '#22c55e' }}>{p.stock}</p>
+                      <p className="text-[10px] text-gray-600">in stock</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-mono" style={{ color: MODULE_COLOR }}>{p.sold.toLocaleString()}</p>
+                      <p className="text-[10px] text-gray-600">sold</p>
+                    </div>
                   </div>
                 </div>
               ))}

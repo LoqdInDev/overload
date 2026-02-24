@@ -290,12 +290,12 @@ export default function ContentPage() {
 
       {result && (
         <div className="panel rounded-2xl p-4 sm:p-7 mt-6 animate-fade-up">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-emerald-400" />
               <span className="hud-label text-[11px]" style={{ color: '#4ade80' }}>COMPLETE</span>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button onClick={copyToClipboard}
                 className="chip text-[10px]" style={{ color: copied ? '#4ade80' : undefined }}>
                 {copied ? 'Copied!' : 'Copy'}

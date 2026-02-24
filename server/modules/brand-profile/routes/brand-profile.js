@@ -1,9 +1,34 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 const { db, logActivity } = require('../../../db/database');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
 const { getBrandContext, buildBrandSystemPrompt, invalidateCache } = require('../../../services/brandContext');
+
+// Media upload config
+const mediaDir = path.join(process.cwd(), 'uploads', 'brand-media');
+fs.mkdirSync(mediaDir, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, mediaDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const base = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
+    cb(null, `${Date.now()}-${base}${ext}`);
+  },
+});
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    const allowed = /\.(jpg|jpeg|png|gif|svg|webp|ico|pdf)$/i;
+    if (allowed.test(path.extname(file.originalname))) cb(null, true);
+    else cb(new Error('Only image files (JPG, PNG, GIF, SVG, WebP, ICO) and PDFs are allowed'));
+  },
+});
 
 // Generate brand profile content with AI
 router.post('/generate', async (req, res) => {
@@ -110,6 +135,82 @@ router.put('/profile/:id', (req, res) => {
   } catch (error) {
     console.error('Error updating profile:', error);
     res.status(500).json({ error: 'Failed to update brand profile' });
+  }
+});
+
+// ══════════════════════════════════════════════════════
+// Media Assets Routes
+// ══════════════════════════════════════════════════════
+
+// POST /media - upload media files
+router.post('/media', upload.array('files', 20), (req, res) => {
+  try {
+    const category = req.body.category || 'other';
+    const inserted = [];
+    for (const file of req.files) {
+      const result = db.prepare(
+        'INSERT INTO bp_media (filename, original_name, category, mimetype, size) VALUES (?, ?, ?, ?, ?)'
+      ).run(file.filename, file.originalname, category, file.mimetype, file.size);
+      inserted.push({
+        id: result.lastInsertRowid,
+        filename: file.filename,
+        original_name: file.originalname,
+        category,
+        mimetype: file.mimetype,
+        size: file.size,
+        url: `/uploads/brand-media/${file.filename}`,
+      });
+    }
+    logActivity('brand-profile', 'upload', `Uploaded ${inserted.length} media file(s)`, category);
+    res.json({ success: true, data: inserted });
+  } catch (error) {
+    console.error('Media upload error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /media - list all media
+router.get('/media', (req, res) => {
+  try {
+    const { category } = req.query;
+    let rows;
+    if (category && category !== 'all') {
+      rows = db.prepare('SELECT * FROM bp_media WHERE category = ? ORDER BY created_at DESC').all(category);
+    } else {
+      rows = db.prepare('SELECT * FROM bp_media ORDER BY created_at DESC').all();
+    }
+    const data = rows.map(r => ({ ...r, url: `/uploads/brand-media/${r.filename}` }));
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /media/:id - update media category
+router.put('/media/:id', (req, res) => {
+  try {
+    const { category } = req.body;
+    const existing = db.prepare('SELECT * FROM bp_media WHERE id = ?').get(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Media not found' });
+    db.prepare('UPDATE bp_media SET category = ? WHERE id = ?').run(category, req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /media/:id - delete a media file
+router.delete('/media/:id', (req, res) => {
+  try {
+    const media = db.prepare('SELECT * FROM bp_media WHERE id = ?').get(req.params.id);
+    if (!media) return res.status(404).json({ error: 'Media not found' });
+    const filepath = path.join(mediaDir, media.filename);
+    if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+    db.prepare('DELETE FROM bp_media WHERE id = ?').run(req.params.id);
+    logActivity('brand-profile', 'delete', `Deleted media: ${media.original_name}`, media.category);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

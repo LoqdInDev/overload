@@ -55,33 +55,33 @@ export default function ChatbotPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-12">
-      <div className="mb-6 sm:mb-8 animate-fade-in flex items-end justify-between">
+      <div className="mb-6 sm:mb-8 animate-fade-in flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div><p className="hud-label text-[11px] mb-2" style={{ color: '#0ea5e9' }}>AI CHATBOT</p><h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">Chatbot Builder</h1></div>
-        <div className="flex gap-1">{['playground', 'templates', 'config'].map(t => (<button key={t} onClick={() => setTab(t)} className={`chip text-[10px] ${tab === t ? 'active' : ''}`} style={tab === t ? { background: 'rgba(14,165,233,0.15)', borderColor: 'rgba(14,165,233,0.3)', color: '#38bdf8' } : {}}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>))}</div>
+        <div className="flex flex-wrap gap-1">{['playground', 'templates', 'config'].map(t => (<button key={t} onClick={() => setTab(t)} className={`chip text-[10px] ${tab === t ? 'active' : ''}`} style={tab === t ? { background: 'rgba(14,165,233,0.15)', borderColor: 'rgba(14,165,233,0.3)', color: '#38bdf8' } : {}}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>))}</div>
       </div>
 
       {tab === 'playground' && (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 animate-fade-in">
           <div className="lg:col-span-3">
             <div className="panel rounded-2xl overflow-hidden flex flex-col" style={{ height: '560px', maxHeight: '70vh' }}>
-              <div className="px-6 py-4 border-b border-indigo-500/[0.06] flex items-center gap-3">
+              <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-indigo-500/[0.06] flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: `${persona.color}20`, color: persona.color }}>{botName[0]}</div>
                 <div><p className="text-sm font-bold text-gray-200">{botName}</p><p className="text-xs text-gray-500">{persona.name} &bull; {generating ? 'Typing...' : 'Online'}</p></div>
                 <div className={`w-2 h-2 rounded-full ml-auto ${generating ? 'bg-sky-400 animate-pulse' : 'bg-emerald-400'}`} />
               </div>
-              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-4">
                 {messages.map((m, i) => (
                   <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] px-4 py-3 rounded-xl text-sm leading-relaxed ${m.role === 'user' ? 'bg-sky-500/15 text-sky-100 rounded-br-sm' : 'bg-white/[0.03] text-gray-300 rounded-bl-sm border border-indigo-500/[0.06]'}`}>
+                    <div className={`max-w-[85%] sm:max-w-[70%] px-4 py-3 rounded-xl text-sm leading-relaxed ${m.role === 'user' ? 'bg-sky-500/15 text-sky-100 rounded-br-sm' : 'bg-white/[0.03] text-gray-300 rounded-bl-sm border border-indigo-500/[0.06]'}`}>
                       {m.text}{generating && i === messages.length - 1 && m.role === 'bot' && <span className="inline-block w-1 h-3 bg-sky-400 ml-0.5 animate-pulse" />}
                     </div>
                   </div>
                 ))}
                 <div ref={chatEndRef} />
               </div>
-              <div className="p-4 border-t border-indigo-500/[0.06] flex gap-3">
-                <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} placeholder="Type a message..." className="flex-1 input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base" />
-                <button onClick={sendMessage} disabled={generating || !input.trim()} className="btn-accent px-5 rounded-xl text-base" style={{ background: '#0ea5e9' }}>Send</button>
+              <div className="p-3 sm:p-4 border-t border-indigo-500/[0.06] flex gap-2 sm:gap-3">
+                <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} placeholder="Type a message..." className="flex-1 min-w-0 input-field rounded-xl px-3 py-2.5 sm:px-5 sm:py-4 text-sm sm:text-base" />
+                <button onClick={sendMessage} disabled={generating || !input.trim()} className="btn-accent px-4 sm:px-5 rounded-xl text-sm sm:text-base flex-shrink-0" style={{ background: '#0ea5e9' }}>Send</button>
               </div>
             </div>
           </div>
@@ -97,7 +97,7 @@ export default function ChatbotPage() {
 
       {tab === 'templates' && (
         <div className="space-y-4 sm:space-y-6 animate-fade-in">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">
             {TEMPLATES.map(t => (
               <button key={t.name} onClick={() => generateTemplate(t)} disabled={generating} className="panel-interactive rounded-2xl p-4 sm:p-6 text-left">
                 <p className="text-sm font-bold text-gray-200">{t.name}</p>
@@ -113,7 +113,7 @@ export default function ChatbotPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 animate-fade-in">
           <div className="panel rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-6">
             <div><p className="hud-label text-[11px] mb-3">BOT NAME</p><input value={botName} onChange={e => setBotName(e.target.value)} className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base" /></div>
-            <div><p className="hud-label text-[11px] mb-3">PERSONA</p><div className="grid grid-cols-2 gap-3">{BOT_PERSONAS.map(p => (<button key={p.id} onClick={() => setPersona(p)} className={`text-left px-4 py-3 rounded-lg border text-sm transition-all ${persona.id === p.id ? 'border-sky-500/30 bg-sky-500/8' : 'border-indigo-500/[0.06]'}`}><p className="font-bold" style={{ color: persona.id === p.id ? p.color : '#9ca3af' }}>{p.name}</p></button>))}</div></div>
+            <div><p className="hud-label text-[11px] mb-3">PERSONA</p><div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{BOT_PERSONAS.map(p => (<button key={p.id} onClick={() => setPersona(p)} className={`text-left px-4 py-3 rounded-lg border text-sm transition-all ${persona.id === p.id ? 'border-sky-500/30 bg-sky-500/8' : 'border-indigo-500/[0.06]'}`}><p className="font-bold" style={{ color: persona.id === p.id ? p.color : '#9ca3af' }}>{p.name}</p></button>))}</div></div>
           </div>
           <div className="panel rounded-2xl p-4 sm:p-6">
             <p className="hud-label text-[11px] mb-3">KNOWLEDGE BASE</p>

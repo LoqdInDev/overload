@@ -44,6 +44,13 @@ export default function BrandProfilePage() {
   const [output, setOutput] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState(null);
 
+  // Media assets
+  const [media, setMedia] = useState([]);
+  const [mediaCategory, setMediaCategory] = useState('all');
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef(null);
+
   // Load profile on mount
   useEffect(() => {
     (async () => {
@@ -174,10 +181,89 @@ export default function BrandProfilePage() {
     }
   };
 
+  // Load media assets
+  const loadMedia = useCallback(async (cat) => {
+    try {
+      const q = cat && cat !== 'all' ? `?category=${cat}` : '';
+      const res = await fetch(`/api/brand-profile/media${q}`);
+      const data = await res.json();
+      if (data.success) setMedia(data.data);
+    } catch (e) {
+      console.error('Failed to load media:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (tab === 'media') loadMedia(mediaCategory);
+  }, [tab, mediaCategory, loadMedia]);
+
+  const uploadFiles = async (files, category = 'other') => {
+    if (!files?.length) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      for (const file of files) form.append('files', file);
+      form.append('category', category);
+      const res = await fetch('/api/brand-profile/media', { method: 'POST', body: form });
+      const data = await res.json();
+      if (data.success) loadMedia(mediaCategory);
+    } catch (e) {
+      console.error('Upload failed:', e);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const deleteMedia = async (id) => {
+    try {
+      await fetch(`/api/brand-profile/media/${id}`, { method: 'DELETE' });
+      setMedia(prev => prev.filter(m => m.id !== id));
+    } catch (e) {
+      console.error('Delete failed:', e);
+    }
+  };
+
+  const updateMediaCategory = async (id, category) => {
+    try {
+      await fetch(`/api/brand-profile/media/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category }),
+      });
+      setMedia(prev => prev.map(m => m.id === id ? { ...m, category } : m));
+    } catch (e) {
+      console.error('Update failed:', e);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const files = Array.from(e.dataTransfer.files);
+    uploadFiles(files, mediaCategory === 'all' ? 'other' : mediaCategory);
+  };
+
+  const formatSize = (bytes) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const MEDIA_CATEGORIES = [
+    { id: 'all', label: 'All' },
+    { id: 'logo', label: 'Logos' },
+    { id: 'banner', label: 'Banners' },
+    { id: 'icon', label: 'Icons' },
+    { id: 'social', label: 'Social Media' },
+    { id: 'product', label: 'Product' },
+    { id: 'other', label: 'Other' },
+  ];
+
   const tabs = [
     { id: 'basics', label: 'Basics', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
     { id: 'voice', label: 'Voice & Tone', icon: 'M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z' },
     { id: 'visual', label: 'Visual', icon: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01' },
+    { id: 'media', label: 'Media', icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
     { id: 'preview', label: 'Preview', icon: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z' },
   ];
 
@@ -190,21 +276,21 @@ export default function BrandProfilePage() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="p-6 sm:p-10 lg:p-12 max-w-4xl mx-auto">
+      <div className="p-4 sm:p-6 lg:p-12 max-w-4xl mx-auto">
 
         {/* Header */}
         <div className="mb-8 animate-fade-in">
-          <div className="flex items-start justify-between gap-4 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
             <div>
               <p className={`text-[10px] uppercase tracking-[0.15em] font-semibold mb-2 ${dark ? 'text-[#C45D3E]/70' : 'text-[#C45D3E]'}`}>Brand Identity</p>
-              <h1 className={`text-3xl sm:text-4xl font-bold tracking-tight ${dark ? 'text-white' : 'text-[#332F2B]'}`} style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: '-0.03em' }}>
+              <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight ${dark ? 'text-white' : 'text-[#332F2B]'}`} style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: '-0.03em' }}>
                 Your Brand DNA
               </h1>
               <p className={`text-sm mt-1 ${dark ? 'text-gray-500' : 'text-[#94908A]'}`}>
                 Every AI module in Overload references this profile when generating content.
               </p>
             </div>
-            <div className="flex items-center gap-3 flex-shrink-0 mt-2">
+            <div className="flex items-center gap-3 flex-shrink-0">
               {/* Save status */}
               <div className={`flex items-center gap-1.5 text-[11px] ${
                 saveStatus === 'saving' ? (dark ? 'text-amber-400/70' : 'text-amber-600')
@@ -240,12 +326,12 @@ export default function BrandProfilePage() {
         </div>
 
         {/* Tabs */}
-        <div className={`flex rounded-xl p-1 mb-8 ${dark ? 'bg-white/[0.02] border border-white/[0.06]' : 'bg-[#F5F0E8] border border-[#e8e0d4]'}`}>
+        <div className={`flex flex-wrap rounded-xl p-1 mb-6 sm:mb-8 ${dark ? 'bg-white/[0.02] border border-white/[0.06]' : 'bg-[#F5F0E8] border border-[#e8e0d4]'}`}>
           {tabs.map(t => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-semibold rounded-lg transition-all duration-200 ${
+              className={`flex-1 min-w-[calc(50%-4px)] sm:min-w-0 flex items-center justify-center gap-2 py-2.5 text-xs font-semibold rounded-lg transition-all duration-200 ${
                 tab === t.id
                   ? dark ? 'bg-[#C45D3E]/15 text-[#C45D3E] shadow-sm' : 'bg-white text-[#C45D3E] shadow-sm border border-[#e8e0d4]'
                   : dark ? 'text-gray-500 hover:text-gray-300' : 'text-[#94908A] hover:text-[#332F2B]'
@@ -427,16 +513,16 @@ export default function BrandProfilePage() {
               {/* Color Preview */}
               <div className="mt-2">
                 <label className={labelCls}>Palette Preview</label>
-                <div className="flex gap-3 mt-1">
-                  <div className="flex-1 rounded-xl p-5 text-center" style={{ background: profile.colors?.primary || '#C45D3E' }}>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1">
+                  <div className="rounded-xl p-5 text-center" style={{ background: profile.colors?.primary || '#C45D3E' }}>
                     <p className="text-sm font-bold text-white" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>Primary</p>
                     <p className="text-[11px] text-white/60 mt-0.5">{profile.colors?.primary || '#C45D3E'}</p>
                   </div>
-                  <div className="flex-1 rounded-xl p-5 text-center" style={{ background: profile.colors?.secondary || '#5E8E6E' }}>
+                  <div className="rounded-xl p-5 text-center" style={{ background: profile.colors?.secondary || '#5E8E6E' }}>
                     <p className="text-sm font-bold text-white" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>Secondary</p>
                     <p className="text-[11px] text-white/60 mt-0.5">{profile.colors?.secondary || '#5E8E6E'}</p>
                   </div>
-                  <div className="flex-1 rounded-xl p-5 text-center" style={{ background: `linear-gradient(135deg, ${profile.colors?.primary || '#C45D3E'}, ${profile.colors?.secondary || '#5E8E6E'})` }}>
+                  <div className="rounded-xl p-5 text-center" style={{ background: `linear-gradient(135deg, ${profile.colors?.primary || '#C45D3E'}, ${profile.colors?.secondary || '#5E8E6E'})` }}>
                     <p className="text-sm font-bold text-white" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>Gradient</p>
                     <p className="text-[11px] text-white/60 mt-0.5">Combined</p>
                   </div>
@@ -453,6 +539,152 @@ export default function BrandProfilePage() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Media Tab */}
+        {tab === 'media' && (
+          <div className="animate-fade-in space-y-6">
+            {/* Upload Zone */}
+            <div
+              className={`rounded-2xl p-6 sm:p-8 transition-all ${card} ${dragOver ? (dark ? 'ring-2 ring-[#C45D3E]/40 bg-[#C45D3E]/5' : 'ring-2 ring-[#C45D3E]/30 bg-[#C45D3E]/[0.03]') : ''}`}
+              style={{ boxShadow: dark ? 'none' : '0 2px 20px -4px rgba(0,0,0,0.04)' }}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={handleDrop}
+            >
+              <div className="text-center py-6 sm:py-10">
+                <div className={`mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-4 ${dark ? 'bg-white/[0.03] border border-white/[0.06]' : 'bg-[#F5F0E8] border border-[#e8e0d4]'}`}>
+                  <svg className={`w-7 h-7 ${dragOver ? 'text-[#C45D3E]' : dark ? 'text-gray-600' : 'text-[#94908A]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                  </svg>
+                </div>
+                <p className={`text-sm font-semibold mb-1 ${dark ? 'text-gray-300' : 'text-[#332F2B]'}`}>
+                  {uploading ? 'Uploading...' : 'Drop files here or click to browse'}
+                </p>
+                <p className={`text-[11px] mb-4 ${dark ? 'text-gray-600' : 'text-[#94908A]'}`}>
+                  JPG, PNG, SVG, WebP, GIF, ICO, PDF — up to 10MB each
+                </p>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="px-5 py-2.5 text-xs font-semibold text-white rounded-xl transition-all hover:opacity-90 disabled:opacity-50"
+                  style={{ background: '#C45D3E' }}
+                >
+                  {uploading ? 'Uploading...' : 'Choose Files'}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*,.pdf,.svg,.ico"
+                  className="hidden"
+                  onChange={(e) => {
+                    uploadFiles(Array.from(e.target.files), mediaCategory === 'all' ? 'other' : mediaCategory);
+                    e.target.value = '';
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Category Filter */}
+            <div className="flex flex-wrap gap-1.5">
+              {MEDIA_CATEGORIES.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setMediaCategory(cat.id)}
+                  className={`px-3 py-1.5 text-[11px] font-semibold rounded-lg transition-all ${
+                    mediaCategory === cat.id
+                      ? dark ? 'bg-[#C45D3E]/15 text-[#C45D3E] border border-[#C45D3E]/25' : 'bg-[#C45D3E]/8 text-[#C45D3E] border border-[#C45D3E]/20'
+                      : dark ? 'bg-white/[0.03] text-gray-500 border border-white/[0.06] hover:text-gray-300' : 'bg-[#F5F0E8] text-[#94908A] border border-[#e8e0d4] hover:text-[#332F2B]'
+                  }`}
+                >
+                  {cat.label}
+                  {cat.id !== 'all' && (() => {
+                    const count = cat.id === 'all' ? media.length : media.filter(m => m.category === cat.id).length;
+                    return count > 0 ? <span className="ml-1 opacity-60">({count})</span> : null;
+                  })()}
+                </button>
+              ))}
+            </div>
+
+            {/* Media Gallery */}
+            {media.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {media.map(item => {
+                  const isImage = item.mimetype?.startsWith('image/');
+                  return (
+                    <div
+                      key={item.id}
+                      className={`group rounded-xl overflow-hidden transition-all hover:-translate-y-0.5 ${card}`}
+                      style={{ boxShadow: dark ? 'none' : '0 1px 8px -2px rgba(0,0,0,0.04)' }}
+                    >
+                      {/* Preview */}
+                      <div className={`relative aspect-square flex items-center justify-center ${dark ? 'bg-white/[0.02]' : 'bg-[#FAF7F2]'}`}>
+                        {isImage ? (
+                          <img src={item.url} alt={item.original_name} className="w-full h-full object-contain p-2" />
+                        ) : (
+                          <div className="text-center p-4">
+                            <svg className={`w-10 h-10 mx-auto ${dark ? 'text-gray-600' : 'text-[#94908A]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                            </svg>
+                            <p className={`text-[10px] mt-1 ${dark ? 'text-gray-600' : 'text-[#94908A]'}`}>PDF</p>
+                          </div>
+                        )}
+                        {/* Hover overlay with actions */}
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                            </svg>
+                          </a>
+                          <button
+                            onClick={() => deleteMedia(item.id)}
+                            className="w-8 h-8 rounded-lg bg-red-500/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-red-500/40 transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Info */}
+                      <div className="p-3">
+                        <p className={`text-xs font-medium truncate ${dark ? 'text-gray-300' : 'text-[#332F2B]'}`}>{item.original_name}</p>
+                        <div className="flex items-center justify-between mt-1.5">
+                          <select
+                            value={item.category}
+                            onChange={(e) => updateMediaCategory(item.id, e.target.value)}
+                            className={`text-[10px] font-medium px-2 py-0.5 rounded-md border appearance-none cursor-pointer ${
+                              dark ? 'bg-white/[0.03] border-white/[0.06] text-gray-500' : 'bg-[#F5F0E8] border-[#e8e0d4] text-[#94908A]'
+                            }`}
+                          >
+                            {MEDIA_CATEGORIES.filter(c => c.id !== 'all').map(c => (
+                              <option key={c.id} value={c.id}>{c.label}</option>
+                            ))}
+                          </select>
+                          <span className={`text-[10px] ${dark ? 'text-gray-600' : 'text-[#b5b0a8]'}`}>{formatSize(item.size)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className={`rounded-2xl p-10 text-center ${card}`} style={{ boxShadow: dark ? 'none' : '0 2px 20px -4px rgba(0,0,0,0.04)' }}>
+                <svg className={`w-12 h-12 mx-auto mb-3 ${dark ? 'text-gray-700' : 'text-[#d5cdc2]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p className={`text-sm font-medium ${dark ? 'text-gray-500' : 'text-[#94908A]'}`}>No media assets yet</p>
+                <p className={`text-[11px] mt-1 ${dark ? 'text-gray-600' : 'text-[#b5b0a8]'}`}>Upload your logos, banners, and brand imagery</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -475,7 +707,7 @@ export default function BrandProfilePage() {
 
               {profile.brand_name ? (
                 <div className={`rounded-xl p-5 space-y-3 text-sm leading-relaxed ${dark ? 'bg-white/[0.02] border border-white/[0.04]' : 'bg-[#FAF7F2] border border-[#e8e0d4]/60'}`}>
-                  <div className="flex items-baseline gap-2">
+                  <div className="flex flex-wrap items-baseline gap-2">
                     <span className={`text-lg font-bold ${dark ? 'text-white' : 'text-[#332F2B]'}`}>{profile.brand_name}</span>
                     {profile.tagline && <span className={`text-xs italic ${dark ? 'text-gray-500' : 'text-[#94908A]'}`}>"{profile.tagline}"</span>}
                   </div>
@@ -522,7 +754,7 @@ export default function BrandProfilePage() {
                   )}
 
                   {(profile.words_to_use || profile.words_to_avoid) && (
-                    <div className="flex gap-4">
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                       {profile.words_to_use && (
                         <div className="flex-1">
                           <span className={`text-[10px] font-semibold uppercase tracking-wider ${dark ? 'text-emerald-500/60' : 'text-[#5E8E6E]'}`}>Use: </span>
@@ -560,7 +792,7 @@ export default function BrandProfilePage() {
             {/* AI Tools */}
             <div>
               <p className={`text-[10px] uppercase tracking-[0.15em] font-semibold mb-3 ${dark ? 'text-[#C45D3E]/60' : 'text-[#C45D3E]'}`}>AI Brand Tools</p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 {AI_TEMPLATES.map(tool => (
                   <button
                     key={tool.name}

@@ -119,7 +119,7 @@ export default function AutopilotPage() {
               <p className="text-xs text-gray-500">Choose which marketing channels Autopilot controls</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {MODULES_LIST.map(mod => (
               <button key={mod.id} onClick={() => toggleModule(mod.id)}
                 className={`rounded-xl p-5 text-left transition-all border ${
@@ -154,7 +154,7 @@ export default function AutopilotPage() {
               <p className="text-xs text-gray-500">How much autonomy should AI have?</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {RISK_LEVELS.map(level => (
               <button key={level.id} onClick={() => setRiskLevel(level.id)}
                 className={`rounded-xl p-4 sm:p-6 text-left transition-all border ${
@@ -227,7 +227,7 @@ export default function AutopilotPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-12">
       {/* Status Banner */}
-      <div className="rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 flex items-center justify-between animate-fade-in" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.02))', border: '1px solid rgba(245,158,11,0.15)' }}>
+      <div className="rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-fade-in" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.02))', border: '1px solid rgba(245,158,11,0.15)' }}>
         <div className="flex items-center gap-3">
           <div className="relative">
             <div className="w-3 h-3 rounded-full bg-emerald-400" />
@@ -238,7 +238,7 @@ export default function AutopilotPage() {
             <p className="text-xs text-gray-500">AI is managing your marketing operations</p>
           </div>
         </div>
-        <button onClick={() => setMode('setup')} className="chip text-[10px]" style={{ background: 'rgba(245,158,11,0.15)', borderColor: 'rgba(245,158,11,0.3)', color: '#fbbf24' }}>
+        <button onClick={() => setMode('setup')} className="chip text-[10px] self-start sm:self-auto" style={{ background: 'rgba(245,158,11,0.15)', borderColor: 'rgba(245,158,11,0.3)', color: '#fbbf24' }}>
           Configure
         </button>
       </div>
@@ -260,7 +260,7 @@ export default function AutopilotPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6">
+      <div className="flex flex-wrap gap-1 mb-6">
         {['actions', 'insights', 'settings'].map(t => (
           <button key={t} onClick={() => setDashTab(t)} className={`chip text-xs ${dashTab === t ? 'active' : ''}`} style={dashTab === t ? { background: 'rgba(245,158,11,0.15)', borderColor: 'rgba(245,158,11,0.3)', color: '#fbbf24' } : {}}>
             {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -272,10 +272,18 @@ export default function AutopilotPage() {
       {dashTab === 'actions' && (
         <div className="space-y-3 animate-fade-in">
           {actions.map(a => (
-            <div key={a.id} className="panel rounded-2xl p-4 sm:p-6 flex items-center gap-4 sm:gap-6">
-              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: statusColor(a.status) }} />
+            <div key={a.id} className="panel rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+              <div className="flex items-center gap-3 sm:contents">
+                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: statusColor(a.status) }} />
+                <div className="flex items-center gap-2 sm:hidden">
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${moduleColor(a.module)}15`, color: moduleColor(a.module), border: `1px solid ${moduleColor(a.module)}25` }}>
+                    {a.module}
+                  </span>
+                  <span className="text-xs text-gray-600">{a.timestamp}</span>
+                </div>
+              </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
+                <div className="hidden sm:flex items-center gap-2 mb-0.5">
                   <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${moduleColor(a.module)}15`, color: moduleColor(a.module), border: `1px solid ${moduleColor(a.module)}25` }}>
                     {a.module}
                   </span>
@@ -284,7 +292,7 @@ export default function AutopilotPage() {
                 <p className="text-sm text-gray-300">{a.action}</p>
               </div>
               {a.status === 'pending' ? (
-                <div className="flex gap-1.5 flex-shrink-0">
+                <div className="flex flex-wrap gap-1.5 flex-shrink-0">
                   <button onClick={() => approveAction(a.id)} className="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all" style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.25)' }}>
                     Approve
                   </button>
@@ -323,7 +331,7 @@ export default function AutopilotPage() {
               <p className="hud-label text-[11px]" style={{ color: MODULE_COLOR }}>AI ANALYSIS TOOLS</p>
               <div className="flex-1 h-px bg-indigo-500/[0.06]" />
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {AI_TEMPLATES.map(tool => (
                 <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === tool.name ? 'border-amber-500/20' : ''}`}>
                   <p className="text-sm font-bold text-gray-300">{tool.name}</p>

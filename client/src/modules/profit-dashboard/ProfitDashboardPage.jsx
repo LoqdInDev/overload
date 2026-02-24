@@ -64,7 +64,7 @@ export default function ProfitDashboardPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 sm:mb-8">
+      <div className="flex flex-wrap gap-1 mb-6 sm:mb-8">
         {['overview', 'revenue', 'costs', 'projections'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
             {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -142,20 +142,22 @@ export default function ProfitDashboardPage() {
       {tab === 'revenue' && (
         <div className="animate-fade-in">
           <div className="panel rounded-2xl overflow-hidden">
-            <div className="divide-y divide-indigo-500/[0.04]">
-              {MOCK_REVENUE.map(r => (
-                <div key={r.id} className="flex items-center gap-6 px-6 py-4 hover:bg-white/[0.01] transition-colors">
-                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: MODULE_COLOR }} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-300">{r.source}</p>
-                    <p className="text-xs text-gray-500">{r.period}</p>
+            <div className="overflow-x-auto">
+              <div className="divide-y divide-indigo-500/[0.04] min-w-[420px]">
+                {MOCK_REVENUE.map(r => (
+                  <div key={r.id} className="flex items-center gap-3 sm:gap-6 px-4 sm:px-6 py-4 hover:bg-white/[0.01] transition-colors">
+                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: MODULE_COLOR }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-300">{r.source}</p>
+                      <p className="text-xs text-gray-500">{r.period}</p>
+                    </div>
+                    <span className="text-sm font-mono font-bold text-white">${r.amount.toLocaleString()}</span>
+                    <span className="text-xs font-mono w-16 text-right" style={{ color: r.change.startsWith('+') ? '#22c55e' : '#ef4444' }}>{r.change}</span>
                   </div>
-                  <span className="text-sm font-mono font-bold text-white">${r.amount.toLocaleString()}</span>
-                  <span className="text-xs font-mono w-16 text-right" style={{ color: r.change.startsWith('+') ? '#22c55e' : '#ef4444' }}>{r.change}</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-            <div className="px-6 py-4 border-t border-indigo-500/[0.08] flex justify-between items-center">
+            <div className="px-4 sm:px-6 py-4 border-t border-indigo-500/[0.08] flex justify-between items-center">
               <span className="text-sm font-bold text-gray-400">TOTAL</span>
               <span className="text-xl font-mono font-bold" style={{ color: MODULE_COLOR }}>${totalRevenue.toLocaleString()}</span>
             </div>
@@ -167,24 +169,26 @@ export default function ProfitDashboardPage() {
       {tab === 'costs' && (
         <div className="animate-fade-in">
           <div className="panel rounded-2xl overflow-hidden">
-            <div className="divide-y divide-indigo-500/[0.04]">
-              {MOCK_COSTS.map(c => (
-                <div key={c.id} className="px-6 py-4 hover:bg-white/[0.01] transition-colors">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-semibold text-gray-300">{c.category}</p>
-                    <div className="flex items-center gap-4">
-                      <span className="text-base font-mono font-bold text-white">${c.amount.toLocaleString()}</span>
-                      <span className="text-xs font-mono text-gray-500">{c.pct}%</span>
-                      <span className="text-xs font-mono" style={{ color: c.trend.startsWith('+') ? '#ef4444' : c.trend === '0%' ? '#6b7280' : '#22c55e' }}>{c.trend}</span>
+            <div className="overflow-x-auto">
+              <div className="divide-y divide-indigo-500/[0.04] min-w-[420px]">
+                {MOCK_COSTS.map(c => (
+                  <div key={c.id} className="px-4 sm:px-6 py-4 hover:bg-white/[0.01] transition-colors">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-sm font-semibold text-gray-300">{c.category}</p>
+                      <div className="flex items-center gap-2 sm:gap-4">
+                        <span className="text-base font-mono font-bold text-white">${c.amount.toLocaleString()}</span>
+                        <span className="text-xs font-mono text-gray-500">{c.pct}%</span>
+                        <span className="text-xs font-mono" style={{ color: c.trend.startsWith('+') ? '#ef4444' : c.trend === '0%' ? '#6b7280' : '#22c55e' }}>{c.trend}</span>
+                      </div>
+                    </div>
+                    <div className="h-1.5 bg-white/[0.03] rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${c.pct}%`, background: `${MODULE_COLOR}90` }} />
                     </div>
                   </div>
-                  <div className="h-1.5 bg-white/[0.03] rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${c.pct}%`, background: `${MODULE_COLOR}90` }} />
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-            <div className="px-6 py-4 border-t border-indigo-500/[0.08] flex justify-between items-center">
+            <div className="px-4 sm:px-6 py-4 border-t border-indigo-500/[0.08] flex justify-between items-center">
               <span className="text-sm font-bold text-gray-400">TOTAL COSTS</span>
               <span className="text-xl font-mono font-bold text-red-400">${totalCosts.toLocaleString()}</span>
             </div>
@@ -196,7 +200,7 @@ export default function ProfitDashboardPage() {
       {tab === 'projections' && (
         <div className="animate-fade-in space-y-4 sm:space-y-6">
           <div className="panel rounded-2xl p-4 sm:p-6">
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4 sm:mb-6">
               <p className="hud-label text-[11px]" style={{ color: MODULE_COLOR }}>AI-POWERED PROJECTIONS</p>
               <button onClick={generateProjection} disabled={generating} className="chip text-[10px]" style={!generating ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
                 {generating ? 'Generating...' : 'Generate Projections'}

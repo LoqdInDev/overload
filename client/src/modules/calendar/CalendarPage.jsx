@@ -67,10 +67,10 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-12">
-      <div className="mb-6 sm:mb-8 animate-fade-in flex items-end justify-between">
+    <div className="p-4 sm:p-6 lg:p-10">
+      <div className="mb-6 sm:mb-8 animate-fade-in flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div><p className="hud-label text-[11px] mb-2" style={{ color: '#0ea5e9' }}>MARKETING CALENDAR</p><h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">{MONTHS[month]} {year}</h1></div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2">
           <button onClick={fillCalendar} disabled={generating} className="chip text-[10px]" style={{ background: 'rgba(14,165,233,0.15)', borderColor: 'rgba(14,165,233,0.3)', color: '#38bdf8' }}>{generating ? 'Generating...' : 'AI Fill Calendar'}</button>
           <button onClick={goToday} className="chip text-[10px]">Today</button>
           <button onClick={prev} className="chip text-[10px]">&larr;</button>
@@ -78,28 +78,30 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      <div className="flex gap-3 mb-6">{EVENT_TYPES.map(t => (<div key={t.id} className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full" style={{ background: t.color }} /><span className="text-xs text-gray-500">{t.name}</span></div>))}</div>
+      <div className="flex flex-wrap gap-3 mb-6">{EVENT_TYPES.map(t => (<div key={t.id} className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full" style={{ background: t.color }} /><span className="text-xs text-gray-500">{t.name}</span></div>))}</div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
         <div className="lg:col-span-3">
-          <div className="panel rounded-2xl overflow-hidden">
-            <div className="grid grid-cols-7">{DAYS.map(d => (<div key={d} className="p-2 text-center text-xs font-bold text-gray-500 border-b border-indigo-500/[0.04]">{d}</div>))}</div>
-            <div className="grid grid-cols-7">
-              {days.map((d, i) => {
-                const evts = d.current ? dayEvents(d.day) : [];
-                const isToday = isCurrentMonth && d.current && d.day === today;
-                const isSelected = d.current && d.day === selectedDay;
-                return (
-                  <button key={i} onClick={() => d.current && setSelectedDay(d.day === selectedDay ? null : d.day)}
-                    className={`min-h-[80px] p-2 border-b border-r border-indigo-500/[0.03] text-left transition-all ${d.current ? 'hover:bg-white/[0.01]' : 'opacity-30'} ${isSelected ? 'bg-sky-500/5 border-sky-500/15' : ''}`}>
-                    <span className={`text-xs font-semibold inline-flex items-center justify-center w-6 h-6 rounded-full ${isToday ? 'bg-sky-500 text-white' : d.current ? 'text-gray-400' : 'text-gray-700'}`}>{d.day}</span>
-                    <div className="mt-0.5 space-y-0.5">
-                      {evts.slice(0, 2).map(e => { const type = EVENT_TYPES.find(t => t.id === e.type); return (<div key={e.id} className="flex items-center gap-1"><div className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: type?.color }} /><span className="text-[9px] text-gray-400 truncate">{e.title}</span></div>); })}
-                      {evts.length > 2 && <span className="text-[9px] text-gray-600">+{evts.length - 2} more</span>}
-                    </div>
-                  </button>
-                );
-              })}
+          <div className="overflow-x-auto">
+            <div className="panel rounded-2xl overflow-hidden min-w-[480px]">
+              <div className="grid grid-cols-7">{DAYS.map(d => (<div key={d} className="p-2 text-center text-xs font-bold text-gray-500 border-b border-indigo-500/[0.04]">{d}</div>))}</div>
+              <div className="grid grid-cols-7">
+                {days.map((d, i) => {
+                  const evts = d.current ? dayEvents(d.day) : [];
+                  const isToday = isCurrentMonth && d.current && d.day === today;
+                  const isSelected = d.current && d.day === selectedDay;
+                  return (
+                    <button key={i} onClick={() => d.current && setSelectedDay(d.day === selectedDay ? null : d.day)}
+                      className={`min-h-[60px] sm:min-h-[80px] p-2 border-b border-r border-indigo-500/[0.03] text-left transition-all ${d.current ? 'hover:bg-white/[0.01]' : 'opacity-30'} ${isSelected ? 'bg-sky-500/5 border-sky-500/15' : ''}`}>
+                      <span className={`text-xs font-semibold inline-flex items-center justify-center w-6 h-6 rounded-full ${isToday ? 'bg-sky-500 text-white' : d.current ? 'text-gray-400' : 'text-gray-700'}`}>{d.day}</span>
+                      <div className="mt-0.5 space-y-0.5">
+                        {evts.slice(0, 2).map(e => { const type = EVENT_TYPES.find(t => t.id === e.type); return (<div key={e.id} className="flex items-center gap-1"><div className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: type?.color }} /><span className="text-[9px] text-gray-400 truncate">{e.title}</span></div>); })}
+                        {evts.length > 2 && <span className="text-[9px] text-gray-600">+{evts.length - 2} more</span>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

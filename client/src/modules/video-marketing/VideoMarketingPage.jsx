@@ -21,7 +21,7 @@ export default function VideoMarketingPage() {
   const [campaigns, setCampaigns] = useState([]);
   const [activeCampaign, setActiveCampaign] = useState(null);
   const [currentStep, setCurrentStep] = useState(0);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(typeof window !== 'undefined' && window.innerWidth >= 768);
 
   const fetchCampaigns = useCallback(async () => {
     try {
@@ -48,6 +48,8 @@ export default function VideoMarketingPage() {
         });
       }
       setCurrentStep(Math.min(lastStep + 1, STEPS.length - 1));
+      // Close sidebar on mobile after selecting a campaign
+      if (window.innerWidth < 768) setSidebarOpen(false);
     } catch (e) {
       console.error('Failed to load campaign:', e);
     }
@@ -97,8 +99,11 @@ export default function VideoMarketingPage() {
 
   return (
     <div className="flex h-full overflow-hidden">
+      {/* Mobile overlay when sidebar is open */}
+      {sidebarOpen && <div className="fixed inset-0 bg-black/40 z-20 md:hidden" onClick={() => setSidebarOpen(false)} />}
+
       {/* Campaign sidebar */}
-      <aside className={`${sidebarOpen ? 'w-64' : 'w-0'} transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] flex flex-col overflow-hidden flex-shrink-0 relative`}>
+      <aside className={`${sidebarOpen ? 'fixed inset-y-0 left-0 z-30 w-64 md:relative md:inset-auto md:z-auto' : 'w-0'} transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] flex flex-col overflow-hidden flex-shrink-0 relative`}>
         <div className={`absolute inset-0 ${dark ? 'bg-[#050508]' : 'bg-white/60'}`} />
         <div className={`absolute inset-y-0 right-0 w-px ${dark ? 'bg-indigo-500/[0.06]' : 'bg-[#e8e0d4]'}`} />
 
@@ -131,7 +136,7 @@ export default function VideoMarketingPage() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Step nav */}
         {activeCampaign && (
-          <div className={`flex items-center gap-0.5 px-6 py-2 overflow-x-auto no-scrollbar flex-shrink-0 relative border-b ${dark ? 'border-indigo-500/[0.06]' : 'border-[#e8e0d4]'}`}>
+          <div className={`flex items-center gap-0.5 px-3 sm:px-6 py-2 overflow-x-auto no-scrollbar flex-shrink-0 relative border-b ${dark ? 'border-indigo-500/[0.06]' : 'border-[#e8e0d4]'}`}>
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className={`mr-2 p-1.5 rounded-md transition-all duration-300 flex-shrink-0 ${dark ? 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]' : 'text-[#94908A] hover:text-[#332F2B] hover:bg-[#EDE5DA]/60'}`}
@@ -176,7 +181,7 @@ export default function VideoMarketingPage() {
                 <svg className="w-3.5 h-3.5 flex-shrink-0 relative" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d={step.icon} />
                 </svg>
-                <span className="hidden xl:inline relative">{step.key}</span>
+                <span className="hidden sm:inline relative">{step.key}</span>
                 {i === currentStep && (
                   <span className="absolute -bottom-px left-2 right-2 h-px" style={{ background: dark ? 'linear-gradient(90deg, transparent, rgba(139,92,246,0.5), transparent)' : 'linear-gradient(90deg, transparent, rgba(196,93,62,0.4), transparent)' }} />
                 )}
@@ -187,7 +192,7 @@ export default function VideoMarketingPage() {
 
         {/* Content area */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-4 sm:p-8">
+          <div className="p-3 sm:p-6 lg:p-8">
             {showingForm ? (
               <div className="max-w-3xl mx-auto">
                 <ProductInput onSubmit={createCampaign} />

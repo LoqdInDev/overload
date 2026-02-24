@@ -84,7 +84,7 @@ export default function SeoPage() {
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Choose an SEO tool</h1>
         <p className="text-base text-gray-500">AI-powered SEO analysis, keyword research, and content optimization</p>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 stagger">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 stagger">
         {TOOLS.map(t => (
           <button key={t.id} onClick={() => setActiveTool(t.id)} className="panel-interactive rounded-2xl p-4 sm:p-7 text-center group">
             <div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center" style={{ background: 'rgba(20,184,166,0.1)', border: '1px solid rgba(20,184,166,0.12)' }}>
@@ -143,7 +143,7 @@ export default function SeoPage() {
         <div className="space-y-4 sm:space-y-6">
           <div className="panel rounded-2xl p-4 sm:p-6">
             <p className="hud-label text-[11px] mb-3">TARGET COUNTRY</p>
-            <div className="grid grid-cols-4 gap-1.5">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
               {COUNTRIES.map(c => (<button key={c} onClick={() => setCountry(c)} className={`chip text-[10px] justify-center ${country === c ? 'active' : ''}`} style={country === c ? { background: 'rgba(20,184,166,0.15)', borderColor: 'rgba(20,184,166,0.3)', color: '#2dd4bf' } : {}}>{c}</button>))}
             </div>
           </div>
@@ -157,9 +157,9 @@ export default function SeoPage() {
       </div>
       {output && (
         <div className="mt-6 animate-fade-up">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
             <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-teal-400" /><span className="hud-label text-[11px]" style={{ color: '#2dd4bf' }}>{generating ? 'ANALYZING...' : 'RESULTS'}</span></div>
-            {!generating && <div className="flex gap-2"><button onClick={copy} className="chip text-[10px]">{copied ? 'Copied!' : 'Copy'}</button><button onClick={generate} className="chip text-[10px]">Regenerate</button></div>}
+            {!generating && <div className="flex flex-wrap gap-2"><button onClick={copy} className="chip text-[10px]">{copied ? 'Copied!' : 'Copy'}</button><button onClick={generate} className="chip text-[10px]">Regenerate</button></div>}
           </div>
           <div className="panel rounded-2xl p-4 sm:p-7"><pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-teal-400 ml-0.5 animate-pulse" />}</pre></div>
         </div>

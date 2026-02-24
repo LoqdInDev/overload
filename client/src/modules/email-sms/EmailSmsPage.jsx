@@ -122,7 +122,7 @@ export default function EmailSmsPage() {
           <p className={`text-base ${dark ? 'text-gray-500' : 'text-gray-500'}`}>Select a message type to start generating with AI</p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 stagger">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 stagger">
           {EMAIL_TYPES.map(type => (
             <button key={type.id} onClick={() => setActiveType(type.id)}
               className={`${dark ? 'panel-interactive' : 'bg-white border border-gray-200 shadow-sm hover:shadow-md hover:-translate-y-0.5'} rounded-2xl p-4 sm:p-7 text-center group transition-all`}>
@@ -144,7 +144,7 @@ export default function EmailSmsPage() {
             <p className="hud-label text-[11px]">POPULAR TEMPLATES</p>
             <div className="flex-1 hud-line" />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 stagger">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 stagger">
             {Object.entries(TEMPLATES).flatMap(([type, tmpls]) =>
               tmpls.slice(0, 1).map(t => {
                 const ct = EMAIL_TYPES.find(c => c.id === type);
@@ -167,7 +167,7 @@ export default function EmailSmsPage() {
             <p className="hud-label text-[11px]">CAPABILITIES</p>
             <div className="flex-1 hud-line" />
           </div>
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-3 stagger">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 stagger">
             {['Subject Lines', 'Body Copy', 'CTAs', 'Drip Flows', 'SMS Copy', 'A/B Variants'].map((cap, i) => (
               <div key={i} className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-lg p-4 sm:p-5 text-center`}>
                 <p className={`text-xs font-semibold ${dark ? 'text-gray-400' : 'text-gray-600'}`}>{cap}</p>
@@ -342,12 +342,12 @@ export default function EmailSmsPage() {
       {/* Final result */}
       {result && (
         <div className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-2xl p-4 sm:p-7 mt-6 animate-fade-up`}>
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-400" />
               <span className="hud-label text-[11px]" style={{ color: '#4ade80' }}>COMPLETE</span>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button onClick={copyToClipboard} className="chip text-[10px]" style={{ color: copied ? '#4ade80' : undefined }}>
                 {copied ? 'Copied!' : 'Copy'}
               </button>

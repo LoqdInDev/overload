@@ -76,23 +76,23 @@ export default function FunnelsPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
-      <div className="flex items-center gap-3 sm:gap-5 mb-6 sm:mb-8">
-        <button onClick={() => { setActiveType(null); setOutput(''); setPrompt(''); }} className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white transition-all">
+      <div className="flex items-start sm:items-center gap-3 sm:gap-5 mb-6 sm:mb-8">
+        <button onClick={() => { setActiveType(null); setOutput(''); setPrompt(''); }} className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white transition-all flex-shrink-0">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
         </button>
-        <div><p className="hud-label text-[11px]" style={{ color: '#7c3aed' }}>{funnel?.name?.toUpperCase()} FUNNEL</p><h2 className="text-lg font-bold text-white">{funnel?.name} Funnel Builder</h2></div>
+        <div><p className="hud-label text-[11px]" style={{ color: '#7c3aed' }}>{funnel?.name?.toUpperCase()} FUNNEL</p><h2 className="text-base sm:text-lg font-bold text-white">{funnel?.name} Funnel Builder</h2></div>
       </div>
 
       {/* Funnel stages pipeline */}
       <div className="panel rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6">
         <p className="hud-label text-[11px] mb-3">FUNNEL STAGES</p>
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-1 sm:overflow-x-auto sm:no-scrollbar">
           {funnel?.stages.map((stage, i) => (
             <div key={i} className="flex items-center flex-shrink-0">
-              <button onClick={() => setActiveStage(i)} className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${i === activeStage ? 'bg-violet-500/15 border border-violet-500/30 text-violet-300' : 'border border-indigo-500/8 text-gray-500 hover:text-gray-300 hover:border-indigo-500/15'}`}>
+              <button onClick={() => setActiveStage(i)} className={`px-3 sm:px-4 py-2 rounded-lg text-xs font-semibold transition-all ${i === activeStage ? 'bg-violet-500/15 border border-violet-500/30 text-violet-300' : 'border border-indigo-500/8 text-gray-500 hover:text-gray-300 hover:border-indigo-500/15'}`}>
                 <span className="text-[10px] block opacity-50 mb-0.5">STEP {i + 1}</span>{stage}
               </button>
-              {i < funnel.stages.length - 1 && <svg className="w-5 h-5 text-gray-700 mx-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>}
+              {i < funnel.stages.length - 1 && <svg className="w-5 h-5 text-gray-700 mx-0.5 flex-shrink-0 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>}
             </div>
           ))}
         </div>
@@ -102,7 +102,7 @@ export default function FunnelsPage() {
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           <div className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-3">TEMPLATES</p><div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{templates.map(t => (<button key={t.name} onClick={() => setPrompt(t.prompt)} className={`text-left px-4 py-3 rounded-lg border text-xs transition-all ${prompt === t.prompt ? 'border-violet-500/30 bg-violet-500/8 text-violet-300' : 'border-indigo-500/8 bg-white/[0.01] text-gray-400 hover:text-gray-200'}`}><p className="font-semibold">{t.name}</p><p className="text-xs text-gray-600 mt-0.5 line-clamp-1">{t.prompt}</p></button>))}</div></div>
           <div className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-3">CUSTOM BRIEF</p><textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={3} placeholder={`Describe what you want for the ${funnel?.stages[activeStage]} page...`} className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base resize-none" /></div>
-          <button onClick={generate} disabled={generating} className="btn-accent w-full py-3 rounded-lg" style={{ background: generating ? '#1e1e2e' : '#7c3aed', boxShadow: generating ? 'none' : '0 4px 20px -4px rgba(124,58,237,0.4)' }}>{generating ? <span className="flex items-center gap-2"><span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />GENERATING...</span> : `GENERATE ${funnel?.stages[activeStage]?.toUpperCase()} COPY`}</button>
+          <button onClick={generate} disabled={generating} className="btn-accent w-full py-3 rounded-lg text-xs sm:text-sm" style={{ background: generating ? '#1e1e2e' : '#7c3aed', boxShadow: generating ? 'none' : '0 4px 20px -4px rgba(124,58,237,0.4)' }}>{generating ? <span className="flex items-center justify-center gap-2"><span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />GENERATING...</span> : `GENERATE ${funnel?.stages[activeStage]?.toUpperCase()} COPY`}</button>
         </div>
         <div className="space-y-4 sm:space-y-6">
           <div className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-3">INDUSTRY</p><div className="grid grid-cols-2 gap-1.5">{INDUSTRIES.map(i => (<button key={i} onClick={() => setIndustry(i)} className={`chip text-[10px] justify-center ${industry === i ? 'active' : ''}`} style={industry === i ? { background: 'rgba(124,58,237,0.15)', borderColor: 'rgba(124,58,237,0.3)', color: '#a78bfa' } : {}}>{i}</button>))}</div></div>
@@ -110,7 +110,7 @@ export default function FunnelsPage() {
           <div className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-3">URGENCY LEVEL</p><div className="grid grid-cols-3 gap-1.5">{URGENCY.map(u => (<button key={u} onClick={() => setUrgency(u)} className={`chip text-[10px] justify-center ${urgency === u ? 'active' : ''}`} style={urgency === u ? { background: 'rgba(124,58,237,0.15)', borderColor: 'rgba(124,58,237,0.3)', color: '#a78bfa' } : {}}>{u}</button>))}</div></div>
         </div>
       </div>
-      {output && <div className="mt-6 animate-fade-up"><div className="flex items-center gap-2 mb-3"><div className="w-2 h-2 rounded-full bg-violet-400" /><span className="hud-label text-[11px]" style={{ color: '#a78bfa' }}>{generating ? 'GENERATING...' : `${funnel?.stages[activeStage]} COPY READY`}</span></div><div className="panel rounded-2xl p-4 sm:p-7"><pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-violet-400 ml-0.5 animate-pulse" />}</pre></div></div>}
+      {output && <div className="mt-4 sm:mt-6 animate-fade-up"><div className="flex items-center gap-2 mb-3"><div className="w-2 h-2 rounded-full bg-violet-400" /><span className="hud-label text-[11px]" style={{ color: '#a78bfa' }}>{generating ? 'GENERATING...' : `${funnel?.stages[activeStage]} COPY READY`}</span></div><div className="panel rounded-2xl p-4 sm:p-6 lg:p-7"><pre className="text-sm sm:text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-violet-400 ml-0.5 animate-pulse" />}</pre></div></div>}
     </div>
   );
 }

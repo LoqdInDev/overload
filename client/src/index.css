@@ -1015,6 +1015,30 @@
 }
 
 /* ═══════════════════════════════════════════
+   MOBILE RESPONSIVE OVERRIDES
+   ═══════════════════════════════════════════ */
+@media (max-width: 639px) {
+  .panel::before,
+  .panel::after {
+    width: 8px;
+    height: 8px;
+  }
+  .panel-interactive::before,
+  .panel-interactive::after {
+    width: 6px;
+    height: 6px;
+  }
+  .btn-accent {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .chip {
+    padding: 4px 10px;
+    font-size: 10px;
+  }
+}
+
+/* ═══════════════════════════════════════════
    SIDEBAR
    ═══════════════════════════════════════════ */
 .sidebar-section-items {

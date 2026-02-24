@@ -68,7 +68,7 @@ export default function ReferralLoyaltyPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 sm:mb-8">
+      <div className="flex flex-wrap gap-1 mb-6 sm:mb-8">
         {['overview', 'programs', 'members', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
             {t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1).replace('-', ' ')}
@@ -121,14 +121,14 @@ export default function ReferralLoyaltyPage() {
           </div>
           <div className="panel rounded-2xl p-4 sm:p-6">
             <p className="hud-label text-[11px] mb-4" style={{ color: MODULE_COLOR }}>TOP REWARDS REDEEMED</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               {[
                 { reward: '$10 Store Credit', redeemed: 890, points: 1000 },
                 { reward: 'Free Shipping', redeemed: 1240, points: 500 },
                 { reward: '20% Off Coupon', redeemed: 456, points: 2000 },
                 { reward: 'Exclusive Product', redeemed: 78, points: 5000 },
               ].map((r, i) => (
-                <div key={i} className="bg-white/[0.02] rounded-lg p-5 border border-indigo-500/[0.06]">
+                <div key={i} className="bg-white/[0.02] rounded-lg p-4 sm:p-5 border border-indigo-500/[0.06]">
                   <p className="text-sm font-semibold text-gray-300">{r.reward}</p>
                   <p className="text-xs text-gray-500 mt-1">{r.points} pts required</p>
                   <p className="text-base font-bold font-mono mt-3" style={{ color: MODULE_COLOR }}>{r.redeemed}</p>
@@ -190,18 +190,18 @@ export default function ReferralLoyaltyPage() {
       {/* Members */}
       {tab === 'members' && (
         <div className="animate-fade-in">
-          <div className="panel rounded-2xl overflow-hidden">
+          <div className="panel rounded-2xl overflow-hidden overflow-x-auto">
             <div className="divide-y divide-indigo-500/[0.04]">
               {MOCK_MEMBERS.map(m => (
-                <div key={m.id} className="flex items-center gap-6 px-6 py-4 hover:bg-white/[0.01] transition-colors">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{ background: `${TIER_COLORS[m.tier]}15`, color: TIER_COLORS[m.tier] }}>
+                <div key={m.id} className="flex items-center gap-3 sm:gap-6 px-3 sm:px-6 py-3 sm:py-4 hover:bg-white/[0.01] transition-colors">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold flex-shrink-0" style={{ background: `${TIER_COLORS[m.tier]}15`, color: TIER_COLORS[m.tier] }}>
                     {m.name.split(' ').map(n => n[0]).join('')}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-300 truncate">{m.name}</p>
-                    <p className="text-xs text-gray-500">{m.email}</p>
+                    <p className="text-xs text-gray-500 truncate">{m.email}</p>
                   </div>
-                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${TIER_COLORS[m.tier]}15`, color: TIER_COLORS[m.tier], border: `1px solid ${TIER_COLORS[m.tier]}25` }}>
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: `${TIER_COLORS[m.tier]}15`, color: TIER_COLORS[m.tier], border: `1px solid ${TIER_COLORS[m.tier]}25` }}>
                     {m.tier}
                   </span>
                   <div className="text-right hidden md:block">
@@ -222,7 +222,7 @@ export default function ReferralLoyaltyPage() {
       {/* AI Tools */}
       {tab === 'ai-tools' && (
         <div className="animate-fade-in space-y-4 sm:space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             {AI_TEMPLATES.map(tool => (
               <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === tool.name ? 'border-rose-600/30' : ''}`}>
                 <p className="text-sm font-bold text-gray-300">{tool.name}</p>
@@ -231,7 +231,7 @@ export default function ReferralLoyaltyPage() {
             ))}
           </div>
           {(generating || output) && (
-            <div className="panel rounded-2xl p-4 sm:p-7">
+            <div className="panel rounded-2xl p-4 sm:p-7 overflow-x-auto">
               <div className="flex items-center gap-3 mb-4">
                 <div className={`w-2.5 h-2.5 rounded-full ${generating ? 'animate-pulse' : ''}`} style={{ background: generating ? MODULE_COLOR : '#4ade80' }} />
                 <span className="hud-label text-[11px]" style={{ color: generating ? MODULE_COLOR : '#4ade80' }}>{generating ? 'GENERATING...' : 'READY'}</span>

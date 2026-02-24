@@ -161,22 +161,22 @@ export default function AdsPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6 sm:mb-8">
+      <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
         <button onClick={() => { setActivePlatform(null); setResult(null); setCampaign({ name: '', objective: 'conversions', budget: '50', audience: '', template: '' }); setAudiencePreset(null); }}
-          className="p-2.5 rounded-lg border border-indigo-500/10 text-gray-500 hover:text-white hover:border-indigo-500/25 transition-all">
+          className="p-2.5 rounded-lg border border-indigo-500/10 text-gray-500 hover:text-white hover:border-indigo-500/25 transition-all flex-shrink-0">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
           </svg>
         </button>
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: `${platform?.color}15`, border: `1px solid ${platform?.color}20` }}>
-            <svg className="w-6 h-6" style={{ color: platform?.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${platform?.color}15`, border: `1px solid ${platform?.color}20` }}>
+            <svg className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: platform?.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d={platform?.icon} />
             </svg>
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="hud-label text-[11px]" style={{ color: '#10b981' }}>{platform?.name?.toUpperCase()} BUILDER</p>
-            <h2 className="text-xl sm:text-2xl font-bold text-white">Build {platform?.name} Campaign</h2>
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white truncate">Build {platform?.name} Campaign</h2>
           </div>
         </div>
       </div>
@@ -211,7 +211,7 @@ export default function AdsPage() {
           {/* Audience */}
           <div className="panel rounded-2xl p-4 sm:p-6">
             <p className="hud-label text-[11px] mb-4">TARGET AUDIENCE</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 mb-4">
               {AUDIENCE_PRESETS.map(a => (
                 <button key={a.id} onClick={() => { setAudiencePreset(a.id); setCampaign({ ...campaign, audience: a.desc }); }}
                   className={`text-left px-4 py-3 rounded-xl border text-xs transition-all ${
@@ -288,17 +288,17 @@ export default function AdsPage() {
           <div className="panel rounded-2xl p-4 sm:p-6">
             <p className="hud-label text-[11px] mb-4">EST. DAILY REACH</p>
             <div className="space-y-3.5">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Impressions</span>
-                <span className="text-white font-mono font-bold">{(Number(campaign.budget || 0) * 180).toLocaleString()}–{(Number(campaign.budget || 0) * 350).toLocaleString()}</span>
+              <div className="flex justify-between gap-2 text-sm">
+                <span className="text-gray-500 flex-shrink-0">Impressions</span>
+                <span className="text-white font-mono font-bold text-right truncate">{(Number(campaign.budget || 0) * 180).toLocaleString()}–{(Number(campaign.budget || 0) * 350).toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Clicks</span>
-                <span className="text-white font-mono font-bold">{Math.round(Number(campaign.budget || 0) * 2.5)}–{Math.round(Number(campaign.budget || 0) * 6)}</span>
+              <div className="flex justify-between gap-2 text-sm">
+                <span className="text-gray-500 flex-shrink-0">Clicks</span>
+                <span className="text-white font-mono font-bold text-right truncate">{Math.round(Number(campaign.budget || 0) * 2.5)}–{Math.round(Number(campaign.budget || 0) * 6)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Est. CPC</span>
-                <span className="text-emerald-400 font-mono font-bold">${(Number(campaign.budget || 0) > 0 ? (Number(campaign.budget) / (Number(campaign.budget) * 4)).toFixed(2) : '0.00')}</span>
+              <div className="flex justify-between gap-2 text-sm">
+                <span className="text-gray-500 flex-shrink-0">Est. CPC</span>
+                <span className="text-emerald-400 font-mono font-bold text-right truncate">${(Number(campaign.budget || 0) > 0 ? (Number(campaign.budget) / (Number(campaign.budget) * 4)).toFixed(2) : '0.00')}</span>
               </div>
             </div>
           </div>
@@ -339,12 +339,12 @@ export default function AdsPage() {
       {/* Results */}
       {result && !result.error && (
         <div className="space-y-4 sm:space-y-6 mt-6 animate-fade-up">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
               <span className="hud-label text-[11px]" style={{ color: '#4ade80' }}>CAMPAIGN READY</span>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-2 sm:gap-3">
               <button onClick={copyResult} className="chip text-xs" style={{ color: copied ? '#4ade80' : undefined }}>
                 {copied ? 'Copied!' : 'Copy All'}
               </button>
