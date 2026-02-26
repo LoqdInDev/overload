@@ -5,6 +5,9 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const { initSharedTables } = require('./db/database');
+const { initAuthTables, cleanExpiredTokens } = require('./services/auth');
+const { requireAuth } = require('./middleware/requireAuth');
+const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,8 +15,20 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// Initialize shared database tables
+// Initialize database tables
 initSharedTables();
+initAuthTables();
+
+// Auth routes (public — no auth required)
+app.use('/api/auth', require('./routes/auth'));
+
+// Protect all other API routes
+app.use('/api', (req, res, next) => {
+  // Allow unauthenticated access to auth routes (already handled above)
+  // and to the modules registry (used by landing page)
+  if (req.path === '/modules') return next();
+  requireAuth(req, res, next);
+});
 
 // Auto-discover and mount modules
 const modulesDir = path.join(__dirname, 'modules');
@@ -71,6 +86,12 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(clientDist, 'index.html'));
   }
 });
+
+// Global error handler (must be last)
+app.use(errorHandler);
+
+// Clean up expired refresh tokens every hour
+setInterval(cleanExpiredTokens, 60 * 60 * 1000);
 
 app.listen(PORT, () => {
   console.log(`\n  Overload server running on http://localhost:${PORT}`);

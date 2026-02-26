@@ -1,7 +1,10 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MODULE_REGISTRY, CATEGORIES } from '../../config/modules';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
+import { fetchJSON } from '../../lib/api';
+import OnboardingWizard from '../../components/shared/OnboardingWizard';
 
 /* ═══════════════════════════════════════════
    HELPERS
@@ -31,6 +34,7 @@ function Counter({ end, suffix = '', prefix = '', duration = 1600 }) {
 }
 
 function Sparkline({ data, color, idx }) {
+  if (!data || data.length < 2) return <div className="w-[72px] h-[28px]" />;
   const max = Math.max(...data), min = Math.min(...data);
   const range = max - min || 1;
   const w = 72, h = 28;
@@ -56,50 +60,11 @@ function Sparkline({ data, color, idx }) {
   );
 }
 
-/* ═══════════════════════════════════════════
-   DATA — In production, this comes from your API
-   ═══════════════════════════════════════════ */
+function SkeletonPulse({ className, style }) {
+  return <div className={`animate-pulse rounded ${className}`} style={{ background: 'currentColor', opacity: 0.07, ...style }} />;
+}
 
-const KPI = [
-  { label: 'Revenue', value: 4820, prefix: '$', color: '#5E8E6E', trend: '+12.4%', up: true, spark: [320, 410, 380, 520, 490, 610, 680], sub: 'today' },
-  { label: 'Campaigns', value: 8, color: '#C45D3E', trend: '+2', up: true, spark: [5, 5, 6, 6, 7, 7, 8], sub: 'active' },
-  { label: 'Content', value: 23, color: '#D4915C', trend: '+7', up: true, spark: [12, 14, 16, 18, 19, 21, 23], sub: 'this week' },
-  { label: 'Subscribers', value: 12400, color: '#8B7355', trend: '+340', up: true, spark: [11200, 11400, 11700, 11900, 12000, 12200, 12400], sub: 'total' },
-];
-
-const WEEKLY = [
-  { day: 'Mon', rev: 3200 },
-  { day: 'Tue', rev: 4100 },
-  { day: 'Wed', rev: 3800 },
-  { day: 'Thu', rev: 5200 },
-  { day: 'Fri', rev: 4900 },
-  { day: 'Sat', rev: 6100 },
-  { day: 'Sun', rev: 4820 },
-];
-
-const CHANNELS = [
-  { name: 'Google Ads', pct: 38, color: '#C45D3E' },
-  { name: 'Meta Ads', pct: 27, color: '#5E8E6E' },
-  { name: 'Email', pct: 18, color: '#D4915C' },
-  { name: 'Organic', pct: 12, color: '#8B7355' },
-  { name: 'TikTok', pct: 5, color: '#9B6B6B' },
-];
-
-const ACTIONS = [
-  { id: 1, title: 'Complete Brand Profile', desc: 'Improves all AI-generated outputs.', path: '/brand-profile', color: '#C45D3E', priority: 'high' },
-  { id: 2, title: 'Connect Ad Platforms', desc: 'Enable cross-platform analytics.', path: '/integrations', color: '#5E8E6E', priority: 'high' },
-  { id: 3, title: 'Activate Autopilot', desc: 'AI scheduling & optimization.', path: '/autopilot', color: '#D4915C', priority: 'medium' },
-  { id: 4, title: 'Reallocate Budget', desc: 'TikTok ROAS 3.2x vs Google 1.8x.', path: '/budget-optimizer', color: '#8B7355', priority: 'low' },
-];
-
-const FEED = [
-  { module: 'AI Content', action: 'Generated blog post', detail: '"10 Growth Hacks for 2026"', time: '2m', color: '#D4915C' },
-  { module: 'Paid Ads', action: 'Campaign optimized', detail: 'Shopping ROAS +18%', time: '15m', color: '#5E8E6E' },
-  { module: 'Email & SMS', action: 'Drip sequence launched', detail: '3,400 targeted', time: '1h', color: '#C45D3E' },
-  { module: 'Social', action: 'Scheduled 12 posts', detail: 'IG, TikTok, LinkedIn', time: '2h', color: '#8B7355' },
-  { module: 'SEO Suite', action: 'Audit completed', detail: '94/100 health score', time: '3h', color: '#5E8E6E' },
-];
-
+/* ─── Quick Actions (static navigation — no API needed) ─── */
 const QUICK = [
   { label: 'Create Video', sub: 'AI clips & reels', path: '/video-marketing', color: '#C45D3E', grad: '#D4735A',
     filled: true,
@@ -135,34 +100,92 @@ function getGreeting() {
 export default function HomePage() {
   const nav = useNavigate();
   const { dark } = useTheme();
+  const { user } = useAuth();
   const greeting = useMemo(getGreeting, []);
 
+  // ─── Onboarding state ───
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    fetchJSON('/api/onboarding/state').then(data => {
+      if (!data.completed && !data.dismissed) setShowOnboarding(true);
+    }).catch(() => {});
+  }, []);
+
+  // ─── Data state ───
+  const [summary, setSummary] = useState(null);
+  const [feed, setFeed] = useState(null);
+  const [actions, setActions] = useState(null);
+  const [weekly, setWeekly] = useState(null);
+  const [channels, setChannels] = useState(null);
+
+  const loadData = useCallback(async () => {
+    const results = await Promise.allSettled([
+      fetchJSON('/api/dashboard/summary'),
+      fetchJSON('/api/dashboard/feed?limit=5'),
+      fetchJSON('/api/dashboard/actions'),
+      fetchJSON('/api/dashboard/weekly'),
+      fetchJSON('/api/dashboard/channels'),
+    ]);
+    if (results[0].status === 'fulfilled') setSummary(results[0].value);
+    if (results[1].status === 'fulfilled') setFeed(results[1].value);
+    if (results[2].status === 'fulfilled') setActions(results[2].value);
+    if (results[3].status === 'fulfilled') setWeekly(results[3].value);
+    if (results[4].status === 'fulfilled') setChannels(results[4].value);
+  }, []);
+
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 60000);
+    return () => clearInterval(interval);
+  }, [loadData]);
+
+  const kpi = summary?.kpi || [];
+  const feedItems = feed || [];
+  const actionItems = actions || [];
+  const weeklyData = weekly?.data || [];
+  const channelData = channels?.channels || [];
+  const isLoading = summary === null;
+
   /* ── Chart calculations ── */
-  const weekTotal = WEEKLY.reduce((s, d) => s + d.rev, 0);
-  const weekMax = Math.max(...WEEKLY.map(d => d.rev));
-  const weekMin = Math.min(...WEEKLY.map(d => d.rev));
-  const weekRange = weekMax - weekMin || 1;
+  const weekTotal = weeklyData.reduce((s, d) => s + d.rev, 0);
+  const hasRevenue = weekly?.hasRevenue;
+
+  const chartData = hasRevenue
+    ? weeklyData.map(d => d.rev)
+    : weeklyData.map(d => d.activity);
+  const chartMax = Math.max(...chartData, 1);
+  const chartMin = Math.min(...chartData, 0);
+  const chartRange = chartMax - chartMin || 1;
+
   const todayBar = [6, 0, 1, 2, 3, 4, 5][new Date().getDay()];
 
   /* Donut gradient */
   let accum = 0;
-  const donutGrad = CHANNELS.map(ch => {
-    const s = (accum / 100) * 360;
-    accum += ch.pct;
-    return `${ch.color} ${s}deg ${(accum / 100) * 360}deg`;
-  }).join(', ');
+  const donutGrad = channelData.length > 0
+    ? channelData.map(ch => {
+        const s = (accum / 100) * 360;
+        accum += ch.pct;
+        return `${ch.color} ${s}deg ${(accum / 100) * 360}deg`;
+      }).join(', ')
+    : null;
 
   /* SVG area chart */
   const cW = 420, cH = 180, pL = 42, pR = 12, pT = 30, pB = 28;
   const plotW = cW - pL - pR, plotH = cH - pT - pB;
-  const chartPts = WEEKLY.map((d, i) => [
-    pL + (i / (WEEKLY.length - 1)) * plotW,
-    pT + plotH - ((d.rev - weekMin) / weekRange) * plotH,
-  ]);
+  const chartPts = weeklyData.map((d, i) => {
+    const val = hasRevenue ? d.rev : d.activity;
+    return [
+      pL + (i / Math.max(weeklyData.length - 1, 1)) * plotW,
+      pT + plotH - ((val - chartMin) / chartRange) * plotH,
+    ];
+  });
   const chartLine = chartPts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
-  const chartArea = `${chartLine} L${chartPts.at(-1)[0].toFixed(1)},${cH - pB} L${chartPts[0][0].toFixed(1)},${cH - pB} Z`;
+  const chartArea = chartPts.length > 0
+    ? `${chartLine} L${chartPts.at(-1)[0].toFixed(1)},${cH - pB} L${chartPts[0][0].toFixed(1)},${cH - pB} Z`
+    : '';
 
-  /* ── LP-Matching Theme Tokens ── */
+  /* ── Theme Tokens ── */
   const terra = '#C45D3E';
   const sage = '#5E8E6E';
   const ink = dark ? '#E8E4DE' : '#332F2B';
@@ -181,8 +204,18 @@ export default function HomePage() {
     animationDelay: `${delay}ms`,
   });
 
+  const displayName = user?.displayName || user?.email?.split('@')[0] || '';
+
   return (
     <div className="p-4 sm:p-5 md:p-7 lg:p-9 max-w-[1440px] mx-auto space-y-4" style={{ fontFamily: dmSans }}>
+
+      {/* ═══ ONBOARDING WIZARD ═══ */}
+      {showOnboarding && (
+        <OnboardingWizard
+          onComplete={() => setShowOnboarding(false)}
+          onDismiss={() => setShowOnboarding(false)}
+        />
+      )}
 
       {/* ═══ STATUS RIBBON ═══ */}
       <div className="cc-panel flex items-center flex-wrap gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 rounded-2xl" style={{
@@ -219,158 +252,208 @@ export default function HomePage() {
           color: ink,
           letterSpacing: '-0.01em',
         }}>
-          {greeting}.
+          {greeting}{displayName ? `, ${displayName}` : ''}.
         </h1>
         <p className="text-[13px] mt-2 leading-relaxed" style={{ color: t2 }}>
-          Revenue is up{' '}
-          <span className="font-bold" style={{ color: sage }}>12%</span>{' '}
-          this week &mdash;{' '}
-          <span className="font-semibold" style={{ color: terra }}>
-            {ACTIONS.filter(a => a.priority === 'high').length} items
-          </span>{' '}
-          need your attention.
+          {isLoading ? (
+            <SkeletonPulse className="h-4 w-64 inline-block" />
+          ) : actionItems.length > 0 ? (
+            <>
+              {summary?.overview?.weekActivities > 0 && (
+                <>
+                  <span className="font-bold" style={{ color: sage }}>
+                    {summary.overview.weekActivities} actions
+                  </span>{' '}
+                  this week &mdash;{' '}
+                </>
+              )}
+              <span className="font-semibold" style={{ color: terra }}>
+                {actionItems.filter(a => a.priority === 'high').length} items
+              </span>{' '}
+              need your attention.
+            </>
+          ) : (
+            <>Your command center is ready. Let&apos;s build something great.</>
+          )}
         </p>
       </div>
 
       {/* ═══ KPI CARDS ═══ */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {KPI.map((k, i) => (
-          <div key={i} className="cc-panel rounded-[22px] p-4 sm:p-5 relative overflow-hidden group/kpi transition-all duration-300 hover:-translate-y-0.5"
-            style={{
-              ...card(60 + i * 35),
-              borderLeft: `3px solid ${k.color}${dark ? '60' : '40'}`,
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.boxShadow = `0 12px 32px -8px ${k.color}18`;
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.boxShadow = dark ? 'none' : '0 2px 12px rgba(44,40,37,0.03)';
-            }}
-          >
-            <div className="flex items-start justify-between">
-              <div className="space-y-2">
-                <div className="text-[10px] font-semibold tracking-[0.1em] uppercase" style={{ color: t3 }}>
-                  {k.label}
-                </div>
-                <div className="text-[20px] sm:text-[24px] md:text-[28px] font-bold tabular-nums leading-none tracking-tight" style={{
-                  color: ink,
-                  fontFamily: dmSans,
-                }}>
-                  <Counter end={k.value} prefix={k.prefix} />
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-2 py-0.5 rounded-lg" style={{
-                    background: k.up
-                      ? (dark ? 'rgba(94,142,110,0.12)' : 'rgba(94,142,110,0.08)')
-                      : 'rgba(196,93,62,0.08)',
-                    color: k.up ? sage : terra,
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="cc-panel rounded-[22px] p-4 sm:p-5" style={card(60 + i * 35)}>
+              <SkeletonPulse className="h-3 w-16 mb-3" />
+              <SkeletonPulse className="h-7 w-24 mb-3" />
+              <SkeletonPulse className="h-4 w-20" />
+            </div>
+          ))
+        ) : (
+          kpi.map((k, i) => (
+            <div key={i} className="cc-panel rounded-[22px] p-4 sm:p-5 relative overflow-hidden group/kpi transition-all duration-300 hover:-translate-y-0.5"
+              style={{
+                ...card(60 + i * 35),
+                borderLeft: `3px solid ${k.color}${dark ? '60' : '40'}`,
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.boxShadow = `0 12px 32px -8px ${k.color}18`;
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.boxShadow = dark ? 'none' : '0 2px 12px rgba(44,40,37,0.03)';
+              }}
+            >
+              <div className="flex items-start justify-between">
+                <div className="space-y-2">
+                  <div className="text-[10px] font-semibold tracking-[0.1em] uppercase" style={{ color: t3 }}>
+                    {k.label}
+                  </div>
+                  <div className="text-[20px] sm:text-[24px] md:text-[28px] font-bold tabular-nums leading-none tracking-tight" style={{
+                    color: ink,
+                    fontFamily: dmSans,
                   }}>
-                    <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d={k.up ? 'M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25' : 'M4.5 4.5l15 15m0 0H8.25m11.25 0V8.25'} />
-                    </svg>
-                    {k.trend}
-                  </span>
-                  <span className="text-[9px]" style={{ color: t3 }}>{k.sub}</span>
+                    <Counter end={k.value} prefix={k.prefix} />
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-2 py-0.5 rounded-lg" style={{
+                      background: k.up
+                        ? (dark ? 'rgba(94,142,110,0.12)' : 'rgba(94,142,110,0.08)')
+                        : 'rgba(196,93,62,0.08)',
+                      color: k.up ? sage : terra,
+                    }}>
+                      <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d={k.up ? 'M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25' : 'M4.5 4.5l15 15m0 0H8.25m11.25 0V8.25'} />
+                      </svg>
+                      {k.trend}
+                    </span>
+                    <span className="text-[9px]" style={{ color: t3 }}>{k.sub}</span>
+                  </div>
                 </div>
-              </div>
-              <div className="opacity-60 group-hover/kpi:opacity-100 transition-opacity">
-                <Sparkline data={k.spark} color={k.color} idx={i} />
+                <div className="opacity-60 group-hover/kpi:opacity-100 transition-opacity">
+                  <Sparkline data={k.spark} color={k.color} idx={i} />
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
-      {/* ═══ REVENUE CHART + CHANNEL MIX ═══ */}
+      {/* ═══ REVENUE/ACTIVITY CHART + CHANNEL MIX ═══ */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
 
-        {/* Revenue Chart — 3 cols */}
+        {/* Chart — 3 cols */}
         <div className="lg:col-span-3 cc-panel overflow-hidden" style={card(200)}>
           <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5" style={{ borderBottom: `1px solid ${brd}` }}>
             <div className="flex items-center gap-2.5">
               <div className="w-[3px] h-4 rounded-full" style={{ background: terra }} />
               <span className="text-[11px] font-bold tracking-[0.08em] uppercase" style={{ color: ink }}>
-                Revenue This Week
+                {hasRevenue ? 'Revenue This Week' : 'Activity This Week'}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[12px] font-bold tabular-nums" style={{ color: t2 }}>
-                $<Counter end={weekTotal} />
-              </span>
-              <span className="text-[9px] font-bold px-2 py-0.5 rounded-lg uppercase" style={{
-                background: dark ? 'rgba(94,142,110,0.12)' : 'rgba(94,142,110,0.08)',
-                color: sage,
-              }}>total</span>
+              {isLoading ? (
+                <SkeletonPulse className="h-4 w-16" />
+              ) : (
+                <>
+                  <span className="text-[12px] font-bold tabular-nums" style={{ color: t2 }}>
+                    {hasRevenue ? (
+                      <>$<Counter end={weekTotal} /></>
+                    ) : (
+                      <><Counter end={weeklyData.reduce((s, d) => s + d.activity, 0)} /> actions</>
+                    )}
+                  </span>
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-lg uppercase" style={{
+                    background: dark ? 'rgba(94,142,110,0.12)' : 'rgba(94,142,110,0.08)',
+                    color: sage,
+                  }}>total</span>
+                </>
+              )}
             </div>
           </div>
 
           <div className="px-2 sm:px-3 py-4 w-full overflow-x-auto">
-            <svg viewBox={`0 0 ${cW} ${cH}`} className="w-full min-w-[320px]" preserveAspectRatio="xMidYMid meet">
-              <defs>
-                <linearGradient id="ccRevGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={terra} stopOpacity={dark ? 0.15 : 0.1} />
-                  <stop offset="100%" stopColor={terra} stopOpacity={0} />
-                </linearGradient>
-              </defs>
+            {isLoading ? (
+              <div className="h-[180px] flex items-center justify-center">
+                <SkeletonPulse className="w-full h-full mx-4" style={{ borderRadius: 12 }} />
+              </div>
+            ) : weeklyData.length > 0 ? (
+              <svg viewBox={`0 0 ${cW} ${cH}`} className="w-full min-w-[320px]" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                  <linearGradient id="ccRevGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={terra} stopOpacity={dark ? 0.15 : 0.1} />
+                    <stop offset="100%" stopColor={terra} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
 
-              {/* Grid lines */}
-              {[0.25, 0.5, 0.75].map((pct, i) => (
-                <line key={i}
-                  x1={pL} y1={pT + plotH * (1 - pct)}
-                  x2={cW - pR} y2={pT + plotH * (1 - pct)}
-                  stroke={dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.05)'}
-                  strokeDasharray="4 4"
-                />
-              ))}
+                {/* Grid lines */}
+                {[0.25, 0.5, 0.75].map((pct, i) => (
+                  <line key={i}
+                    x1={pL} y1={pT + plotH * (1 - pct)}
+                    x2={cW - pR} y2={pT + plotH * (1 - pct)}
+                    stroke={dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.05)'}
+                    strokeDasharray="4 4"
+                  />
+                ))}
 
-              {/* Area fill */}
-              <path d={chartArea} fill="url(#ccRevGrad)" />
+                {/* Area fill */}
+                <path d={chartArea} fill="url(#ccRevGrad)" />
 
-              {/* Line */}
-              <path d={chartLine} fill="none" stroke={terra} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                {/* Line */}
+                <path d={chartLine} fill="none" stroke={terra} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
 
-              {/* Data points & labels */}
-              {chartPts.map(([x, y], i) => {
-                const isToday = i === todayBar;
-                const labelY = y - 14;
-                return (
-                  <g key={i}>
-                    {isToday && <circle cx={x} cy={y} r={9} fill={terra} opacity={0.1} />}
-                    <circle cx={x} cy={y} r={isToday ? 4.5 : 2.5}
-                      fill={isToday ? terra : (dark ? '#1A1816' : '#ffffff')}
-                      stroke={terra}
-                      strokeWidth={isToday ? 0 : 1.5}
-                    />
-                    <text x={x} y={labelY} textAnchor="middle" dominantBaseline="auto"
-                      style={{
-                        fontSize: isToday ? 10 : 8,
-                        fontWeight: isToday ? 700 : 500,
-                        fill: isToday ? terra : t3,
-                        fontFamily: dmSans,
-                      }}>
-                      ${(WEEKLY[i].rev / 1000).toFixed(1)}k
-                    </text>
-                    <text x={x} y={cH - 7} textAnchor="middle" dominantBaseline="auto"
-                      style={{
-                        fontSize: 10,
-                        fontWeight: isToday ? 700 : 500,
-                        fill: isToday ? terra : t3,
-                        fontFamily: dmSans,
-                      }}>
-                      {WEEKLY[i].day}
-                    </text>
-                  </g>
-                );
-              })}
+                {/* Data points & labels */}
+                {chartPts.map(([x, y], i) => {
+                  const isToday = i === todayBar;
+                  const val = hasRevenue ? weeklyData[i]?.rev : weeklyData[i]?.activity;
+                  const labelY = y - 14;
+                  return (
+                    <g key={i}>
+                      {isToday && <circle cx={x} cy={y} r={9} fill={terra} opacity={0.1} />}
+                      <circle cx={x} cy={y} r={isToday ? 4.5 : 2.5}
+                        fill={isToday ? terra : (dark ? '#1A1816' : '#ffffff')}
+                        stroke={terra}
+                        strokeWidth={isToday ? 0 : 1.5}
+                      />
+                      <text x={x} y={labelY} textAnchor="middle" dominantBaseline="auto"
+                        style={{
+                          fontSize: isToday ? 10 : 8,
+                          fontWeight: isToday ? 700 : 500,
+                          fill: isToday ? terra : t3,
+                          fontFamily: dmSans,
+                        }}>
+                        {hasRevenue ? `$${(val / 1000).toFixed(1)}k` : val}
+                      </text>
+                      <text x={x} y={cH - 7} textAnchor="middle" dominantBaseline="auto"
+                        style={{
+                          fontSize: 10,
+                          fontWeight: isToday ? 700 : 500,
+                          fill: isToday ? terra : t3,
+                          fontFamily: dmSans,
+                        }}>
+                        {weeklyData[i]?.day}
+                      </text>
+                    </g>
+                  );
+                })}
 
-              {/* Y-axis labels */}
-              {[0, 0.5, 1].map((pct, i) => (
-                <text key={i} x={pL - 5} y={pT + plotH * (1 - pct) + 3} textAnchor="end"
-                  style={{ fontSize: 8, fill: t3, fontFamily: dmSans }}>
-                  ${((weekMin + weekRange * pct) / 1000).toFixed(1)}k
-                </text>
-              ))}
-            </svg>
+                {/* Y-axis labels */}
+                {[0, 0.5, 1].map((pct, i) => (
+                  <text key={i} x={pL - 5} y={pT + plotH * (1 - pct) + 3} textAnchor="end"
+                    style={{ fontSize: 8, fill: t3, fontFamily: dmSans }}>
+                    {hasRevenue
+                      ? `$${((chartMin + chartRange * pct) / 1000).toFixed(1)}k`
+                      : Math.round(chartMin + chartRange * pct)
+                    }
+                  </text>
+                ))}
+              </svg>
+            ) : (
+              <div className="h-[180px] flex flex-col items-center justify-center gap-2">
+                <svg className="w-8 h-8" style={{ color: t3 }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                </svg>
+                <span className="text-[11px] font-medium" style={{ color: t3 }}>Data will appear as you use modules</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -384,55 +467,81 @@ export default function HomePage() {
           </div>
 
           <div className="p-4 sm:p-5">
-            {/* Donut chart */}
-            <div className="flex items-center justify-center mb-5">
-              <div className="relative">
-                <div style={{
-                  width: 115,
-                  height: 115,
-                  borderRadius: '50%',
-                  background: `conic-gradient(${donutGrad})`,
-                  transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                }}
-                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
-                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                />
-                <div className="absolute inset-[20px] rounded-full flex items-center justify-center" style={{
-                  background: dark ? '#1A1816' : '#ffffff',
-                  boxShadow: dark ? 'inset 0 0 12px rgba(0,0,0,0.4)' : 'inset 0 0 8px rgba(44,40,37,0.03)',
-                }}>
-                  <div className="text-center">
-                    <div className="text-[15px] font-bold tabular-nums" style={{ color: ink }}>
-                      5
-                    </div>
-                    <div className="text-[7px] font-bold uppercase tracking-widest" style={{ color: t3 }}>
-                      sources
-                    </div>
-                  </div>
-                </div>
+            {isLoading ? (
+              <div className="space-y-4">
+                <div className="flex justify-center"><SkeletonPulse className="w-[115px] h-[115px] !rounded-full" /></div>
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <SkeletonPulse key={i} className="h-4 w-full" />
+                ))}
               </div>
-            </div>
-
-            {/* Channel list */}
-            <div className="space-y-3">
-              {CHANNELS.map((ch, i) => (
-                <div key={i} className="flex items-center gap-3 group/ch">
-                  <div className="w-[6px] h-[6px] rounded-full flex-shrink-0 transition-transform group-hover/ch:scale-150" style={{ background: ch.color }} />
-                  <span className="text-[11px] font-medium flex-1 min-w-0" style={{ color: t2 }}>{ch.name}</span>
-                  <div className="flex-1 max-w-[90px] h-[5px] rounded-full overflow-hidden" style={{
-                    background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)',
-                  }}>
-                    <div className="h-full rounded-full transition-all duration-700 ease-out" style={{
-                      width: `${ch.pct}%`,
-                      background: ch.color,
-                    }} />
+            ) : channels?.empty || channelData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 gap-3">
+                <svg className="w-10 h-10" style={{ color: t3 }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                </svg>
+                <span className="text-[11px] font-medium text-center" style={{ color: t3 }}>
+                  Connect platforms to see<br />channel distribution
+                </span>
+                <button onClick={() => nav('/integrations')} className="text-[11px] font-bold px-3 py-1.5 rounded-lg transition-colors" style={{
+                  color: terra,
+                  background: dark ? 'rgba(196,93,62,0.12)' : 'rgba(196,93,62,0.06)',
+                }}>
+                  Connect Platforms
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Donut chart */}
+                <div className="flex items-center justify-center mb-5">
+                  <div className="relative">
+                    <div style={{
+                      width: 115,
+                      height: 115,
+                      borderRadius: '50%',
+                      background: `conic-gradient(${donutGrad})`,
+                      transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    }}
+                      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
+                      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                    />
+                    <div className="absolute inset-[20px] rounded-full flex items-center justify-center" style={{
+                      background: dark ? '#1A1816' : '#ffffff',
+                      boxShadow: dark ? 'inset 0 0 12px rgba(0,0,0,0.4)' : 'inset 0 0 8px rgba(44,40,37,0.03)',
+                    }}>
+                      <div className="text-center">
+                        <div className="text-[15px] font-bold tabular-nums" style={{ color: ink }}>
+                          {channelData.length}
+                        </div>
+                        <div className="text-[7px] font-bold uppercase tracking-widest" style={{ color: t3 }}>
+                          sources
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-[11px] font-bold tabular-nums w-8 text-right" style={{ color: ink }}>
-                    {ch.pct}%
-                  </span>
                 </div>
-              ))}
-            </div>
+
+                {/* Channel list */}
+                <div className="space-y-3">
+                  {channelData.map((ch, i) => (
+                    <div key={i} className="flex items-center gap-3 group/ch">
+                      <div className="w-[6px] h-[6px] rounded-full flex-shrink-0 transition-transform group-hover/ch:scale-150" style={{ background: ch.color }} />
+                      <span className="text-[11px] font-medium flex-1 min-w-0" style={{ color: t2 }}>{ch.name}</span>
+                      <div className="flex-1 max-w-[90px] h-[5px] rounded-full overflow-hidden" style={{
+                        background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)',
+                      }}>
+                        <div className="h-full rounded-full transition-all duration-700 ease-out" style={{
+                          width: `${ch.pct}%`,
+                          background: ch.color,
+                        }} />
+                      </div>
+                      <span className="text-[11px] font-bold tabular-nums w-8 text-right" style={{ color: ink }}>
+                        {ch.pct}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -451,36 +560,61 @@ export default function HomePage() {
             <span className="text-[10px] font-medium" style={{ color: sage }}>Live</span>
           </div>
 
-          <div className="relative">
-            <div className="absolute left-[20px] sm:left-[28px] top-0 bottom-0 w-px" style={{ background: brd }} />
-
-            {FEED.map((item, i) => (
-              <div key={i}
-                className="flex items-start gap-2.5 sm:gap-3 px-3 sm:px-5 py-3 sm:py-3.5 relative transition-colors cursor-default"
-                onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.015)' : 'rgba(44,40,37,0.015)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-              >
-                <div className="relative z-10 w-[10px] h-[10px] rounded-full border-2 mt-1 flex-shrink-0" style={{
-                  borderColor: item.color,
-                  background: dark ? '#1A1816' : '#ffffff',
-                }} />
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-lg" style={{
-                      background: dark ? `${item.color}12` : `${item.color}0c`,
-                      color: item.color,
-                    }}>{item.module}</span>
-                    <span className="text-[12px] font-semibold" style={{ color: ink }}>{item.action}</span>
-                    <span className="text-[10px] ml-auto tabular-nums flex-shrink-0 font-medium" style={{
-                      color: t3,
-                    }}>{item.time} ago</span>
+          {isLoading ? (
+            <div className="p-4 space-y-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex gap-3">
+                  <SkeletonPulse className="w-3 h-3 !rounded-full flex-shrink-0 mt-1" />
+                  <div className="flex-1 space-y-2">
+                    <SkeletonPulse className="h-3 w-48" />
+                    <SkeletonPulse className="h-2.5 w-32" />
                   </div>
-                  <p className="text-[11px] mt-0.5 truncate" style={{ color: t3 }}>{item.detail}</p>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : feedItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 gap-2">
+              <svg className="w-8 h-8" style={{ color: t3 }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-[11px] font-medium" style={{ color: t3 }}>
+                Activity will appear here as you use modules
+              </span>
+            </div>
+          ) : (
+            <div className="relative">
+              <div className="absolute left-[20px] sm:left-[28px] top-0 bottom-0 w-px" style={{ background: brd }} />
+
+              {feedItems.map((item, i) => (
+                <div key={item.id || i}
+                  className="flex items-start gap-2.5 sm:gap-3 px-3 sm:px-5 py-3 sm:py-3.5 relative transition-colors cursor-default"
+                  onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.015)' : 'rgba(44,40,37,0.015)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  <div className="relative z-10 w-[10px] h-[10px] rounded-full border-2 mt-1 flex-shrink-0" style={{
+                    borderColor: item.color,
+                    background: dark ? '#1A1816' : '#ffffff',
+                  }} />
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-lg" style={{
+                        background: dark ? `${item.color}12` : `${item.color}0c`,
+                        color: item.color,
+                      }}>{item.module}</span>
+                      <span className="text-[12px] font-semibold" style={{ color: ink }}>{item.action}</span>
+                      <span className="text-[10px] ml-auto tabular-nums flex-shrink-0 font-medium" style={{
+                        color: t3,
+                      }}>{item.time} ago</span>
+                    </div>
+                    {item.detail && (
+                      <p className="text-[11px] mt-0.5 truncate" style={{ color: t3 }}>{item.detail}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Priority Actions — 2 cols */}
@@ -492,51 +626,75 @@ export default function HomePage() {
             <span className="text-[11px] font-bold tracking-[0.08em] uppercase" style={{ color: ink }}>
               Needs Attention
             </span>
-            <span className="text-[8px] font-bold px-2 py-0.5 rounded-full ml-auto tabular-nums" style={{
-              background: dark ? 'rgba(196,93,62,0.12)' : 'rgba(196,93,62,0.08)',
-              color: terra,
-            }}>
-              {ACTIONS.filter(a => a.priority === 'high').length} urgent
-            </span>
+            {!isLoading && actionItems.length > 0 && (
+              <span className="text-[8px] font-bold px-2 py-0.5 rounded-full ml-auto tabular-nums" style={{
+                background: dark ? 'rgba(196,93,62,0.12)' : 'rgba(196,93,62,0.08)',
+                color: terra,
+              }}>
+                {actionItems.filter(a => a.priority === 'high').length} urgent
+              </span>
+            )}
           </div>
 
-          <div className="p-1.5">
-            {ACTIONS.map(item => (
-              <button key={item.id} onClick={() => nav(item.path)}
-                className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left transition-all group/act"
-                onMouseEnter={e => e.currentTarget.style.background = dark ? `${item.color}08` : `${item.color}05`}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-              >
-                <div className="w-[3px] self-stretch rounded-full flex-shrink-0 transition-opacity" style={{
-                  background: item.color,
-                  opacity: item.priority === 'high' ? 1 : item.priority === 'medium' ? 0.5 : 0.2,
-                }} />
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[12px] font-bold" style={{ color: ink }}>{item.title}</span>
-                    {item.priority === 'high' && (
-                      <span className="text-[8px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-wider" style={{
-                        background: dark ? 'rgba(196,93,62,0.12)' : 'rgba(196,93,62,0.07)',
-                        color: terra,
-                      }}>urgent</span>
-                    )}
-                    {item.priority === 'medium' && (
-                      <span className="text-[8px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-wider" style={{
-                        background: dark ? 'rgba(212,145,92,0.12)' : 'rgba(212,145,92,0.07)',
-                        color: '#D4915C',
-                      }}>medium</span>
-                    )}
+          {isLoading ? (
+            <div className="p-4 space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex gap-3 px-3 py-2">
+                  <SkeletonPulse className="w-1 self-stretch flex-shrink-0 !rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <SkeletonPulse className="h-3 w-40" />
+                    <SkeletonPulse className="h-2.5 w-56" />
                   </div>
-                  <p className="text-[11px] mt-0.5" style={{ color: t3 }}>{item.desc}</p>
                 </div>
+              ))}
+            </div>
+          ) : actionItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 gap-2">
+              <svg className="w-8 h-8" style={{ color: sage }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-[11px] font-bold" style={{ color: sage }}>All caught up!</span>
+              <span className="text-[10px]" style={{ color: t3 }}>No actions need attention right now</span>
+            </div>
+          ) : (
+            <div className="p-1.5">
+              {actionItems.map(item => (
+                <button key={item.id} onClick={() => nav(item.path)}
+                  className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left transition-all group/act"
+                  onMouseEnter={e => e.currentTarget.style.background = dark ? `${item.color}08` : `${item.color}05`}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  <div className="w-[3px] self-stretch rounded-full flex-shrink-0 transition-opacity" style={{
+                    background: item.color,
+                    opacity: item.priority === 'high' ? 1 : item.priority === 'medium' ? 0.5 : 0.2,
+                  }} />
 
-                <svg className="w-3 h-3 flex-shrink-0 opacity-0 group-hover/act:opacity-50 transition-opacity" fill="none" stroke={t3} viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                </svg>
-              </button>
-            ))}
-          </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[12px] font-bold" style={{ color: ink }}>{item.title}</span>
+                      {item.priority === 'high' && (
+                        <span className="text-[8px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-wider" style={{
+                          background: dark ? 'rgba(196,93,62,0.12)' : 'rgba(196,93,62,0.07)',
+                          color: terra,
+                        }}>urgent</span>
+                      )}
+                      {item.priority === 'medium' && (
+                        <span className="text-[8px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-wider" style={{
+                          background: dark ? 'rgba(212,145,92,0.12)' : 'rgba(212,145,92,0.07)',
+                          color: '#D4915C',
+                        }}>medium</span>
+                      )}
+                    </div>
+                    <p className="text-[11px] mt-0.5" style={{ color: t3 }}>{item.desc}</p>
+                  </div>
+
+                  <svg className="w-3 h-3 flex-shrink-0 opacity-0 group-hover/act:opacity-50 transition-opacity" fill="none" stroke={t3} viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                  </svg>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

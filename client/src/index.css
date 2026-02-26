@@ -1055,3 +1055,47 @@
 .sidebar-section-arrow.expanded {
   transform: rotate(90deg);
 }
+
+/* ═══════════════════════════════════════════
+   TOAST NOTIFICATIONS
+   ═══════════════════════════════════════════ */
+@keyframes toast-enter {
+  from { opacity: 0; transform: translateX(100%) scale(0.95); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes toast-exit {
+  from { opacity: 1; transform: translateX(0) scale(1); }
+  to { opacity: 0; transform: translateX(100%) scale(0.95); }
+}
+.toast-enter { animation: toast-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+.toast-exit { animation: toast-exit 0.25s ease-in forwards; }
+
+/* ═══════════════════════════════════════════
+   SKELETON SHIMMER
+   ═══════════════════════════════════════════ */
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ═══════════════════════════════════════════
+   FOCUS & ACCESSIBILITY
+   ═══════════════════════════════════════════ */
+*:focus-visible {
+  outline: 2px solid #C45D3E;
+  outline-offset: 2px;
+}
+[data-theme="dark"] *:focus-visible {
+  outline-color: #D97B5A;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

@@ -3,6 +3,8 @@ const router = express.Router();
 const { db } = require('../../../db/database');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
+const { buildCrossModuleContext } = require('../../../services/crossModuleData');
+const { getBrandContext, buildBrandSystemPrompt } = require('../../../services/brandContext');
 
 // GET / - list all briefings
 router.get('/', (req, res) => {
@@ -139,15 +141,23 @@ router.post('/generate', async (req, res) => {
   try {
     const { type, prompt: rawPrompt } = req.body;
 
-    const systemPrompt = `You are an AI marketing advisor. You provide daily briefings, strategic recommendations, and actionable insights based on marketing performance data. You prioritize recommendations by impact and urgency, and connect insights across different marketing channels.`;
+    const brandBlock = buildBrandSystemPrompt(getBrandContext());
+    const crossModuleData = buildCrossModuleContext();
+
+    const systemPrompt = `You are an AI marketing advisor for a business using Overload, an AI-powered marketing OS. You provide daily briefings, strategic recommendations, and actionable insights based on REAL marketing performance data from their connected modules. You prioritize recommendations by impact and urgency, and connect insights across different marketing channels.
+
+${brandBlock}
+${crossModuleData}
+
+When providing recommendations, reference specific data points from the cross-module intelligence above. If modules have no data yet, recommend setting them up as actionable next steps.`;
 
     const userPrompt = rawPrompt || `Generate a daily marketing briefing that includes:
-1. A summary of yesterday's key marketing activities and results
-2. Today's top priority recommendations (ranked by impact)
-3. A weekly performance snapshot with trends
+1. A summary of recent marketing activities and results (use the real activity data above)
+2. Today's top priority recommendations (ranked by impact, based on real data)
+3. A performance snapshot highlighting what's working and what needs attention
 4. Specific action items with assigned modules/channels
 
-Be concise, data-focused, and actionable.`;
+Be concise, data-focused, and actionable. Reference actual numbers and modules from the cross-module data.`;
 
     const { text } = await generateTextWithClaude(userPrompt, {
       system: systemPrompt,

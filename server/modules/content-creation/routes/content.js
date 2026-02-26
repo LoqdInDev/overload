@@ -5,6 +5,7 @@ const { setupSSE } = require('../../../services/sse');
 const { logActivity } = require('../../../db/database');
 const { queries } = require('../db/queries');
 const { buildContentPrompt } = require('../prompts/contentGenerator');
+const { getSeoKeywordsForContent, getContentForSocial } = require('../../../services/crossModuleData');
 
 const router = express.Router();
 
@@ -75,6 +76,38 @@ router.delete('/projects/:id', (req, res) => {
   queries.delete.run(req.params.id);
   logActivity('content', 'delete', 'Deleted content project', null, req.params.id);
   res.json({ success: true });
+});
+
+// GET /suggestions - Cross-module content suggestions
+router.get('/suggestions', (req, res) => {
+  const seoKeywords = getSeoKeywordsForContent();
+  const recentContent = getContentForSocial();
+
+  const suggestions = [];
+
+  // Suggest content based on SEO keywords
+  for (const kw of seoKeywords.slice(0, 3)) {
+    suggestions.push({
+      type: 'blog',
+      title: `Write about "${kw.keyword}"`,
+      reason: `High search volume (${kw.volume}) with ${kw.difficulty} difficulty`,
+      source: 'seo',
+    });
+  }
+
+  // Suggest social repurposing of recent content
+  for (const content of recentContent.slice(0, 2)) {
+    if (content.type !== 'social') {
+      suggestions.push({
+        type: 'social',
+        title: `Repurpose "${content.title}" for social`,
+        reason: `Turn your ${content.type} into social media posts`,
+        source: 'content',
+      });
+    }
+  }
+
+  res.json(suggestions);
 });
 
 module.exports = router;
