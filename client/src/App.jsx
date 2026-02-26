@@ -46,11 +46,8 @@ const SchedulerPage = lazy(() => import('./modules/scheduler/SchedulerPage'));
 const AutopilotPage = lazy(() => import('./modules/autopilot/AutopilotPage'));
 const BrandProfilePage = lazy(() => import('./modules/brand-profile/BrandProfilePage'));
 const TeamPage = lazy(() => import('./modules/team/TeamPage'));
-const BillingPage = lazy(() => import('./modules/billing/BillingPage'));
 const PrPressPage = lazy(() => import('./modules/pr-press/PrPressPage'));
-const CheckoutOptimizerPage = lazy(() => import('./modules/checkout-optimizer/CheckoutOptimizerPage'));
 const ReferralLoyaltyPage = lazy(() => import('./modules/referral-loyalty/ReferralLoyaltyPage'));
-const ProfitDashboardPage = lazy(() => import('./modules/profit-dashboard/ProfitDashboardPage'));
 const GoalTrackerPage = lazy(() => import('./modules/goal-tracker/GoalTrackerPage'));
 const EcommerceHubPage = lazy(() => import('./modules/ecommerce-hub/EcommerceHubPage'));
 const CustomerIntelligencePage = lazy(() => import('./modules/customer-intelligence/CustomerIntelligencePage'));
@@ -347,11 +344,8 @@ export default function App() {
                     <Route path="/autopilot/*" element={<M component={AutopilotPage} name="Autopilot" />} />
                     <Route path="/brand-profile/*" element={<M component={BrandProfilePage} name="Brand Profile" />} />
                     <Route path="/team/*" element={<M component={TeamPage} name="Team" />} />
-                    <Route path="/billing/*" element={<M component={BillingPage} name="Billing" />} />
                     <Route path="/pr-press/*" element={<M component={PrPressPage} name="PR & Press" />} />
-                    <Route path="/checkout-optimizer/*" element={<M component={CheckoutOptimizerPage} name="Checkout Optimizer" />} />
                     <Route path="/referral-loyalty/*" element={<M component={ReferralLoyaltyPage} name="Referral & Loyalty" />} />
-                    <Route path="/profit-dashboard/*" element={<M component={ProfitDashboardPage} name="Profit Dashboard" />} />
                     <Route path="/goal-tracker/*" element={<M component={GoalTrackerPage} name="Goal Tracker" />} />
                     <Route path="/ecommerce-hub/*" element={<M component={EcommerceHubPage} name="E-commerce Hub" />} />
                     <Route path="/customer-intelligence/*" element={<M component={CustomerIntelligencePage} name="Customer Intelligence" />} />
