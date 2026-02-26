@@ -119,6 +119,14 @@ export default function HomePage() {
   const [weekly, setWeekly] = useState(null);
   const [channels, setChannels] = useState(null);
 
+  // Fallback empty data when server is unavailable
+  const EMPTY_SUMMARY = { kpi: [
+    { label: 'Revenue', value: 0, prefix: '$', color: '#5E8E6E', trend: '$0', up: false, spark: [0,0,0,0,0,0,0], sub: 'this week' },
+    { label: 'Campaigns', value: 0, color: '#C45D3E', trend: '0', up: false, spark: [0,0,0,0,0,0,0], sub: 'active' },
+    { label: 'Content', value: 0, color: '#D4915C', trend: '0', up: false, spark: [0,0,0,0,0,0,0], sub: '0 this week' },
+    { label: 'Subscribers', value: 0, color: '#8B7355', trend: '0', up: false, spark: [0,0,0,0,0,0,0], sub: 'total' },
+  ], overview: { weekActivities: 0 } };
+
   const loadData = useCallback(async () => {
     const results = await Promise.allSettled([
       fetchJSON('/api/dashboard/summary'),
@@ -127,11 +135,11 @@ export default function HomePage() {
       fetchJSON('/api/dashboard/weekly'),
       fetchJSON('/api/dashboard/channels'),
     ]);
-    if (results[0].status === 'fulfilled') setSummary(results[0].value);
-    if (results[1].status === 'fulfilled') setFeed(results[1].value);
-    if (results[2].status === 'fulfilled') setActions(results[2].value);
-    if (results[3].status === 'fulfilled') setWeekly(results[3].value);
-    if (results[4].status === 'fulfilled') setChannels(results[4].value);
+    setSummary(results[0].status === 'fulfilled' ? results[0].value : EMPTY_SUMMARY);
+    setFeed(results[1].status === 'fulfilled' ? results[1].value : []);
+    setActions(results[2].status === 'fulfilled' ? results[2].value : []);
+    setWeekly(results[3].status === 'fulfilled' ? results[3].value : { data: [], hasRevenue: false, total: 0 });
+    setChannels(results[4].status === 'fulfilled' ? results[4].value : { channels: [], empty: true });
   }, []);
 
   useEffect(() => {
