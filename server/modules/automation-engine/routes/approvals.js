@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { db, logActivity } = require('../../../db/database');
+const { createNotification } = require('../db/schema');
 
 // GET /approvals — list queue items
 router.get('/approvals', (req, res) => {
@@ -83,6 +84,7 @@ router.post('/approvals/:id/approve', (req, res) => {
   `).run(item.module_id, item.action_type, `Approved: ${item.title}`, item.id);
 
   logActivity(item.module_id, 'approved', item.title, `Approved automation action: ${item.description}`);
+  createNotification('action_completed', `Approved: ${item.title}`, item.description, item.module_id);
 
   res.json({ success: true, id: Number(req.params.id) });
 });

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import AIToolsTab from '../../components/shared/AIToolsTab';
+import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const FALLBACK_CONNECTED = [
   { id: 'shopify', name: 'Shopify', description: 'Ecommerce platform for online stores', status: 'connected', category: 'ecommerce', lastSync: '2 min ago' },
@@ -412,6 +413,7 @@ export default function IntegrationsPage() {
           </div>
         </div>
       )}
+      <AIInsightsPanel moduleId="integrations" />
     </div>
   );
 }

@@ -29,6 +29,30 @@ router.get('/actions', (req, res) => {
   })));
 });
 
+// GET /actions/stats/:moduleId — per-module stats
+router.get('/actions/stats/:moduleId', (req, res) => {
+  const { moduleId } = req.params;
+  const today = new Date().toISOString().split('T')[0];
+
+  const todayRows = db.prepare(
+    'SELECT status, COUNT(*) as count FROM ae_action_log WHERE module_id = ? AND date(created_at) = ? GROUP BY status'
+  ).all(moduleId, today);
+
+  let todayTotal = 0, completed = 0, failed = 0;
+  for (const r of todayRows) {
+    todayTotal += r.count;
+    if (r.status === 'completed') completed = r.count;
+    if (r.status === 'failed') failed = r.count;
+  }
+
+  res.json({
+    today: todayTotal,
+    completed,
+    failed,
+    successRate: todayTotal > 0 ? Math.round((completed / todayTotal) * 100) : 100,
+  });
+});
+
 // GET /actions/stats — summary counts
 router.get('/actions/stats', (req, res) => {
   const today = new Date().toISOString().split('T')[0];

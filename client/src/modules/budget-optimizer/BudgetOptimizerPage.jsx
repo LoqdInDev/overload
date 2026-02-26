@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchJSON, connectSSE } from '../../lib/api';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const AI_TEMPLATES = [
   { name: 'Optimize Budget Split', prompt: 'Analyze current channel performance and recommend an optimized budget allocation to maximize overall ROAS' },
@@ -114,6 +115,7 @@ export default function BudgetOptimizerPage() {
         </div>
       )}
       {tab === 'ai-tools' && (<div className="space-y-4 sm:space-y-6 animate-fade-in"><div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{AI_TEMPLATES.map(t => (<button key={t.name} onClick={() => generate(t)} disabled={generating} className={`panel-interactive rounded-2xl p-4 sm:p-6 text-left ${selectedTemplate?.name === t.name ? 'border-emerald-500/20' : ''}`}><p className="text-sm font-bold text-gray-300">{t.name}</p><p className="text-xs text-gray-600 mt-1 line-clamp-2">{t.prompt}</p></button>))}</div>{(generating || output) && <div className="panel rounded-2xl p-4 sm:p-7"><div className="flex items-center gap-2 mb-3"><div className={`w-2 h-2 rounded-full ${generating ? 'bg-emerald-400 animate-pulse' : 'bg-emerald-400'}`} /><span className="hud-label text-[11px]" style={{ color: '#34d399' }}>{generating ? 'GENERATING...' : 'READY'}</span></div><pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-emerald-400 ml-0.5 animate-pulse" />}</pre></div>}</div>)}
+      <AIInsightsPanel moduleId="budget-optimizer" />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const MODULE_COLOR = '#8b5cf6';
 
@@ -220,6 +221,7 @@ export default function EcommerceHubPage() {
           </div>
         </div>
       )}
+      <AIInsightsPanel moduleId="ecommerce-hub" />
     </div>
   );
 }

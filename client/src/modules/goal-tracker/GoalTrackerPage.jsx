@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const MODULE_COLOR = '#f59e0b';
 
@@ -237,6 +238,7 @@ export default function GoalTrackerPage() {
           )}
         </div>
       )}
+      <AIInsightsPanel moduleId="goal-tracker" />
     </div>
   );
 }

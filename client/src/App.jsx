@@ -10,6 +10,8 @@ import ErrorBoundary from './components/shared/ErrorBoundary';
 import ModuleErrorBoundary from './components/shared/ModuleErrorBoundary';
 import CommandPalette from './components/shared/CommandPalette';
 import { useRecentModules } from './hooks/useRecentModules';
+import { NotificationProvider } from './context/NotificationContext';
+import NotificationBell from './components/shared/NotificationBell';
 
 export { useTheme };
 
@@ -54,6 +56,9 @@ const KnowledgeBasePage = lazy(() => import('./modules/knowledge-base/KnowledgeB
 const TheAdvisorPage = lazy(() => import('./modules/the-advisor/TheAdvisorPage'));
 const ClientManagerPage = lazy(() => import('./modules/client-manager/ClientManagerPage'));
 const ApprovalsPage = lazy(() => import('./modules/approvals/ApprovalsPage'));
+const AutomationRulesPage = lazy(() => import('./modules/automation-rules/AutomationRulesPage'));
+const ActivityLogPage = lazy(() => import('./modules/activity-log/ActivityLogPage'));
+const AutomationSettingsPage = lazy(() => import('./modules/automation-settings/AutomationSettingsPage'));
 
 function Loader() {
   return (
@@ -211,6 +216,7 @@ export default function App() {
     <ToastProvider>
     <BrandProvider>
     <AutomationProvider>
+    <NotificationProvider>
     <ProtectedRoute>
       <div data-theme={dark ? 'dark' : 'light'}
         className="flex h-screen overflow-hidden"
@@ -335,6 +341,7 @@ export default function App() {
                 {MODULE_REGISTRY.length} MODULES
               </span>
               <AutoStatusChip />
+              <NotificationBell />
             </div>
           </header>
 
@@ -346,6 +353,9 @@ export default function App() {
                   <Routes>
                     <Route path="/dashboard" element={<M component={HomePage} name="Command Center" />} />
                     <Route path="/approvals/*" element={<M component={ApprovalsPage} name="Approval Queue" />} />
+                    <Route path="/automation-rules/*" element={<M component={AutomationRulesPage} name="Automation Rules" />} />
+                    <Route path="/activity-log/*" element={<M component={ActivityLogPage} name="Activity Log" />} />
+                    <Route path="/automation-settings/*" element={<M component={AutomationSettingsPage} name="Automation Settings" />} />
                     <Route path="/video-marketing/*" element={<M component={VideoMarketingPage} name="Video Marketing" />} />
                     <Route path="/content/*" element={<M component={ContentPage} name="AI Content" />} />
                     <Route path="/creative/*" element={<M component={CreativePage} name="Creative" />} />
@@ -397,6 +407,7 @@ export default function App() {
         </main>
       </div>
     </ProtectedRoute>
+    </NotificationProvider>
     </AutomationProvider>
     </BrandProvider>
     </ToastProvider>
@@ -505,6 +516,46 @@ function SidebarNav({ navOpen, setNavOpen, mobileMenuOpen, dark, toggle, terra, 
           {!navOpen && pendingCount > 0 && (
             <div className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ background: '#D4A017', animation: 'auto-pulse 2s ease-in-out infinite' }} />
           )}
+        </NavLink>
+
+        {/* Automation Rules */}
+        <NavLink to="/automation-rules"
+          className={`flex items-center gap-3 rounded-xl transition-all duration-200 group mt-1 ${navOpen ? 'px-3 py-2.5' : 'p-2.5 justify-center'}`}
+          style={{
+            color: location.pathname === '/automation-rules' ? (dark ? '#F5EDE6' : '#2C2825') : muted,
+            fontWeight: location.pathname === '/automation-rules' ? 600 : 500,
+            background: location.pathname === '/automation-rules' ? (dark ? 'rgba(139,92,246,0.12)' : 'rgba(139,92,246,0.07)') : undefined,
+          }}
+          onMouseEnter={e => { if (location.pathname !== '/automation-rules') { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.03)'; e.currentTarget.style.color = ink; } }}
+          onMouseLeave={e => { if (location.pathname !== '/automation-rules') { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = muted; } }}
+        >
+          <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ background: location.pathname === '/automation-rules' ? (dark ? 'rgba(139,92,246,0.2)' : 'rgba(139,92,246,0.1)') : (dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)') }}>
+            <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" strokeWidth={1.6} stroke={location.pathname === '/automation-rules' ? '#8b5cf6' : 'currentColor'}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+            </svg>
+          </div>
+          {navOpen && <span className="text-[12.5px]">Automation Rules</span>}
+        </NavLink>
+
+        {/* Activity Log */}
+        <NavLink to="/activity-log"
+          className={`flex items-center gap-3 rounded-xl transition-all duration-200 group mt-1 ${navOpen ? 'px-3 py-2.5' : 'p-2.5 justify-center'}`}
+          style={{
+            color: location.pathname === '/activity-log' ? (dark ? '#F5EDE6' : '#2C2825') : muted,
+            fontWeight: location.pathname === '/activity-log' ? 600 : 500,
+            background: location.pathname === '/activity-log' ? (dark ? 'rgba(94,142,110,0.12)' : 'rgba(94,142,110,0.07)') : undefined,
+          }}
+          onMouseEnter={e => { if (location.pathname !== '/activity-log') { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.03)'; e.currentTarget.style.color = ink; } }}
+          onMouseLeave={e => { if (location.pathname !== '/activity-log') { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = muted; } }}
+        >
+          <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ background: location.pathname === '/activity-log' ? (dark ? 'rgba(94,142,110,0.2)' : 'rgba(94,142,110,0.1)') : (dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)') }}>
+            <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" strokeWidth={1.6} stroke={location.pathname === '/activity-log' ? '#5E8E6E' : 'currentColor'}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          {navOpen && <span className="text-[12.5px]">Activity Log</span>}
         </NavLink>
 
         {/* Recent modules */}

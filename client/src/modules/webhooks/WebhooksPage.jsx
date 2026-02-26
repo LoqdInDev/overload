@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import { fetchJSON, postJSON, connectSSE } from '../../lib/api';
+import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const AI_TEMPLATES = [
   { name: 'Webhook Setup Guide', prompt: 'Create a comprehensive webhook setup guide with endpoint configuration, authentication, and payload format examples' },
@@ -185,6 +186,7 @@ export default function WebhooksPage() {
         )}
       </div>)}
       {tab === 'ai-tools' && (<div className="space-y-4 sm:space-y-6 animate-fade-in"><div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{AI_TEMPLATES.map(t => (<button key={t.name} onClick={() => generate(t)} disabled={generating} className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === t.name ? 'border-orange-500/20' : ''}`}><p className="text-sm font-bold text-gray-300">{t.name}</p><p className="text-xs text-gray-600 mt-1 line-clamp-2">{t.prompt}</p></button>))}</div>{(generating || output) && <div className="panel rounded-2xl p-4 sm:p-7"><div className="flex items-center gap-3 mb-4"><div className={`w-2 h-2 rounded-full ${generating ? 'bg-orange-400 animate-pulse' : 'bg-orange-400'}`} /><span className="hud-label text-[11px]" style={{ color: '#fb923c' }}>{generating ? 'GENERATING...' : 'READY'}</span></div><pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-orange-400 ml-0.5 animate-pulse" />}</pre></div>}</div>)}
+      <AIInsightsPanel moduleId="webhooks" />
     </div>
   );
 }

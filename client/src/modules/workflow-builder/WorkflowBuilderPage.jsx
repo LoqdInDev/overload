@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const MODULE_COLOR = '#8b5cf6';
 
@@ -168,6 +169,7 @@ export default function WorkflowBuilderPage() {
           )}
         </div>
       )}
+      <AIInsightsPanel moduleId="workflow-builder" />
     </div>
   );
 }

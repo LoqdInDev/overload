@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { MODULE_REGISTRY, CATEGORIES } from '../../config/modules';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 function AnimatedNumber({ value }) {
   const [display, setDisplay] = useState(0);
@@ -302,6 +303,7 @@ export default function AnalyticsPage() {
           )}
         </div>
 
+        <AIInsightsPanel moduleId="analytics" />
       </div>
     </div>
   );

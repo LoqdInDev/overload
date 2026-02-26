@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const MOCK_AUDIENCES = [
   { id: 1, name: 'High-Value Purchasers', platform: 'Meta', type: 'custom', size: '45K', status: 'active' },
@@ -59,6 +60,7 @@ export default function AudienceBuilderPage() {
       {tab === 'audiences' && (<div className="space-y-3 animate-fade-in">{MOCK_AUDIENCES.map(a => (<div key={a.id} className="panel rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6"><div className="flex-1 min-w-0"><p className="text-base font-semibold text-gray-200">{a.name}</p><p className="text-xs text-gray-500 mt-0.5">{typeLabels[a.type]} &bull; {a.size} reach</p></div><div className="flex flex-wrap items-center gap-2"><span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${platformColors[a.platform]}`}>{a.platform}</span><span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${a.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-gray-500/10 text-gray-500 border border-gray-500/20'}`}>{a.status}</span></div></div>))}</div>)}
       {tab === 'segments' && (<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 animate-fade-in">{MOCK_SEGMENTS.map((s, i) => (<div key={i} className="panel rounded-2xl p-4 sm:p-6 flex items-center gap-4 sm:gap-6"><div className="flex-1 min-w-0"><p className="text-base font-semibold text-gray-200">{s.name}</p><p className="text-xs text-gray-500 mt-0.5">{s.count} users</p></div><span className={`text-xs font-bold font-mono ${s.trend.startsWith('+') ? 'text-emerald-400' : 'text-red-400'}`}>{s.trend}</span></div>))}</div>)}
       {tab === 'ai-tools' && (<div className="space-y-4 sm:space-y-6 animate-fade-in"><div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{AI_TEMPLATES.map(t => (<button key={t.name} onClick={() => generate(t)} disabled={generating} className={`panel-interactive rounded-2xl p-4 sm:p-6 text-left ${selectedTemplate?.name === t.name ? 'border-violet-500/20' : ''}`}><p className="text-sm font-bold text-gray-300">{t.name}</p><p className="text-xs text-gray-600 mt-1 line-clamp-2">{t.prompt}</p></button>))}</div>{(generating || output) && <div className="panel rounded-2xl p-4 sm:p-7"><div className="flex items-center gap-2 mb-3"><div className={`w-2 h-2 rounded-full ${generating ? 'bg-violet-400 animate-pulse' : 'bg-violet-400'}`} /><span className="hud-label text-[11px]" style={{ color: '#a78bfa' }}>{generating ? 'GENERATING...' : 'READY'}</span></div><pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-violet-400 ml-0.5 animate-pulse" />}</pre></div>}</div>)}
+      <AIInsightsPanel moduleId="audience-builder" />
     </div>
   );
 }

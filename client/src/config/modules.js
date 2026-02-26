@@ -359,6 +359,15 @@ export const MODULE_REGISTRY = [
     color: '#64748b',
     category: 'settings',
   },
+  {
+    id: 'automation-settings',
+    name: 'Automation Settings',
+    description: 'Configure global automation behavior, safety limits, and notification preferences',
+    path: '/automation-settings',
+    icon: 'M4.5 12a7.5 7.5 0 0015 0m-15 0a7.5 7.5 0 1115 0m-15 0H3m16.5 0H21m-1.645-6.536l-1.298.75m-14.114 0l-1.298-.75m16.71 9.572l-1.298-.75M4.935 17.536l-1.298.75M12 3.75V2.25m0 19.5V20.25',
+    color: '#D4A017',
+    category: 'settings',
+  },
 ];
 
 export const CATEGORIES = [

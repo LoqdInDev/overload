@@ -3,6 +3,7 @@ import { usePageTitle } from '../../hooks/usePageTitle';
 import { useTheme } from '../../context/ThemeContext';
 import { useBrand } from '../../context/BrandContext';
 import { fetchJSON, postJSON, connectSSE } from '../../lib/api';
+import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const COLOR = '#C45D3E';
 
@@ -1012,6 +1013,7 @@ export default function BrandHubPage() {
         )}
 
       </div>
+      <AIInsightsPanel moduleId="brand-hub" />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchJSON, postJSON, connectSSE } from '../../lib/api';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const MODULE_COLOR = '#64748b';
 
@@ -233,6 +234,7 @@ export default function TeamPage() {
           )}
         </div>
       )}
+      <AIInsightsPanel moduleId="team" />
     </div>
   );
 }

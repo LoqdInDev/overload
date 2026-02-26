@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const MODULE_COLOR = '#e11d48';
 
@@ -243,6 +244,7 @@ export default function ReferralLoyaltyPage() {
           )}
         </div>
       )}
+      <AIInsightsPanel moduleId="referral-loyalty" />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchJSON, postJSON, connectSSE } from '../../lib/api';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const PAGE_TYPES = [
   { id: 'landing', name: 'Landing Page', desc: 'High-converting landing page with hero, features, CTA' },
@@ -228,6 +229,7 @@ export default function WebsiteBuilderPage() {
           )}
         </div>
       )}
+      <AIInsightsPanel moduleId="website-builder" />
     </div>
   );
 }

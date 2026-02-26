@@ -67,6 +67,17 @@ export async function postJSON(url, body) {
   });
 }
 
+export async function putJSON(url, body) {
+  return fetchJSON(url, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  });
+}
+
+export async function deleteJSON(url) {
+  return fetchJSON(url, { method: 'DELETE' });
+}
+
 export function connectSSE(url, body, { onChunk, onResult, onError }) {
   const controller = new AbortController();
 

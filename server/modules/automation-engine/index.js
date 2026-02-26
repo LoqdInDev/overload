@@ -17,6 +17,11 @@ module.exports = {
     router.use('/', require('./routes/modes'));
     router.use('/', require('./routes/approvals'));
     router.use('/', require('./routes/actions'));
+    router.use('/', require('./routes/rules'));
+    router.use('/', require('./routes/notifications'));
+    router.use('/', require('./routes/settings'));
+    router.use('/', require('./routes/activity-log'));
+    router.use('/', require('./routes/insights'));
     return router;
   },
 };

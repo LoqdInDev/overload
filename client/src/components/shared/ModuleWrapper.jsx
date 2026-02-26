@@ -2,6 +2,8 @@ import { MODULE_REGISTRY } from '../../config/modules';
 import { useAutomation } from '../../context/AutomationContext';
 import { useTheme } from '../../context/ThemeContext';
 import ModeToggle from './ModeToggle';
+import CopilotSuggestions from './CopilotSuggestions';
+import AutopilotDashboard from './AutopilotDashboard';
 
 export default function ModuleWrapper({ moduleId, children }) {
   const mod = MODULE_REGISTRY.find(m => m.id === moduleId);
@@ -80,8 +82,19 @@ export default function ModuleWrapper({ moduleId, children }) {
         </div>
       )}
 
-      {/* Module content */}
-      {children}
+      {/* Module content — mode-responsive */}
+      {mode === 'autopilot' ? (
+        <AutopilotDashboard moduleId={moduleId}>
+          {children}
+        </AutopilotDashboard>
+      ) : (
+        <>
+          {children}
+          {mode === 'copilot' && (
+            <CopilotSuggestions moduleId={moduleId} />
+          )}
+        </>
+      )}
     </div>
   );
 }

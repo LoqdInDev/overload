@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { fetchJSON, postJSON } from '../lib/api';
+import { fetchJSON, putJSON } from '../lib/api';
 
 const AutomationContext = createContext(null);
 
@@ -66,7 +66,7 @@ export function AutomationProvider({ children }) {
 
   const setMode = useCallback(async (moduleId, mode) => {
     try {
-      await postJSON(`/api/automation/modes/${moduleId}`, { mode });
+      await putJSON(`/api/automation/modes/${moduleId}`, { mode });
       setModes(prev => ({
         ...prev,
         [moduleId]: { ...prev[moduleId], mode },

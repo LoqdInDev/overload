@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const MODULE_COLOR = '#3b82f6';
 
@@ -170,6 +171,7 @@ export default function SchedulerPage() {
           )}
         </div>
       )}
+      <AIInsightsPanel moduleId="scheduler" />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import { fetchJSON, postJSON, connectSSE } from '../../lib/api';
+import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const EVENT_TYPES = [
   { id: 'campaign', name: 'Campaign', color: '#7c3aed' },
@@ -142,6 +143,7 @@ export default function CalendarPage() {
       </div>
 
       {output && <div className="mt-6 animate-fade-up"><div className="flex items-center gap-2 mb-3"><div className={`w-2 h-2 rounded-full ${generating ? 'bg-sky-400 animate-pulse' : 'bg-emerald-400'}`} /><span className="hud-label text-[11px]" style={{ color: generating ? '#38bdf8' : '#4ade80' }}>{generating ? 'GENERATING CALENDAR...' : 'AI SUGGESTIONS'}</span></div><div className="panel rounded-2xl p-4 sm:p-7"><pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-sky-400 ml-0.5 animate-pulse" />}</pre></div></div>}
+      <AIInsightsPanel moduleId="calendar" />
     </div>
   );
 }

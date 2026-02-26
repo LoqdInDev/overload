@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import { fetchJSON, connectSSE } from '../../lib/api';
+import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const TOOLS = [
   { id: 'ad-spy', name: 'Ad Spy', icon: 'M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
@@ -89,6 +90,7 @@ export default function CompetitorsPage() {
         </div>
       </div>
       {output && <div className="mt-6 animate-fade-up"><div className="flex items-center gap-2 mb-3"><div className={`w-2 h-2 rounded-full ${generating ? 'bg-red-400 animate-pulse' : 'bg-emerald-400'}`} /><span className="hud-label text-[11px]" style={{ color: generating ? '#f87171' : '#4ade80' }}>{generating ? 'ANALYZING...' : 'ANALYSIS COMPLETE'}</span></div><div className="panel rounded-2xl p-4 sm:p-7"><pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-red-400 ml-0.5 animate-pulse" />}</pre></div></div>}
+      <AIInsightsPanel moduleId="competitors" />
     </div>
   );
 }

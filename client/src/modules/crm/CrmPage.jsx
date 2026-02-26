@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import { fetchJSON, connectSSE } from '../../lib/api';
+import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const PIPELINE_STAGES = [
   { id: 'lead', name: 'Lead', color: '#6366f1' },
@@ -240,6 +241,7 @@ export default function CrmPage() {
           )}
         </div>
       )}
+      <AIInsightsPanel moduleId="crm" />
     </div>
   );
 }
