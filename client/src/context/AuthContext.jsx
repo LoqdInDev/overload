@@ -16,11 +16,28 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // On mount, verify existing token
+  // Auto-login: creates default owner and returns tokens
+  const autoLogin = async () => {
+    try {
+      const res = await fetch('/api/auth/auto-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      localStorage.setItem(TOKEN_KEY, data.accessToken);
+      localStorage.setItem(REFRESH_KEY, data.refreshToken);
+      setUser(data.user);
+    } catch {
+      // server may not be running
+    }
+  };
+
+  // On mount, verify existing token or auto-login
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
-      setLoading(false);
+      autoLogin().finally(() => setLoading(false));
       return;
     }
 
@@ -35,6 +52,7 @@ export function AuthProvider({ children }) {
       .catch(() => {
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(REFRESH_KEY);
+        return autoLogin();
       })
       .finally(() => setLoading(false));
   }, []);

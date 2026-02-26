@@ -99,6 +99,30 @@ router.post('/logout', (req, res) => {
   res.json({ success: true });
 });
 
+// POST /api/auth/auto-login
+// Creates a default owner account if none exists and returns tokens
+router.post('/auto-login', async (req, res, next) => {
+  try {
+    const { db } = require('../db/database');
+    let user = db.prepare('SELECT * FROM users ORDER BY created_at ASC LIMIT 1').get();
+
+    if (!user) {
+      // Create default owner
+      user = await createUser('owner@overload.local', 'overload-auto-2024', 'Owner');
+    }
+
+    const tokens = generateTokenPair(user.id);
+
+    res.json({
+      user: { id: user.id, email: user.email, displayName: user.display_name || user.displayName, role: user.role },
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/auth/me
 router.get('/me', requireAuth, (req, res) => {
   res.json({ user: req.user });
