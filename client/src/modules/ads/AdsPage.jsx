@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import ModuleWrapper from '../../components/shared/ModuleWrapper';
 
 const PLATFORMS = [
   { id: 'google', name: 'Google Ads', icon: 'M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z', color: '#3b82f6' },
@@ -96,6 +97,7 @@ export default function AdsPage() {
   if (!activePlatform) {
     return (
       <div className="p-4 sm:p-6 lg:p-12">
+        <ModuleWrapper moduleId="ads">
         <div className="mb-6 sm:mb-10 animate-fade-in">
           <p className="hud-label mb-3 text-[11px]" style={{ color: '#10b981' }}>AD CAMPAIGN BUILDER</p>
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">Choose your platform</h1>
@@ -153,6 +155,7 @@ export default function AdsPage() {
             ))}
           </div>
         </div>
+        </ModuleWrapper>
       </div>
     );
   }
@@ -162,6 +165,7 @@ export default function AdsPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
+      <ModuleWrapper moduleId="ads">
       {/* Header */}
       <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
         <button onClick={() => { setActivePlatform(null); setResult(null); setCampaign({ name: '', objective: 'conversions', budget: '50', audience: '', template: '' }); setAudiencePreset(null); }}
@@ -427,6 +431,7 @@ export default function AdsPage() {
           )}
         </div>
       )}
+      </ModuleWrapper>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import ModuleWrapper from '../../components/shared/ModuleWrapper';
 
 const MODULE_COLOR = '#f59e0b';
 
@@ -118,6 +119,7 @@ export default function EmailSmsPage() {
   if (!activeType) {
     return (
       <div className="p-4 sm:p-6 lg:p-12">
+        <ModuleWrapper moduleId="email-sms">
         <div className="mb-6 sm:mb-8 animate-fade-in">
           <p className="hud-label text-[11px] mb-2" style={{ color: MODULE_COLOR }}>EMAIL & SMS ENGINE</p>
           <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 ${dark ? 'text-white' : 'text-gray-900'}`}>What do you want to create?</h1>
@@ -177,6 +179,7 @@ export default function EmailSmsPage() {
             ))}
           </div>
         </div>
+        </ModuleWrapper>
       </div>
     );
   }
@@ -188,6 +191,7 @@ export default function EmailSmsPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
+      <ModuleWrapper moduleId="email-sms">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6 sm:mb-8">
         <button onClick={() => { setActiveType(null); setResult(''); setStreamText(''); setPrompt(''); setSubjectLine(''); }}
@@ -362,6 +366,7 @@ export default function EmailSmsPage() {
           </div>
         </div>
       )}
+      </ModuleWrapper>
     </div>
   );
 }

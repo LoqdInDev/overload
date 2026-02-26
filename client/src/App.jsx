@@ -5,6 +5,7 @@ import { ThemeContext, useTheme } from './context/ThemeContext';
 import { BrandProvider } from './context/BrandContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+import { AutomationProvider, useAutomation } from './context/AutomationContext';
 import ErrorBoundary from './components/shared/ErrorBoundary';
 import ModuleErrorBoundary from './components/shared/ModuleErrorBoundary';
 import CommandPalette from './components/shared/CommandPalette';
@@ -52,6 +53,7 @@ const EcommerceHubPage = lazy(() => import('./modules/ecommerce-hub/EcommerceHub
 const KnowledgeBasePage = lazy(() => import('./modules/knowledge-base/KnowledgeBasePage'));
 const TheAdvisorPage = lazy(() => import('./modules/the-advisor/TheAdvisorPage'));
 const ClientManagerPage = lazy(() => import('./modules/client-manager/ClientManagerPage'));
+const ApprovalsPage = lazy(() => import('./modules/approvals/ApprovalsPage'));
 
 function Loader() {
   return (
@@ -75,6 +77,37 @@ function M({ component: Comp, name }) {
     <ModuleErrorBoundary moduleName={name}>
       <Comp />
     </ModuleErrorBoundary>
+  );
+}
+
+function AutoStatusChip() {
+  const { modes, pendingCount } = useAutomation();
+  const { dark } = useTheme();
+  const counts = { autopilot: 0, copilot: 0 };
+  Object.values(modes).forEach(m => { if (m.mode !== 'manual' && counts[m.mode] !== undefined) counts[m.mode]++; });
+  const hasAuto = counts.autopilot > 0 || counts.copilot > 0;
+  if (!hasAuto && pendingCount === 0) return null;
+  return (
+    <div className="hidden lg:flex items-center gap-2">
+      {counts.autopilot > 0 && (
+        <span className="flex items-center gap-1 text-[9px] font-semibold tracking-wider" style={{ color: '#22c55e' }}>
+          <span className="w-[5px] h-[5px] rounded-full" style={{ background: '#22c55e', animation: 'auto-breathe 3s ease-in-out infinite' }} />
+          {counts.autopilot}A
+        </span>
+      )}
+      {counts.copilot > 0 && (
+        <span className="flex items-center gap-1 text-[9px] font-semibold tracking-wider" style={{ color: '#D4A017' }}>
+          <span className="w-[5px] h-[5px] rounded-full" style={{ background: '#D4A017', animation: 'auto-pulse 2s ease-in-out infinite' }} />
+          {counts.copilot}C
+        </span>
+      )}
+      {pendingCount > 0 && (
+        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold"
+          style={{ background: dark ? 'rgba(212,160,23,0.12)' : 'rgba(212,160,23,0.08)', color: '#D4A017' }}>
+          {pendingCount} pending
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -177,6 +210,7 @@ export default function App() {
     <ThemeContext.Provider value={{ dark, toggle }}>
     <ToastProvider>
     <BrandProvider>
+    <AutomationProvider>
     <ProtectedRoute>
       <div data-theme={dark ? 'dark' : 'light'}
         className="flex h-screen overflow-hidden"
@@ -300,6 +334,7 @@ export default function App() {
               <span className="hidden lg:inline text-[9px] font-medium tracking-wider" style={{ color: muted }}>
                 {MODULE_REGISTRY.length} MODULES
               </span>
+              <AutoStatusChip />
             </div>
           </header>
 
@@ -310,6 +345,7 @@ export default function App() {
                 <div key={pageKey} className="page-enter">
                   <Routes>
                     <Route path="/dashboard" element={<M component={HomePage} name="Command Center" />} />
+                    <Route path="/approvals/*" element={<M component={ApprovalsPage} name="Approval Queue" />} />
                     <Route path="/video-marketing/*" element={<M component={VideoMarketingPage} name="Video Marketing" />} />
                     <Route path="/content/*" element={<M component={ContentPage} name="AI Content" />} />
                     <Route path="/creative/*" element={<M component={CreativePage} name="Creative" />} />
@@ -361,6 +397,7 @@ export default function App() {
         </main>
       </div>
     </ProtectedRoute>
+    </AutomationProvider>
     </BrandProvider>
     </ToastProvider>
     </ThemeContext.Provider>
@@ -374,6 +411,7 @@ export default function App() {
 function SidebarNav({ navOpen, setNavOpen, mobileMenuOpen, dark, toggle, terra, ink, muted, location, expandedSections, toggleSection, suppressActive }) {
   const { user, logout } = useAuth();
   const recents = useRecentModules();
+  const { pendingCount, getMode } = useAutomation();
 
   const handleSidebarKeyDown = (e) => {
     if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
@@ -434,6 +472,39 @@ function SidebarNav({ navOpen, setNavOpen, mobileMenuOpen, dark, toggle, terra, 
             </svg>
           </div>
           {navOpen && <span className="text-[12.5px]">Command Center</span>}
+        </NavLink>
+
+        {/* Approval Queue */}
+        <NavLink to="/approvals"
+          className={`flex items-center gap-3 rounded-xl transition-all duration-200 group mt-1 ${navOpen ? 'px-3 py-2.5' : 'p-2.5 justify-center'}`}
+          style={{
+            color: location.pathname === '/approvals' ? (dark ? '#F5EDE6' : '#2C2825') : muted,
+            fontWeight: location.pathname === '/approvals' ? 600 : 500,
+            background: location.pathname === '/approvals' ? (dark ? 'rgba(212,160,23,0.12)' : 'rgba(212,160,23,0.07)') : undefined,
+          }}
+          onMouseEnter={e => { if (location.pathname !== '/approvals') { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.03)'; e.currentTarget.style.color = ink; } }}
+          onMouseLeave={e => { if (location.pathname !== '/approvals') { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = muted; } }}
+        >
+          <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ background: location.pathname === '/approvals' ? (dark ? 'rgba(212,160,23,0.2)' : 'rgba(212,160,23,0.1)') : (dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)') }}>
+            <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" strokeWidth={1.6} stroke={location.pathname === '/approvals' ? '#D4A017' : 'currentColor'}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          {navOpen && (
+            <div className="flex items-center gap-2 flex-1">
+              <span className="text-[12.5px]">Approvals</span>
+              {pendingCount > 0 && (
+                <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-bold text-white"
+                  style={{ background: '#D4A017', animation: 'auto-pulse 2s ease-in-out infinite' }}>
+                  {pendingCount}
+                </span>
+              )}
+            </div>
+          )}
+          {!navOpen && pendingCount > 0 && (
+            <div className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ background: '#D4A017', animation: 'auto-pulse 2s ease-in-out infinite' }} />
+          )}
         </NavLink>
 
         {/* Recent modules */}
@@ -523,6 +594,12 @@ function SidebarNav({ navOpen, setNavOpen, mobileMenuOpen, dark, toggle, terra, 
                         {navOpen && <span className="truncate">{mod.name}</span>}
                         {isActive && navOpen && <div className="ml-auto w-[5px] h-[5px] rounded-full flex-shrink-0" style={{ background: mod.color }} />}
                         {isSpecial && !isActive && navOpen && <div className="ml-auto w-[5px] h-[5px] rounded-full flex-shrink-0 animate-pulse" style={{ background: mod.color, opacity: 0.6 }} />}
+                        {!isActive && !isSpecial && navOpen && mod.automatable && (() => {
+                          const modMode = getMode(mod.id);
+                          if (modMode === 'copilot') return <div className="ml-auto w-[5px] h-[5px] rounded-full flex-shrink-0" style={{ background: '#D4A017', animation: 'auto-pulse 2s ease-in-out infinite' }} />;
+                          if (modMode === 'autopilot') return <div className="ml-auto w-[5px] h-[5px] rounded-full flex-shrink-0" style={{ background: '#22c55e', animation: 'auto-breathe 3s ease-in-out infinite' }} />;
+                          return null;
+                        })()}
                       </NavLink>
                     );
                   })}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import ModuleWrapper from '../../components/shared/ModuleWrapper';
 
 const TOOLS = [
   { id: 'keywords', name: 'Keyword Research', icon: 'M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z' },
@@ -81,6 +82,7 @@ export default function SeoPage() {
 
   if (!activeTool) return (
     <div className="p-4 sm:p-6 lg:p-12">
+      <ModuleWrapper moduleId="seo">
       <div className="mb-6 sm:mb-8 animate-fade-in">
         <p className="hud-label text-[11px] mb-2" style={{ color: '#14b8a6' }}>SEO SUITE</p>
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Choose an SEO tool</h1>
@@ -108,6 +110,7 @@ export default function SeoPage() {
           )))}
         </div>
       </div>
+      </ModuleWrapper>
     </div>
   );
 
@@ -116,6 +119,7 @@ export default function SeoPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
+      <ModuleWrapper moduleId="seo">
       <div className="flex items-center gap-3 sm:gap-5 mb-6 sm:mb-8">
         <button onClick={() => { setActiveTool(null); setOutput(''); setPrompt(''); }} className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white transition-all">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
@@ -166,6 +170,7 @@ export default function SeoPage() {
           <div className="panel rounded-2xl p-4 sm:p-7"><pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-teal-400 ml-0.5 animate-pulse" />}</pre></div>
         </div>
       )}
+      </ModuleWrapper>
     </div>
   );
 }

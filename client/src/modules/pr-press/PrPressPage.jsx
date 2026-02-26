@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import ModuleWrapper from '../../components/shared/ModuleWrapper';
 
 const MODULE_COLOR = '#be185d';
 
@@ -48,6 +49,7 @@ export default function PrPressPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-10">
+      <ModuleWrapper moduleId="pr-press">
       <div className="mb-6 sm:mb-8 animate-fade-in">
         <p className="hud-label text-[11px] mb-2" style={{ color: MODULE_COLOR }}>PR & PRESS</p>
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Public Relations Hub</h1>
@@ -221,6 +223,7 @@ export default function PrPressPage() {
           )}
         </div>
       )}
+      </ModuleWrapper>
     </div>
   );
 }

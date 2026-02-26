@@ -4,7 +4,8 @@ import { usePageTitle } from '../../hooks/usePageTitle';
 import { MODULE_REGISTRY, CATEGORIES } from '../../config/modules';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
-import { fetchJSON } from '../../lib/api';
+import { useAutomation } from '../../context/AutomationContext';
+import { fetchJSON, postJSON } from '../../lib/api';
 import OnboardingWizard from '../../components/shared/OnboardingWizard';
 
 /* ═══════════════════════════════════════════
@@ -65,7 +66,17 @@ function SkeletonPulse({ className, style }) {
   return <div className={`animate-pulse rounded ${className}`} style={{ background: 'currentColor', opacity: 0.07, ...style }} />;
 }
 
-/* ─── Quick Actions (static navigation — no API needed) ─── */
+function relativeTime(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+/* ─── Quick Actions (static navigation) ─── */
 const QUICK = [
   { label: 'Create Video', sub: 'AI clips & reels', path: '/video-marketing', color: '#C45D3E', grad: '#D4735A',
     filled: true,
@@ -95,7 +106,7 @@ function getGreeting() {
 }
 
 /* ═══════════════════════════════════════════
-   COMMAND CENTER — Warm Editorial Design
+   COMMAND CENTER — Automation Mission Control
    ═══════════════════════════════════════════ */
 
 export default function HomePage() {
@@ -103,6 +114,7 @@ export default function HomePage() {
   const nav = useNavigate();
   const { dark } = useTheme();
   const { user } = useAuth();
+  const { modes, pendingCount, actionStats, getMode, refreshPending } = useAutomation();
   const greeting = useMemo(getGreeting, []);
 
   // ─── Onboarding state ───
@@ -114,34 +126,41 @@ export default function HomePage() {
     }).catch(() => {});
   }, []);
 
+  // ─── Mode distribution ───
+  const modeDist = useMemo(() => {
+    let autopilot = 0, copilot = 0, manual = 0;
+    MODULE_REGISTRY.forEach(m => {
+      const mode = getMode(m.id);
+      if (mode === 'autopilot') autopilot++;
+      else if (mode === 'copilot') copilot++;
+      else manual++;
+    });
+    return { autopilot, copilot, manual };
+  }, [modes, getMode]);
+
+  const hasAutomation = modeDist.autopilot > 0 || modeDist.copilot > 0;
+
   // ─── Data state ───
   const [summary, setSummary] = useState(null);
-  const [feed, setFeed] = useState(null);
-  const [actions, setActions] = useState(null);
-  const [weekly, setWeekly] = useState(null);
-  const [channels, setChannels] = useState(null);
+  const [feedItems, setFeedItems] = useState(null);
+  const [approvals, setApprovals] = useState(null);
 
-  // Fallback empty data when server is unavailable
   const EMPTY_SUMMARY = { kpi: [
     { label: 'Revenue', value: 0, prefix: '$', color: '#5E8E6E', trend: '$0', up: false, spark: [0,0,0,0,0,0,0], sub: 'this week' },
     { label: 'Campaigns', value: 0, color: '#C45D3E', trend: '0', up: false, spark: [0,0,0,0,0,0,0], sub: 'active' },
     { label: 'Content', value: 0, color: '#D4915C', trend: '0', up: false, spark: [0,0,0,0,0,0,0], sub: '0 this week' },
     { label: 'Subscribers', value: 0, color: '#8B7355', trend: '0', up: false, spark: [0,0,0,0,0,0,0], sub: 'total' },
-  ], overview: { weekActivities: 0 } };
+  ] };
 
   const loadData = useCallback(async () => {
     const results = await Promise.allSettled([
       fetchJSON('/api/dashboard/summary'),
-      fetchJSON('/api/dashboard/feed?limit=5'),
-      fetchJSON('/api/dashboard/actions'),
-      fetchJSON('/api/dashboard/weekly'),
-      fetchJSON('/api/dashboard/channels'),
+      fetchJSON('/api/automation/actions?limit=15').catch(() => fetchJSON('/api/dashboard/feed?limit=10')),
+      fetchJSON('/api/automation/approvals?limit=5'),
     ]);
     setSummary(results[0].status === 'fulfilled' ? results[0].value : EMPTY_SUMMARY);
-    setFeed(results[1].status === 'fulfilled' ? results[1].value : []);
-    setActions(results[2].status === 'fulfilled' ? results[2].value : []);
-    setWeekly(results[3].status === 'fulfilled' ? results[3].value : { data: [], hasRevenue: false, total: 0 });
-    setChannels(results[4].status === 'fulfilled' ? results[4].value : { channels: [], empty: true });
+    setFeedItems(results[1].status === 'fulfilled' ? (results[1].value?.actions || results[1].value || []) : []);
+    setApprovals(results[2].status === 'fulfilled' ? (results[2].value?.approvals || results[2].value || []) : []);
   }, []);
 
   useEffect(() => {
@@ -151,49 +170,43 @@ export default function HomePage() {
   }, [loadData]);
 
   const kpi = summary?.kpi || [];
-  const feedItems = feed || [];
-  const actionItems = actions || [];
-  const weeklyData = weekly?.data || [];
-  const channelData = channels?.channels || [];
+  const feed = feedItems || [];
+  const approvalItems = approvals || [];
   const isLoading = summary === null;
 
-  /* ── Chart calculations ── */
-  const weekTotal = weeklyData.reduce((s, d) => s + d.rev, 0);
-  const hasRevenue = weekly?.hasRevenue;
+  // ─── Approve / Reject handlers ───
+  const handleApprove = useCallback(async (id) => {
+    try {
+      await postJSON(`/api/automation/approvals/${id}/approve`, {});
+      refreshPending();
+      loadData();
+    } catch { /* silent */ }
+  }, [refreshPending, loadData]);
 
-  const chartData = hasRevenue
-    ? weeklyData.map(d => d.rev)
-    : weeklyData.map(d => d.activity);
-  const chartMax = Math.max(...chartData, 1);
-  const chartMin = Math.min(...chartData, 0);
-  const chartRange = chartMax - chartMin || 1;
+  const handleReject = useCallback(async (id) => {
+    try {
+      await postJSON(`/api/automation/approvals/${id}/reject`, {});
+      refreshPending();
+      loadData();
+    } catch { /* silent */ }
+  }, [refreshPending, loadData]);
 
-  const todayBar = [6, 0, 1, 2, 3, 4, 5][new Date().getDay()];
-
-  /* Donut gradient */
-  let accum = 0;
-  const donutGrad = channelData.length > 0
-    ? channelData.map(ch => {
-        const s = (accum / 100) * 360;
-        accum += ch.pct;
-        return `${ch.color} ${s}deg ${(accum / 100) * 360}deg`;
-      }).join(', ')
-    : null;
-
-  /* SVG area chart */
-  const cW = 420, cH = 180, pL = 42, pR = 12, pT = 30, pB = 28;
-  const plotW = cW - pL - pR, plotH = cH - pT - pB;
-  const chartPts = weeklyData.map((d, i) => {
-    const val = hasRevenue ? d.rev : d.activity;
-    return [
-      pL + (i / Math.max(weeklyData.length - 1, 1)) * plotW,
-      pT + plotH - ((val - chartMin) / chartRange) * plotH,
-    ];
-  });
-  const chartLine = chartPts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
-  const chartArea = chartPts.length > 0
-    ? `${chartLine} L${chartPts.at(-1)[0].toFixed(1)},${cH - pB} L${chartPts[0][0].toFixed(1)},${cH - pB} Z`
-    : '';
+  // ─── Quick actions with conditional Review Queue ───
+  const quickActions = useMemo(() => {
+    const base = [...QUICK];
+    if (pendingCount > 0) {
+      base.push({
+        label: 'Review Queue',
+        sub: `${pendingCount} pending`,
+        path: '/approvals',
+        color: '#D4915C',
+        grad: '#E0A573',
+        filled: true,
+        icon: 'M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+      });
+    }
+    return base;
+  }, [pendingCount]);
 
   /* ── Theme Tokens ── */
   const terra = '#C45D3E';
@@ -202,19 +215,31 @@ export default function HomePage() {
   const t2 = dark ? '#94908A' : '#7A756F';
   const t3 = dark ? '#6B6660' : '#94908A';
   const brd = dark ? 'rgba(255,255,255,0.06)' : 'rgba(44,40,37,0.06)';
-  const surface = dark ? 'rgba(255,255,255,0.025)' : '#FFFFFF';
+  const surface = dark ? 'rgba(255,255,255,0.02)' : '#fff';
+  const panelBorder = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
   const dmSans = "'DM Sans', system-ui, sans-serif";
   const fraunces = "'Fraunces', Georgia, serif";
 
-  const card = (delay = 0) => ({
+  const panel = (delay = 0) => ({
     background: surface,
-    border: `1px solid ${brd}`,
-    borderRadius: 22,
-    boxShadow: dark ? 'none' : '0 2px 12px rgba(44,40,37,0.03)',
+    border: `1px solid ${panelBorder}`,
+    borderRadius: 16,
     animationDelay: `${delay}ms`,
   });
 
   const displayName = user?.displayName || user?.email?.split('@')[0] || '';
+
+  const modeColor = (mode) => {
+    if (mode === 'autopilot') return sage;
+    if (mode === 'copilot') return '#D4915C';
+    return t3;
+  };
+
+  const modeBg = (mode) => {
+    if (mode === 'autopilot') return dark ? 'rgba(94,142,110,0.15)' : 'rgba(94,142,110,0.1)';
+    if (mode === 'copilot') return dark ? 'rgba(212,145,92,0.15)' : 'rgba(212,145,92,0.1)';
+    return dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)';
+  };
 
   return (
     <div className="p-4 sm:p-5 md:p-7 lg:p-9 max-w-[1440px] mx-auto space-y-4" style={{ fontFamily: dmSans }}>
@@ -227,35 +252,62 @@ export default function HomePage() {
         />
       )}
 
-      {/* ═══ STATUS RIBBON ═══ */}
-      <div className="cc-panel flex items-center flex-wrap gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 rounded-2xl" style={{
-        background: dark ? 'rgba(255,255,255,0.02)' : 'rgba(196,93,62,0.03)',
-        border: `1px solid ${brd}`,
+      {/* ═══ 1. AUTOMATION STATUS RIBBON ═══ */}
+      <div className="flex items-center flex-wrap gap-2 sm:gap-3 px-3 sm:px-4 py-2 rounded-xl" style={{
+        background: dark ? 'rgba(255,255,255,0.02)' : 'rgba(94,142,110,0.04)',
+        border: `1px solid ${panelBorder}`,
       }}>
+        {/* Left: Systems Online */}
         <div className="flex items-center gap-1.5">
-          <div className="w-[6px] h-[6px] rounded-full" style={{ background: sage }} />
-          <span className="text-[10px] font-semibold tracking-[0.1em] uppercase" style={{ color: sage }}>
-            Operational
+          <div className="w-[7px] h-[7px] rounded-full" style={{
+            background: sage,
+            boxShadow: `0 0 6px ${sage}80`,
+            animation: 'pulse 2s ease-in-out infinite',
+          }} />
+          <span className="text-[10px] font-bold tracking-[0.1em] uppercase" style={{ color: sage }}>
+            Systems Online
           </span>
         </div>
-        <div className="w-px h-3 flex-shrink-0" style={{ background: brd }} />
-        <span className="text-[10px] font-medium tracking-wider uppercase" style={{ color: t3 }}>
-          {MODULE_REGISTRY.length} modules
-        </span>
-        <div className="w-px h-3 flex-shrink-0" style={{ background: brd }} />
-        <div className="flex items-center gap-1.5">
-          {CATEGORIES.slice(0, 6).map((cat, i) => (
-            <div key={i} className="w-[5px] h-[5px] rounded-full" style={{ background: cat.color, opacity: 0.4 }} />
-          ))}
+
+        {/* Center: Mode distribution */}
+        <div className="hidden sm:flex items-center gap-1 mx-auto">
+          <span className="text-[10px] font-semibold tabular-nums" style={{ color: sage }}>
+            {modeDist.autopilot} Autopilot
+          </span>
+          <span className="text-[10px]" style={{ color: t3 }}>&middot;</span>
+          <span className="text-[10px] font-semibold tabular-nums" style={{ color: '#D4915C' }}>
+            {modeDist.copilot} Copilot
+          </span>
+          <span className="text-[10px]" style={{ color: t3 }}>&middot;</span>
+          <span className="text-[10px] font-semibold tabular-nums" style={{ color: t3 }}>
+            {modeDist.manual} Manual
+          </span>
         </div>
-        <div className="flex-1" />
-        <span className="hidden sm:inline text-[10px] font-medium tabular-nums" style={{ color: t3 }}>
-          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-        </span>
+
+        {/* Right: Pending + Actions today */}
+        <div className="flex items-center gap-2 ml-auto">
+          {pendingCount > 0 && (
+            <button
+              onClick={() => nav('/approvals')}
+              className="text-[10px] font-bold px-2 py-0.5 rounded-lg transition-colors"
+              style={{
+                background: dark ? 'rgba(212,145,92,0.15)' : 'rgba(212,145,92,0.1)',
+                color: '#D4915C',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(212,145,92,0.25)' : 'rgba(212,145,92,0.18)'}
+              onMouseLeave={e => e.currentTarget.style.background = dark ? 'rgba(212,145,92,0.15)' : 'rgba(212,145,92,0.1)'}
+            >
+              {pendingCount} awaiting review
+            </button>
+          )}
+          <span className="text-[10px] font-medium tabular-nums" style={{ color: t3 }}>
+            {actionStats.today} AI actions today
+          </span>
+        </div>
       </div>
 
-      {/* ═══ GREETING ═══ */}
-      <div className="cc-panel px-1 pt-3 pb-4" style={{ animationDelay: '30ms' }}>
+      {/* ═══ 2. GREETING + AI SUMMARY ═══ */}
+      <div className="px-1 pt-3 pb-3" style={{ animationDelay: '30ms' }}>
         <h1 className="text-[22px] sm:text-[26px] md:text-[32px] leading-tight" style={{
           fontFamily: fraunces,
           fontStyle: 'italic',
@@ -266,451 +318,30 @@ export default function HomePage() {
         </h1>
         <p className="text-[13px] mt-2 leading-relaxed" style={{ color: t2 }}>
           {isLoading ? (
-            <SkeletonPulse className="h-4 w-64 inline-block" />
-          ) : actionItems.length > 0 ? (
+            <SkeletonPulse className="h-4 w-72 inline-block" />
+          ) : hasAutomation ? (
             <>
-              {summary?.overview?.weekActivities > 0 && (
+              <span style={{ color: sage }}>Autopilot handled </span>
+              <span className="font-bold" style={{ color: sage }}>{actionStats.today} actions</span>
+              <span style={{ color: t2 }}> today. </span>
+              {pendingCount > 0 ? (
                 <>
-                  <span className="font-bold" style={{ color: sage }}>
-                    {summary.overview.weekActivities} actions
-                  </span>{' '}
-                  this week &mdash;{' '}
+                  <span className="font-semibold" style={{ color: '#D4915C' }}>{pendingCount} items</span>
+                  <span> await your review.</span>
                 </>
+              ) : (
+                <span>All caught up on reviews.</span>
               )}
-              <span className="font-semibold" style={{ color: terra }}>
-                {actionItems.filter(a => a.priority === 'high').length} items
-              </span>{' '}
-              need your attention.
             </>
           ) : (
-            <>Your command center is ready. Let&apos;s build something great.</>
+            <>All modules in manual mode. Enable Copilot to get AI suggestions.</>
           )}
         </p>
       </div>
 
-      {/* ═══ KPI CARDS ═══ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="cc-panel rounded-[22px] p-4 sm:p-5" style={card(60 + i * 35)}>
-              <SkeletonPulse className="h-3 w-16 mb-3" />
-              <SkeletonPulse className="h-7 w-24 mb-3" />
-              <SkeletonPulse className="h-4 w-20" />
-            </div>
-          ))
-        ) : (
-          kpi.map((k, i) => (
-            <div key={i} className="cc-panel rounded-[22px] p-4 sm:p-5 relative overflow-hidden group/kpi transition-all duration-300 hover:-translate-y-0.5"
-              style={{
-                ...card(60 + i * 35),
-                borderLeft: `3px solid ${k.color}${dark ? '60' : '40'}`,
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.boxShadow = `0 12px 32px -8px ${k.color}18`;
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.boxShadow = dark ? 'none' : '0 2px 12px rgba(44,40,37,0.03)';
-              }}
-            >
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <div className="text-[10px] font-semibold tracking-[0.1em] uppercase" style={{ color: t3 }}>
-                    {k.label}
-                  </div>
-                  <div className="text-[20px] sm:text-[24px] md:text-[28px] font-bold tabular-nums leading-none tracking-tight" style={{
-                    color: ink,
-                    fontFamily: dmSans,
-                  }}>
-                    <Counter end={k.value} prefix={k.prefix} />
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-2 py-0.5 rounded-lg" style={{
-                      background: k.up
-                        ? (dark ? 'rgba(94,142,110,0.12)' : 'rgba(94,142,110,0.08)')
-                        : 'rgba(196,93,62,0.08)',
-                      color: k.up ? sage : terra,
-                    }}>
-                      <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d={k.up ? 'M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25' : 'M4.5 4.5l15 15m0 0H8.25m11.25 0V8.25'} />
-                      </svg>
-                      {k.trend}
-                    </span>
-                    <span className="text-[9px]" style={{ color: t3 }}>{k.sub}</span>
-                  </div>
-                </div>
-                <div className="opacity-60 group-hover/kpi:opacity-100 transition-opacity">
-                  <Sparkline data={k.spark} color={k.color} idx={i} />
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* ═══ REVENUE/ACTIVITY CHART + CHANNEL MIX ═══ */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-
-        {/* Chart — 3 cols */}
-        <div className="lg:col-span-3 cc-panel overflow-hidden" style={card(200)}>
-          <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5" style={{ borderBottom: `1px solid ${brd}` }}>
-            <div className="flex items-center gap-2.5">
-              <div className="w-[3px] h-4 rounded-full" style={{ background: terra }} />
-              <span className="text-[11px] font-bold tracking-[0.08em] uppercase" style={{ color: ink }}>
-                {hasRevenue ? 'Revenue This Week' : 'Activity This Week'}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              {isLoading ? (
-                <SkeletonPulse className="h-4 w-16" />
-              ) : (
-                <>
-                  <span className="text-[12px] font-bold tabular-nums" style={{ color: t2 }}>
-                    {hasRevenue ? (
-                      <>$<Counter end={weekTotal} /></>
-                    ) : (
-                      <><Counter end={weeklyData.reduce((s, d) => s + d.activity, 0)} /> actions</>
-                    )}
-                  </span>
-                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-lg uppercase" style={{
-                    background: dark ? 'rgba(94,142,110,0.12)' : 'rgba(94,142,110,0.08)',
-                    color: sage,
-                  }}>total</span>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className="px-2 sm:px-3 py-4 w-full overflow-x-auto">
-            {isLoading ? (
-              <div className="h-[180px] flex items-center justify-center">
-                <SkeletonPulse className="w-full h-full mx-4" style={{ borderRadius: 12 }} />
-              </div>
-            ) : weeklyData.length > 0 ? (
-              <svg viewBox={`0 0 ${cW} ${cH}`} className="w-full min-w-[320px]" preserveAspectRatio="xMidYMid meet">
-                <defs>
-                  <linearGradient id="ccRevGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={terra} stopOpacity={dark ? 0.15 : 0.1} />
-                    <stop offset="100%" stopColor={terra} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-
-                {/* Grid lines */}
-                {[0.25, 0.5, 0.75].map((pct, i) => (
-                  <line key={i}
-                    x1={pL} y1={pT + plotH * (1 - pct)}
-                    x2={cW - pR} y2={pT + plotH * (1 - pct)}
-                    stroke={dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.05)'}
-                    strokeDasharray="4 4"
-                  />
-                ))}
-
-                {/* Area fill */}
-                <path d={chartArea} fill="url(#ccRevGrad)" />
-
-                {/* Line */}
-                <path d={chartLine} fill="none" stroke={terra} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-
-                {/* Data points & labels */}
-                {chartPts.map(([x, y], i) => {
-                  const isToday = i === todayBar;
-                  const val = hasRevenue ? weeklyData[i]?.rev : weeklyData[i]?.activity;
-                  const labelY = y - 14;
-                  return (
-                    <g key={i}>
-                      {isToday && <circle cx={x} cy={y} r={9} fill={terra} opacity={0.1} />}
-                      <circle cx={x} cy={y} r={isToday ? 4.5 : 2.5}
-                        fill={isToday ? terra : (dark ? '#1A1816' : '#ffffff')}
-                        stroke={terra}
-                        strokeWidth={isToday ? 0 : 1.5}
-                      />
-                      <text x={x} y={labelY} textAnchor="middle" dominantBaseline="auto"
-                        style={{
-                          fontSize: isToday ? 10 : 8,
-                          fontWeight: isToday ? 700 : 500,
-                          fill: isToday ? terra : t3,
-                          fontFamily: dmSans,
-                        }}>
-                        {hasRevenue ? `$${(val / 1000).toFixed(1)}k` : val}
-                      </text>
-                      <text x={x} y={cH - 7} textAnchor="middle" dominantBaseline="auto"
-                        style={{
-                          fontSize: 10,
-                          fontWeight: isToday ? 700 : 500,
-                          fill: isToday ? terra : t3,
-                          fontFamily: dmSans,
-                        }}>
-                        {weeklyData[i]?.day}
-                      </text>
-                    </g>
-                  );
-                })}
-
-                {/* Y-axis labels */}
-                {[0, 0.5, 1].map((pct, i) => (
-                  <text key={i} x={pL - 5} y={pT + plotH * (1 - pct) + 3} textAnchor="end"
-                    style={{ fontSize: 8, fill: t3, fontFamily: dmSans }}>
-                    {hasRevenue
-                      ? `$${((chartMin + chartRange * pct) / 1000).toFixed(1)}k`
-                      : Math.round(chartMin + chartRange * pct)
-                    }
-                  </text>
-                ))}
-              </svg>
-            ) : (
-              <div className="h-[180px] flex flex-col items-center justify-center gap-2">
-                <svg className="w-8 h-8" style={{ color: t3 }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-                </svg>
-                <span className="text-[11px] font-medium" style={{ color: t3 }}>Data will appear as you use modules</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Channel Mix — 2 cols */}
-        <div className="lg:col-span-2 cc-panel overflow-hidden" style={card(240)}>
-          <div className="flex items-center gap-2.5 px-4 sm:px-5 py-3 sm:py-3.5" style={{ borderBottom: `1px solid ${brd}` }}>
-            <div className="w-[3px] h-4 rounded-full" style={{ background: sage }} />
-            <span className="text-[11px] font-bold tracking-[0.08em] uppercase" style={{ color: ink }}>
-              Channel Performance
-            </span>
-          </div>
-
-          <div className="p-4 sm:p-5">
-            {isLoading ? (
-              <div className="space-y-4">
-                <div className="flex justify-center"><SkeletonPulse className="w-[115px] h-[115px] !rounded-full" /></div>
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <SkeletonPulse key={i} className="h-4 w-full" />
-                ))}
-              </div>
-            ) : channels?.empty || channelData.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 gap-3">
-                <svg className="w-10 h-10" style={{ color: t3 }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
-                </svg>
-                <span className="text-[11px] font-medium text-center" style={{ color: t3 }}>
-                  Connect platforms to see<br />channel distribution
-                </span>
-                <button onClick={() => nav('/integrations')} className="text-[11px] font-bold px-3 py-1.5 rounded-lg transition-colors" style={{
-                  color: terra,
-                  background: dark ? 'rgba(196,93,62,0.12)' : 'rgba(196,93,62,0.06)',
-                }}>
-                  Connect Platforms
-                </button>
-              </div>
-            ) : (
-              <>
-                {/* Donut chart */}
-                <div className="flex items-center justify-center mb-5">
-                  <div className="relative">
-                    <div style={{
-                      width: 115,
-                      height: 115,
-                      borderRadius: '50%',
-                      background: `conic-gradient(${donutGrad})`,
-                      transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                    }}
-                      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
-                      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                    />
-                    <div className="absolute inset-[20px] rounded-full flex items-center justify-center" style={{
-                      background: dark ? '#1A1816' : '#ffffff',
-                      boxShadow: dark ? 'inset 0 0 12px rgba(0,0,0,0.4)' : 'inset 0 0 8px rgba(44,40,37,0.03)',
-                    }}>
-                      <div className="text-center">
-                        <div className="text-[15px] font-bold tabular-nums" style={{ color: ink }}>
-                          {channelData.length}
-                        </div>
-                        <div className="text-[7px] font-bold uppercase tracking-widest" style={{ color: t3 }}>
-                          sources
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Channel list */}
-                <div className="space-y-3">
-                  {channelData.map((ch, i) => (
-                    <div key={i} className="flex items-center gap-3 group/ch">
-                      <div className="w-[6px] h-[6px] rounded-full flex-shrink-0 transition-transform group-hover/ch:scale-150" style={{ background: ch.color }} />
-                      <span className="text-[11px] font-medium flex-1 min-w-0" style={{ color: t2 }}>{ch.name}</span>
-                      <div className="flex-1 max-w-[90px] h-[5px] rounded-full overflow-hidden" style={{
-                        background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)',
-                      }}>
-                        <div className="h-full rounded-full transition-all duration-700 ease-out" style={{
-                          width: `${ch.pct}%`,
-                          background: ch.color,
-                        }} />
-                      </div>
-                      <span className="text-[11px] font-bold tabular-nums w-8 text-right" style={{ color: ink }}>
-                        {ch.pct}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ═══ ACTIVITY + ACTIONS ═══ */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-
-        {/* Operations Feed — 3 cols */}
-        <div className="lg:col-span-3 cc-panel overflow-hidden" style={card(280)}>
-          <div className="flex items-center gap-2.5 px-4 sm:px-5 py-3 sm:py-3.5" style={{ borderBottom: `1px solid ${brd}` }}>
-            <div className="w-[6px] h-[6px] rounded-full" style={{ background: sage }} />
-            <span className="text-[11px] font-bold tracking-[0.08em] uppercase" style={{ color: ink }}>
-              Operations Feed
-            </span>
-            <div className="flex-1" />
-            <span className="text-[10px] font-medium" style={{ color: sage }}>Live</span>
-          </div>
-
-          {isLoading ? (
-            <div className="p-4 space-y-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex gap-3">
-                  <SkeletonPulse className="w-3 h-3 !rounded-full flex-shrink-0 mt-1" />
-                  <div className="flex-1 space-y-2">
-                    <SkeletonPulse className="h-3 w-48" />
-                    <SkeletonPulse className="h-2.5 w-32" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : feedItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 gap-2">
-              <svg className="w-8 h-8" style={{ color: t3 }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-[11px] font-medium" style={{ color: t3 }}>
-                Activity will appear here as you use modules
-              </span>
-            </div>
-          ) : (
-            <div className="relative">
-              <div className="absolute left-[20px] sm:left-[28px] top-0 bottom-0 w-px" style={{ background: brd }} />
-
-              {feedItems.map((item, i) => (
-                <div key={item.id || i}
-                  className="flex items-start gap-2.5 sm:gap-3 px-3 sm:px-5 py-3 sm:py-3.5 relative transition-colors cursor-default"
-                  onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.015)' : 'rgba(44,40,37,0.015)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
-                  <div className="relative z-10 w-[10px] h-[10px] rounded-full border-2 mt-1 flex-shrink-0" style={{
-                    borderColor: item.color,
-                    background: dark ? '#1A1816' : '#ffffff',
-                  }} />
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-lg" style={{
-                        background: dark ? `${item.color}12` : `${item.color}0c`,
-                        color: item.color,
-                      }}>{item.module}</span>
-                      <span className="text-[12px] font-semibold" style={{ color: ink }}>{item.action}</span>
-                      <span className="text-[10px] ml-auto tabular-nums flex-shrink-0 font-medium" style={{
-                        color: t3,
-                      }}>{item.time} ago</span>
-                    </div>
-                    {item.detail && (
-                      <p className="text-[11px] mt-0.5 truncate" style={{ color: t3 }}>{item.detail}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Priority Actions — 2 cols */}
-        <div className="lg:col-span-2 cc-panel overflow-hidden" style={card(320)}>
-          <div className="flex items-center gap-2.5 px-4 sm:px-5 py-3 sm:py-3.5" style={{ borderBottom: `1px solid ${brd}` }}>
-            <svg className="w-3.5 h-3.5" fill="none" stroke={terra} viewBox="0 0 24 24" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-            </svg>
-            <span className="text-[11px] font-bold tracking-[0.08em] uppercase" style={{ color: ink }}>
-              Needs Attention
-            </span>
-            {!isLoading && actionItems.length > 0 && (
-              <span className="text-[8px] font-bold px-2 py-0.5 rounded-full ml-auto tabular-nums" style={{
-                background: dark ? 'rgba(196,93,62,0.12)' : 'rgba(196,93,62,0.08)',
-                color: terra,
-              }}>
-                {actionItems.filter(a => a.priority === 'high').length} urgent
-              </span>
-            )}
-          </div>
-
-          {isLoading ? (
-            <div className="p-4 space-y-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex gap-3 px-3 py-2">
-                  <SkeletonPulse className="w-1 self-stretch flex-shrink-0 !rounded-full" />
-                  <div className="flex-1 space-y-2">
-                    <SkeletonPulse className="h-3 w-40" />
-                    <SkeletonPulse className="h-2.5 w-56" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : actionItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 gap-2">
-              <svg className="w-8 h-8" style={{ color: sage }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-[11px] font-bold" style={{ color: sage }}>All caught up!</span>
-              <span className="text-[10px]" style={{ color: t3 }}>No actions need attention right now</span>
-            </div>
-          ) : (
-            <div className="p-1.5">
-              {actionItems.map(item => (
-                <button key={item.id} onClick={() => nav(item.path)}
-                  className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left transition-all group/act"
-                  onMouseEnter={e => e.currentTarget.style.background = dark ? `${item.color}08` : `${item.color}05`}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
-                  <div className="w-[3px] self-stretch rounded-full flex-shrink-0 transition-opacity" style={{
-                    background: item.color,
-                    opacity: item.priority === 'high' ? 1 : item.priority === 'medium' ? 0.5 : 0.2,
-                  }} />
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[12px] font-bold" style={{ color: ink }}>{item.title}</span>
-                      {item.priority === 'high' && (
-                        <span className="text-[8px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-wider" style={{
-                          background: dark ? 'rgba(196,93,62,0.12)' : 'rgba(196,93,62,0.07)',
-                          color: terra,
-                        }}>urgent</span>
-                      )}
-                      {item.priority === 'medium' && (
-                        <span className="text-[8px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-wider" style={{
-                          background: dark ? 'rgba(212,145,92,0.12)' : 'rgba(212,145,92,0.07)',
-                          color: '#D4915C',
-                        }}>medium</span>
-                      )}
-                    </div>
-                    <p className="text-[11px] mt-0.5" style={{ color: t3 }}>{item.desc}</p>
-                  </div>
-
-                  <svg className="w-3 h-3 flex-shrink-0 opacity-0 group-hover/act:opacity-50 transition-opacity" fill="none" stroke={t3} viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                  </svg>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ═══ QUICK ACTIONS ═══ */}
-      <div className="cc-panel overflow-hidden" style={card(360)}>
-        <div className="flex items-center gap-2.5 px-4 sm:px-5 py-3 sm:py-3.5" style={{ borderBottom: `1px solid ${brd}` }}>
+      {/* ═══ 3. QUICK ACTIONS ═══ */}
+      <div className="overflow-hidden rounded-2xl" style={panel(60)}>
+        <div className="flex items-center gap-2.5 px-4 sm:px-5 py-3" style={{ borderBottom: `1px solid ${panelBorder}` }}>
           <svg className="w-3.5 h-3.5" fill="none" stroke={terra} viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
           </svg>
@@ -718,13 +349,14 @@ export default function HomePage() {
             Quick Actions
           </span>
         </div>
-        <div className="p-3 sm:p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
-          {QUICK.map((q, i) => (
+        <div className="p-3 sm:p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2.5 sm:gap-3">
+          {quickActions.map((q, i) => (
             <button key={i} onClick={() => nav(q.path)}
               className="group/q flex flex-col items-center gap-2 sm:gap-2.5 px-2 sm:px-3 py-4 sm:py-5 rounded-2xl transition-all duration-300 cursor-pointer"
               style={{
                 background: dark ? 'rgba(255,255,255,0.02)' : 'rgba(44,40,37,0.02)',
                 border: `1px solid ${dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.05)'}`,
+                animationDelay: `${80 + i * 30}ms`,
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.background = dark ? `${q.color}10` : `${q.color}08`;
@@ -772,6 +404,342 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* ═══ 4. THREE-PANEL MAIN AREA ═══ */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+
+        {/* ─── LEFT: Operations Feed (3/5) ─── */}
+        <div className="lg:col-span-3 overflow-hidden rounded-2xl" style={panel(140)}>
+          <div className="flex items-center gap-2.5 px-4 sm:px-5 py-3" style={{ borderBottom: `1px solid ${panelBorder}` }}>
+            <div className="w-[6px] h-[6px] rounded-full" style={{ background: sage }} />
+            <span className="text-[11px] font-bold tracking-[0.08em] uppercase" style={{ color: ink }}>
+              Operations Feed
+            </span>
+            <div className="flex-1" />
+            <span className="text-[10px] font-medium" style={{ color: sage }}>Live</span>
+          </div>
+
+          <div className="max-h-[520px] overflow-y-auto">
+            {isLoading ? (
+              <div className="p-4 space-y-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex gap-3">
+                    <SkeletonPulse className="w-3 h-3 !rounded-full flex-shrink-0 mt-1" />
+                    <div className="flex-1 space-y-2">
+                      <SkeletonPulse className="h-3 w-48" />
+                      <SkeletonPulse className="h-2.5 w-32" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : feed.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-2">
+                <svg className="w-8 h-8" style={{ color: t3 }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-[11px] font-medium" style={{ color: t3 }}>
+                  No activity yet. Start using modules to see your feed.
+                </span>
+              </div>
+            ) : (
+              <div className="relative">
+                <div className="absolute left-[20px] sm:left-[28px] top-0 bottom-0 w-px" style={{ background: brd }} />
+                {feed.map((item, i) => {
+                  const itemMode = item.mode || (item.moduleId ? getMode(item.moduleId) : 'manual');
+                  const isPending = item.status === 'pending_approval' || item.pending;
+                  const itemColor = item.color || (MODULE_REGISTRY.find(m => m.id === item.moduleId)?.color) || t3;
+                  return (
+                    <div key={item.id || i}
+                      className="flex items-start gap-2.5 sm:gap-3 px-3 sm:px-5 py-3 relative transition-colors"
+                      style={{
+                        borderLeft: isPending ? `3px solid #D4915C` : '3px solid transparent',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.015)' : 'rgba(44,40,37,0.015)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <div className="relative z-10 w-[10px] h-[10px] rounded-full border-2 mt-1 flex-shrink-0" style={{
+                        borderColor: itemColor,
+                        background: dark ? '#1A1816' : '#ffffff',
+                      }} />
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-lg" style={{
+                            background: dark ? `${itemColor}12` : `${itemColor}0c`,
+                            color: itemColor,
+                          }}>{item.module || item.moduleName || 'System'}</span>
+
+                          {(itemMode === 'autopilot' || itemMode === 'copilot') && (
+                            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded" style={{
+                              background: modeBg(itemMode),
+                              color: modeColor(itemMode),
+                            }}>
+                              {itemMode === 'autopilot' ? 'AUTO' : 'COPILOT'}
+                            </span>
+                          )}
+
+                          {isPending && (
+                            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded" style={{
+                              background: dark ? 'rgba(212,145,92,0.15)' : 'rgba(212,145,92,0.1)',
+                              color: '#D4915C',
+                            }}>
+                              Needs Review
+                            </span>
+                          )}
+
+                          <span className="text-[12px] font-semibold" style={{ color: ink }}>
+                            {item.action || item.title || item.description}
+                          </span>
+                          <span className="text-[10px] ml-auto tabular-nums flex-shrink-0 font-medium" style={{ color: t3 }}>
+                            {item.time ? `${item.time} ago` : (item.createdAt ? relativeTime(item.createdAt) : '')}
+                          </span>
+                        </div>
+
+                        {item.detail && (
+                          <p className="text-[11px] mt-0.5 truncate" style={{ color: t3 }}>{item.detail}</p>
+                        )}
+
+                        {isPending && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <button
+                              onClick={() => handleApprove(item.id)}
+                              className="text-[10px] font-bold px-3 py-1 rounded-lg transition-colors"
+                              style={{
+                                background: dark ? 'rgba(94,142,110,0.15)' : 'rgba(94,142,110,0.1)',
+                                color: sage,
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(94,142,110,0.25)' : 'rgba(94,142,110,0.18)'}
+                              onMouseLeave={e => e.currentTarget.style.background = dark ? 'rgba(94,142,110,0.15)' : 'rgba(94,142,110,0.1)'}
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleReject(item.id)}
+                              className="text-[10px] font-bold px-3 py-1 rounded-lg transition-colors"
+                              style={{
+                                background: dark ? 'rgba(196,93,62,0.12)' : 'rgba(196,93,62,0.07)',
+                                color: terra,
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(196,93,62,0.2)' : 'rgba(196,93,62,0.12)'}
+                              onMouseLeave={e => e.currentTarget.style.background = dark ? 'rgba(196,93,62,0.12)' : 'rgba(196,93,62,0.07)'}
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ─── RIGHT: Stacked panels (2/5) ─── */}
+        <div className="lg:col-span-2 space-y-4">
+
+          {/* ── Approval Queue Preview ── */}
+          <div className="overflow-hidden rounded-2xl" style={panel(200)}>
+            <div className="flex items-center gap-2.5 px-4 sm:px-5 py-3" style={{ borderBottom: `1px solid ${panelBorder}` }}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="#D4915C" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-[11px] font-bold tracking-[0.08em] uppercase" style={{ color: ink }}>
+                Approval Queue
+              </span>
+              {pendingCount > 0 && (
+                <span className="text-[8px] font-bold px-2 py-0.5 rounded-full ml-auto tabular-nums" style={{
+                  background: dark ? 'rgba(212,145,92,0.15)' : 'rgba(212,145,92,0.1)',
+                  color: '#D4915C',
+                }}>
+                  {pendingCount}
+                </span>
+              )}
+            </div>
+
+            {isLoading ? (
+              <div className="p-4 space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex gap-3 px-2 py-2">
+                    <SkeletonPulse className="w-1 self-stretch flex-shrink-0 !rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <SkeletonPulse className="h-3 w-36" />
+                      <SkeletonPulse className="h-2.5 w-24" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : approvalItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 gap-2">
+                <svg className="w-8 h-8" style={{ color: sage }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-[11px] font-bold" style={{ color: sage }}>All caught up</span>
+              </div>
+            ) : (
+              <div className="p-2">
+                {approvalItems.slice(0, 5).map((item, i) => {
+                  const mod = MODULE_REGISTRY.find(m => m.id === item.moduleId);
+                  const priorityColor = item.priority === 'high' ? terra : item.priority === 'medium' ? '#D4915C' : t3;
+                  return (
+                    <div key={item.id || i} className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-colors"
+                      onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <div className="w-[5px] h-[5px] rounded-full flex-shrink-0" style={{ background: priorityColor }} />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[11px] font-semibold truncate" style={{ color: ink }}>
+                          {item.title || item.action}
+                        </div>
+                        <div className="text-[9px] font-medium" style={{ color: t3 }}>
+                          {mod?.name || item.module || 'Unknown'} &middot; {item.createdAt ? relativeTime(item.createdAt) : item.time || ''}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <button onClick={() => handleApprove(item.id)}
+                          className="w-6 h-6 rounded-md flex items-center justify-center transition-colors"
+                          style={{ background: dark ? 'rgba(94,142,110,0.12)' : 'rgba(94,142,110,0.08)' }}
+                          onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(94,142,110,0.25)' : 'rgba(94,142,110,0.15)'}
+                          onMouseLeave={e => e.currentTarget.style.background = dark ? 'rgba(94,142,110,0.12)' : 'rgba(94,142,110,0.08)'}
+                          title="Approve"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke={sage} viewBox="0 0 24 24" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                        </button>
+                        <button onClick={() => handleReject(item.id)}
+                          className="w-6 h-6 rounded-md flex items-center justify-center transition-colors"
+                          style={{ background: dark ? 'rgba(196,93,62,0.1)' : 'rgba(196,93,62,0.06)' }}
+                          onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(196,93,62,0.2)' : 'rgba(196,93,62,0.12)'}
+                          onMouseLeave={e => e.currentTarget.style.background = dark ? 'rgba(196,93,62,0.1)' : 'rgba(196,93,62,0.06)'}
+                          title="Reject"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke={terra} viewBox="0 0 24 24" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {pendingCount > 5 && (
+                  <button onClick={() => nav('/approvals')}
+                    className="w-full text-center text-[11px] font-bold py-2 mt-1 rounded-lg transition-colors"
+                    style={{ color: '#D4915C' }}
+                    onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(212,145,92,0.08)' : 'rgba(212,145,92,0.05)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    View All &rarr;
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* ── Module Status Grid ── */}
+          <div className="overflow-hidden rounded-2xl" style={panel(260)}>
+            <div className="flex items-center gap-2.5 px-4 sm:px-5 py-3" style={{ borderBottom: `1px solid ${panelBorder}` }}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke={ink} viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zm0 9.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+              </svg>
+              <span className="text-[11px] font-bold tracking-[0.08em] uppercase" style={{ color: ink }}>
+                Module Status
+              </span>
+            </div>
+
+            <div className="p-2 grid grid-cols-2 gap-px max-h-[360px] overflow-y-auto">
+              {MODULE_REGISTRY.map((mod) => {
+                const mode = getMode(mod.id);
+                const dotColor = mode === 'autopilot' ? sage : mode === 'copilot' ? '#D4915C' : t3;
+                return (
+                  <button
+                    key={mod.id}
+                    onClick={() => nav(mod.path)}
+                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition-colors group/mod"
+                    onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.025)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <div className="w-[5px] h-[5px] rounded-full flex-shrink-0 transition-transform group-hover/mod:scale-150" style={{ background: dotColor }} />
+                    <span className="text-[10px] font-medium truncate flex-1" style={{ color: dark ? '#B5B0AA' : '#4A4541' }}>
+                      {mod.name}
+                    </span>
+                    <span className="text-[8px] font-bold uppercase tracking-wider flex-shrink-0" style={{ color: modeColor(mode), opacity: mode === 'manual' ? 0.5 : 1 }}>
+                      {mode === 'autopilot' ? 'AUTO' : mode === 'copilot' ? 'CO' : ''}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ═══ 5. KPI ROW (condensed) ═══ */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-2xl p-4" style={{ ...panel(320 + i * 30) }}>
+              <SkeletonPulse className="h-3 w-16 mb-3" />
+              <SkeletonPulse className="h-6 w-20 mb-2" />
+              <SkeletonPulse className="h-3 w-16" />
+            </div>
+          ))
+        ) : (
+          kpi.map((k, i) => (
+            <div key={i} className="rounded-2xl p-4 relative overflow-hidden group/kpi transition-all duration-300 hover:-translate-y-0.5"
+              style={{
+                ...panel(320 + i * 30),
+                borderLeft: `3px solid ${k.color}${dark ? '60' : '40'}`,
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.boxShadow = `0 8px 24px -6px ${k.color}18`;
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              <div className="flex items-start justify-between">
+                <div className="space-y-1.5">
+                  <div className="text-[10px] font-semibold tracking-[0.1em] uppercase" style={{ color: t3 }}>
+                    {k.label}
+                  </div>
+                  <div className="text-[18px] sm:text-[22px] font-bold tabular-nums leading-none tracking-tight" style={{
+                    color: ink,
+                    fontFamily: dmSans,
+                  }}>
+                    <Counter end={k.value} prefix={k.prefix} />
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-lg" style={{
+                      background: k.up
+                        ? (dark ? 'rgba(94,142,110,0.12)' : 'rgba(94,142,110,0.08)')
+                        : 'rgba(196,93,62,0.08)',
+                      color: k.up ? sage : terra,
+                    }}>
+                      <svg className="w-2 h-2" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d={k.up ? 'M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25' : 'M4.5 4.5l15 15m0 0H8.25m11.25 0V8.25'} />
+                      </svg>
+                      {k.trend}
+                    </span>
+                    <span className="text-[8px]" style={{ color: t3 }}>{k.sub}</span>
+                  </div>
+                </div>
+                <div className="opacity-50 group-hover/kpi:opacity-100 transition-opacity">
+                  <Sparkline data={k.spark} color={k.color} idx={i} />
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Breathing pulse keyframe */}
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(94,142,110,0.5); }
+          50% { opacity: 0.6; box-shadow: 0 0 12px rgba(94,142,110,0.8); }
+        }
+      `}</style>
     </div>
   );
 }

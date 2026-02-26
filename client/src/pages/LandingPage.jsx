@@ -140,19 +140,19 @@ const Icon = {
    DATA
    ═══════════════════════════════════════════ */
 const SOLUTIONS = [
-  { title: 'Your whole marketing team, in one place', desc: 'Content, ads, analytics, email — everything you used to need five people for, handled by one platform that actually works together.' },
-  { title: 'Launch campaigns in minutes, not weeks', desc: 'Set your goals and watch campaigns go live across Google, Meta, and TikTok. Configured, optimized, and running before your coffee gets cold.' },
-  { title: 'See what\'s actually working', desc: 'No more guessing. Unified reporting across every channel shows you exactly where your money goes and what it brings back.' },
+  { title: 'Automation that replaces your marketing team', desc: 'Content, ads, analytics, email — everything you used to need five people for, handled by AI that executes autonomously across every channel.' },
+  { title: 'Three modes: Manual, Copilot, Autopilot', desc: 'Start hands-on and graduate to full automation at your own pace. Review everything, approve AI suggestions, or let it run entirely on its own.' },
+  { title: 'Always optimizing, even while you sleep', desc: 'AI monitors every campaign, reallocates budget, pauses underperformers, and scales winners — 24/7 without manual intervention.' },
 ];
 
 const JOURNEY = [
-  { title: 'Build Your Brand', desc: 'Set up your brand profile once. Overload learns your voice, audience, products, and goals.' },
-  { title: 'Create Content', desc: 'Generate video ads, blog posts, social captions, email sequences, and creatives — all on-brand.' },
-  { title: 'Launch Campaigns', desc: 'Paid ads go live across Google, Meta, and TikTok. Funnels and landing pages deployed instantly.' },
-  { title: 'Grow Your Audience', desc: 'SEO optimized. Social scheduled. Influencers found. Referral programs launched and running.' },
-  { title: 'Convert & Retain', desc: 'Email flows triggered. Cart recovery active. Loyalty programs running — all automatically.' },
-  { title: 'Analyze Everything', desc: 'Unified dashboard with real ROAS, profit margins, and customer lifetime value at a glance.' },
-  { title: 'Go on Autopilot', desc: 'Flip the switch. Overload runs your marketing 24/7. You just check in weekly.' },
+  { title: 'Connect', desc: 'Link your platforms — Shopify, Meta, Google, TikTok, email, and more. One-click integrations, no code required.' },
+  { title: 'Configure', desc: 'Set your brand voice, goals, audience, and budget. Overload builds your strategy automatically.' },
+  { title: 'Manual Mode', desc: 'Start hands-on. Review every recommendation, approve each action, and stay in full control while you build trust.' },
+  { title: 'Copilot Mode', desc: 'AI drafts campaigns, content, and optimizations. You review and approve — like a CMO who never sleeps.' },
+  { title: 'Analyze & Optimize', desc: 'Unified dashboard with real ROAS, profit margins, and customer lifetime value. AI finds what works and doubles down.' },
+  { title: 'Scale Confidently', desc: 'Campaigns, content, email flows, and ad spend — all managed and optimized across every channel simultaneously.' },
+  { title: 'Autopilot Mode', desc: 'Flip the switch. Overload runs your entire marketing 24/7. You just check in weekly.' },
 ];
 
 const INTEGRATIONS = [
@@ -171,16 +171,16 @@ const TESTIMONIALS = [
 
 const PRICING = [
   {
-    name: 'Starter', desc: 'For solo founders getting started.', price: '$49', period: '/mo',
+    name: 'Manual', desc: 'Full control. You call the shots.', price: '$49', period: '/mo',
     features: ['All 38 modules', 'AI content generation', 'Basic analytics', 'Email support', '5 campaigns/month'],
   },
   {
-    name: 'Autopilot', desc: 'For growing businesses ready to scale.', price: '$149', period: '/mo', featured: true,
-    features: ['Everything in Starter', 'Full autonomous execution', 'The Advisor daily briefings', 'Unlimited campaigns', 'Priority support', 'Custom integrations'],
+    name: 'Copilot', desc: 'AI recommends. You approve.', price: '$149', period: '/mo', featured: true,
+    features: ['Everything in Manual', 'AI-drafted campaigns & content', 'The Advisor daily briefings', 'Unlimited campaigns', 'Priority support', 'Custom integrations'],
   },
   {
-    name: 'Blackout', desc: 'For brands that want total domination.', price: '$299', period: '/mo',
-    features: ['Everything in Autopilot', '24/7 autonomous operations', 'Custom model training', 'Dedicated account manager', 'White-label reports', 'Full API access'],
+    name: 'Autopilot', desc: 'Fully autonomous marketing.', price: '$299', period: '/mo',
+    features: ['Everything in Copilot', '24/7 autonomous operations', 'Custom model training', 'Dedicated account manager', 'White-label reports', 'Full API access'],
   },
 ];
 
@@ -245,16 +245,16 @@ export default function LandingPage() {
 
         <div className="text-center max-w-3xl mx-auto relative z-10 lp-hero-anim">
           <div style={{ marginBottom: 28 }}>
-            <span className="lp-pill">Marketing OS</span>
+            <span className="lp-pill">Marketing Automation</span>
           </div>
 
           <h1 className="lp-serif" style={{ fontSize: 'clamp(2.6rem, 6.5vw, 4.8rem)', lineHeight: 1.08, letterSpacing: '-0.025em', marginBottom: 24 }}>
-            <span style={{ color: 'var(--lp-ink)' }}>The marketing platform</span><br />
-            <span style={{ color: 'var(--lp-terra)' }}>that runs itself</span>
+            <span style={{ color: 'var(--lp-ink)' }}>Your marketing</span><br />
+            <span style={{ color: 'var(--lp-terra)' }}>runs itself</span>
           </h1>
 
           <p style={{ color: 'var(--lp-muted)', fontSize: 17, maxWidth: 480, margin: '0 auto 40px', lineHeight: 1.7 }}>
-            Content, ads, email, analytics — 38 tools working together on autopilot. So you can get back to building.
+            Connect your platforms. Set your strategy. Let AI handle the rest — from content to ads to email, on autopilot.
           </p>
 
           <div className="flex items-center justify-center gap-4 flex-wrap">
@@ -284,7 +284,7 @@ export default function LandingPage() {
                 {[
                   { val: '38', suf: '', label: 'Active Modules' },
                   { val: '100', suf: '%', label: 'Autonomous' },
-                  { val: '$0', suf: '', label: 'Extra Tools', raw: true },
+                  { val: '3', suf: '', label: 'Automation Modes', raw: false },
                   { val: '10', suf: 'x', label: 'Faster Output' },
                 ].map((s, i, arr) => (
                   <div key={i} className="flex items-center">
@@ -308,8 +308,8 @@ export default function LandingPage() {
             <div className="max-w-5xl mx-auto">
               <div className="lp-card-tab">Why Overload</div>
               <h2 className="lp-serif" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', lineHeight: 1.12, letterSpacing: '-0.02em', marginBottom: 56, color: 'var(--lp-ink)' }}>
-                One platform that replaces<br className="hidden md:block" />
-                <span style={{ color: 'var(--lp-muted)' }}>your entire marketing stack</span>
+                One platform that automates<br className="hidden md:block" />
+                <span style={{ color: 'var(--lp-muted)' }}>your entire marketing operation</span>
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -440,8 +440,8 @@ export default function LandingPage() {
             <div className="max-w-5xl mx-auto">
               <div className="lp-card-tab">How it works</div>
               <h2 className="lp-serif" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', lineHeight: 1.12, letterSpacing: '-0.02em', marginBottom: 56, color: 'var(--lp-ink)' }}>
-                Seven steps from zero<br className="hidden md:block" />
-                <span style={{ color: 'var(--lp-muted)' }}>to running on autopilot</span>
+                From connected<br className="hidden md:block" />
+                <span style={{ color: 'var(--lp-muted)' }}>to fully autonomous</span>
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -481,8 +481,8 @@ export default function LandingPage() {
             <div className="max-w-5xl mx-auto text-center">
               <div className="lp-card-tab">Integrations</div>
               <h2 className="lp-serif" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', lineHeight: 1.12, letterSpacing: '-0.02em', marginBottom: 56 }}>
-                <span style={{ color: '#fff' }}>Works with the tools</span><br />
-                <span style={{ color: 'rgba(255,255,255,0.35)' }}>you already love</span>
+                <span style={{ color: '#fff' }}>Works with the platforms</span><br />
+                <span style={{ color: 'rgba(255,255,255,0.35)' }}>you already use</span>
               </h2>
 
               <div style={{ width: 64, height: 64, borderRadius: 20, background: 'var(--lp-terra)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 48px', boxShadow: '0 16px 48px rgba(196,93,62,0.25)' }}>
@@ -598,11 +598,11 @@ export default function LandingPage() {
           <div className="lp-section-card lp-sc-accent">
             <div className="max-w-3xl mx-auto text-center" style={{ padding: '40px 0' }}>
               <h2 className="lp-serif" style={{ fontSize: 'clamp(2rem, 5vw, 3.2rem)', lineHeight: 1.1, color: '#fff', letterSpacing: '-0.02em', marginBottom: 20 }}>
-                Ready to take marketing<br />
-                <span style={{ color: 'rgba(255,255,255,0.65)' }}>off your plate?</span>
+                Ready to put marketing<br />
+                <span style={{ color: 'rgba(255,255,255,0.65)' }}>on autopilot?</span>
               </h2>
               <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 16, maxWidth: 420, margin: '0 auto 40px', lineHeight: 1.7 }}>
-                Join thousands of businesses already running their entire marketing on Overload.
+                Join thousands of businesses already automating their entire marketing with Overload.
               </p>
               <button onClick={go} className="lp-cta" style={{ padding: '18px 48px', fontSize: 16, background: '#fff', color: 'var(--lp-dark)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
                 Start your free trial
@@ -623,7 +623,7 @@ export default function LandingPage() {
             <span className="lp-serif" style={{ fontSize: 16, color: '#fff' }}>Overload</span>
           </div>
           <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.4)', maxWidth: 300, lineHeight: 1.6, marginBottom: 48 }}>
-            Your marketing, handled.
+            Your marketing, automated.
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8" style={{ marginBottom: 48 }}>

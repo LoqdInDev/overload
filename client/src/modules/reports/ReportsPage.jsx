@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import ModuleWrapper from '../../components/shared/ModuleWrapper';
 
 const REPORT_TYPES = [
   { id: 'overview', name: 'Business Overview', desc: 'Full marketing performance summary across all channels', icon: 'M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5' },
@@ -43,6 +44,7 @@ export default function ReportsPage() {
 
   if (!selectedType) return (
     <div className="p-4 sm:p-6 lg:p-12">
+      <ModuleWrapper moduleId="reports">
       <div className="mb-6 sm:mb-8 animate-fade-in"><p className="hud-label text-[11px] mb-2" style={{ color: '#f43f5e' }}>REPORTS</p><h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Report Generator</h1><p className="text-base text-gray-500">AI-powered marketing reports and performance analysis</p></div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
@@ -71,12 +73,14 @@ export default function ReportsPage() {
           ))}
         </div>
       </div>
+      </ModuleWrapper>
     </div>
   );
 
   const type = REPORT_TYPES.find(r => r.id === selectedType);
   return (
     <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
+      <ModuleWrapper moduleId="reports">
       <div className="flex items-center gap-3 mb-6 sm:mb-8">
         <button onClick={() => { setSelectedType(null); setOutput(''); }} className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg></button>
         <div><p className="hud-label text-[11px]" style={{ color: '#f43f5e' }}>{type?.name?.toUpperCase()}</p><h2 className="text-lg font-bold text-white">{type?.name}</h2></div>
@@ -110,6 +114,7 @@ export default function ReportsPage() {
           <div className="panel rounded-2xl p-4 sm:p-7"><pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-rose-400 ml-0.5 animate-pulse" />}</pre></div>
         </div>
       )}
+      </ModuleWrapper>
     </div>
   );
 }

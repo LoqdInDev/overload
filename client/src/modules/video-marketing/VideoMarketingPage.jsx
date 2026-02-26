@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import ModuleWrapper from '../../components/shared/ModuleWrapper';
 import ProductInput from './components/ProductInput';
 import Dashboard from './components/Dashboard';
 import CampaignHistory from './components/CampaignHistory';
@@ -92,15 +93,18 @@ export default function VideoMarketingPage() {
   if (!hasCampaigns && showingForm) {
     return (
       <div className="h-full overflow-y-auto">
+        <ModuleWrapper moduleId="video-marketing">
         <div className="p-6 sm:p-10 lg:p-16 max-w-5xl mx-auto">
           <ProductInput onSubmit={createCampaign} welcome />
         </div>
+        </ModuleWrapper>
       </div>
     );
   }
 
   return (
     <div className="flex h-full overflow-hidden">
+      <ModuleWrapper moduleId="video-marketing">
       {/* Mobile overlay when sidebar is open */}
       {sidebarOpen && <div className="fixed inset-0 bg-black/40 z-20 md:hidden" onClick={() => setSidebarOpen(false)} />}
 
@@ -210,6 +214,7 @@ export default function VideoMarketingPage() {
           </div>
         </div>
       </div>
+      </ModuleWrapper>
     </div>
   );
 }

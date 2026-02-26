@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import ModuleWrapper from '../../components/shared/ModuleWrapper';
 
 const MODULE_COLOR = '#3b82f6';
 
@@ -246,6 +247,7 @@ export default function SocialPage() {
   // ════════════════════════════════════════════════════
   return (
     <div className="p-4 sm:p-6 lg:p-12">
+      <ModuleWrapper moduleId="social">
       {/* Header */}
       <div className="mb-6 sm:mb-8 animate-fade-in">
         <p className="hud-label text-[11px] mb-2" style={{ color: MODULE_COLOR }}>SOCIAL MEDIA ENGINE</p>
@@ -697,6 +699,7 @@ export default function SocialPage() {
           </div>
         );
       })()}
+      </ModuleWrapper>
     </div>
   );
 }

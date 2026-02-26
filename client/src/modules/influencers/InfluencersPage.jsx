@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import ModuleWrapper from '../../components/shared/ModuleWrapper';
 
 const TOOLS = [
   { id: 'find', name: 'Find Influencers', icon: 'M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z' },
@@ -49,6 +50,7 @@ export default function InfluencersPage() {
 
   if (!activeTool) return (
     <div className="p-4 sm:p-6 lg:p-12">
+      <ModuleWrapper moduleId="influencers">
       <div className="mb-6 sm:mb-8 animate-fade-in"><p className="hud-label text-[11px] mb-2" style={{ color: '#ec4899' }}>INFLUENCER FINDER</p><h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Influencer Marketing Hub</h1><p className="text-base text-gray-500">Discover, outreach, and manage influencer campaigns with AI</p></div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 stagger">
         {TOOLS.map(t => (
@@ -60,11 +62,13 @@ export default function InfluencersPage() {
           </button>
         ))}
       </div>
+      </ModuleWrapper>
     </div>
   );
 
   return (
     <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
+      <ModuleWrapper moduleId="influencers">
       <div className="flex items-center gap-3 sm:gap-5 mb-6 sm:mb-8">
         <button onClick={() => { setActiveTool(null); setOutput(''); setPrompt(''); }} className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg></button>
         <div><p className="hud-label text-[11px]" style={{ color: '#ec4899' }}>{TOOLS.find(t => t.id === activeTool)?.name?.toUpperCase()}</p><h2 className="text-lg font-bold text-white">{TOOLS.find(t => t.id === activeTool)?.name}</h2></div>
@@ -110,6 +114,7 @@ export default function InfluencersPage() {
       )}
 
       {output && <div className="mt-6 animate-fade-up"><div className="flex items-center gap-2 mb-3"><div className={`w-2 h-2 rounded-full ${generating ? 'bg-pink-400 animate-pulse' : 'bg-emerald-400'}`} /><span className="hud-label text-[11px]" style={{ color: generating ? '#f472b6' : '#4ade80' }}>{generating ? 'PROCESSING...' : 'COMPLETE'}</span></div><div className="panel rounded-2xl p-4 sm:p-7"><pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-pink-400 ml-0.5 animate-pulse" />}</pre></div></div>}
+      </ModuleWrapper>
     </div>
   );
 }

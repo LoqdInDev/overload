@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import { connectSSE } from '../../lib/api';
+import ModuleWrapper from '../../components/shared/ModuleWrapper';
 
 /* ─── constants ─────────────────────────────────────────────────────── */
 
@@ -193,6 +194,7 @@ export default function CustomerAiPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-12">
+      <ModuleWrapper moduleId="customer-ai">
       {/* ── Header ── */}
       <div className="mb-6 sm:mb-8 animate-fade-in flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
@@ -524,6 +526,7 @@ export default function CustomerAiPage() {
           )}
         </div>
       )}
+      </ModuleWrapper>
     </div>
   );
 }

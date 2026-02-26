@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import ModuleWrapper from '../../components/shared/ModuleWrapper';
 
 const CONTENT_TYPES = [
   { id: 'blog', name: 'Blog Post', icon: 'M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25' },
@@ -105,6 +106,7 @@ export default function ContentPage() {
   if (!activeType) {
     return (
       <div className="p-4 sm:p-6 lg:p-12">
+        <ModuleWrapper moduleId="content">
         <div className="mb-6 sm:mb-8 animate-fade-in">
           <p className="hud-label text-[11px] mb-2" style={{ color: '#f97316' }}>AI CONTENT ENGINE</p>
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">What do you want to write?</h1>
@@ -148,6 +150,7 @@ export default function ContentPage() {
             )}
           </div>
         </div>
+        </ModuleWrapper>
       </div>
     );
   }
@@ -158,6 +161,7 @@ export default function ContentPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
+      <ModuleWrapper moduleId="content">
       {/* Header */}
       <div className="flex items-center gap-3 sm:gap-5 mb-6 sm:mb-8">
         <button onClick={() => { setActiveType(null); setResult(''); setStreamText(''); setPrompt(''); }}
@@ -310,6 +314,7 @@ export default function ContentPage() {
           </div>
         </div>
       )}
+      </ModuleWrapper>
     </div>
   );
 }
