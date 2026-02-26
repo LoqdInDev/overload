@@ -46,7 +46,7 @@ const STEPS = [
     key: 'complete',
     title: 'You\u2019re All Set!',
     subtitle: 'Your command center is ready',
-    description: 'All core setup complete. Explore 44 AI-powered modules across marketing, advertising, analytics, and automation.',
+    description: 'All core setup complete. Explore 41 AI-powered modules across marketing, advertising, analytics, and automation.',
     icon: 'M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
     color: '#5E8E6E',
   },
