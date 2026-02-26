@@ -29,10 +29,8 @@ const InfluencersPage = lazy(() => import('./modules/influencers/InfluencersPage
 const ReviewsPage = lazy(() => import('./modules/reviews/ReviewsPage'));
 const CompetitorsPage = lazy(() => import('./modules/competitors/CompetitorsPage'));
 const AffiliatesPage = lazy(() => import('./modules/affiliates/AffiliatesPage'));
-const BrandStrategyPage = lazy(() => import('./modules/brand-strategy/BrandStrategyPage'));
 const CalendarPage = lazy(() => import('./modules/calendar/CalendarPage'));
 const WebsiteBuilderPage = lazy(() => import('./modules/website-builder/WebsiteBuilderPage'));
-const ChatbotPage = lazy(() => import('./modules/chatbot/ChatbotPage'));
 const ProductFeedsPage = lazy(() => import('./modules/product-feeds/ProductFeedsPage'));
 const ReportsPage = lazy(() => import('./modules/reports/ReportsPage'));
 const AbTestingPage = lazy(() => import('./modules/ab-testing/AbTestingPage'));
@@ -44,14 +42,13 @@ const WebhooksPage = lazy(() => import('./modules/webhooks/WebhooksPage'));
 const WorkflowBuilderPage = lazy(() => import('./modules/workflow-builder/WorkflowBuilderPage'));
 const SchedulerPage = lazy(() => import('./modules/scheduler/SchedulerPage'));
 const AutopilotPage = lazy(() => import('./modules/autopilot/AutopilotPage'));
-const BrandProfilePage = lazy(() => import('./modules/brand-profile/BrandProfilePage'));
+const CustomerAiPage = lazy(() => import('./modules/customer-ai/CustomerAiPage'));
+const BrandHubPage = lazy(() => import('./modules/brand-hub/BrandHubPage'));
 const TeamPage = lazy(() => import('./modules/team/TeamPage'));
 const PrPressPage = lazy(() => import('./modules/pr-press/PrPressPage'));
 const ReferralLoyaltyPage = lazy(() => import('./modules/referral-loyalty/ReferralLoyaltyPage'));
 const GoalTrackerPage = lazy(() => import('./modules/goal-tracker/GoalTrackerPage'));
 const EcommerceHubPage = lazy(() => import('./modules/ecommerce-hub/EcommerceHubPage'));
-const CustomerIntelligencePage = lazy(() => import('./modules/customer-intelligence/CustomerIntelligencePage'));
-const SupportCenterPage = lazy(() => import('./modules/support-center/SupportCenterPage'));
 const KnowledgeBasePage = lazy(() => import('./modules/knowledge-base/KnowledgeBasePage'));
 const TheAdvisorPage = lazy(() => import('./modules/the-advisor/TheAdvisorPage'));
 const ClientManagerPage = lazy(() => import('./modules/client-manager/ClientManagerPage'));
@@ -327,10 +324,10 @@ export default function App() {
                     <Route path="/reviews/*" element={<M component={ReviewsPage} name="Reviews" />} />
                     <Route path="/competitors/*" element={<M component={CompetitorsPage} name="Competitors" />} />
                     <Route path="/affiliates/*" element={<M component={AffiliatesPage} name="Affiliates" />} />
-                    <Route path="/brand-strategy/*" element={<M component={BrandStrategyPage} name="Brand Strategy" />} />
+                    <Route path="/brand-strategy/*" element={<Navigate to="/brand-hub" replace />} />
                     <Route path="/calendar/*" element={<M component={CalendarPage} name="Calendar" />} />
                     <Route path="/website-builder/*" element={<M component={WebsiteBuilderPage} name="Website Builder" />} />
-                    <Route path="/chatbot/*" element={<M component={ChatbotPage} name="Chatbot" />} />
+                    <Route path="/chatbot/*" element={<Navigate to="/customer-ai" replace />} />
                     <Route path="/product-feeds/*" element={<M component={ProductFeedsPage} name="Product Feeds" />} />
                     <Route path="/reports/*" element={<M component={ReportsPage} name="Reports" />} />
                     <Route path="/ab-testing/*" element={<M component={AbTestingPage} name="A/B Testing" />} />
@@ -342,14 +339,16 @@ export default function App() {
                     <Route path="/workflow-builder/*" element={<M component={WorkflowBuilderPage} name="Workflow Builder" />} />
                     <Route path="/scheduler/*" element={<M component={SchedulerPage} name="Scheduler" />} />
                     <Route path="/autopilot/*" element={<M component={AutopilotPage} name="Autopilot" />} />
-                    <Route path="/brand-profile/*" element={<M component={BrandProfilePage} name="Brand Profile" />} />
+                    <Route path="/brand-profile/*" element={<Navigate to="/brand-hub" replace />} />
+                    <Route path="/customer-ai/*" element={<M component={CustomerAiPage} name="Customer AI" />} />
+                    <Route path="/brand-hub/*" element={<M component={BrandHubPage} name="Brand Hub" />} />
                     <Route path="/team/*" element={<M component={TeamPage} name="Team" />} />
                     <Route path="/pr-press/*" element={<M component={PrPressPage} name="PR & Press" />} />
                     <Route path="/referral-loyalty/*" element={<M component={ReferralLoyaltyPage} name="Referral & Loyalty" />} />
                     <Route path="/goal-tracker/*" element={<M component={GoalTrackerPage} name="Goal Tracker" />} />
                     <Route path="/ecommerce-hub/*" element={<M component={EcommerceHubPage} name="E-commerce Hub" />} />
-                    <Route path="/customer-intelligence/*" element={<M component={CustomerIntelligencePage} name="Customer Intelligence" />} />
-                    <Route path="/support-center/*" element={<M component={SupportCenterPage} name="Support Center" />} />
+                    <Route path="/customer-intelligence/*" element={<Navigate to="/crm" replace />} />
+                    <Route path="/support-center/*" element={<Navigate to="/customer-ai" replace />} />
                     <Route path="/knowledge-base/*" element={<M component={KnowledgeBasePage} name="Knowledge Base" />} />
                     <Route path="/the-advisor/*" element={<M component={TheAdvisorPage} name="The Advisor" />} />
                     <Route path="/client-manager/*" element={<M component={ClientManagerPage} name="Client Manager" />} />

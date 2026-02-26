@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const MOCK_AUDIENCES = [
   { id: 1, name: 'High-Value Purchasers', platform: 'Meta', type: 'custom', size: '45K', status: 'active' },
@@ -28,6 +29,7 @@ const AI_TEMPLATES = [
 ];
 
 export default function AudienceBuilderPage() {
+  usePageTitle('Audience Builder');
   const [tab, setTab] = useState('audiences');
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');

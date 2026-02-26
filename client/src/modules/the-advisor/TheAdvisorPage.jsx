@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const MODULE_COLOR = '#d4a017';
 
@@ -53,6 +54,7 @@ const MOCK_ACTIONS = [
 ];
 
 export default function TheAdvisorPage() {
+  usePageTitle('The Advisor');
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');
   const [yesterdayOpen, setYesterdayOpen] = useState(false);

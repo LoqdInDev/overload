@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const MODULE_COLOR = '#8b5cf6';
 
@@ -45,6 +46,7 @@ const statusColor = (s) => {
 };
 
 export default function WorkflowBuilderPage() {
+  usePageTitle('Workflow Builder');
   const [tab, setTab] = useState('workflows');
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');

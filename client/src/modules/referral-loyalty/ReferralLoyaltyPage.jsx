@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const MODULE_COLOR = '#e11d48';
 
@@ -29,6 +30,7 @@ const MOCK_MEMBERS = [
 const TIER_COLORS = { Platinum: '#a78bfa', Gold: '#f59e0b', Silver: '#9ca3af', Bronze: '#d97706' };
 
 export default function ReferralLoyaltyPage() {
+  usePageTitle('Referral & Loyalty');
   const [tab, setTab] = useState('overview');
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');

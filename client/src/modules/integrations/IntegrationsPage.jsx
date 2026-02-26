@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 import AIToolsTab from '../../components/shared/AIToolsTab';
 
 const FALLBACK_CONNECTED = [
@@ -55,6 +56,7 @@ const STATUS_STYLES = {
 };
 
 export default function IntegrationsPage() {
+  usePageTitle('Integrations Hub');
   const [tab, setTab] = useState('connected');
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);

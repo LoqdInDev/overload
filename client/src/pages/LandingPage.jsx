@@ -172,7 +172,7 @@ const TESTIMONIALS = [
 const PRICING = [
   {
     name: 'Starter', desc: 'For solo founders getting started.', price: '$49', period: '/mo',
-    features: ['All 41 modules', 'AI content generation', 'Basic analytics', 'Email support', '5 campaigns/month'],
+    features: ['All 38 modules', 'AI content generation', 'Basic analytics', 'Email support', '5 campaigns/month'],
   },
   {
     name: 'Autopilot', desc: 'For growing businesses ready to scale.', price: '$149', period: '/mo', featured: true,
@@ -254,7 +254,7 @@ export default function LandingPage() {
           </h1>
 
           <p style={{ color: 'var(--lp-muted)', fontSize: 17, maxWidth: 480, margin: '0 auto 40px', lineHeight: 1.7 }}>
-            Content, ads, email, analytics — 41 tools working together on autopilot. So you can get back to building.
+            Content, ads, email, analytics — 38 tools working together on autopilot. So you can get back to building.
           </p>
 
           <div className="flex items-center justify-center gap-4 flex-wrap">
@@ -282,7 +282,7 @@ export default function LandingPage() {
             <div className="max-w-4xl mx-auto">
               <div className="flex flex-wrap items-center justify-center gap-8 md:gap-0">
                 {[
-                  { val: '41', suf: '', label: 'Active Modules' },
+                  { val: '38', suf: '', label: 'Active Modules' },
                   { val: '100', suf: '%', label: 'Autonomous' },
                   { val: '$0', suf: '', label: 'Extra Tools', raw: true },
                   { val: '10', suf: 'x', label: 'Faster Output' },
@@ -333,7 +333,7 @@ export default function LandingPage() {
         <section data-scroll-card="left" id="modules">
           <div className="lp-section-card lp-sc-light">
             <div className="max-w-5xl mx-auto">
-              <div className="lp-card-tab">41 Modules</div>
+              <div className="lp-card-tab">38 Modules</div>
               <h2 className="lp-serif" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', lineHeight: 1.12, letterSpacing: '-0.02em', marginBottom: 48, color: 'var(--lp-ink)' }}>
                 Everything you need.<br className="hidden md:block" />
                 <span style={{ color: 'var(--lp-muted)' }}>Nothing you don't.</span>

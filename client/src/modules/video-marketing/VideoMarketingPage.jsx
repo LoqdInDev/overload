@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
+import { usePageTitle } from '../../hooks/usePageTitle';
 import ProductInput from './components/ProductInput';
 import Dashboard from './components/Dashboard';
 import CampaignHistory from './components/CampaignHistory';
@@ -17,6 +18,7 @@ const STEPS = [
 ];
 
 export default function VideoMarketingPage() {
+  usePageTitle('Video Marketing');
   const { dark } = useTheme();
   const [campaigns, setCampaigns] = useState([]);
   const [activeCampaign, setActiveCampaign] = useState(null);

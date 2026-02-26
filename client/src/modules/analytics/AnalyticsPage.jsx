@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { MODULE_REGISTRY, CATEGORIES } from '../../config/modules';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 function AnimatedNumber({ value }) {
   const [display, setDisplay] = useState(0);
@@ -23,6 +24,7 @@ function AnimatedNumber({ value }) {
 }
 
 export default function AnalyticsPage() {
+  usePageTitle('Analytics');
   const { dark } = useTheme();
   const [activity, setActivity] = useState([]);
   const [overview, setOverview] = useState({ total: 0, modules: [] });

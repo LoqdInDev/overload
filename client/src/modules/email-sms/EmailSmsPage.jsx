@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTheme } from '../../context/ThemeContext';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const MODULE_COLOR = '#f59e0b';
 
@@ -48,6 +49,7 @@ const TONES = ['Professional', 'Friendly', 'Urgent', 'Playful'];
 const LENGTHS = ['Short', 'Medium', 'Long'];
 
 export default function EmailSmsPage() {
+  usePageTitle('Email & SMS');
   const { dark } = useTheme();
   const [activeType, setActiveType] = useState(null);
   const [tone, setTone] = useState('Professional');

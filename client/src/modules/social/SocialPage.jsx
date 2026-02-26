@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const MODULE_COLOR = '#3b82f6';
 
@@ -50,6 +51,7 @@ const TONES = ['Professional', 'Casual', 'Witty', 'Bold', 'Empathetic', 'Trendy'
 const charLimits = { instagram: 2200, twitter: 280, linkedin: 3000, tiktok: 2200, facebook: 63206, youtube: 5000, pinterest: 500 };
 
 export default function SocialPage() {
+  usePageTitle('Social Media');
   const { dark } = useTheme();
   const [tab, setTab] = useState('create'); // create | accounts | publish
   const [activeType, setActiveType] = useState(null);

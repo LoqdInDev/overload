@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const MODULE_COLOR = '#f59e0b';
 
@@ -30,6 +31,7 @@ const MOCK_MILESTONES = [
 ];
 
 export default function GoalTrackerPage() {
+  usePageTitle('Goal Tracker');
   const [tab, setTab] = useState('overview');
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');

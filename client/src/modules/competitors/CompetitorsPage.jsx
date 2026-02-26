@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usePageTitle } from '../../hooks/usePageTitle';
+import { fetchJSON, connectSSE } from '../../lib/api';
 
 const TOOLS = [
   { id: 'ad-spy', name: 'Ad Spy', icon: 'M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
@@ -16,6 +18,7 @@ const TEMPLATES = {
 const DEPTHS = ['Quick Scan', 'Standard', 'Deep Dive'];
 
 export default function CompetitorsPage() {
+  usePageTitle('Competitor Intel');
   const [activeTool, setActiveTool] = useState(null);
   const [competitorName, setCompetitorName] = useState('');
   const [competitorUrl, setCompetitorUrl] = useState('');
@@ -24,20 +27,44 @@ export default function CompetitorsPage() {
   const [prompt, setPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');
+  const [stats, setStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(true);
 
-  const generate = async () => {
+  useEffect(() => {
+    fetchJSON('/api/competitors/stats')
+      .then(setStats)
+      .catch(() => setStats(null))
+      .finally(() => setLoadingStats(false));
+  }, []);
+
+  const generate = () => {
     setGenerating(true); setOutput('');
     const fullPrompt = `[Tool: ${activeTool}] [Depth: ${depth}] [Competitor: ${competitorName}${competitorUrl ? ` (${competitorUrl})` : ''}]${myCompany ? ` [My Company: ${myCompany}]` : ''}\n\n${prompt || `Perform a ${depth.toLowerCase()} ${TOOLS.find(t => t.id === activeTool)?.name} for ${competitorName}`}`;
-    try {
-      const res = await fetch('/api/competitors/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: activeTool, prompt: fullPrompt }) });
-      const reader = res.body.getReader(); const decoder = new TextDecoder();
-      while (true) { const { done, value } = await reader.read(); if (done) break; const lines = decoder.decode(value, { stream: true }).split('\n').filter(l => l.startsWith('data: ')); for (const line of lines) { try { const d = JSON.parse(line.slice(6)); if (d.type === 'chunk') setOutput(p => p + d.text); else if (d.type === 'result') setOutput(d.data.content); } catch {} } }
-    } catch (e) { console.error(e); } finally { setGenerating(false); }
+    const cancel = connectSSE('/api/competitors/generate', { type: activeTool, prompt: fullPrompt }, {
+      onChunk: (text) => setOutput(p => p + text),
+      onResult: (data) => { setOutput(data.content); setGenerating(false); },
+      onError: (err) => { console.error(err); setGenerating(false); },
+    });
+    return cancel;
   };
 
   if (!activeTool) return (
     <div className="p-4 sm:p-6 lg:p-12">
       <div className="mb-6 sm:mb-8 animate-fade-in"><p className="hud-label text-[11px] mb-2" style={{ color: '#ef4444' }}>COMPETITOR INTEL</p><h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Competitor Intelligence</h1><p className="text-base text-gray-500">AI-powered competitive analysis, ad spying, and market intelligence</p></div>
+      {!loadingStats && stats && (
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          {[
+            { label: 'TRACKED', value: stats.totalCompetitors },
+            { label: 'REPORTS', value: stats.totalReports },
+            { label: 'THIS MONTH', value: stats.recentReports },
+          ].map(s => (
+            <div key={s.label} className="panel rounded-2xl p-4 text-center">
+              <p className="text-2xl font-bold text-white">{s.value}</p>
+              <p className="hud-label text-[11px] mt-1" style={{ color: '#ef4444' }}>{s.label}</p>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 stagger">
         {TOOLS.map(t => (<button key={t.id} onClick={() => setActiveTool(t.id)} className="panel-interactive rounded-2xl p-4 sm:p-7 text-center group"><div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.12)' }}><svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={t.icon} /></svg></div><p className="text-sm font-bold text-gray-300 group-hover:text-white transition-colors">{t.name}</p></button>))}
       </div>

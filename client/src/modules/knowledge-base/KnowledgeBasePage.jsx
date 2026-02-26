@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const MODULE_COLOR = '#3b82f6';
 
@@ -32,6 +33,7 @@ const MOCK_CATEGORIES = [
 ];
 
 export default function KnowledgeBasePage() {
+  usePageTitle('Knowledge Base');
   const [tab, setTab] = useState('overview');
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');

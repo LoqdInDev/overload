@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usePageTitle } from '../../hooks/usePageTitle';
+import { fetchJSON, connectSSE } from '../../lib/api';
 
 const TOOLS = [
   { id: 'respond', name: 'Response Generator', icon: 'M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z' },
@@ -19,6 +21,7 @@ const TEMPLATES = [
 ];
 
 export default function ReviewsPage() {
+  usePageTitle('Reviews & Reputation');
   const [activeTool, setActiveTool] = useState(null);
   const [reviewText, setReviewText] = useState('');
   const [stars, setStars] = useState(5);
@@ -26,8 +29,17 @@ export default function ReviewsPage() {
   const [tone, setTone] = useState('Professional');
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');
+  const [stats, setStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(true);
 
-  const generate = async () => {
+  useEffect(() => {
+    fetchJSON('/api/reviews/stats')
+      .then(data => setStats(data))
+      .catch(err => console.error('Failed to load review stats:', err))
+      .finally(() => setLoadingStats(false));
+  }, []);
+
+  const generate = () => {
     setGenerating(true); setOutput('');
     const prompt = activeTool === 'respond'
       ? `[Platform: ${platform}] [Rating: ${stars} stars] [Tone: ${tone}]\n\nReview: "${reviewText}"\n\nGenerate a ${tone.toLowerCase()} response to this ${stars}-star ${platform} review.`
@@ -36,18 +48,18 @@ export default function ReviewsPage() {
         : activeTool === 'testimonial'
           ? `Format this review into a professional marketing testimonial:\n\n"${reviewText}"`
           : `Analyze the sentiment of these reviews and provide a breakdown:\n\n${reviewText}`;
-    try {
-      const res = await fetch('/api/reviews/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: activeTool, prompt }) });
-      const reader = res.body.getReader(); const decoder = new TextDecoder();
-      while (true) { const { done, value } = await reader.read(); if (done) break; const lines = decoder.decode(value, { stream: true }).split('\n').filter(l => l.startsWith('data: ')); for (const line of lines) { try { const d = JSON.parse(line.slice(6)); if (d.type === 'chunk') setOutput(p => p + d.text); else if (d.type === 'result') setOutput(d.data.content); } catch {} } }
-    } catch (e) { console.error(e); } finally { setGenerating(false); }
+    connectSSE('/api/reviews/generate', { type: activeTool, prompt }, {
+      onChunk: (text) => setOutput(p => p + text),
+      onResult: (data) => { setOutput(data.content); setGenerating(false); },
+      onError: (err) => { console.error(err); setGenerating(false); },
+    });
   };
 
   if (!activeTool) return (
     <div className="p-4 sm:p-6 lg:p-12">
       <div className="mb-6 sm:mb-8 animate-fade-in"><p className="hud-label text-[11px] mb-2" style={{ color: '#eab308' }}>REVIEWS & REPUTATION</p><h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Reputation Management</h1><p className="text-base text-gray-500">AI-powered review responses, sentiment analysis, and reputation tools</p></div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
-        {[{ l: 'AVG RATING', v: '4.2', c: '#eab308' }, { l: 'TOTAL REVIEWS', v: '1,284', c: '#3b82f6' }, { l: 'RESPONSE RATE', v: '87%', c: '#22c55e' }, { l: 'SENTIMENT', v: '+72', c: '#a855f7' }].map((s, i) => (
+        {[{ l: 'AVG RATING', v: loadingStats ? '—' : stats?.avgRating?.toFixed(1) ?? '—', c: '#eab308' }, { l: 'TOTAL REVIEWS', v: loadingStats ? '—' : stats?.total?.toLocaleString() ?? '—', c: '#3b82f6' }, { l: 'RESPONSE RATE', v: loadingStats ? '—' : stats?.pending != null && stats?.total ? `${Math.round(((stats.total - stats.pending) / stats.total) * 100)}%` : '—', c: '#22c55e' }, { l: 'SENTIMENT', v: loadingStats ? '—' : stats?.bySentiment?.positive != null ? `+${stats.bySentiment.positive}` : '—', c: '#a855f7' }].map((s, i) => (
           <div key={i} className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-1">{s.l}</p><p className="text-xl sm:text-2xl font-bold font-mono" style={{ color: s.c }}>{s.v}</p></div>
         ))}
       </div>

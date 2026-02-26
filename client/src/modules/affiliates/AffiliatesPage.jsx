@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const MOCK_PROGRAMS = [
   { id: 1, name: 'Pro Plan Referral', type: 'percentage', rate: 25, affiliates: 48, revenue: 12400, status: 'active' },
@@ -21,6 +22,7 @@ const AI_TEMPLATES = [
 ];
 
 export default function AffiliatesPage() {
+  usePageTitle('Affiliate Manager');
   const [tab, setTab] = useState('programs');
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');

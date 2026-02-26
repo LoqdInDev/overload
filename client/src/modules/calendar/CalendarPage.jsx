@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usePageTitle } from '../../hooks/usePageTitle';
+import { fetchJSON, postJSON, connectSSE } from '../../lib/api';
 
 const EVENT_TYPES = [
   { id: 'campaign', name: 'Campaign', color: '#7c3aed' },
@@ -25,45 +27,62 @@ function getMonthData(year, month) {
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 export default function CalendarPage() {
+  usePageTitle('Marketing Calendar');
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
   const [selectedDay, setSelectedDay] = useState(null);
-  const [events, setEvents] = useState([
-    { id: 1, title: 'Product Launch Campaign', type: 'campaign', day: 5 },
-    { id: 2, title: 'Blog Post: SEO Guide', type: 'content', day: 8 },
-    { id: 3, title: 'Instagram Reel Series', type: 'social', day: 8 },
-    { id: 4, title: 'Newsletter Send', type: 'email', day: 12 },
-    { id: 5, title: 'Ad Campaign Review', type: 'deadline', day: 15 },
-    { id: 6, title: 'Twitter Thread', type: 'social', day: 18 },
-    { id: 7, title: 'Case Study Publish', type: 'content', day: 20 },
-    { id: 8, title: 'Quarter End Report', type: 'deadline', day: 28 },
-    { id: 9, title: 'Drip Sequence Launch', type: 'email', day: 22 },
-    { id: 10, title: 'Seasonal Sale Start', type: 'campaign', day: 25 },
-  ]);
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [newEvent, setNewEvent] = useState({ title: '', type: 'content' });
 
+  useEffect(() => {
+    setLoading(true);
+    const start = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+    const endDate = new Date(year, month + 1, 0);
+    const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+    fetchJSON(`/api/calendar/events?start=${start}&end=${end}`)
+      .then(data => setEvents(data))
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
+  }, [year, month]);
+
   const days = getMonthData(year, month);
   const today = now.getDate();
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
-  const dayEvents = (day) => events.filter(e => e.day === day);
+  const dayEvents = (day) => events.filter(e => new Date(e.date).getDate() === day);
 
   const prev = () => { if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1); };
   const next = () => { if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1); };
   const goToday = () => { setYear(now.getFullYear()); setMonth(now.getMonth()); };
 
-  const addEvent = () => { if (!newEvent.title.trim() || !selectedDay) return; setEvents(e => [...e, { id: Date.now(), title: newEvent.title, type: newEvent.type, day: selectedDay }]); setNewEvent({ title: '', type: 'content' }); setShowAddForm(false); };
-
-  const fillCalendar = async () => {
-    setGenerating(true); setOutput('');
+  const addEvent = async () => {
+    if (!newEvent.title.trim() || !selectedDay) return;
+    const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
+    const type = EVENT_TYPES.find(t => t.id === newEvent.type);
     try {
-      const res = await fetch('/api/calendar/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'fill', prompt: `Generate a marketing content calendar for ${MONTHS[month]} ${year}. Include social media posts, blog content, email campaigns, and deadlines. Format each event as: [Day] - [Type: campaign|content|social|email|deadline] - [Title]` }) });
-      const reader = res.body.getReader(); const decoder = new TextDecoder();
-      while (true) { const { done, value } = await reader.read(); if (done) break; const lines = decoder.decode(value, { stream: true }).split('\n').filter(l => l.startsWith('data: ')); for (const line of lines) { try { const d = JSON.parse(line.slice(6)); if (d.type === 'chunk') setOutput(p => p + d.text); else if (d.type === 'result') setOutput(d.data.content); } catch {} } }
-    } catch (e) { console.error(e); } finally { setGenerating(false); }
+      const created = await postJSON('/api/calendar/events', {
+        title: newEvent.title,
+        module_id: newEvent.type,
+        date,
+        color: type?.color || '#3b82f6',
+      });
+      setEvents(e => [...e, created]);
+      setNewEvent({ title: '', type: 'content' });
+      setShowAddForm(false);
+    } catch (err) { console.error(err); }
+  };
+
+  const fillCalendar = () => {
+    setGenerating(true); setOutput('');
+    connectSSE('/api/calendar/generate', { type: 'fill', prompt: `Generate a marketing content calendar for ${MONTHS[month]} ${year}. Include social media posts, blog content, email campaigns, and deadlines. Format each event as: [Day] - [Type: campaign|content|social|email|deadline] - [Title]` }, {
+      onChunk: (text) => setOutput(p => p + text),
+      onResult: (data) => { setOutput(data.content); setGenerating(false); },
+      onError: (err) => { console.error(err); setGenerating(false); },
+    });
   };
 
   return (
@@ -95,7 +114,7 @@ export default function CalendarPage() {
                       className={`min-h-[60px] sm:min-h-[80px] p-2 border-b border-r border-indigo-500/[0.03] text-left transition-all ${d.current ? 'hover:bg-white/[0.01]' : 'opacity-30'} ${isSelected ? 'bg-sky-500/5 border-sky-500/15' : ''}`}>
                       <span className={`text-xs font-semibold inline-flex items-center justify-center w-6 h-6 rounded-full ${isToday ? 'bg-sky-500 text-white' : d.current ? 'text-gray-400' : 'text-gray-700'}`}>{d.day}</span>
                       <div className="mt-0.5 space-y-0.5">
-                        {evts.slice(0, 2).map(e => { const type = EVENT_TYPES.find(t => t.id === e.type); return (<div key={e.id} className="flex items-center gap-1"><div className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: type?.color }} /><span className="text-[9px] text-gray-400 truncate">{e.title}</span></div>); })}
+                        {evts.slice(0, 2).map(e => { const type = EVENT_TYPES.find(t => t.id === e.module_id || t.id === e.type); return (<div key={e.id} className="flex items-center gap-1"><div className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: type?.color || e.color || '#3b82f6' }} /><span className="text-[9px] text-gray-400 truncate">{e.title}</span></div>); })}
                         {evts.length > 2 && <span className="text-[9px] text-gray-600">+{evts.length - 2} more</span>}
                       </div>
                     </button>
@@ -111,13 +130,13 @@ export default function CalendarPage() {
             <div className="panel rounded-2xl p-4 sm:p-6 animate-fade-in">
               <div className="flex items-center justify-between mb-3"><p className="hud-label text-[11px]" style={{ color: '#0ea5e9' }}>{MONTHS[month]} {selectedDay}</p><button onClick={() => setShowAddForm(!showAddForm)} className="chip text-[10px]">+ Add</button></div>
               {showAddForm && (<div className="space-y-3 mb-3 p-3 rounded-lg bg-black/30"><input value={newEvent.title} onChange={e => setNewEvent({ ...newEvent, title: e.target.value })} placeholder="Event title" className="w-full input-field rounded px-3 py-2 text-xs" /><div className="flex gap-1 flex-wrap">{EVENT_TYPES.map(t => (<button key={t.id} onClick={() => setNewEvent({ ...newEvent, type: t.id })} className="text-[9px] px-2 py-0.5 rounded-full border" style={newEvent.type === t.id ? { background: `${t.color}20`, borderColor: `${t.color}40`, color: t.color } : { borderColor: 'rgba(99,102,241,0.1)', color: '#6b7280' }}>{t.name}</button>))}</div><button onClick={addEvent} className="btn-accent w-full py-1.5 rounded text-[10px]" style={{ background: '#0ea5e9' }}>Add Event</button></div>)}
-              <div className="space-y-1.5">{dayEvents(selectedDay).length === 0 ? <p className="text-xs text-gray-600">No events</p> : dayEvents(selectedDay).map(e => { const type = EVENT_TYPES.find(t => t.id === e.type); return (<div key={e.id} className="flex items-center gap-2 py-1.5"><div className="w-1.5 h-1.5 rounded-full" style={{ background: type?.color }} /><span className="text-sm text-gray-300">{e.title}</span></div>); })}</div>
+              <div className="space-y-1.5">{dayEvents(selectedDay).length === 0 ? <p className="text-xs text-gray-600">No events</p> : dayEvents(selectedDay).map(e => { const type = EVENT_TYPES.find(t => t.id === e.module_id || t.id === e.type); return (<div key={e.id} className="flex items-center gap-2 py-1.5"><div className="w-1.5 h-1.5 rounded-full" style={{ background: type?.color || e.color || '#3b82f6' }} /><span className="text-sm text-gray-300">{e.title}</span></div>); })}</div>
             </div>
           )}
 
           <div className="panel rounded-2xl p-4 sm:p-6">
             <p className="hud-label text-[11px] mb-3">UPCOMING</p>
-            <div className="space-y-3">{events.filter(e => isCurrentMonth ? e.day >= today : true).sort((a, b) => a.day - b.day).slice(0, 6).map(e => { const type = EVENT_TYPES.find(t => t.id === e.type); return (<div key={e.id} className="flex items-center gap-2"><span className="text-xs text-gray-600 font-mono w-6">{e.day}</span><div className="w-1.5 h-1.5 rounded-full" style={{ background: type?.color }} /><span className="text-xs text-gray-400 truncate">{e.title}</span></div>); })}</div>
+            <div className="space-y-3">{events.filter(e => { const d = new Date(e.date); return isCurrentMonth ? d.getDate() >= today : true; }).sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 6).map(e => { const type = EVENT_TYPES.find(t => t.id === e.module_id || t.id === e.type); return (<div key={e.id} className="flex items-center gap-2"><span className="text-xs text-gray-600 font-mono w-6">{new Date(e.date).getDate()}</span><div className="w-1.5 h-1.5 rounded-full" style={{ background: type?.color || e.color || '#3b82f6' }} /><span className="text-xs text-gray-400 truncate">{e.title}</span></div>); })}</div>
           </div>
         </div>
       </div>

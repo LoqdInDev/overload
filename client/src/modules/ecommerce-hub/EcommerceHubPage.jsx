@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const MODULE_COLOR = '#8b5cf6';
 
@@ -29,6 +30,7 @@ const MOCK_PRODUCTS = [
 ];
 
 export default function EcommerceHubPage() {
+  usePageTitle('E-commerce Hub');
   const [tab, setTab] = useState('overview');
 
   const orderStatusColor = (s) => s === 'fulfilled' ? '#22c55e' : s === 'shipped' ? '#3b82f6' : s === 'processing' ? '#f59e0b' : '#ef4444';

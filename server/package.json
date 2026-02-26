@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "start": "node index.js",
-    "dev": "node --watch index.js"
+    "dev": "node --watch index.js",
+    "test": "vitest"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
@@ -19,5 +20,8 @@
     "jspdf": "^2.5.2",
     "multer": "^2.0.2",
     "uuid": "^11.0.3"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.18"
   }
 }

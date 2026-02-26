@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const MOCK_TESTS = [
   { id: 1, name: 'Homepage Hero CTA', type: 'copy', status: 'running', variants: 3, lift: '+18.2%' },
@@ -25,6 +26,7 @@ const AI_TEMPLATES = [
 ];
 
 export default function AbTestingPage() {
+  usePageTitle('A/B Testing');
   const [tab, setTab] = useState('tests');
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');

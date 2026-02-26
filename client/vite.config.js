@@ -9,4 +9,9 @@ export default defineConfig({
       '/videos': 'http://localhost:3000',
     },
   },
+  test: {
+    globals: true,
+    environment: 'node',
+    setupFiles: [],
+  },
 });

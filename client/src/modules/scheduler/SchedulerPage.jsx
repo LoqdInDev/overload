@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const MODULE_COLOR = '#3b82f6';
 
@@ -40,6 +41,7 @@ const frequencyLabel = (f) => {
 };
 
 export default function SchedulerPage() {
+  usePageTitle('Scheduler');
   const [tab, setTab] = useState('upcoming');
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');

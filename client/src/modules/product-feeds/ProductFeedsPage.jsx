@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { fetchJSON, connectSSE } from '../../lib/api';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const CHANNELS = [
   { id: 'google', name: 'Google Shopping', color: '#4285F4' },
@@ -6,15 +8,6 @@ const CHANNELS = [
   { id: 'tiktok', name: 'TikTok Shop', color: '#ff0050' },
   { id: 'amazon', name: 'Amazon', color: '#FF9900' },
   { id: 'shopify', name: 'Shopify', color: '#96bf48' },
-];
-
-const MOCK_PRODUCTS = [
-  { id: 1, name: 'Wireless Earbuds Pro', sku: 'WEP-001', price: 79.99, stock: 234, status: 'active', channels: ['google', 'meta', 'amazon'] },
-  { id: 2, name: 'Smart Watch Ultra', sku: 'SWU-002', price: 299.99, stock: 89, status: 'active', channels: ['google', 'meta', 'tiktok', 'amazon'] },
-  { id: 3, name: 'Laptop Stand Adjustable', sku: 'LSA-003', price: 49.99, stock: 567, status: 'active', channels: ['google', 'amazon'] },
-  { id: 4, name: 'USB-C Hub 7-in-1', sku: 'UCH-004', price: 34.99, stock: 0, status: 'out_of_stock', channels: ['google', 'meta'] },
-  { id: 5, name: 'Mechanical Keyboard RGB', sku: 'MKR-005', price: 129.99, stock: 45, status: 'active', channels: ['google', 'meta', 'amazon', 'shopify'] },
-  { id: 6, name: 'Noise Cancelling Headphones', sku: 'NCH-006', price: 199.99, stock: 12, status: 'low_stock', channels: ['google', 'amazon'] },
 ];
 
 const AI_TOOLS = [
@@ -25,29 +18,69 @@ const AI_TOOLS = [
 ];
 
 export default function ProductFeedsPage() {
+  usePageTitle('Product Feeds');
   const [tab, setTab] = useState('products');
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [search, setSearch] = useState('');
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');
+  const [products, setProducts] = useState([]);
+  const [feeds, setFeeds] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = MOCK_PRODUCTS.filter(p => {
-    if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.sku.toLowerCase().includes(search.toLowerCase())) return false;
-    if (selectedChannel && !p.channels.includes(selectedChannel)) return false;
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      try {
+        const [productsData, feedsData] = await Promise.all([
+          fetchJSON('/api/product-feeds/products'),
+          fetchJSON('/api/product-feeds/feeds'),
+        ]);
+        if (!cancelled) {
+          setProducts(Array.isArray(productsData) ? productsData : []);
+          setFeeds(Array.isArray(feedsData) ? feedsData : []);
+        }
+      } catch (err) {
+        console.error('Failed to load product feeds data:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  const filtered = products.filter(p => {
+    const name = (p.title || '').toLowerCase();
+    const sku = (p.sku || '').toLowerCase();
+    const q = search.toLowerCase();
+    if (search && !name.includes(q) && !sku.includes(q)) return false;
+    if (selectedChannel && (p.channel || '').toLowerCase() !== selectedChannel) return false;
     return true;
   });
 
-  const totalActive = MOCK_PRODUCTS.filter(p => p.status === 'active').length;
-  const totalChannels = new Set(MOCK_PRODUCTS.flatMap(p => p.channels)).size;
+  const totalActive = products.filter(p => (p.availability || '').toLowerCase() === 'in_stock' || (p.availability || '').toLowerCase() === 'in stock' || (p.availability || '').toLowerCase() === 'active').length;
+  const totalChannels = new Set(products.map(p => p.channel).filter(Boolean)).size;
+  const totalOutOfStock = products.filter(p => (p.availability || '').toLowerCase() === 'out_of_stock' || (p.availability || '').toLowerCase() === 'out of stock').length;
 
   const generate = async (tool) => {
     setGenerating(true); setOutput('');
-    const productList = filtered.slice(0, 5).map(p => `${p.name} (${p.sku}) - $${p.price}`).join('\n');
-    try {
-      const res = await fetch('/api/product-feeds/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'optimize', prompt: `${tool.prompt}\n\nProducts:\n${productList}` }) });
-      const reader = res.body.getReader(); const decoder = new TextDecoder();
-      while (true) { const { done, value } = await reader.read(); if (done) break; const lines = decoder.decode(value, { stream: true }).split('\n').filter(l => l.startsWith('data: ')); for (const line of lines) { try { const d = JSON.parse(line.slice(6)); if (d.type === 'chunk') setOutput(p => p + d.text); else if (d.type === 'result') setOutput(d.data.content); } catch {} } }
-    } catch (e) { console.error(e); } finally { setGenerating(false); }
+    const productList = filtered.slice(0, 5).map(p => `${p.title} (${p.sku}) - $${p.price}`).join('\n');
+    const cancel = connectSSE('/api/product-feeds/generate', { type: 'optimize', prompt: `${tool.prompt}\n\nProducts:\n${productList}` }, {
+      onChunk: (text) => setOutput(prev => prev + text),
+      onResult: (data) => { setOutput(data.content); setGenerating(false); },
+      onError: (err) => { console.error(err); setGenerating(false); }
+    });
+    return cancel;
+  };
+
+  const mapAvailabilityToStatus = (availability) => {
+    const a = (availability || '').toLowerCase().replace(/\s+/g, '_');
+    if (a === 'in_stock' || a === 'active') return 'active';
+    if (a === 'out_of_stock') return 'out_of_stock';
+    if (a === 'low_stock') return 'low_stock';
+    return 'active';
   };
 
   const statusBadge = (status) => {
@@ -56,12 +89,26 @@ export default function ProductFeedsPage() {
     return <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${s.bg} ${s.text} border ${s.border}`}>{status.replace('_', ' ')}</span>;
   };
 
+  if (loading) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-12">
+        <div className="mb-6 sm:mb-8 animate-fade-in"><p className="hud-label text-[11px] mb-2" style={{ color: '#64748b' }}>PRODUCT FEEDS</p><h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Product Feed Manager</h1></div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="panel rounded-2xl p-4 sm:p-6 animate-pulse"><div className="h-3 w-20 bg-white/5 rounded mb-2" /><div className="h-7 w-12 bg-white/5 rounded" /></div>
+          ))}
+        </div>
+        <div className="text-center text-gray-500 py-12">Loading product feeds...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 sm:p-6 lg:p-12">
       <div className="mb-6 sm:mb-8 animate-fade-in"><p className="hud-label text-[11px] mb-2" style={{ color: '#64748b' }}>PRODUCT FEEDS</p><h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Product Feed Manager</h1></div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
-        {[{ l: 'TOTAL PRODUCTS', v: MOCK_PRODUCTS.length }, { l: 'ACTIVE', v: totalActive }, { l: 'CHANNELS', v: totalChannels }, { l: 'OUT OF STOCK', v: MOCK_PRODUCTS.filter(p => p.status === 'out_of_stock').length }].map((s, i) => (
+        {[{ l: 'TOTAL PRODUCTS', v: products.length }, { l: 'ACTIVE', v: totalActive }, { l: 'CHANNELS', v: totalChannels }, { l: 'OUT OF STOCK', v: totalOutOfStock }].map((s, i) => (
           <div key={i} className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-1">{s.l}</p><p className="text-xl sm:text-2xl font-bold text-white font-mono">{s.v}</p></div>
         ))}
       </div>
@@ -79,34 +126,50 @@ export default function ProductFeedsPage() {
               {CHANNELS.map(c => (<button key={c.id} onClick={() => setSelectedChannel(selectedChannel === c.id ? null : c.id)} className={`chip text-[9px] ${selectedChannel === c.id ? 'active' : ''}`} style={selectedChannel === c.id ? { background: `${c.color}15`, borderColor: `${c.color}30`, color: c.color } : {}}>{c.name.split(' ')[0]}</button>))}
             </div>
           </div>
-          <div className="panel rounded-2xl overflow-hidden overflow-x-auto">
-            <div className="min-w-[600px]">
-              <div className="grid grid-cols-[1fr_80px_80px_60px_auto_80px] px-4 sm:px-6 py-3 border-b border-indigo-500/[0.06] text-xs font-bold text-gray-500">
-                <span>PRODUCT</span><span>SKU</span><span className="text-right">PRICE</span><span className="text-right">STOCK</span><span className="text-center">CHANNELS</span><span className="text-center">STATUS</span>
-              </div>
-              {filtered.map(p => (
-                <div key={p.id} className="grid grid-cols-[1fr_80px_80px_60px_auto_80px] items-center px-4 sm:px-6 py-4 border-b border-indigo-500/[0.03] hover:bg-white/[0.01] transition-colors">
-                  <span className="text-sm font-semibold text-gray-200 truncate">{p.name}</span>
-                  <span className="text-xs text-gray-500 font-mono">{p.sku}</span>
-                  <span className="text-sm text-gray-300 font-mono text-right">${p.price}</span>
-                  <span className={`text-sm font-mono text-right ${p.stock === 0 ? 'text-red-400' : p.stock < 20 ? 'text-yellow-400' : 'text-gray-400'}`}>{p.stock}</span>
-                  <div className="flex gap-1 justify-center">{p.channels.map(c => { const ch = CHANNELS.find(x => x.id === c); return <div key={c} className="w-2 h-2 rounded-full" title={ch?.name} style={{ background: ch?.color }} />; })}</div>
-                  <div className="text-center">{statusBadge(p.status)}</div>
-                </div>
-              ))}
+          {products.length === 0 ? (
+            <div className="panel rounded-2xl p-12 text-center">
+              <p className="text-gray-500 text-base">No products yet</p>
+              <p className="text-gray-600 text-sm mt-1">Products will appear here once feeds are synced.</p>
             </div>
-          </div>
+          ) : filtered.length === 0 ? (
+            <div className="panel rounded-2xl p-12 text-center">
+              <p className="text-gray-500 text-base">No products match your filters</p>
+            </div>
+          ) : (
+            <div className="panel rounded-2xl overflow-hidden overflow-x-auto">
+              <div className="min-w-[600px]">
+                <div className="grid grid-cols-[1fr_80px_80px_auto_80px] px-4 sm:px-6 py-3 border-b border-indigo-500/[0.06] text-xs font-bold text-gray-500">
+                  <span>PRODUCT</span><span>SKU</span><span className="text-right">PRICE</span><span className="text-center">CHANNEL</span><span className="text-center">STATUS</span>
+                </div>
+                {filtered.map((p, idx) => {
+                  const status = mapAvailabilityToStatus(p.availability);
+                  const ch = CHANNELS.find(x => x.id === (p.channel || '').toLowerCase());
+                  return (
+                    <div key={p.id || idx} className="grid grid-cols-[1fr_80px_80px_auto_80px] items-center px-4 sm:px-6 py-4 border-b border-indigo-500/[0.03] hover:bg-white/[0.01] transition-colors">
+                      <span className="text-sm font-semibold text-gray-200 truncate">{p.title}</span>
+                      <span className="text-xs text-gray-500 font-mono">{p.sku}</span>
+                      <span className="text-sm text-gray-300 font-mono text-right">${p.price}</span>
+                      <div className="flex gap-1 justify-center">
+                        {ch ? <div className="w-2 h-2 rounded-full" title={ch.name} style={{ background: ch.color }} /> : p.channel ? <span className="text-[9px] text-gray-500">{p.channel}</span> : null}
+                      </div>
+                      <div className="text-center">{statusBadge(status)}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {tab === 'channels' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 animate-fade-in stagger">
           {CHANNELS.map(c => {
-            const count = MOCK_PRODUCTS.filter(p => p.channels.includes(c.id)).length;
+            const count = products.filter(p => (p.channel || '').toLowerCase() === c.id).length;
             return (
               <div key={c.id} className="panel rounded-2xl p-4 sm:p-6">
                 <div className="flex items-center gap-3 sm:gap-5 mb-3"><div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: `${c.color}15`, border: `1px solid ${c.color}25` }}><span className="text-sm font-bold" style={{ color: c.color }}>{c.name[0]}</span></div><div><p className="text-base font-bold text-gray-200">{c.name}</p><p className="text-xs text-gray-500">{count} products synced</p></div></div>
-                <div className="h-1.5 rounded-full bg-white/[0.03] overflow-hidden"><div className="h-full rounded-full transition-all" style={{ width: `${(count / MOCK_PRODUCTS.length) * 100}%`, background: c.color }} /></div>
+                <div className="h-1.5 rounded-full bg-white/[0.03] overflow-hidden"><div className="h-full rounded-full transition-all" style={{ width: `${products.length > 0 ? (count / products.length) * 100 : 0}%`, background: c.color }} /></div>
               </div>
             );
           })}

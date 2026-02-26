@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const MODULE_COLOR = '#be185d';
 
@@ -27,6 +28,7 @@ const MOCK_CONTACTS = [
 ];
 
 export default function PrPressPage() {
+  usePageTitle('PR & Press');
   const [tab, setTab] = useState('overview');
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');

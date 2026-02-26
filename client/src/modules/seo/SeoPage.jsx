@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const TOOLS = [
   { id: 'keywords', name: 'Keyword Research', icon: 'M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z' },
@@ -45,6 +46,7 @@ const COUNTRIES = ['US', 'UK', 'CA', 'AU', 'DE', 'FR', 'IN'];
 const INTENTS = ['Informational', 'Commercial', 'Navigational', 'Transactional'];
 
 export default function SeoPage() {
+  usePageTitle('SEO Suite');
   const [activeTool, setActiveTool] = useState(null);
   const [prompt, setPrompt] = useState('');
   const [country, setCountry] = useState('US');

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '../../hooks/usePageTitle';
 import { MODULE_REGISTRY, CATEGORIES } from '../../config/modules';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -98,6 +99,7 @@ function getGreeting() {
    ═══════════════════════════════════════════ */
 
 export default function HomePage() {
+  usePageTitle('Dashboard');
   const nav = useNavigate();
   const { dark } = useTheme();
   const { user } = useAuth();

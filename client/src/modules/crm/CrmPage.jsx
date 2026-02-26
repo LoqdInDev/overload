@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usePageTitle } from '../../hooks/usePageTitle';
+import { fetchJSON, connectSSE } from '../../lib/api';
 
 const PIPELINE_STAGES = [
   { id: 'lead', name: 'Lead', color: '#6366f1' },
@@ -29,14 +31,37 @@ const MOCK_CONTACTS = [
   { id: 6, name: 'David Kim', email: 'david@startup.io', company: 'Startup.io', status: 'lead', score: 38 },
 ];
 
+const MOCK_SEGMENTS = [
+  { id: 1, name: 'Power Buyers', size: 1240, avgLtv: '$2,480', growth: '+18%', churnRisk: 'Low', traits: ['High frequency', 'Multi-category', 'Brand loyal'] },
+  { id: 2, name: 'Casual Shoppers', size: 3420, avgLtv: '$340', growth: '+5%', churnRisk: 'Medium', traits: ['Sale-driven', 'Seasonal', 'Price-sensitive'] },
+  { id: 3, name: 'New Customers', size: 890, avgLtv: '$85', growth: '+32%', churnRisk: 'High', traits: ['First purchase', 'Discovery phase', 'Email engaged'] },
+  { id: 4, name: 'VIP Enterprise', size: 156, avgLtv: '$12,400', growth: '+8%', churnRisk: 'Low', traits: ['High AOV', 'Annual contracts', 'Support heavy'] },
+  { id: 5, name: 'At-Risk', size: 420, avgLtv: '$520', growth: '-12%', churnRisk: 'Critical', traits: ['Declining activity', 'No recent purchase', 'Low engagement'] },
+];
+
+const MOCK_INSIGHTS = [
+  { id: 1, title: 'Churn Spike in Casual Shoppers', severity: 'high', description: 'Casual Shoppers segment shows 23% higher churn rate compared to last quarter, driven by increased competition and lack of loyalty incentives.', recommendation: 'Implement automated welcome sequence with personalized discount codes and loyalty program enrollment.' },
+  { id: 2, title: 'VIP Segment Revenue Opportunity', severity: 'medium', description: 'VIP Enterprise clients have 40% headroom for upsells based on usage patterns and peer benchmarks.', recommendation: 'Launch dedicated account manager outreach with tailored expansion proposals.' },
+  { id: 3, title: 'New Customer Activation Gap', severity: 'high', description: 'Only 34% of new customers make a second purchase within 30 days, well below the 55% industry benchmark.', recommendation: 'Create a 7-day post-purchase nurture campaign with product recommendations and onboarding tips.' },
+  { id: 4, title: 'Geographic Expansion Signal', severity: 'low', description: 'Organic traffic from APAC region grew 67% quarter-over-quarter with minimal marketing spend.', recommendation: 'Invest in APAC-localized landing pages and regional payment methods.' },
+];
+
 const AI_TOOLS = [
   { name: 'Follow-up Email', prompt: 'Write a professional follow-up email for a deal in the proposal stage' },
   { name: 'Cold Outreach', prompt: 'Write a compelling cold outreach email introducing our services' },
   { name: 'Upsell Proposal', prompt: 'Write an upsell proposal email for an existing customer' },
   { name: 'Win-back Email', prompt: 'Write a win-back email to re-engage a lost deal' },
+  { name: 'Analyze Segments', prompt: 'Perform deep analysis of customer segments including behavioral patterns, purchase frequency, average spend, and engagement metrics' },
+  { name: 'Predict Churn', prompt: 'Analyze customer behavior signals and predict churn risk levels, identifying at-risk customers and recommending retention strategies' },
+  { name: 'Generate Persona', prompt: 'Create detailed customer personas based on demographic data, psychographics, buying behavior, and pain points' },
+  { name: 'LTV Analysis', prompt: 'Calculate and analyze customer lifetime value across segments, identify highest-value cohorts' },
 ];
 
+const churnColor = (r) => r === 'Low' ? '#22c55e' : r === 'Medium' ? '#f59e0b' : r === 'High' ? '#f97316' : '#ef4444';
+const severityColor = (s) => s === 'high' ? '#ef4444' : s === 'medium' ? '#f59e0b' : '#3b82f6';
+
 export default function CrmPage() {
+  usePageTitle('CRM');
   const [tab, setTab] = useState('pipeline');
   const [statusFilter, setStatusFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -52,14 +77,19 @@ export default function CrmPage() {
 
   const generate = async (tool) => {
     setSelectedTool(tool); setGenerating(true); setOutput('');
-    try {
-      const res = await fetch('/api/crm/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'email', prompt: tool.prompt }) });
-      const reader = res.body.getReader(); const decoder = new TextDecoder();
-      while (true) { const { done, value } = await reader.read(); if (done) break; const lines = decoder.decode(value, { stream: true }).split('\n').filter(l => l.startsWith('data: ')); for (const line of lines) { try { const d = JSON.parse(line.slice(6)); if (d.type === 'chunk') setOutput(p => p + d.text); else if (d.type === 'result') setOutput(d.data.content); } catch {} } }
-    } catch (e) { console.error(e); } finally { setGenerating(false); }
+    connectSSE('/api/crm/generate', { type: 'email', prompt: tool.prompt }, {
+      onChunk: (text) => setOutput(prev => prev + text),
+      onResult: (data) => { setOutput(data.content); setGenerating(false); },
+      onError: (err) => { console.error(err); setGenerating(false); }
+    });
   };
 
   const statusColor = (s) => s === 'customer' ? '#22c55e' : s === 'prospect' ? '#3b82f6' : '#f59e0b';
+
+  const tabLabel = (t) => {
+    if (t === 'ai-tools') return 'AI Tools';
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  };
 
   return (
     <div className="p-4 sm:p-6 lg:p-12">
@@ -77,8 +107,8 @@ export default function CrmPage() {
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-1 mb-4 sm:mb-6">
-        {['pipeline', 'contacts', 'ai-tools'].map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: 'rgba(99,102,241,0.15)', borderColor: 'rgba(99,102,241,0.3)', color: '#818cf8' } : {}}>{t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1)}</button>
+        {['pipeline', 'contacts', 'segments', 'insights', 'ai-tools'].map(t => (
+          <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: 'rgba(99,102,241,0.15)', borderColor: 'rgba(99,102,241,0.3)', color: '#818cf8' } : {}}>{tabLabel(t)}</button>
         ))}
       </div>
 
@@ -131,6 +161,63 @@ export default function CrmPage() {
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Segments */}
+      {tab === 'segments' && (
+        <div className="animate-fade-in">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+            {MOCK_SEGMENTS.map(seg => (
+              <div key={seg.id} className="panel rounded-2xl p-4 sm:p-6">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="text-sm font-bold text-white">{seg.name}</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">{seg.size.toLocaleString()} customers</p>
+                  </div>
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${churnColor(seg.churnRisk)}15`, color: churnColor(seg.churnRisk), border: `1px solid ${churnColor(seg.churnRisk)}25` }}>{seg.churnRisk} Risk</span>
+                </div>
+                <div className="flex gap-4 mb-3">
+                  <div>
+                    <p className="hud-label text-[9px] mb-0.5">AVG LTV</p>
+                    <p className="text-xs font-bold text-white font-mono">{seg.avgLtv}</p>
+                  </div>
+                  <div>
+                    <p className="hud-label text-[9px] mb-0.5">GROWTH</p>
+                    <p className="text-xs font-bold font-mono" style={{ color: seg.growth.startsWith('+') ? '#22c55e' : '#ef4444' }}>{seg.growth}</p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {seg.traits.map((trait, i) => (
+                    <span key={i} className="chip text-[9px] px-2 py-0.5">{trait}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Insights */}
+      {tab === 'insights' && (
+        <div className="animate-fade-in space-y-3 sm:space-y-4">
+          {MOCK_INSIGHTS.map(ins => (
+            <div key={ins.id} className="panel rounded-2xl p-4 sm:p-6">
+              <div className="flex items-start gap-3 mb-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm font-bold text-white">{ins.title}</p>
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${severityColor(ins.severity)}15`, color: severityColor(ins.severity), border: `1px solid ${severityColor(ins.severity)}25` }}>{ins.severity}</span>
+                  </div>
+                  <p className="text-xs text-gray-400 leading-relaxed">{ins.description}</p>
+                </div>
+              </div>
+              <div className="rounded-xl p-3 sm:p-4" style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.08)' }}>
+                <p className="hud-label text-[9px] mb-1" style={{ color: '#6366f1' }}>RECOMMENDATION</p>
+                <p className="text-xs text-gray-300 leading-relaxed">{ins.recommendation}</p>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

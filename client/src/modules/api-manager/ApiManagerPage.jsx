@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const MOCK_KEYS = [
   { id: 1, name: 'Production Key', key: 'sk-prod...8f2x', requests: '8,420', status: 'active', created: 'Jan 15, 2026' },
@@ -25,6 +26,7 @@ const AI_TEMPLATES = [
 ];
 
 export default function ApiManagerPage() {
+  usePageTitle('API Manager');
   const [tab, setTab] = useState('keys');
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const MODULE_COLOR = '#f59e0b';
 
@@ -54,6 +55,7 @@ const statusColor = (s) => {
 };
 
 export default function AutopilotPage() {
+  usePageTitle('Autopilot Mode');
   const [mode, setMode] = useState('setup');
   const [selectedModules, setSelectedModules] = useState([]);
   const [riskLevel, setRiskLevel] = useState('balanced');

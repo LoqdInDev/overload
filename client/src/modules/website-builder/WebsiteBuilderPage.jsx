@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { fetchJSON, postJSON, connectSSE } from '../../lib/api';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const PAGE_TYPES = [
   { id: 'landing', name: 'Landing Page', desc: 'High-converting landing page with hero, features, CTA' },
@@ -31,6 +33,7 @@ const SECTIONS = [
 ];
 
 export default function WebsiteBuilderPage() {
+  usePageTitle('Website Builder');
   const [pageType, setPageType] = useState(null);
   const [style, setStyle] = useState('Minimal');
   const [framework, setFramework] = useState('HTML/CSS');
@@ -42,22 +45,88 @@ export default function WebsiteBuilderPage() {
   const [output, setOutput] = useState('');
   const [activeTab, setActiveTab] = useState('code');
 
+  const [sites, setSites] = useState([]);
+  const [loadingSites, setLoadingSites] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    fetchJSON('/api/website-builder/sites')
+      .then(data => setSites(data))
+      .catch(err => console.error('Failed to fetch sites:', err))
+      .finally(() => setLoadingSites(false));
+  }, []);
+
   const toggleSection = (id) => setSelectedSections(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
 
   const generate = async (templatePrompt) => {
-    setGenerating(true); setOutput('');
+    setGenerating(true); setOutput(''); setSaved(false);
     const sections = selectedSections.map(id => SECTIONS.find(s => s.id === id)?.name).join(', ');
     const prompt = templatePrompt || `Generate a ${style.toLowerCase()} ${PAGE_TYPES.find(p => p.id === pageType)?.name || 'landing page'} using ${framework}.\n\nBrand: ${brandName || 'My Brand'}\nDescription: ${brandDesc || 'A modern business'}\nPrimary Color: ${colorPrimary}\nSections: ${sections}\n\nGenerate clean, production-ready code with responsive design and modern UI patterns.`;
+    const cancel = connectSSE('/api/website-builder/generate', { type: pageType || 'landing', prompt }, {
+      onChunk: (text) => setOutput(prev => prev + text),
+      onResult: (data) => { setOutput(data.content); setGenerating(false); },
+      onError: (err) => { console.error(err); setGenerating(false); }
+    });
+    return cancel;
+  };
+
+  const handleSavePage = async () => {
+    if (!output || saving) return;
+    setSaving(true);
     try {
-      const res = await fetch('/api/website-builder/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: pageType || 'landing', prompt }) });
-      const reader = res.body.getReader(); const decoder = new TextDecoder();
-      while (true) { const { done, value } = await reader.read(); if (done) break; const lines = decoder.decode(value, { stream: true }).split('\n').filter(l => l.startsWith('data: ')); for (const line of lines) { try { const d = JSON.parse(line.slice(6)); if (d.type === 'chunk') setOutput(p => p + d.text); else if (d.type === 'result') setOutput(d.data.content); } catch {} } }
-    } catch (e) { console.error(e); } finally { setGenerating(false); }
+      let siteId;
+      if (sites.length > 0) {
+        siteId = sites[0].id;
+      } else {
+        const newSite = await postJSON('/api/website-builder/sites', { name: brandName || 'My Site' });
+        siteId = newSite.id;
+        setSites(prev => [newSite, ...prev]);
+      }
+      const typeName = PAGE_TYPES.find(p => p.id === pageType)?.name || pageType || 'landing';
+      await postJSON('/api/website-builder/pages', {
+        site_id: siteId,
+        name: typeName,
+        slug: pageType || 'landing',
+        content: output
+      });
+      setSaved(true);
+    } catch (err) {
+      console.error('Failed to save page:', err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!pageType) return (
     <div className="p-4 sm:p-6 lg:p-12">
       <div className="mb-6 sm:mb-8 animate-fade-in"><p className="hud-label text-[11px] mb-2" style={{ color: '#d946ef' }}>WEBSITE BUILDER</p><h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">AI Website Builder</h1><p className="text-base text-gray-500">Generate production-ready pages, sections, and components with AI</p></div>
+
+      {/* My Sites Section */}
+      {loadingSites ? (
+        <div className="panel rounded-2xl p-8 mb-6 sm:mb-8 text-center">
+          <div className="w-6 h-6 border-2 border-gray-600 border-t-white rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-gray-500">Loading sites...</p>
+        </div>
+      ) : sites.length > 0 && (
+        <div className="mb-6 sm:mb-8">
+          <p className="hud-label text-[11px] mb-3" style={{ color: '#d946ef' }}>MY SITES</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 stagger">
+            {sites.map(site => (
+              <div key={site.id} className="panel rounded-2xl p-4 sm:p-6">
+                <p className="text-base font-bold text-gray-200 mb-1">{site.name}</p>
+                <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <span>{site.pages || site.pageList?.length || 0} pages</span>
+                  <span>{site.created_at ? new Date(site.created_at).toLocaleDateString() : ''}</span>
+                </div>
+                {site.domain && <p className="text-xs text-gray-600 mt-1 font-mono">{site.domain}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <p className="hud-label text-[11px] mb-3" style={{ color: '#d946ef' }}>CHOOSE PAGE TYPE</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
         {PAGE_TYPES.map(p => (
           <button key={p.id} onClick={() => setPageType(p.id)} className="panel-interactive rounded-2xl p-4 sm:p-7 text-left group">
@@ -81,7 +150,7 @@ export default function WebsiteBuilderPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
       <div className="flex items-center gap-3 sm:gap-5 mb-6 sm:mb-8">
-        <button onClick={() => { setPageType(null); setOutput(''); }} className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg></button>
+        <button onClick={() => { setPageType(null); setOutput(''); setSaved(false); }} className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg></button>
         <div><p className="hud-label text-[11px]" style={{ color: '#d946ef' }}>{PAGE_TYPES.find(p => p.id === pageType)?.name?.toUpperCase()}</p><h2 className="text-lg font-bold text-white">{PAGE_TYPES.find(p => p.id === pageType)?.name}</h2></div>
       </div>
 
@@ -139,6 +208,24 @@ export default function WebsiteBuilderPage() {
           <div className="panel rounded-2xl p-4 sm:p-7 overflow-x-auto">
             <pre className="text-sm sm:text-base text-gray-300 whitespace-pre-wrap font-mono leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-fuchsia-400 ml-0.5 animate-pulse" />}</pre>
           </div>
+
+          {/* Save Page Button */}
+          {!generating && (
+            <div className="mt-4 flex items-center gap-3">
+              <button onClick={handleSavePage} disabled={saving || saved} className="px-6 py-3 rounded-xl text-sm font-bold tracking-wide transition-all"
+                style={{
+                  background: saved ? '#22c55e' : saving ? '#1e1e2e' : '#d946ef',
+                  boxShadow: saved ? '0 4px 20px -4px rgba(34,197,94,0.4)' : saving ? 'none' : '0 4px 20px -4px rgba(217,70,239,0.4)',
+                  color: 'white',
+                  opacity: saving ? 0.7 : 1,
+                }}>
+                {saved ? 'Page Saved' : saving ? (
+                  <span className="flex items-center gap-2"><span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />Saving...</span>
+                ) : 'Save Page'}
+              </button>
+              {saved && <span className="text-xs text-emerald-400">Page saved to your site successfully.</span>}
+            </div>
+          )}
         </div>
       )}
     </div>

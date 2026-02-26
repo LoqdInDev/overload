@@ -154,4 +154,17 @@ router.get('/reports', (req, res) => {
   }
 });
 
+// GET /stats
+router.get('/stats', (req, res) => {
+  try {
+    const totalCompetitors = db.prepare('SELECT COUNT(*) as count FROM ci_competitors').get().count;
+    const totalReports = db.prepare('SELECT COUNT(*) as count FROM ci_reports').get().count;
+    const byType = db.prepare('SELECT type, COUNT(*) as count FROM ci_reports GROUP BY type').all();
+    const recentReports = db.prepare('SELECT COUNT(*) as count FROM ci_reports WHERE created_at > datetime("now", "-30 days")').get().count;
+    res.json({ totalCompetitors, totalReports, byType, recentReports });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
