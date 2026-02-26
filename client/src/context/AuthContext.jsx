@@ -16,6 +16,9 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Fallback user when server is unavailable
+  const FALLBACK_USER = { id: 'local', email: 'owner@overload.local', displayName: 'Owner', role: 'owner' };
+
   // Auto-login: creates default owner and returns tokens
   const autoLogin = async () => {
     try {
@@ -23,13 +26,14 @@ export function AuthProvider({ children }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
-      if (!res.ok) return;
+      if (!res.ok) throw new Error('auto-login failed');
       const data = await res.json();
       localStorage.setItem(TOKEN_KEY, data.accessToken);
       localStorage.setItem(REFRESH_KEY, data.refreshToken);
       setUser(data.user);
     } catch {
-      // server may not be running
+      // Server unavailable — use fallback so app is still usable
+      setUser(FALLBACK_USER);
     }
   };
 
