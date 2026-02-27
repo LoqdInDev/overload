@@ -625,19 +625,27 @@ export default function LandingPage() {
                 <img src="/logo.png" alt="Overload" style={{ width: 80, height: 80 }} />
               </div>
 
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4 max-w-3xl mx-auto">
-                {INTEGRATIONS.map((int, i) => (
-                  <div key={i} className="flex flex-col items-center gap-2.5 py-5 px-2 rounded-2xl transition-all duration-300 cursor-default"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.transform = 'translateY(-3px)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.transform = ''; }}
-                  >
-                    <img
-                      src={`/brands/${int.slug}.svg`}
-                      alt={int.name}
-                      style={{ width: 28, height: 28 }}
-                    />
-                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}>{int.name}</span>
+              <style>{`
+                @keyframes marquee-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+                @keyframes marquee-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+              `}</style>
+              <div className="max-w-4xl mx-auto space-y-4 overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)' }}>
+                {[
+                  { items: INTEGRATIONS.slice(0, 6), direction: 'left', speed: '25s' },
+                  { items: INTEGRATIONS.slice(6, 12), direction: 'right', speed: '30s' },
+                  { items: INTEGRATIONS.slice(12, 18), direction: 'left', speed: '22s' },
+                ].map((row, ri) => (
+                  <div key={ri} className="flex" style={{ animation: `marquee-${row.direction} ${row.speed} linear infinite`, width: 'max-content' }}>
+                    {[...row.items, ...row.items].map((int, i) => (
+                      <div key={i} className="flex flex-col items-center gap-2.5 py-5 px-2 rounded-2xl mx-2 flex-shrink-0 transition-all duration-300 cursor-default"
+                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', width: 120 }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.transform = 'translateY(-3px)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.transform = ''; }}
+                      >
+                        <img src={`/brands/${int.slug}.svg`} alt={int.name} style={{ width: 28, height: 28 }} />
+                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}>{int.name}</span>
+                      </div>
+                    ))}
                   </div>
                 ))}
               </div>
