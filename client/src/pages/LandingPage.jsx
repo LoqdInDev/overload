@@ -289,14 +289,6 @@ const INTEGRATIONS = [
 ];
 
 
-const TESTIMONIALS = [
-  { quote: "Overload replaced our entire 5-person marketing team. We're saving $30K/month and getting better results.", name: 'Sarah Chen', role: 'CEO, Lumina Beauty', metric: '$30K/mo saved', metricColor: '#5E8E6E' },
-  { quote: "The Advisor briefing every morning is like having a CMO who never sleeps. It caught a bleeding campaign before I even woke up.", name: 'Marcus Rodriguez', role: 'Founder, UrbanFit', big: true, metric: '9x growth', metricColor: '#C45D3E' },
-  { quote: "We went from $2K to $18K/month in revenue in 3 months. Autopilot mode is genuinely insane.", name: 'Jamie Park', role: 'Co-founder, NovaTech', metric: '$2K → $18K/mo', metricColor: '#C45D3E' },
-  { quote: "I was skeptical about AI running my ads. Then it outperformed my agency by 3x in the first week.", name: 'Rachel Kim', role: 'DTC Brand Owner', metric: '3x ROAS increase', metricColor: '#5E8E6E' },
-  { quote: "Setup took 20 minutes. By the next morning, I had campaigns running on 4 platforms I'd never used before.", name: 'David Okafor', role: 'E-commerce Entrepreneur', metric: '20 min setup', metricColor: '#8B7355' },
-];
-
 const PRICING = [
   {
     name: 'Manual', desc: 'Full control. You call the shots.', price: '$49', period: '/mo',
@@ -653,58 +645,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── CARD 6: Testimonials ── */}
-        <section data-scroll-card="right">
-          <div className="lp-section-card lp-sc-light">
-            <div className="max-w-5xl mx-auto">
-              <div className="lp-card-tab">What people say</div>
-              <h2 className="lp-serif" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', lineHeight: 1.12, letterSpacing: '-0.02em', marginBottom: 48, color: 'var(--lp-ink)' }}>
-                Real results from<br className="hidden md:block" />
-                <span style={{ color: 'var(--lp-muted)' }}>real businesses</span>
-              </h2>
-
-              <div className="columns-1 md:columns-2 lg:columns-3 gap-5 space-y-5">
-                {TESTIMONIALS.map((t, i) => (
-                  <div key={i} className="lp-testimonial break-inside-avoid">
-                    {/* Metric badge */}
-                    {t.metric && (
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 12px', borderRadius: 100, marginBottom: 14, background: `${t.metricColor}0d`, border: `1px solid ${t.metricColor}1a` }}>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={t.metricColor} strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: t.metricColor }}>{t.metric}</span>
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', gap: 3, marginBottom: 14 }}>
-                      {[...Array(5)].map((_, j) => <span key={j} style={{ color: 'var(--lp-terra)', fontSize: 13 }}>&#9733;</span>)}
-                    </div>
-                    <p className={t.big ? 'lp-serif' : ''} style={{ color: 'var(--lp-ink)', lineHeight: 1.7, marginBottom: 18, fontSize: t.big ? 17 : 14, fontStyle: t.big ? 'italic' : 'normal' }}>"{t.quote}"</p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff', background: ['#C45D3E', '#5E8E6E', '#8B7355', '#9B6B6B', '#6B7E9B'][i] }}>
-                        {t.name.split(' ').map(w => w[0]).join('')}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--lp-ink)' }}>{t.name}</p>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="var(--lp-sage)" style={{ flexShrink: 0 }}><path d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        </div>
-                        <p style={{ fontSize: 11, color: 'var(--lp-muted)' }}>{t.role}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {/* Video card */}
-                <div className="lp-testimonial break-inside-avoid flex flex-col items-center justify-center" style={{ background: 'var(--lp-dark)', borderColor: 'rgba(255,255,255,0.06)', padding: '44px 28px', cursor: 'pointer' }}>
-                  <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
-                    <svg width="22" height="22" fill="#fff" viewBox="0 0 24 24" style={{ marginLeft: 2 }}><path d="M8 5v14l11-7z" /></svg>
-                  </div>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>Watch how UrbanFit scaled 9x</p>
-                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 3 }}>2 min video</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── CARD 7: Pricing ── DARK */}
+        {/* ── CARD 6: Pricing ── DARK */}
         <section data-scroll-card="left" id="pricing">
           <div className="lp-section-card lp-sc-dark">
             <div className="max-w-5xl mx-auto">
