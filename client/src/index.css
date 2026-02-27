@@ -930,7 +930,182 @@
   box-shadow: 0 16px 40px rgba(0,0,0,0.2);
 }
 
-/* Icon circles */
+/* ── Why Overload — Premium section redesign ── */
+.lp-why-section {
+  position: relative;
+}
+.lp-why-section::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -120px;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(196,93,62,0.06) 0%, rgba(94,142,110,0.03) 50%, transparent 70%);
+  filter: blur(80px);
+  pointer-events: none;
+}
+.lp-why-section::after {
+  content: '';
+  position: absolute;
+  bottom: -40px;
+  left: -80px;
+  width: 350px;
+  height: 350px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(94,142,110,0.05) 0%, rgba(237,229,218,0.08) 50%, transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+}
+
+.lp-why-heading-group {
+  text-align: center;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.lp-why-subtitle {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--lp-muted);
+  max-width: 520px;
+  margin: 0 auto 16px;
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+}
+
+.lp-why-divider {
+  width: 64px;
+  height: 2px;
+  margin: 0 auto;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--lp-terra), var(--lp-sage));
+  opacity: 0.5;
+}
+
+/* Why Overload cards — premium feature cards */
+.lp-why-card {
+  background: var(--lp-surface);
+  border: 1px solid rgba(44,40,37,0.05);
+  border-radius: 24px;
+  padding: 36px 32px 32px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lp-why-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.lp-why-card:nth-child(1)::before {
+  background: linear-gradient(90deg, #C45D3E, #D97B5A);
+}
+.lp-why-card:nth-child(2)::before {
+  background: linear-gradient(90deg, #5E8E6E, #7FB592);
+}
+.lp-why-card:nth-child(3)::before {
+  background: linear-gradient(90deg, #332F2B, #5A5550);
+}
+.lp-why-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 24px 64px -16px rgba(44,40,37,0.12), 0 0 0 1px rgba(44,40,37,0.04);
+}
+.lp-why-card:hover::before {
+  opacity: 1;
+}
+
+/* Icon container */
+.lp-why-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  position: relative;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lp-why-card:hover .lp-why-icon {
+  transform: scale(1.08);
+}
+.lp-why-icon-terra {
+  background: linear-gradient(135deg, rgba(196,93,62,0.1), rgba(196,93,62,0.04));
+  border: 1px solid rgba(196,93,62,0.08);
+}
+.lp-why-icon-sage {
+  background: linear-gradient(135deg, rgba(94,142,110,0.12), rgba(94,142,110,0.04));
+  border: 1px solid rgba(94,142,110,0.1);
+}
+.lp-why-icon-ink {
+  background: linear-gradient(135deg, rgba(51,47,43,0.08), rgba(51,47,43,0.02));
+  border: 1px solid rgba(51,47,43,0.06);
+}
+
+/* Card number badge */
+.lp-why-number {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 48px;
+  font-weight: 300;
+  line-height: 1;
+  opacity: 0.04;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+.lp-why-card:hover .lp-why-number {
+  opacity: 0.08;
+}
+
+/* Bottom CTA row */
+.lp-why-cta-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 56px;
+}
+.lp-why-cta-link {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--lp-terra);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  border-radius: 100px;
+  border: 1.5px solid rgba(196,93,62,0.15);
+  background: rgba(196,93,62,0.04);
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+}
+.lp-why-cta-link:hover {
+  background: rgba(196,93,62,0.08);
+  border-color: rgba(196,93,62,0.25);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(196,93,62,0.1);
+}
+.lp-why-cta-link svg {
+  transition: transform 0.3s ease;
+}
+.lp-why-cta-link:hover svg {
+  transform: translateX(3px);
+}
+
+/* Icon circles — warm accent backgrounds */
 .lp-icon {
   width: 44px;
   height: 44px;

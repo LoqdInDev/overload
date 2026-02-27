@@ -252,9 +252,37 @@ const Icon = {
    DATA
    ═══════════════════════════════════════════ */
 const SOLUTIONS = [
-  { title: 'Automation that replaces your marketing team', desc: 'Content, ads, analytics, email — everything you used to need five people for, handled by AI that executes autonomously across every channel.' },
-  { title: 'Three modes: Manual, Copilot, Autopilot', desc: 'Start hands-on and graduate to full automation at your own pace. Review everything, approve AI suggestions, or let it run entirely on its own.' },
-  { title: 'Always optimizing, even while you sleep', desc: 'AI monitors every campaign, reallocates budget, pauses underperformers, and scales winners — 24/7 without manual intervention.' },
+  {
+    title: 'Automation that replaces your marketing team',
+    desc: 'Content, ads, analytics, email — everything you used to need five people for, handled by AI that executes autonomously across every channel.',
+    icon: (color) => (
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Three modes: Manual, Copilot, Autopilot',
+    desc: 'Start hands-on and graduate to full automation at your own pace. Review everything, approve AI suggestions, or let it run entirely on its own.',
+    icon: (color) => (
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Always optimizing, even while you sleep',
+    desc: 'AI monitors every campaign, reallocates budget, pauses underperformers, and scales winners — 24/7 without manual intervention.',
+    icon: (color) => (
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+        <path d="M22 12A10 10 0 0 0 12 2v10z" />
+      </svg>
+    ),
+  },
 ];
 
 const JOURNEY = [
@@ -497,26 +525,47 @@ export default function LandingPage() {
 
         {/* ── CARD 2: Why Overload ── */}
         <section data-scroll-card="right" id="platform">
-          <div className="lp-section-card lp-sc-cream">
-            <div className="max-w-5xl mx-auto">
-              <div className="lp-card-tab">Why Overload</div>
-              <h2 className="lp-serif" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', lineHeight: 1.12, letterSpacing: '-0.02em', marginBottom: 56, color: 'var(--lp-ink)' }}>
-                One platform that automates<br className="hidden md:block" />
-                <span style={{ color: 'var(--lp-muted)' }}>your entire marketing operation</span>
-              </h2>
+          <div className="lp-section-card lp-sc-cream lp-why-section">
+            <div className="max-w-5xl mx-auto" style={{ position: 'relative', zIndex: 1 }}>
+              {/* Centered heading group */}
+              <div className="lp-why-heading-group">
+                <div className="lp-card-tab" style={{ marginLeft: 'auto', marginRight: 'auto' }}>Why Overload</div>
+                <h2 className="lp-serif" style={{ fontSize: 'clamp(2rem, 4.5vw, 3.2rem)', lineHeight: 1.1, letterSpacing: '-0.025em', marginBottom: 20, color: 'var(--lp-ink)' }}>
+                  One platform that automates<br className="hidden md:block" />
+                  <span style={{ color: 'var(--lp-muted)' }}>your entire marketing operation</span>
+                </h2>
+                <p className="lp-why-subtitle">
+                  Stop juggling ten tools that don't talk to each other. Overload handles everything from content to conversion — automatically.
+                </p>
+                <div className="lp-why-divider" />
+              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Feature cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6" style={{ marginTop: 48 }}>
                 {SOLUTIONS.map((s, i) => (
-                  <div key={i} className="lp-card" style={{ padding: 32 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: ['rgba(196,93,62,0.08)', 'rgba(94,142,110,0.1)', 'rgba(51,47,43,0.06)'][i], display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-                      <span style={{ fontSize: 16, fontWeight: 700, color: ['var(--lp-terra)', 'var(--lp-sage)', 'var(--lp-ink)'][i] }}>
-                        {['01', '02', '03'][i]}
-                      </span>
+                  <div key={i} className="lp-why-card">
+                    {/* Faint large number watermark */}
+                    <span className="lp-why-number">{['01', '02', '03'][i]}</span>
+
+                    {/* Icon */}
+                    <div className={`lp-why-icon ${['lp-why-icon-terra', 'lp-why-icon-sage', 'lp-why-icon-ink'][i]}`}>
+                      {s.icon(['var(--lp-terra)', 'var(--lp-sage)', 'var(--lp-ink)'][i])}
                     </div>
-                    <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--lp-ink)', marginBottom: 10, lineHeight: 1.3 }}>{s.title}</h3>
-                    <p style={{ fontSize: 14, color: 'var(--lp-muted)', lineHeight: 1.7 }}>{s.desc}</p>
+
+                    <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--lp-ink)', marginBottom: 12, lineHeight: 1.35, letterSpacing: '-0.01em' }}>{s.title}</h3>
+                    <p style={{ fontSize: 14.5, color: 'var(--lp-muted)', lineHeight: 1.75 }}>{s.desc}</p>
                   </div>
                 ))}
+              </div>
+
+              {/* Bottom CTA */}
+              <div className="lp-why-cta-row">
+                <a href="#modules" className="lp-why-cta-link">
+                  See all 43+ modules
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
+                  </svg>
+                </a>
               </div>
             </div>
           </div>
