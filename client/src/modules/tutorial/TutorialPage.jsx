@@ -277,7 +277,7 @@ export default function TutorialPage() {
   return (
     <div className="h-full overflow-hidden flex flex-col">
       {/* ── Header ── */}
-      <div className="flex-shrink-0 px-4 sm:px-6 lg:px-10 pt-6 pb-2">
+      <div className="flex-shrink-0 px-4 sm:px-6 lg:px-10 pt-4 sm:pt-6 pb-2">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center gap-3 mb-1">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{
@@ -300,8 +300,8 @@ export default function TutorialPage() {
       </div>
 
       {/* ── Main layout ── */}
-      <div className="flex-1 min-h-0 flex px-4 sm:px-6 lg:px-10 pb-6">
-        <div className="max-w-6xl mx-auto w-full flex gap-6">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row px-4 sm:px-6 lg:px-10 pb-6">
+        <div className="max-w-6xl mx-auto w-full flex flex-col lg:flex-row gap-0 lg:gap-6">
 
           {/* ── Chapter nav (desktop sidebar) ── */}
           <div className="hidden lg:flex flex-col gap-1 w-[240px] flex-shrink-0 pt-4 overflow-y-auto no-scrollbar">
@@ -350,7 +350,7 @@ export default function TutorialPage() {
           </div>
 
           {/* ── Mobile chapter pills ── */}
-          <div className="lg:hidden flex-shrink-0 flex gap-1.5 overflow-x-auto no-scrollbar pb-3 pt-2 -mx-4 px-4 sm:-mx-6 sm:px-6" style={{ position: 'sticky', top: 0 }}>
+          <div className="lg:hidden flex-shrink-0 flex gap-1.5 overflow-x-auto no-scrollbar pb-3 pt-2 -mx-4 px-4 sm:-mx-6 sm:px-6">
             {CHAPTERS.map((ch, i) => {
               const isActive = i === activeChapter;
               return (
@@ -375,7 +375,7 @@ export default function TutorialPage() {
             <div className="animate-fade-in" key={chapter.id}>
 
               {/* Chapter hero */}
-              <div className="rounded-2xl p-6 sm:p-8 mb-6 relative overflow-hidden" style={{
+              <div className="rounded-2xl p-4 sm:p-6 md:p-8 mb-4 sm:mb-6 relative overflow-hidden" style={{
                 background: `linear-gradient(135deg, ${chapter.color}10, ${chapter.color}05)`,
                 border: `1px solid ${chapter.color}18`,
               }}>
@@ -390,18 +390,18 @@ export default function TutorialPage() {
                     </span>
                   </div>
 
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{
+                  <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{
                       background: `${chapter.color}15`,
                       border: `1px solid ${chapter.color}25`,
                     }}>
-                      <svg className="w-7 h-7" style={{ color: chapter.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                      <svg className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: chapter.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d={chapter.icon} />
                         {chapter.icon2 && <path strokeLinecap="round" strokeLinejoin="round" d={chapter.icon2} />}
                       </svg>
                     </div>
-                    <div>
-                      <h2 style={{ fontFamily: fraunces, fontStyle: 'italic', fontSize: 'clamp(22px, 3vw, 30px)', fontWeight: 400, color: ink, lineHeight: 1.2, marginBottom: 4 }}>
+                    <div className="min-w-0">
+                      <h2 style={{ fontFamily: fraunces, fontStyle: 'italic', fontSize: 'clamp(20px, 3vw, 30px)', fontWeight: 400, color: ink, lineHeight: 1.2, marginBottom: 4 }}>
                         {chapter.title}
                       </h2>
                       <p style={{ fontSize: 13, color: chapter.color, fontWeight: 600, fontFamily: dmSans, marginBottom: 12 }}>
@@ -416,15 +416,15 @@ export default function TutorialPage() {
               </div>
 
               {/* Steps */}
-              <div className="space-y-4 mb-6">
+              <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
                 {chapter.steps.map((step, i) => (
-                  <div key={i} className="rounded-2xl p-5 sm:p-6 transition-all duration-200" style={{
+                  <div key={i} className="rounded-2xl p-4 sm:p-5 md:p-6 transition-all duration-200" style={{
                     background: surface,
                     border: `1px solid ${brd}`,
                   }}>
-                    <div className="flex gap-4">
+                    <div className="flex gap-3 sm:gap-4">
                       {/* Step number */}
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{
                         background: `${chapter.color}12`,
                         border: `1.5px solid ${chapter.color}30`,
                       }}>
@@ -434,10 +434,10 @@ export default function TutorialPage() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <h3 style={{ fontSize: 16, fontWeight: 700, color: ink, fontFamily: dmSans, marginBottom: 8 }}>
+                        <h3 style={{ fontSize: 15, fontWeight: 700, color: ink, fontFamily: dmSans, marginBottom: 6 }}>
                           {step.title}
                         </h3>
-                        <p style={{ fontSize: 13.5, color: t2, lineHeight: 1.75, fontFamily: dmSans, marginBottom: step.path ? 14 : 0 }}>
+                        <p style={{ fontSize: 13, color: t2, lineHeight: 1.7, fontFamily: dmSans, marginBottom: step.path ? 14 : 0 }}>
                           {step.text}
                         </p>
 
@@ -469,7 +469,7 @@ export default function TutorialPage() {
 
               {/* Tip callout */}
               {chapter.tip && (
-                <div className="rounded-2xl p-5 mb-6 flex gap-3" style={{
+                <div className="rounded-2xl p-4 sm:p-5 mb-4 sm:mb-6 flex gap-3" style={{
                   background: dark ? 'rgba(212,160,23,0.06)' : 'rgba(212,160,23,0.05)',
                   border: `1px solid ${dark ? 'rgba(212,160,23,0.15)' : 'rgba(212,160,23,0.12)'}`,
                 }}>
@@ -487,43 +487,43 @@ export default function TutorialPage() {
               )}
 
               {/* Chapter navigation */}
-              <div className="flex items-center justify-between pt-2 pb-4" style={{ borderTop: `1px solid ${brd}` }}>
+              <div className="flex items-center justify-between gap-2 pt-2 pb-4" style={{ borderTop: `1px solid ${brd}` }}>
                 {activeChapter > 0 ? (
                   <button
                     onClick={() => setActiveChapter(activeChapter - 1)}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all"
+                    className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 rounded-xl transition-all min-w-0 max-w-[45%]"
                     style={{ background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)', fontSize: 12, fontWeight: 600, color: t2, fontFamily: dmSans }}
                     onMouseEnter={e => { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.08)' : 'rgba(44,40,37,0.06)'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)'; }}
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
                     </svg>
-                    {CHAPTERS[activeChapter - 1].title}
+                    <span className="truncate">{CHAPTERS[activeChapter - 1].title}</span>
                   </button>
                 ) : <div />}
 
                 {activeChapter < CHAPTERS.length - 1 ? (
                   <button
                     onClick={() => setActiveChapter(activeChapter + 1)}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all"
+                    className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 rounded-xl transition-all min-w-0 max-w-[45%] ml-auto"
                     style={{ background: `${CHAPTERS[activeChapter + 1].color}12`, border: `1px solid ${CHAPTERS[activeChapter + 1].color}20`, fontSize: 12, fontWeight: 600, color: CHAPTERS[activeChapter + 1].color, fontFamily: dmSans }}
                     onMouseEnter={e => { e.currentTarget.style.background = `${CHAPTERS[activeChapter + 1].color}20`; }}
                     onMouseLeave={e => { e.currentTarget.style.background = `${CHAPTERS[activeChapter + 1].color}12`; }}
                   >
-                    {CHAPTERS[activeChapter + 1].title}
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <span className="truncate">{CHAPTERS[activeChapter + 1].title}</span>
+                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                     </svg>
                   </button>
                 ) : (
                   <button
                     onClick={() => navigate('/dashboard')}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white transition-all"
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-white transition-all ml-auto"
                     style={{ background: 'linear-gradient(135deg, #5E8E6E, #5E8E6Edd)', boxShadow: '0 2px 8px rgba(94,142,110,0.3)', fontSize: 12, fontWeight: 700, fontFamily: dmSans }}
                   >
-                    Start Using Overload
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <span className="truncate">Start Using Overload</span>
+                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                     </svg>
                   </button>
