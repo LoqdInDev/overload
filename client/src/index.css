@@ -1105,6 +1105,258 @@
   transform: translateX(3px);
 }
 
+/* ── How It Works — Premium timeline redesign ── */
+.lp-hiw-section {
+  position: relative;
+}
+.lp-hiw-section::before {
+  content: '';
+  position: absolute;
+  top: 20%;
+  right: -100px;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(196,93,62,0.05) 0%, transparent 70%);
+  filter: blur(80px);
+  pointer-events: none;
+}
+
+.lp-hiw-heading-group {
+  text-align: center;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.lp-hiw-subtitle {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--lp-muted);
+  max-width: 500px;
+  margin: 0 auto 16px;
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+}
+
+.lp-hiw-divider {
+  width: 64px;
+  height: 2px;
+  margin: 0 auto;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--lp-terra), var(--lp-sage));
+  opacity: 0.45;
+}
+
+/* Timeline grid */
+.lp-hiw-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  position: relative;
+  margin-top: 52px;
+}
+@media (min-width: 768px) {
+  .lp-hiw-grid {
+    grid-template-columns: 1fr 64px 1fr;
+    gap: 0;
+  }
+}
+
+/* Timeline vertical line */
+.lp-hiw-timeline {
+  display: none;
+  position: relative;
+}
+@media (min-width: 768px) {
+  .lp-hiw-timeline {
+    display: flex;
+    justify-content: center;
+  }
+  .lp-hiw-timeline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, rgba(196,93,62,0.15), rgba(94,142,110,0.2) 50%, rgba(196,93,62,0.3));
+    border-radius: 2px;
+  }
+}
+
+/* Timeline node */
+.lp-hiw-node {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--lp-surface);
+  border: 2px solid rgba(44,40,37,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(44,40,37,0.04);
+  flex-shrink: 0;
+}
+.lp-hiw-node span {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--lp-muted);
+  letter-spacing: 0.02em;
+}
+
+/* Step card */
+.lp-hiw-step {
+  background: var(--lp-surface);
+  border: 1px solid rgba(44,40,37,0.05);
+  border-radius: 22px;
+  padding: 28px 28px 24px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-bottom: 16px;
+}
+@media (min-width: 768px) {
+  .lp-hiw-step {
+    margin-bottom: 0;
+  }
+}
+.lp-hiw-step::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.lp-hiw-step:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 48px -12px rgba(44,40,37,0.1), 0 0 0 1px rgba(44,40,37,0.03);
+}
+.lp-hiw-step:hover::before {
+  opacity: 1;
+}
+.lp-hiw-step:hover .lp-hiw-step-icon {
+  transform: scale(1.08);
+}
+
+/* Step icon */
+.lp-hiw-step-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Phase labels */
+.lp-hiw-phase {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 100px;
+  margin-bottom: 20px;
+}
+.lp-hiw-phase-setup {
+  background: rgba(94,142,110,0.08);
+  color: var(--lp-sage);
+  border: 1px solid rgba(94,142,110,0.12);
+}
+.lp-hiw-phase-grow {
+  background: rgba(196,93,62,0.06);
+  color: var(--lp-terra);
+  border: 1px solid rgba(196,93,62,0.1);
+}
+.lp-hiw-phase-auto {
+  background: rgba(51,47,43,0.06);
+  color: var(--lp-ink);
+  border: 1px solid rgba(51,47,43,0.08);
+}
+
+/* Autopilot finale card */
+.lp-hiw-finale {
+  background: linear-gradient(145deg, var(--lp-dark), #1E1B19);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 24px;
+  padding: 36px 36px 32px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-top: 8px;
+}
+.lp-hiw-finale::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 40px;
+  right: 40px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--lp-terra), transparent);
+  border-radius: 2px;
+}
+.lp-hiw-finale::after {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(196,93,62,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.lp-hiw-finale:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 32px 80px -16px rgba(44,40,37,0.4);
+}
+
+/* Finale node — special */
+.lp-hiw-node-finale {
+  border-color: var(--lp-terra);
+  background: var(--lp-dark);
+  box-shadow: 0 0 0 4px rgba(196,93,62,0.15), 0 2px 8px rgba(44,40,37,0.1);
+}
+.lp-hiw-node-finale span {
+  color: var(--lp-terra);
+}
+
+/* Spacer for alternating layout */
+.lp-hiw-spacer {
+  display: none;
+}
+@media (min-width: 768px) {
+  .lp-hiw-spacer {
+    display: block;
+  }
+}
+
+/* Mobile timeline node (inline) */
+.lp-hiw-mobile-node {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+@media (min-width: 768px) {
+  .lp-hiw-mobile-node {
+    display: none;
+  }
+}
+
 /* ── Modules Bento — Premium redesign ── */
 .lp-bento-section {
   position: relative;

@@ -286,13 +286,36 @@ const SOLUTIONS = [
 ];
 
 const JOURNEY = [
-  { title: 'Connect', desc: 'Link your platforms — Shopify, Meta, Google, TikTok, email, and more. One-click integrations, no code required.' },
-  { title: 'Configure', desc: 'Set your brand voice, goals, audience, and budget. Overload builds your strategy automatically.' },
-  { title: 'Manual Mode', desc: 'Start hands-on. Review every recommendation, approve each action, and stay in full control while you build trust.' },
-  { title: 'Copilot Mode', desc: 'AI drafts campaigns, content, and optimizations. You review and approve — like a CMO who never sleeps.' },
-  { title: 'Analyze & Optimize', desc: 'Unified dashboard with real ROAS, profit margins, and customer lifetime value. AI finds what works and doubles down.' },
-  { title: 'Scale Confidently', desc: 'Campaigns, content, email flows, and ad spend — all managed and optimized across every channel simultaneously.' },
-  { title: 'Autopilot Mode', desc: 'Flip the switch. Overload runs your entire marketing 24/7. You just check in weekly.' },
+  {
+    title: 'Connect', desc: 'Link your platforms — Shopify, Meta, Google, TikTok, email, and more. One-click integrations, no code required.',
+    phase: 'setup', iconBg: 'rgba(94,142,110,0.1)', iconBorder: 'rgba(94,142,110,0.12)', accentColor: 'var(--lp-sage)',
+    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--lp-sage)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>,
+  },
+  {
+    title: 'Configure', desc: 'Set your brand voice, goals, audience, and budget. Overload builds your strategy automatically.',
+    phase: 'setup', iconBg: 'rgba(94,142,110,0.1)', iconBorder: 'rgba(94,142,110,0.12)', accentColor: 'var(--lp-sage)',
+    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--lp-sage)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>,
+  },
+  {
+    title: 'Manual Mode', desc: 'Start hands-on. Review every recommendation, approve each action, and stay in full control while you build trust.',
+    phase: 'grow', iconBg: 'rgba(196,93,62,0.08)', iconBorder: 'rgba(196,93,62,0.1)', accentColor: 'var(--lp-terra)',
+    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--lp-terra)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>,
+  },
+  {
+    title: 'Copilot Mode', desc: 'AI drafts campaigns, content, and optimizations. You review and approve — like a CMO who never sleeps.',
+    phase: 'grow', iconBg: 'rgba(196,93,62,0.08)', iconBorder: 'rgba(196,93,62,0.1)', accentColor: 'var(--lp-terra)',
+    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--lp-terra)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>,
+  },
+  {
+    title: 'Analyze & Optimize', desc: 'Unified dashboard with real ROAS, profit margins, and customer lifetime value. AI finds what works and doubles down.',
+    phase: 'grow', iconBg: 'rgba(196,93,62,0.08)', iconBorder: 'rgba(196,93,62,0.1)', accentColor: 'var(--lp-terra)',
+    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--lp-terra)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>,
+  },
+  {
+    title: 'Scale Confidently', desc: 'Campaigns, content, email flows, and ad spend — all managed and optimized across every channel simultaneously.',
+    phase: 'auto', iconBg: 'rgba(51,47,43,0.06)', iconBorder: 'rgba(51,47,43,0.08)', accentColor: 'var(--lp-ink)',
+    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--lp-ink)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>,
+  },
 ];
 
 const INTEGRATIONS = [
@@ -697,40 +720,104 @@ export default function LandingPage() {
 
         {/* ── CARD 4: How it works ── */}
         <section data-scroll-card="right">
-          <div className="lp-section-card lp-sc-cream">
-            <div className="max-w-5xl mx-auto">
-              <div className="lp-card-tab">How it works</div>
-              <h2 className="lp-serif" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', lineHeight: 1.12, letterSpacing: '-0.02em', marginBottom: 56, color: 'var(--lp-ink)' }}>
-                From connected<br className="hidden md:block" />
-                <span style={{ color: 'var(--lp-muted)' }}>to fully autonomous</span>
-              </h2>
+          <div className="lp-section-card lp-sc-cream lp-hiw-section">
+            <div className="max-w-5xl mx-auto" style={{ position: 'relative', zIndex: 1 }}>
+              {/* Centered heading group */}
+              <div className="lp-hiw-heading-group">
+                <div className="lp-card-tab" style={{ marginLeft: 'auto', marginRight: 'auto' }}>How it works</div>
+                <h2 className="lp-serif" style={{ fontSize: 'clamp(2rem, 4.5vw, 3.2rem)', lineHeight: 1.1, letterSpacing: '-0.025em', marginBottom: 20, color: 'var(--lp-ink)' }}>
+                  From connected<br className="hidden md:block" />
+                  <span style={{ color: 'var(--lp-muted)' }}>to fully autonomous</span>
+                </h2>
+                <p className="lp-hiw-subtitle">
+                  Seven steps from setup to autopilot. Go at your own pace — you're always in control.
+                </p>
+                <div className="lp-hiw-divider" />
+              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {/* Phase labels */}
+              <div className="hidden md:flex items-center justify-center gap-4" style={{ marginTop: 40, marginBottom: 8 }}>
+                <span className="lp-hiw-phase lp-hiw-phase-setup">Setup</span>
+                <span className="lp-hiw-phase lp-hiw-phase-grow">Growth</span>
+                <span className="lp-hiw-phase lp-hiw-phase-auto">Autonomy</span>
+              </div>
+
+              {/* Timeline layout */}
+              <div className="lp-hiw-grid">
                 {JOURNEY.map((step, i) => {
-                  const isLast = i === 6;
                   const num = String(i + 1).padStart(2, '0');
+                  const isLeft = i % 2 === 0;
                   return (
-                    <div key={i} className={`rounded-[20px] p-6 transition-all duration-300 ${isLast ? 'md:col-span-3' : ''}`}
-                      style={{
-                        background: isLast ? 'var(--lp-dark)' : 'var(--lp-surface)',
-                        border: isLast ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(44,40,37,0.05)',
-                        boxShadow: isLast ? '0 20px 64px -16px rgba(44,40,37,0.25)' : '0 1px 4px rgba(44,40,37,0.03)',
-                        cursor: 'default',
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.transform = ''; }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-                        <span className="lp-serif" style={{ fontSize: 32, color: isLast ? 'var(--lp-terra)' : 'rgba(44,40,37,0.08)', lineHeight: 1, flexShrink: 0 }}>{num}</span>
-                        <div>
-                          <h3 style={{ fontWeight: 700, marginBottom: 4, color: isLast ? '#fff' : 'var(--lp-ink)', fontSize: 15 }}>{step.title}</h3>
-                          <p style={{ fontSize: 13, lineHeight: 1.6, color: isLast ? 'rgba(255,255,255,0.5)' : 'var(--lp-muted)' }}>{step.desc}</p>
-                          {isLast && <p style={{ marginTop: 10, fontSize: 12, fontWeight: 700, color: 'var(--lp-terra)' }}>The best part of Overload</p>}
-                        </div>
-                      </div>
+                    <div key={i} className="contents">
+                      {/* Desktop: alternating left/right with timeline */}
+                      {isLeft ? (
+                        <>
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 0' }}>
+                            <div className="lp-hiw-step" style={{ maxWidth: 420 }}>
+                              <div className="lp-hiw-mobile-node">
+                                <div className="lp-hiw-node"><span>{num}</span></div>
+                                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--lp-muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Step {num}</span>
+                              </div>
+                              <div className="lp-hiw-step-icon" style={{ background: `linear-gradient(135deg, ${step.iconBg}, transparent)`, border: `1px solid ${step.iconBorder}` }}>
+                                {step.icon}
+                              </div>
+                              <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--lp-ink)', marginBottom: 8, letterSpacing: '-0.01em' }}>{step.title}</h3>
+                              <p style={{ fontSize: 13.5, color: 'var(--lp-muted)', lineHeight: 1.7 }}>{step.desc}</p>
+                              <style>{`.lp-hiw-step:nth-of-type(${i + 1})::before { background: linear-gradient(90deg, ${step.accentColor}, transparent); }`}</style>
+                            </div>
+                          </div>
+                          <div className="lp-hiw-timeline" style={{ padding: '12px 0' }}>
+                            <div className="lp-hiw-node" style={{ marginTop: 28 }}><span>{num}</span></div>
+                          </div>
+                          <div className="lp-hiw-spacer" />
+                        </>
+                      ) : (
+                        <>
+                          <div className="lp-hiw-spacer" />
+                          <div className="lp-hiw-timeline" style={{ padding: '12px 0' }}>
+                            <div className="lp-hiw-node" style={{ marginTop: 28 }}><span>{num}</span></div>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'flex-start', padding: '12px 0' }}>
+                            <div className="lp-hiw-step" style={{ maxWidth: 420 }}>
+                              <div className="lp-hiw-mobile-node">
+                                <div className="lp-hiw-node"><span>{num}</span></div>
+                                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--lp-muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Step {num}</span>
+                              </div>
+                              <div className="lp-hiw-step-icon" style={{ background: `linear-gradient(135deg, ${step.iconBg}, transparent)`, border: `1px solid ${step.iconBorder}` }}>
+                                {step.icon}
+                              </div>
+                              <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--lp-ink)', marginBottom: 8, letterSpacing: '-0.01em' }}>{step.title}</h3>
+                              <p style={{ fontSize: 13.5, color: 'var(--lp-muted)', lineHeight: 1.7 }}>{step.desc}</p>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Autopilot finale card */}
+              <div style={{ maxWidth: 640, margin: '0 auto' }}>
+                <div className="lp-hiw-finale">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16, position: 'relative', zIndex: 1 }}>
+                    <div style={{ width: 52, height: 52, borderRadius: 16, background: 'linear-gradient(135deg, rgba(196,93,62,0.2), rgba(196,93,62,0.08))', border: '1px solid rgba(196,93,62,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--lp-terra)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <span className="lp-serif" style={{ fontSize: 20, color: '#fff', fontWeight: 400 }}>Autopilot Mode</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--lp-terra)', letterSpacing: '0.06em', padding: '3px 10px', borderRadius: 100, background: 'rgba(196,93,62,0.12)', border: '1px solid rgba(196,93,62,0.2)' }}>STEP 07</span>
+                      </div>
+                      <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>Flip the switch. Overload runs your entire marketing 24/7. You just check in weekly.</p>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative', zIndex: 1, marginTop: 20 }}>
+                    <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, rgba(196,93,62,0.3), transparent)' }} />
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--lp-terra)', letterSpacing: '0.02em' }}>The best part of Overload</span>
+                    <div style={{ flex: 1, height: 1, background: 'linear-gradient(270deg, rgba(196,93,62,0.3), transparent)' }} />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
