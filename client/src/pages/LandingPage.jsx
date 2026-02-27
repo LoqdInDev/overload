@@ -586,7 +586,7 @@ export default function LandingPage() {
               <div className="lp-why-heading-group">
                 <div className="lp-card-tab" style={{ marginLeft: 'auto', marginRight: 'auto' }}>Why Overload</div>
                 <h2 className="lp-serif" style={{ fontSize: 'clamp(2rem, 4.5vw, 3.2rem)', lineHeight: 1.1, letterSpacing: '-0.025em', marginBottom: 20, color: 'var(--lp-ink)' }}>
-                  One platform that automates<br className="hidden md:block" />
+                  One platform that automates<br />
                   <span style={{ color: 'var(--lp-muted)' }}>your entire marketing operation</span>
                 </h2>
                 <p className="lp-why-subtitle">
@@ -634,7 +634,7 @@ export default function LandingPage() {
               <div className="lp-bento-heading-group">
                 <div className="lp-card-tab" style={{ marginLeft: 'auto', marginRight: 'auto' }}>{MODULE_COUNT} Modules</div>
                 <h2 className="lp-serif" style={{ fontSize: 'clamp(2rem, 4.5vw, 3.2rem)', lineHeight: 1.1, letterSpacing: '-0.025em', marginBottom: 20, color: 'var(--lp-ink)' }}>
-                  Everything you need.<br className="hidden md:block" />
+                  Everything you need.<br />
                   <span style={{ color: 'var(--lp-muted)' }}>Nothing you don't.</span>
                 </h2>
                 <p className="lp-bento-subtitle">
@@ -758,7 +758,7 @@ export default function LandingPage() {
               <div className="lp-hiw-heading-group">
                 <div className="lp-card-tab" style={{ marginLeft: 'auto', marginRight: 'auto' }}>How it works</div>
                 <h2 className="lp-serif" style={{ fontSize: 'clamp(2rem, 4.5vw, 3.2rem)', lineHeight: 1.1, letterSpacing: '-0.025em', marginBottom: 20, color: 'var(--lp-ink)' }}>
-                  From connected<br className="hidden md:block" />
+                  From connected<br />
                   <span style={{ color: 'var(--lp-muted)' }}>to fully autonomous</span>
                 </h2>
                 <p className="lp-hiw-subtitle">
