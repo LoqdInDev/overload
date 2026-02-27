@@ -408,46 +408,78 @@ export default function LandingPage() {
       </nav>
 
       {/* ═══════ HERO ═══════ */}
-      <section className="relative pt-36 pb-8 md:pt-44 md:pb-12 px-6 overflow-hidden" style={{ background: 'var(--lp-cream)' }}>
+      <section className="lp-hero relative pt-36 pb-8 md:pt-44 md:pb-16 px-6">
+        {/* Ambient glows */}
         <div className="lp-hero-glow" />
         <div className="lp-hero-glow-2 hidden md:block" />
+        <div className="lp-hero-glow-3 hidden md:block" />
+
+        {/* Decorative rings */}
+        <div className="lp-hero-ring lp-hero-ring-1 hidden lg:block" />
+        <div className="lp-hero-ring lp-hero-ring-2 hidden lg:block" />
 
         <div className="text-center max-w-3xl mx-auto relative z-10 lp-hero-anim">
-          <div style={{ marginBottom: 28 }}>
-            <span className="lp-pill">
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--lp-sage)', display: 'inline-block', boxShadow: '0 0 8px rgba(94,142,110,0.5)', animation: 'lp-live-dot 2s ease-in-out infinite' }} />
+          {/* Badge */}
+          <div>
+            <span className="lp-hero-badge">
+              <span className="lp-hero-badge-dot" />
               AI-Powered Marketing OS
             </span>
           </div>
 
-          <h1 className="lp-serif" style={{ fontSize: 'clamp(2.6rem, 6.5vw, 4.8rem)', lineHeight: 1.08, letterSpacing: '-0.025em', marginBottom: 24 }}>
+          {/* Headline */}
+          <h1 className="lp-serif lp-hero-headline">
             <span style={{ color: 'var(--lp-ink)' }}>Your marketing</span><br />
             <span style={{ color: 'var(--lp-terra)' }}>runs itself</span>
           </h1>
 
-          <p style={{ color: 'var(--lp-muted)', fontSize: 17, maxWidth: 480, margin: '0 auto 40px', lineHeight: 1.7 }}>
+          {/* Subtitle */}
+          <p className="lp-hero-sub">
             {MODULE_COUNT} AI modules across content, ads, email, and analytics. Three modes — from full control to fully autonomous.
           </p>
 
-          <div className="flex items-center justify-center gap-4 flex-wrap">
-            <button onClick={go} className="lp-cta lp-cta-terra" style={{ padding: '16px 44px', fontSize: 15 }}>
+          {/* Divider */}
+          <div className="lp-hero-divider" />
+
+          {/* CTA buttons */}
+          <div className="lp-hero-cta-group">
+            <button onClick={go} className="lp-cta lp-cta-terra" style={{ padding: '18px 48px', fontSize: 15 }}>
               Start free trial
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 2 }}>
-                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
               </svg>
             </button>
-            <button onClick={go} className="lp-cta lp-cta-outline" style={{ padding: '16px 36px', fontSize: 15 }}>
+            <button onClick={go} className="lp-cta lp-cta-outline" style={{ padding: '18px 40px', fontSize: 15 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ opacity: 0.6 }}><path d="M8 5v14l11-7z" /></svg>
               Watch demo
             </button>
           </div>
 
+          {/* Social proof */}
+          <div className="lp-hero-proof">
+            <div className="lp-hero-proof-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--lp-sage)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+              No credit card required
+            </div>
+            <div className="lp-hero-proof-dot" />
+            <div className="lp-hero-proof-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--lp-sage)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+              14-day free trial
+            </div>
+            <div className="lp-hero-proof-dot" />
+            <div className="lp-hero-proof-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--lp-sage)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
+              Set up in 5 minutes
+            </div>
+          </div>
         </div>
 
-        {/* Hero product mockup */}
-        <div className="lp-hero-anim" style={{ maxWidth: 900, margin: '48px auto 0', position: 'relative', zIndex: 10 }}>
+        {/* Hero product mockup — elevated with gradient border */}
+        <div className="lp-hero-mockup-wrap lp-hero-anim">
           <div style={{ opacity: 0, animation: 'lp-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.8s forwards' }}>
-            <HeroDashboard />
+            <div className="lp-hero-mockup-border">
+              <HeroDashboard />
+            </div>
           </div>
         </div>
       </section>
