@@ -633,12 +633,10 @@ export default function LandingPage() {
                     onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.transform = ''; }}
                   >
                     <img
-                      src={`https://cdn.simpleicons.org/${int.slug}/${int.color.replace('#', '')}`}
+                      src={`/brands/${int.slug}.svg`}
                       alt={int.name}
                       style={{ width: 28, height: 28 }}
-                      onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'block'; }}
                     />
-                    <span style={{ fontSize: 13, fontWeight: 700, color: int.color, opacity: 0.85, display: 'none' }}>{int.name.slice(0, 2).toUpperCase()}</span>
                     <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}>{int.name}</span>
                   </div>
                 ))}
