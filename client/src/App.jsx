@@ -449,7 +449,7 @@ function SidebarNav({ navOpen, setNavOpen, mobileMenuOpen, dark, toggle, terra, 
 
       {/* Logo */}
       <div className="relative flex items-center gap-3 px-4 h-[60px] flex-shrink-0">
-        <img src="/logo.png" alt="Overload" className="w-[34px] h-[34px] rounded-xl flex-shrink-0"
+        <img src="/logo.png" alt="Overload" className="w-[42px] h-[42px] rounded-xl flex-shrink-0"
           style={{ boxShadow: '0 2px 8px rgba(196,93,62,0.25)' }} />
         {navOpen && (
           <div className="flex flex-col">

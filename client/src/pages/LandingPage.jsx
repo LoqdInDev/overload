@@ -121,7 +121,7 @@ function HeroDashboard() {
       <div className="lp-mock-body">
         {/* Sidebar mini */}
         <div className="lp-mock-sidebar hidden md:flex">
-          <img src="/favicon.png" alt="O" style={{ width: 24, height: 24, borderRadius: 6 }} />
+          <img src="/favicon.png" alt="O" style={{ width: 30, height: 30, borderRadius: 6 }} />
           {[...Array(6)].map((_, i) => (
             <div key={i} style={{
               width: 20, height: 20, borderRadius: 5,
@@ -341,7 +341,7 @@ export default function LandingPage() {
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'lp-nav-scrolled' : ''}`}>
         <div className="max-w-7xl mx-auto px-6 lg:px-10 h-[72px] flex items-center justify-between">
           <div className="flex items-center gap-2.5 cursor-pointer select-none" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <img src="/logo.png" alt="Overload" style={{ width: 32, height: 32, borderRadius: 8 }} />
+            <img src="/logo.png" alt="Overload" style={{ width: 40, height: 40, borderRadius: 8 }} />
             <span className="lp-serif" style={{ fontSize: 18, color: 'var(--lp-ink)' }}>Overload</span>
           </div>
           <div className="hidden md:flex items-center gap-10">
@@ -621,8 +621,8 @@ export default function LandingPage() {
                 <span style={{ color: 'rgba(255,255,255,0.35)' }}>you already use</span>
               </h2>
 
-              <div style={{ width: 64, height: 64, borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 48px', boxShadow: '0 16px 48px rgba(196,93,62,0.25)', overflow: 'hidden' }}>
-                <img src="/logo.png" alt="Overload" style={{ width: 64, height: 64 }} />
+              <div style={{ width: 80, height: 80, borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 48px', boxShadow: '0 16px 48px rgba(196,93,62,0.25)', overflow: 'hidden' }}>
+                <img src="/logo.png" alt="Overload" style={{ width: 80, height: 80 }} />
               </div>
 
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4 max-w-3xl mx-auto">
@@ -775,7 +775,7 @@ export default function LandingPage() {
       <footer style={{ padding: '72px 24px 36px', background: 'var(--lp-dark)', color: 'rgba(255,255,255,0.4)' }}>
         <div className="max-w-5xl mx-auto">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <img src="/favicon.png" alt="Overload" style={{ width: 28, height: 28, borderRadius: 8 }} />
+            <img src="/favicon.png" alt="Overload" style={{ width: 36, height: 36, borderRadius: 8 }} />
             <span className="lp-serif" style={{ fontSize: 16, color: '#fff' }}>Overload</span>
           </div>
           <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.4)', maxWidth: 300, lineHeight: 1.6, marginBottom: 48 }}>
