@@ -354,7 +354,7 @@ export default function HomePage() {
             Quick Actions
           </span>
         </div>
-        <div className="p-3 sm:p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3">
+        <div className="p-3 sm:p-4 grid grid-cols-3 sm:grid-cols-6 gap-2.5 sm:gap-3">
           {quickActions.map((q, i) => (
             <button key={i} onClick={() => nav(q.path)}
               className="group/q flex flex-col items-center gap-2 sm:gap-2.5 px-2 sm:px-3 py-4 sm:py-5 rounded-2xl transition-all duration-300 cursor-pointer"
