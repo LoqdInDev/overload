@@ -708,7 +708,7 @@ function SidebarNav({ navOpen, setNavOpen, mobileMenuOpen, dark, toggle, terra, 
       </div>
 
       {/* Bottom controls */}
-      <div className="relative px-3 py-3 space-y-0.5" style={{ borderTop: `1px solid ${dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.06)'}` }}>
+      <div className="relative px-3 py-3 space-y-0.5 rounded-2xl mx-2 mb-2" style={{ background: dark ? 'rgba(196,93,62,0.08)' : 'rgba(196,93,62,0.05)', border: `1px solid ${dark ? 'rgba(196,93,62,0.15)' : 'rgba(196,93,62,0.10)'}` }}>
         {user && navOpen && (
           <div className="flex items-center gap-2.5 px-3 py-2 mb-1">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0"
