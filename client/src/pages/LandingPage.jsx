@@ -867,46 +867,88 @@ export default function LandingPage() {
 
         {/* ── CARD 6: Pricing ── DARK */}
         <section data-scroll-card="left" id="pricing">
-          <div className="lp-section-card lp-sc-dark">
-            <div className="max-w-5xl mx-auto">
-              <div className="text-center">
-                <div className="lp-card-tab">Pricing</div>
-                <h2 className="lp-serif" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', lineHeight: 1.12, letterSpacing: '-0.02em', marginBottom: 56 }}>
+          <div className="lp-section-card lp-sc-dark lp-pricing-section">
+            <div className="max-w-5xl mx-auto" style={{ position: 'relative', zIndex: 1 }}>
+              {/* Centered heading group */}
+              <div className="lp-pricing-heading-group">
+                <div className="lp-card-tab" style={{ marginLeft: 'auto', marginRight: 'auto' }}>Pricing</div>
+                <h2 className="lp-serif" style={{ fontSize: 'clamp(2rem, 4.5vw, 3.2rem)', lineHeight: 1.1, letterSpacing: '-0.025em', marginBottom: 20 }}>
                   <span style={{ color: '#fff' }}>Simple, honest pricing</span>
                 </h2>
+                <p className="lp-pricing-subtitle">
+                  Start with Manual for full control, or go straight to Autopilot. Upgrade or downgrade anytime.
+                </p>
+                <div className="lp-pricing-divider" />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-                {PRICING.map((p, i) => (
-                  <div key={i}
-                    className={`rounded-[24px] p-8 relative transition-all duration-300 ${p.featured ? 'lp-pricing-featured' : 'lp-card'}`}
-                    style={!p.featured ? { background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.06)' } : {}}
-                    onMouseEnter={e => { if (!p.featured) e.currentTarget.style.transform = 'translateY(-4px)'; }}
-                    onMouseLeave={e => { if (!p.featured) e.currentTarget.style.transform = ''; }}
-                  >
-                    {p.featured && (
-                      <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: 'var(--lp-terra)', fontSize: 10, fontWeight: 700, color: '#fff', padding: '6px 18px', borderRadius: 100, letterSpacing: '0.04em', textTransform: 'uppercase', boxShadow: '0 4px 16px rgba(196,93,62,0.3)' }}>Most popular</div>
-                    )}
-                    <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, color: p.featured ? 'var(--lp-terra-light)' : 'rgba(255,255,255,0.5)' }}>{p.name}</p>
-                    <p style={{ fontSize: 12, marginBottom: 20, color: p.featured ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.3)' }}>{p.desc}</p>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 24 }}>
-                      <span style={{ fontSize: 38, fontWeight: 700, color: p.featured ? '#fff' : 'rgba(255,255,255,0.85)', letterSpacing: '-0.04em' }}>{p.price}</span>
-                      <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.35)' }}>{p.period}</span>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start" style={{ marginTop: 52 }}>
+                {PRICING.map((p, i) => {
+                  const icons = [
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>,
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--lp-terra)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>,
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>,
+                  ];
+                  const iconBgs = [
+                    'rgba(255,255,255,0.04)',
+                    'rgba(196,93,62,0.1)',
+                    'rgba(255,255,255,0.04)',
+                  ];
+                  const iconBorders = [
+                    'rgba(255,255,255,0.06)',
+                    'rgba(196,93,62,0.15)',
+                    'rgba(255,255,255,0.06)',
+                  ];
+                  return (
+                    <div key={i} className={`lp-pricing-card ${p.featured ? 'lp-pricing-featured' : ''}`}>
+                      {p.featured && <div className="lp-pricing-badge">Most popular</div>}
+
+                      {/* Plan icon */}
+                      <div className="lp-pricing-icon" style={{ background: `linear-gradient(135deg, ${iconBgs[i]}, transparent)`, border: `1px solid ${iconBorders[i]}` }}>
+                        {icons[i]}
+                      </div>
+
+                      {/* Plan name & description */}
+                      <p style={{ fontSize: 14, fontWeight: 700, marginBottom: 4, color: p.featured ? 'var(--lp-terra-light)' : 'rgba(255,255,255,0.55)', letterSpacing: '0.01em' }}>{p.name}</p>
+                      <p style={{ fontSize: 12.5, marginBottom: 24, color: p.featured ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.3)', lineHeight: 1.5 }}>{p.desc}</p>
+
+                      {/* Price */}
+                      <div className="lp-pricing-price">
+                        <span className="lp-pricing-price-value" style={{ color: p.featured ? '#fff' : 'rgba(255,255,255,0.9)' }}>{p.price}</span>
+                        <span className="lp-pricing-price-period" style={{ color: 'rgba(255,255,255,0.3)' }}>{p.period}</span>
+                      </div>
+
+                      {/* CTA button */}
+                      <button onClick={go}
+                        className={`w-full py-3.5 rounded-2xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${p.featured ? 'lp-cta-white' : 'lp-cta'}`}
+                        style={{ marginTop: 20 }}
+                      >
+                        Get started
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5l7 7-7 7" /></svg>
+                      </button>
+
+                      {/* Divider */}
+                      <div className="lp-pricing-feat-divider" />
+
+                      {/* Feature list */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {p.features.map((f, j) => (
+                          <div key={j} className="lp-pricing-feature">
+                            <div className="lp-pricing-feature-check" style={{ background: p.featured ? 'rgba(196,93,62,0.12)' : 'rgba(94,142,110,0.1)' }}>
+                              {Icon.check(p.featured ? '#C45D3E' : '#5E8E6E')}
+                            </div>
+                            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.4 }}>{f}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <button onClick={go}
-                      className={`w-full py-3 rounded-2xl text-sm font-semibold transition-all flex items-center justify-center ${p.featured ? 'lp-cta-white' : 'lp-cta'}`}
-                      style={{ marginBottom: 24 }}
-                    >Get started</button>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      {p.features.map((f, j) => (
-                        <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          {Icon.check(p.featured ? '#C45D3E' : '#5E8E6E')}
-                          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>{f}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
+              </div>
+
+              {/* Guarantee footer */}
+              <div className="lp-pricing-guarantee">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
+                <span>14-day free trial on all plans. No credit card required. Cancel anytime.</span>
               </div>
             </div>
           </div>
