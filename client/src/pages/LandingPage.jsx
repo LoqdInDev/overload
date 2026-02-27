@@ -268,24 +268,24 @@ const JOURNEY = [
 ];
 
 const INTEGRATIONS = [
-  { name: 'Shopify', color: '#95BF47' },
-  { name: 'Meta', color: '#0081FB' },
-  { name: 'Google', color: '#4285F4' },
-  { name: 'TikTok', color: '#FE2C55' },
-  { name: 'Twitter/X', color: '#999999' },
-  { name: 'LinkedIn', color: '#0A66C2' },
-  { name: 'Klaviyo', color: '#BFD730' },
-  { name: 'Mailchimp', color: '#FFE01B' },
-  { name: 'Stripe', color: '#635BFF' },
-  { name: 'HubSpot', color: '#FF7A59' },
-  { name: 'YouTube', color: '#FF0000' },
-  { name: 'Pinterest', color: '#E60023' },
-  { name: 'Slack', color: '#4A154B' },
-  { name: 'Amazon', color: '#FF9900' },
-  { name: 'Notion', color: '#999999' },
-  { name: 'Airtable', color: '#18BFFF' },
-  { name: 'Zapier', color: '#FF4F00' },
-  { name: 'Snapchat', color: '#FFFC00' },
+  { name: 'Shopify', color: '#95BF47', slug: 'shopify' },
+  { name: 'Meta', color: '#0081FB', slug: 'meta' },
+  { name: 'Google', color: '#4285F4', slug: 'google' },
+  { name: 'TikTok', color: '#FE2C55', slug: 'tiktok' },
+  { name: 'Twitter/X', color: '#AAAAAA', slug: 'x' },
+  { name: 'LinkedIn', color: '#0A66C2', slug: 'linkedin' },
+  { name: 'Klaviyo', color: '#BFD730', slug: 'klaviyo' },
+  { name: 'Mailchimp', color: '#FFE01B', slug: 'mailchimp' },
+  { name: 'Stripe', color: '#635BFF', slug: 'stripe' },
+  { name: 'HubSpot', color: '#FF7A59', slug: 'hubspot' },
+  { name: 'YouTube', color: '#FF0000', slug: 'youtube' },
+  { name: 'Pinterest', color: '#E60023', slug: 'pinterest' },
+  { name: 'Slack', color: '#ECB22E', slug: 'slack' },
+  { name: 'Amazon', color: '#FF9900', slug: 'amazon' },
+  { name: 'Notion', color: '#CCCCCC', slug: 'notion' },
+  { name: 'Airtable', color: '#18BFFF', slug: 'airtable' },
+  { name: 'Zapier', color: '#FF4F00', slug: 'zapier' },
+  { name: 'Snapchat', color: '#FFFC00', slug: 'snapchat' },
 ];
 
 
@@ -627,12 +627,18 @@ export default function LandingPage() {
 
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4 max-w-3xl mx-auto">
                 {INTEGRATIONS.map((int, i) => (
-                  <div key={i} className="flex flex-col items-center gap-2 py-4 px-2 rounded-2xl transition-all duration-300 cursor-default"
+                  <div key={i} className="flex flex-col items-center gap-2.5 py-5 px-2 rounded-2xl transition-all duration-300 cursor-default"
                     style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
                     onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.transform = 'translateY(-3px)'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.transform = ''; }}
                   >
-                    <span style={{ fontSize: 13, fontWeight: 700, color: int.color, opacity: 0.85 }}>{int.name.slice(0, 2).toUpperCase()}</span>
+                    <img
+                      src={`https://cdn.simpleicons.org/${int.slug}/${int.color.replace('#', '')}`}
+                      alt={int.name}
+                      style={{ width: 28, height: 28 }}
+                      onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'block'; }}
+                    />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: int.color, opacity: 0.85, display: 'none' }}>{int.name.slice(0, 2).toUpperCase()}</span>
                     <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}>{int.name}</span>
                   </div>
                 ))}
