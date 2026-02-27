@@ -3,6 +3,17 @@ import { usePageTitle } from '../../hooks/usePageTitle';
 import AIToolsTab from '../../components/shared/AIToolsTab';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
+// Map integration IDs to brand SVG filenames in /brands/
+const BRAND_ICON_MAP = {
+  'shopify': 'shopify', 'google-ads': 'google', 'meta-ads': 'meta',
+  'klaviyo': 'klaviyo', 'tiktok': 'tiktok', 'google-analytics': 'google',
+  'stripe': 'stripe', 'slack': 'slack', 'hubspot': 'hubspot',
+  'mailchimp': 'mailchimp', 'zapier': 'zapier', 'intercom': 'intercom',
+  'segment': 'segment', 'mixpanel': 'mixpanel', 'airtable': 'airtable',
+  'notion': 'notion', 'pinterest-ads': 'pinterest', 'snapchat-ads': 'snapchat',
+  'twilio': 'twilio', 'bigcommerce': 'bigcommerce',
+};
+
 const FALLBACK_CONNECTED = [
   { id: 'shopify', name: 'Shopify', description: 'Ecommerce platform for online stores', status: 'connected', category: 'ecommerce', lastSync: '2 min ago' },
   { id: 'google-ads', name: 'Google Ads', description: 'Search and display advertising', status: 'connected', category: 'ads', lastSync: '5 min ago' },
@@ -254,8 +265,10 @@ export default function IntegrationsPage() {
           ) : connected.map(p => (
             <div key={p.id} className="panel rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
               <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-sm font-bold text-indigo-400 flex-shrink-0">
-                  {p.name.charAt(0)}
+                <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-sm font-bold text-indigo-400 flex-shrink-0 overflow-hidden">
+                  {BRAND_ICON_MAP[p.id] ? (
+                    <img src={`/brands/${BRAND_ICON_MAP[p.id]}.svg`} alt={p.name} className="w-6 h-6" />
+                  ) : p.name.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-base font-semibold text-gray-200">{p.name}</p>
@@ -290,8 +303,10 @@ export default function IntegrationsPage() {
           {available.map(p => (
             <div key={p.id} className="panel rounded-2xl p-4 sm:p-6 flex flex-col gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-sm font-bold text-indigo-400 flex-shrink-0">
-                  {p.name.charAt(0)}
+                <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-sm font-bold text-indigo-400 flex-shrink-0 overflow-hidden">
+                  {BRAND_ICON_MAP[p.id] ? (
+                    <img src={`/brands/${BRAND_ICON_MAP[p.id]}.svg`} alt={p.name} className="w-6 h-6" />
+                  ) : p.name.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-base font-semibold text-gray-200">{p.name}</p>
