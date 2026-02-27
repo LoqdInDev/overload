@@ -561,7 +561,7 @@ export default function LandingPage() {
               {/* Bottom CTA */}
               <div className="lp-why-cta-row">
                 <a href="#modules" className="lp-why-cta-link">
-                  See all 43+ modules
+                  See all 38+ modules
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
                   </svg>
