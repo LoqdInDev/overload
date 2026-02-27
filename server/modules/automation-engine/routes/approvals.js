@@ -35,8 +35,18 @@ router.get('/approvals', (req, res) => {
 
   res.json({
     items: rows.map(r => ({
-      ...r,
+      id: r.id,
+      moduleId: r.module_id,
+      title: r.title,
+      description: r.description,
+      actionType: r.action_type,
+      priority: r.priority,
+      confidence: r.ai_confidence != null ? Math.round(r.ai_confidence * 100) : null,
       payload: r.payload ? JSON.parse(r.payload) : null,
+      status: r.status,
+      createdAt: r.created_at,
+      reviewedAt: r.reviewed_at,
+      reviewedBy: r.reviewed_by,
     })),
     total: total.count,
   });
@@ -64,7 +74,20 @@ router.get('/approvals/count', (req, res) => {
 router.get('/approvals/:id', (req, res) => {
   const row = db.prepare('SELECT * FROM ae_approval_queue WHERE id = ?').get(req.params.id);
   if (!row) return res.status(404).json({ error: 'Approval item not found' });
-  res.json({ ...row, payload: row.payload ? JSON.parse(row.payload) : null });
+  res.json({
+    id: row.id,
+    moduleId: row.module_id,
+    title: row.title,
+    description: row.description,
+    actionType: row.action_type,
+    priority: row.priority,
+    confidence: row.ai_confidence != null ? Math.round(row.ai_confidence * 100) : null,
+    payload: row.payload ? JSON.parse(row.payload) : null,
+    status: row.status,
+    createdAt: row.created_at,
+    reviewedAt: row.reviewed_at,
+    reviewedBy: row.reviewed_by,
+  });
 });
 
 // POST /approvals/:id/approve

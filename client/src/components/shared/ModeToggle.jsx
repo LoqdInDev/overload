@@ -32,23 +32,34 @@ export default function ModeToggle({ moduleId }) {
   const currentMode = getMode(moduleId);
   const [hoveredMode, setHoveredMode] = useState(null);
   const [confirming, setConfirming] = useState(null);
+  const [changing, setChanging] = useState(false);
 
   const currentIdx = MODES.findIndex(m => m.id === currentMode);
 
   async function handleClick(mode) {
-    if (mode.id === currentMode) return;
+    if (mode.id === currentMode || changing) return;
 
     // Manual doesn't need confirmation
     if (mode.id === 'manual') {
-      await setMode(moduleId, mode.id);
-      setConfirming(null);
+      setChanging(true);
+      try {
+        await setMode(moduleId, mode.id);
+        setConfirming(null);
+      } finally {
+        setChanging(false);
+      }
       return;
     }
 
     // Show confirmation for copilot/autopilot
     if (confirming === mode.id) {
-      await setMode(moduleId, mode.id);
-      setConfirming(null);
+      setChanging(true);
+      try {
+        await setMode(moduleId, mode.id);
+        setConfirming(null);
+      } finally {
+        setChanging(false);
+      }
     } else {
       setConfirming(mode.id);
       setTimeout(() => setConfirming(null), 4000);
@@ -84,9 +95,10 @@ export default function ModeToggle({ moduleId }) {
             <button
               key={mode.id}
               onClick={() => handleClick(mode)}
+              disabled={changing}
               onMouseEnter={() => setHoveredMode(mode.id)}
               onMouseLeave={() => setHoveredMode(null)}
-              className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200"
+              className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 color: isActive ? mode.color : (dark ? '#94908A' : '#6b7280'),
                 fontWeight: isActive ? 600 : 500,
@@ -107,7 +119,7 @@ export default function ModeToggle({ moduleId }) {
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d={mode.icon} />
               </svg>
-              <span className="hidden sm:inline">{mode.label}</span>
+              <span className="sr-only sm:not-sr-only">{mode.label}</span>
               {isActive && mode.id !== 'manual' && (
                 <span
                   className="w-1.5 h-1.5 rounded-full"

@@ -144,6 +144,7 @@ export default function HomePage() {
   const [summary, setSummary] = useState(null);
   const [feedItems, setFeedItems] = useState(null);
   const [approvals, setApprovals] = useState(null);
+  const [feedActing, setFeedActing] = useState(false);
 
   const EMPTY_SUMMARY = { kpi: [
     { label: 'Revenue', value: 0, prefix: '$', color: '#5E8E6E', trend: '$0', up: false, spark: [0,0,0,0,0,0,0], sub: 'this week' },
@@ -176,19 +177,23 @@ export default function HomePage() {
 
   // ─── Approve / Reject handlers ───
   const handleApprove = useCallback(async (id) => {
+    setFeedActing(true);
     try {
       await postJSON(`/api/automation/approvals/${id}/approve`, {});
       refreshPending();
       loadData();
     } catch { /* silent */ }
+    setFeedActing(false);
   }, [refreshPending, loadData]);
 
   const handleReject = useCallback(async (id) => {
+    setFeedActing(true);
     try {
       await postJSON(`/api/automation/approvals/${id}/reject`, {});
       refreshPending();
       loadData();
     } catch { /* silent */ }
+    setFeedActing(false);
   }, [refreshPending, loadData]);
 
   // ─── Quick actions with conditional Review Queue ───
@@ -349,7 +354,7 @@ export default function HomePage() {
             Quick Actions
           </span>
         </div>
-        <div className="p-3 sm:p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2.5 sm:gap-3">
+        <div className="p-3 sm:p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3">
           {quickActions.map((q, i) => (
             <button key={i} onClick={() => nav(q.path)}
               className="group/q flex flex-col items-center gap-2 sm:gap-2.5 px-2 sm:px-3 py-4 sm:py-5 rounded-2xl transition-all duration-300 cursor-pointer"
@@ -502,27 +507,29 @@ export default function HomePage() {
                           <div className="flex items-center gap-2 mt-2">
                             <button
                               onClick={() => handleApprove(item.id)}
-                              className="text-[10px] font-bold px-3 py-1 rounded-lg transition-colors"
+                              disabled={feedActing}
+                              className="text-[10px] font-bold px-3 py-1 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                               style={{
                                 background: dark ? 'rgba(94,142,110,0.15)' : 'rgba(94,142,110,0.1)',
                                 color: sage,
                               }}
-                              onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(94,142,110,0.25)' : 'rgba(94,142,110,0.18)'}
-                              onMouseLeave={e => e.currentTarget.style.background = dark ? 'rgba(94,142,110,0.15)' : 'rgba(94,142,110,0.1)'}
+                              onMouseEnter={e => { if (!feedActing) e.currentTarget.style.background = dark ? 'rgba(94,142,110,0.25)' : 'rgba(94,142,110,0.18)'; }}
+                              onMouseLeave={e => { e.currentTarget.style.background = dark ? 'rgba(94,142,110,0.15)' : 'rgba(94,142,110,0.1)'; }}
                             >
-                              Approve
+                              {feedActing ? '...' : 'Approve'}
                             </button>
                             <button
                               onClick={() => handleReject(item.id)}
-                              className="text-[10px] font-bold px-3 py-1 rounded-lg transition-colors"
+                              disabled={feedActing}
+                              className="text-[10px] font-bold px-3 py-1 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                               style={{
                                 background: dark ? 'rgba(196,93,62,0.12)' : 'rgba(196,93,62,0.07)',
                                 color: terra,
                               }}
-                              onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(196,93,62,0.2)' : 'rgba(196,93,62,0.12)'}
-                              onMouseLeave={e => e.currentTarget.style.background = dark ? 'rgba(196,93,62,0.12)' : 'rgba(196,93,62,0.07)'}
+                              onMouseEnter={e => { if (!feedActing) e.currentTarget.style.background = dark ? 'rgba(196,93,62,0.2)' : 'rgba(196,93,62,0.12)'; }}
+                              onMouseLeave={e => { e.currentTarget.style.background = dark ? 'rgba(196,93,62,0.12)' : 'rgba(196,93,62,0.07)'; }}
                             >
-                              Reject
+                              {feedActing ? '...' : 'Reject'}
                             </button>
                           </div>
                         )}
@@ -597,10 +604,11 @@ export default function HomePage() {
                       </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         <button onClick={() => handleApprove(item.id)}
-                          className="w-6 h-6 rounded-md flex items-center justify-center transition-colors"
+                          disabled={feedActing}
+                          className="w-6 h-6 rounded-md flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                           style={{ background: dark ? 'rgba(94,142,110,0.12)' : 'rgba(94,142,110,0.08)' }}
-                          onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(94,142,110,0.25)' : 'rgba(94,142,110,0.15)'}
-                          onMouseLeave={e => e.currentTarget.style.background = dark ? 'rgba(94,142,110,0.12)' : 'rgba(94,142,110,0.08)'}
+                          onMouseEnter={e => { if (!feedActing) e.currentTarget.style.background = dark ? 'rgba(94,142,110,0.25)' : 'rgba(94,142,110,0.15)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = dark ? 'rgba(94,142,110,0.12)' : 'rgba(94,142,110,0.08)'; }}
                           title="Approve"
                         >
                           <svg className="w-3 h-3" fill="none" stroke={sage} viewBox="0 0 24 24" strokeWidth={2.5}>
@@ -608,10 +616,11 @@ export default function HomePage() {
                           </svg>
                         </button>
                         <button onClick={() => handleReject(item.id)}
-                          className="w-6 h-6 rounded-md flex items-center justify-center transition-colors"
+                          disabled={feedActing}
+                          className="w-6 h-6 rounded-md flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                           style={{ background: dark ? 'rgba(196,93,62,0.1)' : 'rgba(196,93,62,0.06)' }}
-                          onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(196,93,62,0.2)' : 'rgba(196,93,62,0.12)'}
-                          onMouseLeave={e => e.currentTarget.style.background = dark ? 'rgba(196,93,62,0.1)' : 'rgba(196,93,62,0.06)'}
+                          onMouseEnter={e => { if (!feedActing) e.currentTarget.style.background = dark ? 'rgba(196,93,62,0.2)' : 'rgba(196,93,62,0.12)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = dark ? 'rgba(196,93,62,0.1)' : 'rgba(196,93,62,0.06)'; }}
                           title="Reject"
                         >
                           <svg className="w-3 h-3" fill="none" stroke={terra} viewBox="0 0 24 24" strokeWidth={2.5}>

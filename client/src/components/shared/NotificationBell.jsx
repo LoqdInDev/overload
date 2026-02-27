@@ -41,6 +41,8 @@ export default function NotificationBell() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(o => !o)}
+        aria-label="Notifications"
+        aria-expanded={open}
         className="relative p-1.5 rounded-lg transition-colors"
         style={{ color: textSecondary }}
       >
@@ -56,7 +58,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 rounded-xl shadow-2xl z-50 overflow-hidden animate-fade-in"
+        <div className="absolute right-0 top-full mt-2 w-[min(320px,90vw)] rounded-xl shadow-2xl z-50 overflow-hidden animate-fade-in"
           style={{ background: bg, border: `1px solid ${border}` }}>
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: `1px solid ${border}` }}>
@@ -71,8 +73,12 @@ export default function NotificationBell() {
           {/* Items */}
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center text-xs" style={{ color: textSecondary }}>
-                No notifications yet
+              <div className="px-4 py-8 text-center">
+                <svg className="w-6 h-6 mx-auto mb-2" fill="none" stroke={textSecondary} strokeWidth={1.5} viewBox="0 0 24 24" style={{ opacity: 0.5 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                </svg>
+                <p className="text-[11px] font-medium" style={{ color: textSecondary }}>No notifications yet</p>
+                <p className="text-[10px] mt-0.5" style={{ color: textSecondary, opacity: 0.7 }}>Actions and suggestions will appear here</p>
               </div>
             ) : notifications.map(n => {
               const config = TYPE_CONFIG[n.type] || TYPE_CONFIG.action_completed;

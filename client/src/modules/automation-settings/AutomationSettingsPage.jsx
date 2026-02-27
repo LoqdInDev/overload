@@ -2,15 +2,18 @@ import { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAutomation } from '../../context/AutomationContext';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import { useToast } from '../../context/ToastContext';
 import { fetchJSON, putJSON } from '../../lib/api';
 
 export default function AutomationSettingsPage() {
   usePageTitle('Automation Settings');
   const { dark } = useTheme();
   const { modes, setMode, refreshModes } = useAutomation();
+  const { toast } = useToast();
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [pausing, setPausing] = useState(false);
   const [dirty, setDirty] = useState(false);
 
   const cardBg = dark ? 'rgba(255,255,255,0.02)' : '#ffffff';
@@ -42,25 +45,35 @@ export default function AutomationSettingsPage() {
     try {
       await putJSON('/api/automation/settings', settings);
       setDirty(false);
-    } catch { /* silent */ }
+      toast.success('Settings saved', 'Your automation preferences have been updated');
+    } catch {
+      toast.error('Save failed', 'Could not save settings — try again');
+    }
     setSaving(false);
   }
 
   async function pauseAll() {
-    // Store current modes then set all to manual
-    const currentModes = {};
-    for (const [id, data] of Object.entries(modes)) {
-      if (data.mode !== 'manual') currentModes[id] = data.mode;
+    setPausing(true);
+    try {
+      const currentModes = {};
+      for (const [id, data] of Object.entries(modes)) {
+        if (data.mode !== 'manual') currentModes[id] = data.mode;
+      }
+      await putJSON('/api/automation/settings', { pauseAll: 'true', previousModes: JSON.stringify(currentModes) });
+      for (const id of Object.keys(currentModes)) {
+        await setMode(id, 'manual');
+      }
+      update('pauseAll', 'true');
+      refreshModes();
+      toast.warning('Automation paused', 'All modules set to manual mode');
+    } catch {
+      toast.error('Pause failed', 'Could not pause automation — try again');
     }
-    await putJSON('/api/automation/settings', { pauseAll: 'true', previousModes: JSON.stringify(currentModes) });
-    for (const id of Object.keys(currentModes)) {
-      await setMode(id, 'manual');
-    }
-    update('pauseAll', 'true');
-    refreshModes();
+    setPausing(false);
   }
 
   async function resumeAll() {
+    setPausing(true);
     try {
       const prevModes = JSON.parse(settings.previousModes || '{}');
       for (const [id, mode] of Object.entries(prevModes)) {
@@ -69,7 +82,11 @@ export default function AutomationSettingsPage() {
       await putJSON('/api/automation/settings', { pauseAll: 'false' });
       update('pauseAll', 'false');
       refreshModes();
-    } catch { /* silent */ }
+      toast.success('Automation resumed', 'Modules restored to previous modes');
+    } catch {
+      toast.error('Resume failed', 'Could not resume automation — try again');
+    }
+    setPausing(false);
   }
 
   if (loading || !settings) {
@@ -90,9 +107,9 @@ export default function AutomationSettingsPage() {
   function Toggle({ checked, onChange }) {
     return (
       <button type="button" onClick={() => onChange(!checked)}
-        className="w-9 h-5 rounded-full transition-all relative flex-shrink-0"
+        className="w-9 h-5 rounded-full transition-colors duration-200 relative flex-shrink-0"
         style={{ background: checked ? '#22c55e' : (dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)') }}>
-        <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all" style={{ left: checked ? '18px' : '2px' }} />
+        <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all duration-200" style={{ left: checked ? '18px' : '2px' }} />
       </button>
     );
   }
@@ -119,7 +136,7 @@ export default function AutomationSettingsPage() {
           }}>
             <span className="text-xs font-medium" style={{ color: '#5E8E6E' }}>Unsaved changes</span>
             <button onClick={handleSave} disabled={saving}
-              className="px-4 py-1.5 rounded-lg text-xs font-semibold"
+              className="px-4 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               style={{ background: '#5E8E6E', color: '#fff' }}>
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
@@ -136,10 +153,10 @@ export default function AutomationSettingsPage() {
                   <p className="text-xs font-medium" style={{ color: '#ef4444' }}>All automation is paused</p>
                   <p className="text-[11px] mt-0.5" style={{ color: textSecondary }}>All modules are running in manual mode</p>
                 </div>
-                <button onClick={resumeAll}
-                  className="px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:scale-105"
+                <button onClick={resumeAll} disabled={pausing}
+                  className="px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   style={{ background: 'rgba(34,197,94,0.12)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.2)' }}>
-                  Resume Automation
+                  {pausing ? 'Resuming...' : 'Resume Automation'}
                 </button>
               </div>
             ) : (
@@ -148,10 +165,10 @@ export default function AutomationSettingsPage() {
                   <p className="text-xs font-medium" style={{ color: textPrimary }}>Automation is running</p>
                   <p className="text-[11px] mt-0.5" style={{ color: textSecondary }}>Pause to set all modules to manual mode instantly</p>
                 </div>
-                <button onClick={pauseAll}
-                  className="px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:scale-105"
+                <button onClick={pauseAll} disabled={pausing}
+                  className="px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>
-                  Pause All Automation
+                  {pausing ? 'Pausing...' : 'Pause All Automation'}
                 </button>
               </div>
             )}

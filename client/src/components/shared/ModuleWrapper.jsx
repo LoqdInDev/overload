@@ -78,7 +78,7 @@ export default function ModuleWrapper({ moduleId, children }) {
               animation: banner.dotAnimation,
             }}
           />
-          <span style={{ opacity: 0.85, fontWeight: 500 }}>{banner.text}</span>
+          <span style={{ fontWeight: 500 }}>{banner.text}</span>
         </div>
       )}
 
