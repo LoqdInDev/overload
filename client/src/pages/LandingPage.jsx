@@ -406,23 +406,103 @@ export default function LandingPage() {
 
         {/* ── CARD 1: Stats ── */}
         <section data-scroll-card="left">
-          <div className="lp-section-card lp-sc-light">
-            <div className="max-w-4xl mx-auto">
-              <div className="flex flex-wrap items-center justify-center gap-8 md:gap-0">
+          <div className="lp-section-card lp-sc-light" style={{ overflow: 'hidden' }}>
+            {/* Decorative background elements */}
+            <div style={{ position: 'absolute', top: -80, right: -80, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(196,93,62,0.04) 0%, transparent 70%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', bottom: -60, left: -60, width: 250, height: 250, borderRadius: '50%', background: 'radial-gradient(circle, rgba(94,142,110,0.04) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+            <div className="max-w-5xl mx-auto relative">
+              {/* Section header */}
+              <div className="text-center mb-12 md:mb-16">
+                <div className="lp-card-tab">By the numbers</div>
+                <h2 className="lp-serif" style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.4rem)', lineHeight: 1.15, letterSpacing: '-0.02em', color: 'var(--lp-ink)' }}>
+                  Built for scale,{' '}
+                  <span style={{ color: 'var(--lp-muted)' }}>designed for speed</span>
+                </h2>
+              </div>
+
+              {/* Stats grid */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
                 {[
-                  { val: String(MODULE_COUNT), suf: '', label: 'Active Modules' },
-                  { val: '100', suf: '%', label: 'Autonomous' },
-                  { val: '3', suf: '', label: 'Automation Modes', raw: false },
-                  { val: '10', suf: 'x', label: 'Faster Output' },
-                ].map((s, i, arr) => (
-                  <div key={i} className="flex items-center">
-                    <div className="text-center px-6 md:px-10">
-                      <p style={{ fontSize: 36, fontWeight: 700, color: 'var(--lp-ink)', letterSpacing: '-0.04em', fontFamily: "'DM Sans', sans-serif" }}>
-                        {s.raw ? s.val : <><AnimatedNumber value={s.val} />{s.suf}</>}
-                      </p>
-                      <p style={{ fontSize: 13, color: 'var(--lp-muted)', fontWeight: 500, marginTop: 4 }}>{s.label}</p>
+                  {
+                    val: String(MODULE_COUNT), suf: '', label: 'Active Modules', sub: 'Content, ads, analytics & more',
+                    color: '#C45D3E', grad: 'rgba(196,93,62,0.06)', gradHover: 'rgba(196,93,62,0.10)', borderColor: 'rgba(196,93,62,0.12)',
+                    icon: 'M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zm0 9.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z',
+                  },
+                  {
+                    val: '100', suf: '%', label: 'Autonomous', sub: 'Zero human intervention needed',
+                    color: '#5E8E6E', grad: 'rgba(94,142,110,0.06)', gradHover: 'rgba(94,142,110,0.10)', borderColor: 'rgba(94,142,110,0.12)',
+                    icon: 'M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+                  },
+                  {
+                    val: '3', suf: '', label: 'Automation Modes', sub: 'Manual · Copilot · Autopilot',
+                    color: '#D4A017', grad: 'rgba(212,160,23,0.05)', gradHover: 'rgba(212,160,23,0.09)', borderColor: 'rgba(212,160,23,0.10)',
+                    icon: 'M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z',
+                  },
+                  {
+                    val: '10', suf: 'x', label: 'Faster Output', sub: 'Compared to manual marketing',
+                    color: '#6366f1', grad: 'rgba(99,102,241,0.05)', gradHover: 'rgba(99,102,241,0.09)', borderColor: 'rgba(99,102,241,0.10)',
+                    icon: 'M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.58-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z',
+                  },
+                ].map((s, i) => (
+                  <div
+                    key={i}
+                    className="group relative rounded-2xl md:rounded-3xl p-5 sm:p-6 md:p-8 transition-all duration-500 cursor-default"
+                    style={{
+                      background: s.grad,
+                      border: `1px solid ${s.borderColor}`,
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = s.gradHover;
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = `0 12px 40px ${s.color}15, 0 4px 16px ${s.color}10`;
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = s.grad;
+                      e.currentTarget.style.transform = '';
+                      e.currentTarget.style.boxShadow = '';
+                    }}
+                  >
+                    {/* Decorative arc */}
+                    <div style={{
+                      position: 'absolute', top: -30, right: -30, width: 100, height: 100, borderRadius: '50%',
+                      border: `1.5px solid ${s.color}10`, pointerEvents: 'none',
+                    }} />
+
+                    {/* Icon */}
+                    <div className="mb-4 md:mb-5" style={{
+                      width: 36, height: 36, borderRadius: 10,
+                      background: `${s.color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      border: `1px solid ${s.color}18`,
+                    }}>
+                      <svg width="17" height="17" fill="none" stroke={s.color} viewBox="0 0 24 24" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d={s.icon} />
+                      </svg>
                     </div>
-                    {i < arr.length - 1 && <div className="lp-divider hidden md:block" style={{ height: 40 }} />}
+
+                    {/* Number */}
+                    <p style={{
+                      fontSize: 'clamp(34px, 5vw, 52px)', fontWeight: 800, color: s.color,
+                      letterSpacing: '-0.04em', lineHeight: 1, fontFamily: "'DM Sans', sans-serif",
+                      marginBottom: 6,
+                    }}>
+                      <AnimatedNumber value={s.val} />{s.suf}
+                    </p>
+
+                    {/* Label */}
+                    <p style={{
+                      fontSize: 14, fontWeight: 700, color: 'var(--lp-ink)',
+                      letterSpacing: '-0.01em', marginBottom: 4,
+                    }}>
+                      {s.label}
+                    </p>
+
+                    {/* Subtitle */}
+                    <p style={{
+                      fontSize: 12, color: 'var(--lp-muted)', lineHeight: 1.5, fontWeight: 500,
+                    }}>
+                      {s.sub}
+                    </p>
                   </div>
                 ))}
               </div>
