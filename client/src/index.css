@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* App shell — use dvh for mobile viewport address bar handling */
+#app-shell {
+  height: 100vh;
+  height: 100dvh;
+}
+
 /* ═══════════════════════════════════════════
    OVERLOAD — Marketing OS
    Warm Editorial + Module Compatibility Layer

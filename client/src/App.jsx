@@ -221,7 +221,8 @@ export default function App() {
     <NotificationProvider>
     <ProtectedRoute>
       <div data-theme={dark ? 'dark' : 'light'}
-        className="flex h-screen overflow-hidden"
+        className="flex overflow-hidden"
+        id="app-shell"
         style={{
           fontFamily: "'DM Sans', system-ui, sans-serif",
           background: dark ? '#1A1816' : '#FBF7F0',
