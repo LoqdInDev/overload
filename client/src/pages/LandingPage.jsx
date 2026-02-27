@@ -290,9 +290,6 @@ const INTEGRATIONS = [
   { name: 'Snapchat', color: '#FFFC00' },
 ];
 
-const SOCIAL_PROOF_BRANDS = [
-  'Lumina Beauty', 'UrbanFit', 'NovaTech', 'Drift Supply', 'Peakform', 'Meridian Co.',
-];
 
 const TESTIMONIALS = [
   { quote: "Overload replaced our entire 5-person marketing team. We're saving $30K/month and getting better results.", name: 'Sarah Chen', role: 'CEO, Lumina Beauty', metric: '$30K/mo saved', metricColor: '#5E8E6E' },
@@ -406,17 +403,6 @@ export default function LandingPage() {
             </button>
           </div>
 
-          {/* Social proof bar */}
-          <div style={{ marginTop: 48 }}>
-            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--lp-muted)', opacity: 0.6, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 16 }}>
-              Trusted by 2,000+ businesses including
-            </p>
-            <div className="lp-logo-bar">
-              {SOCIAL_PROOF_BRANDS.map((brand, i) => (
-                <span key={i} className="lp-logo-item">{brand}</span>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Hero product mockup */}
