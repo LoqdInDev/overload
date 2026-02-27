@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MODULE_REGISTRY } from '../config/modules';
 
 const MODULE_COUNT = MODULE_REGISTRY.length;
+const BENTO_REMAINING = MODULE_COUNT - 8;
 
 /* ═══════════════════════════════════════════
    SCROLL-DRIVEN CARD ANIMATION
@@ -94,6 +95,116 @@ function AnimatedNumber({ value, suffix = '' }) {
 }
 
 /* ═══════════════════════════════════════════
+   HERO DASHBOARD MOCKUP
+   Pure CSS/JSX product preview
+   ═══════════════════════════════════════════ */
+function HeroDashboard() {
+  return (
+    <div className="lp-hero-mockup">
+      {/* Browser chrome */}
+      <div className="lp-mock-chrome">
+        <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FF605C' }} />
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FFBD44' }} />
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#00CA4E' }} />
+        </div>
+        <div className="lp-mock-url">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ opacity: 0.5 }}>
+            <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" />
+          </svg>
+          <span>overload.app/dashboard</span>
+        </div>
+        <div style={{ width: 40 }} />
+      </div>
+
+      {/* Dashboard body */}
+      <div className="lp-mock-body">
+        {/* Sidebar mini */}
+        <div className="lp-mock-sidebar hidden md:flex">
+          <div style={{ width: 24, height: 24, borderRadius: 6, background: 'var(--lp-terra)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ color: '#fff', fontSize: 9, fontWeight: 900 }}>O</span>
+          </div>
+          {[...Array(6)].map((_, i) => (
+            <div key={i} style={{
+              width: 20, height: 20, borderRadius: 5,
+              background: i === 0 ? 'rgba(196,93,62,0.15)' : 'rgba(255,255,255,0.06)',
+              border: i === 0 ? '1px solid rgba(196,93,62,0.25)' : '1px solid rgba(255,255,255,0.04)',
+            }} />
+          ))}
+        </div>
+
+        {/* Main content area */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, padding: '14px 16px', minWidth: 0 }}>
+          {/* Top bar */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#E8E4DE', letterSpacing: '-0.01em' }}>Command Center</div>
+              <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', marginTop: 1 }}>Good morning — 4 actions completed overnight</div>
+            </div>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              {/* Mode toggle mock */}
+              <div style={{ display: 'flex', gap: 2, background: 'rgba(255,255,255,0.05)', borderRadius: 6, padding: 2 }}>
+                <div style={{ padding: '2px 8px', borderRadius: 4, fontSize: 7, fontWeight: 600, color: 'rgba(255,255,255,0.3)' }}>Manual</div>
+                <div style={{ padding: '2px 8px', borderRadius: 4, fontSize: 7, fontWeight: 600, color: '#D4A017', background: 'rgba(212,160,23,0.12)' }}>Copilot</div>
+                <div style={{ padding: '2px 8px', borderRadius: 4, fontSize: 7, fontWeight: 600, color: 'rgba(255,255,255,0.3)' }}>Autopilot</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+            {[
+              { label: 'Revenue', val: '$24.8K', change: '+18%', up: true },
+              { label: 'ROAS', val: '4.2x', change: '+0.8', up: true },
+              { label: 'Campaigns', val: '12', change: 'Active', up: null },
+              { label: 'AI Actions', val: '847', change: 'This week', up: null },
+            ].map((s, i) => (
+              <div key={i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 8, padding: '8px 10px' }}>
+                <div style={{ fontSize: 7, color: 'rgba(255,255,255,0.35)', fontWeight: 500, marginBottom: 3 }}>{s.label}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#E8E4DE', letterSpacing: '-0.02em' }}>{s.val}</div>
+                <div style={{ fontSize: 7, fontWeight: 600, color: s.up === true ? '#5E8E6E' : s.up === false ? '#C45D3E' : 'rgba(255,255,255,0.25)', marginTop: 2 }}>
+                  {s.up === true && '↑ '}{s.up === false && '↓ '}{s.change}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Bottom row: chart + feed */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 8, flex: 1 }}>
+            {/* Chart area */}
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 8, padding: '10px 12px', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ fontSize: 8, fontWeight: 600, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>Revenue Trend</div>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', gap: 3, minHeight: 48 }}>
+                {[28, 35, 32, 45, 42, 55, 48, 62, 58, 72, 68, 78].map((h, j) => (
+                  <div key={j} style={{ flex: 1, borderRadius: 2, height: `${h}%`, background: j >= 10 ? 'var(--lp-terra)' : j >= 8 ? 'rgba(196,93,62,0.4)' : 'rgba(255,255,255,0.08)', transition: 'all 0.3s' }} />
+                ))}
+              </div>
+            </div>
+
+            {/* Activity feed */}
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 8, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ fontSize: 8, fontWeight: 600, color: 'rgba(255,255,255,0.4)' }}>Live Activity</div>
+              {[
+                { icon: '✓', color: '#5E8E6E', text: 'Blog post published', time: '2m ago' },
+                { icon: '⚡', color: '#D4A017', text: 'Ad budget optimized', time: '8m ago' },
+                { icon: '✓', color: '#5E8E6E', text: 'Email sequence sent', time: '14m ago' },
+                { icon: '→', color: '#C45D3E', text: 'Awaiting approval', time: '22m ago' },
+              ].map((a, j) => (
+                <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 7 }}>
+                  <span style={{ width: 14, height: 14, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${a.color}18`, color: a.color, fontSize: 7, fontWeight: 700, flexShrink: 0 }}>{a.icon}</span>
+                  <span style={{ color: 'rgba(255,255,255,0.55)', flex: 1 }}>{a.text}</span>
+                  <span style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }}>{a.time}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
    SIMPLE SVG ICONS (line style)
    ═══════════════════════════════════════════ */
 const Icon = {
@@ -159,17 +270,36 @@ const JOURNEY = [
 ];
 
 const INTEGRATIONS = [
-  'Shopify', 'Meta', 'Google', 'TikTok', 'Twitter/X', 'LinkedIn',
-  'Klaviyo', 'Mailchimp', 'Stripe', 'HubSpot', 'YouTube', 'Pinterest',
-  'Slack', 'Amazon', 'Notion', 'Airtable', 'Zapier', 'Snapchat',
+  { name: 'Shopify', color: '#95BF47' },
+  { name: 'Meta', color: '#0081FB' },
+  { name: 'Google', color: '#4285F4' },
+  { name: 'TikTok', color: '#FE2C55' },
+  { name: 'Twitter/X', color: '#999999' },
+  { name: 'LinkedIn', color: '#0A66C2' },
+  { name: 'Klaviyo', color: '#BFD730' },
+  { name: 'Mailchimp', color: '#FFE01B' },
+  { name: 'Stripe', color: '#635BFF' },
+  { name: 'HubSpot', color: '#FF7A59' },
+  { name: 'YouTube', color: '#FF0000' },
+  { name: 'Pinterest', color: '#E60023' },
+  { name: 'Slack', color: '#4A154B' },
+  { name: 'Amazon', color: '#FF9900' },
+  { name: 'Notion', color: '#999999' },
+  { name: 'Airtable', color: '#18BFFF' },
+  { name: 'Zapier', color: '#FF4F00' },
+  { name: 'Snapchat', color: '#FFFC00' },
+];
+
+const SOCIAL_PROOF_BRANDS = [
+  'Lumina Beauty', 'UrbanFit', 'NovaTech', 'Drift Supply', 'Peakform', 'Meridian Co.',
 ];
 
 const TESTIMONIALS = [
-  { quote: "Overload replaced our entire 5-person marketing team. We're saving $30K/month and getting better results.", name: 'Sarah Chen', role: 'CEO, Lumina Beauty' },
-  { quote: "The Advisor briefing every morning is like having a CMO who never sleeps. It caught a bleeding campaign before I even woke up.", name: 'Marcus Rodriguez', role: 'Founder, UrbanFit', big: true },
-  { quote: "We went from $2K to $18K/month in revenue in 3 months. Autopilot mode is genuinely insane.", name: 'Jamie Park', role: 'Co-founder, NovaTech' },
-  { quote: "I was skeptical about AI running my ads. Then it outperformed my agency by 3x in the first week.", name: 'Rachel Kim', role: 'DTC Brand Owner' },
-  { quote: "Setup took 20 minutes. By the next morning, I had campaigns running on 4 platforms I'd never used before.", name: 'David Okafor', role: 'E-commerce Entrepreneur' },
+  { quote: "Overload replaced our entire 5-person marketing team. We're saving $30K/month and getting better results.", name: 'Sarah Chen', role: 'CEO, Lumina Beauty', metric: '$30K/mo saved', metricColor: '#5E8E6E' },
+  { quote: "The Advisor briefing every morning is like having a CMO who never sleeps. It caught a bleeding campaign before I even woke up.", name: 'Marcus Rodriguez', role: 'Founder, UrbanFit', big: true, metric: '9x growth', metricColor: '#C45D3E' },
+  { quote: "We went from $2K to $18K/month in revenue in 3 months. Autopilot mode is genuinely insane.", name: 'Jamie Park', role: 'Co-founder, NovaTech', metric: '$2K → $18K/mo', metricColor: '#C45D3E' },
+  { quote: "I was skeptical about AI running my ads. Then it outperformed my agency by 3x in the first week.", name: 'Rachel Kim', role: 'DTC Brand Owner', metric: '3x ROAS increase', metricColor: '#5E8E6E' },
+  { quote: "Setup took 20 minutes. By the next morning, I had campaigns running on 4 platforms I'd never used before.", name: 'David Okafor', role: 'E-commerce Entrepreneur', metric: '20 min setup', metricColor: '#8B7355' },
 ];
 
 const PRICING = [
@@ -242,13 +372,16 @@ export default function LandingPage() {
       </nav>
 
       {/* ═══════ HERO ═══════ */}
-      <section className="relative pt-36 pb-20 md:pt-44 md:pb-28 px-6 overflow-hidden" style={{ background: 'var(--lp-cream)' }}>
+      <section className="relative pt-36 pb-8 md:pt-44 md:pb-12 px-6 overflow-hidden" style={{ background: 'var(--lp-cream)' }}>
         <div className="lp-hero-glow" />
         <div className="lp-hero-glow-2 hidden md:block" />
 
         <div className="text-center max-w-3xl mx-auto relative z-10 lp-hero-anim">
           <div style={{ marginBottom: 28 }}>
-            <span className="lp-pill">Marketing Automation</span>
+            <span className="lp-pill">
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--lp-sage)', display: 'inline-block', boxShadow: '0 0 8px rgba(94,142,110,0.5)', animation: 'lp-live-dot 2s ease-in-out infinite' }} />
+              AI-Powered Marketing OS
+            </span>
           </div>
 
           <h1 className="lp-serif" style={{ fontSize: 'clamp(2.6rem, 6.5vw, 4.8rem)', lineHeight: 1.08, letterSpacing: '-0.025em', marginBottom: 24 }}>
@@ -257,7 +390,7 @@ export default function LandingPage() {
           </h1>
 
           <p style={{ color: 'var(--lp-muted)', fontSize: 17, maxWidth: 480, margin: '0 auto 40px', lineHeight: 1.7 }}>
-            Connect your platforms. Set your strategy. Let AI handle the rest — from content to ads to email, on autopilot.
+            {MODULE_COUNT} AI modules across content, ads, email, and analytics. Three modes — from full control to fully autonomous.
           </p>
 
           <div className="flex items-center justify-center gap-4 flex-wrap">
@@ -267,12 +400,30 @@ export default function LandingPage() {
                 <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
               </svg>
             </button>
-            <button onClick={go} className="lp-cta lp-cta-outline" style={{ padding: '16px 36px', fontSize: 15 }}>Watch demo</button>
+            <button onClick={go} className="lp-cta lp-cta-outline" style={{ padding: '16px 36px', fontSize: 15 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ opacity: 0.6 }}><path d="M8 5v14l11-7z" /></svg>
+              Watch demo
+            </button>
           </div>
 
-          <p style={{ color: 'var(--lp-muted)', fontSize: 13, marginTop: 32, opacity: 0.7 }}>
-            Trusted by 2,000+ businesses worldwide
-          </p>
+          {/* Social proof bar */}
+          <div style={{ marginTop: 48 }}>
+            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--lp-muted)', opacity: 0.6, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 16 }}>
+              Trusted by 2,000+ businesses including
+            </p>
+            <div className="lp-logo-bar">
+              {SOCIAL_PROOF_BRANDS.map((brand, i) => (
+                <span key={i} className="lp-logo-item">{brand}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Hero product mockup */}
+        <div className="lp-hero-anim" style={{ maxWidth: 900, margin: '48px auto 0', position: 'relative', zIndex: 10 }}>
+          <div style={{ opacity: 0, animation: 'lp-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.8s forwards' }}>
+            <HeroDashboard />
+          </div>
         </div>
       </section>
 
@@ -432,7 +583,7 @@ export default function LandingPage() {
                   </div>
                 </div>
               </div>
-              <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--lp-muted)', marginTop: 32, fontWeight: 500 }}>...and 33 more modules inside</p>
+              <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--lp-muted)', marginTop: 32, fontWeight: 500 }}>...and {BENTO_REMAINING} more modules inside</p>
             </div>
           </div>
         </section>
@@ -493,14 +644,14 @@ export default function LandingPage() {
               </div>
 
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4 max-w-3xl mx-auto">
-                {INTEGRATIONS.map((name, i) => (
+                {INTEGRATIONS.map((int, i) => (
                   <div key={i} className="flex flex-col items-center gap-2 py-4 px-2 rounded-2xl transition-all duration-300 cursor-default"
                     style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
                     onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.transform = 'translateY(-3px)'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.transform = ''; }}
                   >
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>{name.slice(0, 2).toUpperCase()}</span>
-                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 500 }}>{name}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: int.color, opacity: 0.85 }}>{int.name.slice(0, 2).toUpperCase()}</span>
+                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}>{int.name}</span>
                   </div>
                 ))}
               </div>
@@ -521,6 +672,13 @@ export default function LandingPage() {
               <div className="columns-1 md:columns-2 lg:columns-3 gap-5 space-y-5">
                 {TESTIMONIALS.map((t, i) => (
                   <div key={i} className="lp-testimonial break-inside-avoid">
+                    {/* Metric badge */}
+                    {t.metric && (
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 12px', borderRadius: 100, marginBottom: 14, background: `${t.metricColor}0d`, border: `1px solid ${t.metricColor}1a` }}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={t.metricColor} strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: t.metricColor }}>{t.metric}</span>
+                      </div>
+                    )}
                     <div style={{ display: 'flex', gap: 3, marginBottom: 14 }}>
                       {[...Array(5)].map((_, j) => <span key={j} style={{ color: 'var(--lp-terra)', fontSize: 13 }}>&#9733;</span>)}
                     </div>
@@ -529,8 +687,11 @@ export default function LandingPage() {
                       <div style={{ width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff', background: ['#C45D3E', '#5E8E6E', '#8B7355', '#9B6B6B', '#6B7E9B'][i] }}>
                         {t.name.split(' ').map(w => w[0]).join('')}
                       </div>
-                      <div>
-                        <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--lp-ink)' }}>{t.name}</p>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--lp-ink)' }}>{t.name}</p>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="var(--lp-sage)" style={{ flexShrink: 0 }}><path d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
                         <p style={{ fontSize: 11, color: 'var(--lp-muted)' }}>{t.role}</p>
                       </div>
                     </div>
@@ -600,16 +761,30 @@ export default function LandingPage() {
         <section data-scroll-card="right">
           <div className="lp-section-card lp-sc-accent">
             <div className="max-w-3xl mx-auto text-center" style={{ padding: '40px 0' }}>
+              {/* Limited offer badge */}
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 16px', borderRadius: 100, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)', marginBottom: 28, fontSize: 12, fontWeight: 600, color: '#fff' }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff', animation: 'lp-live-dot 2s ease-in-out infinite' }} />
+                Early access — 30% off for first 500 users
+              </div>
+
               <h2 className="lp-serif" style={{ fontSize: 'clamp(2rem, 5vw, 3.2rem)', lineHeight: 1.1, color: '#fff', letterSpacing: '-0.02em', marginBottom: 20 }}>
                 Ready to put marketing<br />
                 <span style={{ color: 'rgba(255,255,255,0.65)' }}>on autopilot?</span>
               </h2>
               <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 16, maxWidth: 420, margin: '0 auto 40px', lineHeight: 1.7 }}>
-                Join thousands of businesses already automating their entire marketing with Overload.
+                Join 2,000+ businesses already automating their marketing. Start free, upgrade when you're ready.
               </p>
-              <button onClick={go} className="lp-cta" style={{ padding: '18px 48px', fontSize: 16, background: '#fff', color: 'var(--lp-dark)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
-                Start your free trial
-              </button>
+              <div className="flex items-center justify-center gap-4 flex-wrap">
+                <button onClick={go} className="lp-cta" style={{ padding: '18px 48px', fontSize: 16, background: '#fff', color: 'var(--lp-dark)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
+                  Start your free trial
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                  </svg>
+                </button>
+              </div>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 20 }}>
+                No credit card required &middot; 14-day free trial &middot; Cancel anytime
+              </p>
             </div>
           </div>
         </section>
