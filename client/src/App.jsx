@@ -449,10 +449,8 @@ function SidebarNav({ navOpen, setNavOpen, mobileMenuOpen, dark, toggle, terra, 
 
       {/* Logo */}
       <div className="relative flex items-center gap-3 px-4 h-[60px] flex-shrink-0">
-        <div className="w-[34px] h-[34px] rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: `linear-gradient(135deg, ${terra}, #A84D33)`, boxShadow: '0 2px 8px rgba(196,93,62,0.25)' }}>
-          <span className="text-white text-[13px] font-black tracking-tight">O</span>
-        </div>
+        <img src="/logo.png" alt="Overload" className="w-[34px] h-[34px] rounded-xl flex-shrink-0"
+          style={{ boxShadow: '0 2px 8px rgba(196,93,62,0.25)' }} />
         {navOpen && (
           <div className="flex flex-col">
             <span style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 18, fontWeight: 400, color: ink, letterSpacing: '-0.01em' }}>Overload</span>
