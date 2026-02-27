@@ -9,6 +9,7 @@ import { AutomationProvider, useAutomation } from './context/AutomationContext';
 import ErrorBoundary from './components/shared/ErrorBoundary';
 import ModuleErrorBoundary from './components/shared/ModuleErrorBoundary';
 import CommandPalette from './components/shared/CommandPalette';
+import ChatBot from './components/shared/ChatBot';
 import { useRecentModules } from './hooks/useRecentModules';
 import { NotificationProvider } from './context/NotificationContext';
 import NotificationBell from './components/shared/NotificationBell';
@@ -239,6 +240,9 @@ export default function App() {
 
         {/* Command Palette */}
         <CommandPalette open={cmdPaletteOpen} onClose={() => setCmdPaletteOpen(false)} />
+
+        {/* Chat Bot */}
+        <ChatBot />
 
         {/* Subtle warm ambient glow */}
         {!dark && (
