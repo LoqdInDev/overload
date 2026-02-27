@@ -747,7 +747,7 @@ function SidebarNav({ navOpen, setNavOpen, mobileMenuOpen, dark, toggle, terra, 
           {navOpen && <span>Sign Out</span>}
         </button>
         <button onClick={() => setNavOpen(!navOpen)}
-          className={`hidden md:flex w-full items-center ${navOpen ? 'justify-start px-3' : 'justify-center'} gap-2.5 py-2 rounded-xl transition-all duration-200 text-[11.5px] font-medium`}
+          className={`flex md:hidden w-full items-center ${navOpen ? 'justify-start px-3' : 'justify-center'} gap-2.5 py-2 rounded-xl transition-all duration-200 text-[11.5px] font-medium`}
           style={{ color: muted }}
           aria-label={navOpen ? 'Collapse sidebar' : 'Expand sidebar'}
           aria-expanded={navOpen}
