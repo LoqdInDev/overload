@@ -573,35 +573,50 @@ export default function LandingPage() {
 
         {/* ── CARD 3: Modules Bento ── */}
         <section data-scroll-card="left" id="modules">
-          <div className="lp-section-card lp-sc-light">
-            <div className="max-w-5xl mx-auto">
-              <div className="lp-card-tab">{MODULE_COUNT} Modules</div>
-              <h2 className="lp-serif" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', lineHeight: 1.12, letterSpacing: '-0.02em', marginBottom: 48, color: 'var(--lp-ink)' }}>
-                Everything you need.<br className="hidden md:block" />
-                <span style={{ color: 'var(--lp-muted)' }}>Nothing you don't.</span>
-              </h2>
+          <div className="lp-section-card lp-sc-light lp-bento-section">
+            <div className="max-w-5xl mx-auto" style={{ position: 'relative', zIndex: 1 }}>
+              {/* Centered heading group */}
+              <div className="lp-bento-heading-group">
+                <div className="lp-card-tab" style={{ marginLeft: 'auto', marginRight: 'auto' }}>{MODULE_COUNT} Modules</div>
+                <h2 className="lp-serif" style={{ fontSize: 'clamp(2rem, 4.5vw, 3.2rem)', lineHeight: 1.1, letterSpacing: '-0.025em', marginBottom: 20, color: 'var(--lp-ink)' }}>
+                  Everything you need.<br className="hidden md:block" />
+                  <span style={{ color: 'var(--lp-muted)' }}>Nothing you don't.</span>
+                </h2>
+                <p className="lp-bento-subtitle">
+                  One unified platform with every tool your marketing team needs — from content creation to campaign analytics.
+                </p>
+                <div className="lp-bento-divider" />
+              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {/* Autopilot — large */}
-                <div className="lp-card md:col-span-2 md:row-span-2" style={{ padding: 32, background: 'var(--lp-blush)', borderColor: 'rgba(196,93,62,0.08)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 22 }}>
-                    <div className="lp-icon lp-icon-terra">{Icon.bolt}</div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-5" style={{ marginTop: 48 }}>
+                {/* Autopilot — hero card */}
+                <div className="lp-bento-card lp-bento-hero md:col-span-2 md:row-span-2">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24, position: 'relative', zIndex: 1 }}>
+                    <div className="lp-icon lp-icon-terra" style={{ width: 48, height: 48, borderRadius: 14 }}>{Icon.bolt}</div>
                     <div>
-                      <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--lp-ink)' }}>Autopilot Mode</p>
-                      <p style={{ fontSize: 12, color: 'var(--lp-muted)' }}>Runs everything around the clock</p>
+                      <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--lp-ink)', letterSpacing: '-0.01em' }}>Autopilot Mode</p>
+                      <p style={{ fontSize: 12.5, color: 'var(--lp-muted)', fontWeight: 500 }}>Runs everything around the clock</p>
                     </div>
                   </div>
-                  <div style={{ borderRadius: 16, background: '#fff', padding: 20, border: '1px solid rgba(44,40,37,0.04)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--lp-sage)', boxShadow: '0 0 8px rgba(94,142,110,0.4)' }} />
-                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--lp-sage)', letterSpacing: '0.04em' }}>RUNNING</span>
+                  <div style={{ borderRadius: 18, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', padding: 22, border: '1px solid rgba(44,40,37,0.04)', position: 'relative', zIndex: 1 }}>
+                    <div className="lp-bento-status">
+                      <div className="lp-bento-status-dot" />
+                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--lp-sage)', letterSpacing: '0.05em' }}>RUNNING</span>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                      {['Content Generation', 'Ad Deployment', 'Email Sequences', 'Social Scheduling'].map((t, j) => (
-                        <div key={j} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: 13, color: 'var(--lp-muted)', fontWeight: 500 }}>{t}</span>
-                          <div style={{ width: 72, height: 5, borderRadius: 5, background: 'var(--lp-sand)' }}>
-                            <div style={{ height: '100%', borderRadius: 5, background: j % 2 === 0 ? 'var(--lp-terra)' : 'var(--lp-sage)', width: `${70 + j * 8}%` }} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      {[
+                        { name: 'Content Generation', pct: 78, color: 'var(--lp-terra)' },
+                        { name: 'Ad Deployment', pct: 92, color: 'var(--lp-sage)' },
+                        { name: 'Email Sequences', pct: 85, color: 'var(--lp-terra)' },
+                        { name: 'Social Scheduling', pct: 96, color: 'var(--lp-sage)' },
+                      ].map((item, j) => (
+                        <div key={j}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                            <span style={{ fontSize: 13, color: 'var(--lp-ink)', fontWeight: 500 }}>{item.name}</span>
+                            <span style={{ fontSize: 11, color: 'var(--lp-muted)', fontWeight: 600 }}>{item.pct}%</span>
+                          </div>
+                          <div className="lp-bento-progress">
+                            <div className="lp-bento-progress-fill" style={{ width: `${item.pct}%`, background: item.color }} />
                           </div>
                         </div>
                       ))}
@@ -610,68 +625,72 @@ export default function LandingPage() {
                 </div>
 
                 {/* Video */}
-                <div className="lp-card">
-                  <div className="lp-icon lp-icon-sage" style={{ marginBottom: 14 }}>{Icon.play}</div>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--lp-ink)', marginBottom: 4 }}>Video Marketing</p>
-                  <p style={{ fontSize: 12, color: 'var(--lp-muted)' }}>Script to screen in minutes</p>
+                <div className="lp-bento-card" style={{ padding: '28px 24px' }}>
+                  <div className="lp-icon lp-icon-sage" style={{ marginBottom: 16, width: 48, height: 48, borderRadius: 14 }}>{Icon.play}</div>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--lp-ink)', marginBottom: 6, letterSpacing: '-0.01em' }}>Video Marketing</p>
+                  <p style={{ fontSize: 12.5, color: 'var(--lp-muted)', lineHeight: 1.6 }}>Script to screen in minutes</p>
                 </div>
 
                 {/* Analytics */}
-                <div className="lp-card">
-                  <div className="lp-icon lp-icon-ink" style={{ marginBottom: 14 }}>{Icon.chart}</div>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--lp-ink)', marginBottom: 10 }}>Analytics</p>
-                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 40 }}>
-                    {[40, 65, 45, 80, 55, 90, 70].map((h, j) => (
-                      <div key={j} style={{ flex: 1, borderRadius: 3, height: h + '%', background: j === 5 ? 'var(--lp-terra)' : 'var(--lp-sand)' }} />
+                <div className="lp-bento-card" style={{ padding: '28px 24px' }}>
+                  <div className="lp-icon lp-icon-ink" style={{ marginBottom: 16, width: 48, height: 48, borderRadius: 14 }}>{Icon.chart}</div>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--lp-ink)', marginBottom: 14, letterSpacing: '-0.01em' }}>Analytics</p>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 5, height: 44 }}>
+                    {[35, 58, 42, 75, 50, 92, 68].map((h, j) => (
+                      <div key={j} className="lp-bento-bar" style={{ height: h + '%', background: j === 5 ? 'var(--lp-terra)' : j === 3 ? 'rgba(196,93,62,0.3)' : 'var(--lp-sand)', borderRadius: 4 }} />
                     ))}
                   </div>
                 </div>
 
                 {/* Content */}
-                <div className="lp-card">
-                  <div className="lp-icon lp-icon-terra" style={{ marginBottom: 14 }}>{Icon.pen}</div>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--lp-ink)', marginBottom: 4 }}>Content Creation</p>
-                  <p style={{ fontSize: 12, color: 'var(--lp-muted)' }}>Blog, copy, captions at scale</p>
+                <div className="lp-bento-card" style={{ padding: '28px 24px' }}>
+                  <div className="lp-icon lp-icon-terra" style={{ marginBottom: 16, width: 48, height: 48, borderRadius: 14 }}>{Icon.pen}</div>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--lp-ink)', marginBottom: 6, letterSpacing: '-0.01em' }}>Content Creation</p>
+                  <p style={{ fontSize: 12.5, color: 'var(--lp-muted)', lineHeight: 1.6 }}>Blog, copy, captions at scale</p>
                 </div>
 
                 {/* Advisor */}
-                <div className="lp-card" style={{ background: 'rgba(94,142,110,0.06)', borderColor: 'rgba(94,142,110,0.1)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                    <div className="lp-icon lp-icon-sage">{Icon.bulb}</div>
+                <div className="lp-bento-card lp-bento-advisor">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                    <div className="lp-icon lp-icon-sage" style={{ width: 48, height: 48, borderRadius: 14 }}>{Icon.bulb}</div>
                     <div>
-                      <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--lp-ink)' }}>The Advisor</p>
-                      <p style={{ fontSize: 10, color: 'var(--lp-sage)', fontWeight: 600 }}>Your daily marketing brief</p>
+                      <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--lp-ink)', letterSpacing: '-0.01em' }}>The Advisor</p>
+                      <p style={{ fontSize: 11, color: 'var(--lp-sage)', fontWeight: 600, letterSpacing: '0.02em' }}>Your daily marketing brief</p>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-                      <span style={{ color: 'var(--lp-sage)', fontWeight: 700 }}>+</span>
-                      <span style={{ color: 'var(--lp-ink)' }}>ROAS up 23% on Meta</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div className="lp-bento-insight">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--lp-sage)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5" /><path d="M5 12l7-7 7 7" /></svg>
+                      <span style={{ fontSize: 12.5, color: 'var(--lp-ink)', fontWeight: 500 }}>ROAS up 23% on Meta</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-                      <span style={{ color: 'var(--lp-terra)', fontWeight: 700 }}>!</span>
-                      <span style={{ color: 'var(--lp-ink)' }}>Shift budget from TikTok</span>
+                    <div className="lp-bento-insight">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--lp-terra)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                      <span style={{ fontSize: 12.5, color: 'var(--lp-ink)', fontWeight: 500 }}>Shift budget from TikTok</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Small row */}
-                <div className="lp-card flex items-center gap-3">
-                  <div className="lp-icon lp-icon-ink" style={{ width: 36, height: 36, borderRadius: 10 }}>{Icon.mail}</div>
+                {/* Bottom row — compact cards */}
+                <div className="lp-bento-card lp-bento-compact md:col-span-2">
+                  <div className="lp-icon lp-icon-ink" style={{ width: 42, height: 42, borderRadius: 12, flexShrink: 0 }}>{Icon.mail}</div>
                   <div>
-                    <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--lp-ink)' }}>Email & SMS</p>
-                    <p style={{ fontSize: 11, color: 'var(--lp-muted)' }}>Drip sequences & blasts</p>
+                    <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--lp-ink)', letterSpacing: '-0.01em' }}>Email & SMS</p>
+                    <p style={{ fontSize: 12, color: 'var(--lp-muted)', marginTop: 2 }}>Drip sequences & blasts</p>
                   </div>
                 </div>
-                <div className="lp-card flex items-center gap-3">
-                  <div className="lp-icon lp-icon-terra" style={{ width: 36, height: 36, borderRadius: 10 }}>{Icon.target}</div>
+                <div className="lp-bento-card lp-bento-compact md:col-span-2">
+                  <div className="lp-icon lp-icon-terra" style={{ width: 42, height: 42, borderRadius: 12, flexShrink: 0 }}>{Icon.target}</div>
                   <div>
-                    <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--lp-ink)' }}>Paid Advertising</p>
-                    <p style={{ fontSize: 11, color: 'var(--lp-muted)' }}>Google, Meta, TikTok</p>
+                    <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--lp-ink)', letterSpacing: '-0.01em' }}>Paid Advertising</p>
+                    <p style={{ fontSize: 12, color: 'var(--lp-muted)', marginTop: 2 }}>Google, Meta, TikTok</p>
                   </div>
                 </div>
               </div>
-              <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--lp-muted)', marginTop: 32, fontWeight: 500 }}>...and {BENTO_REMAINING} more modules inside</p>
+
+              {/* Footer with decorative lines */}
+              <div className="lp-bento-footer">
+                <span>...and {BENTO_REMAINING} more modules inside</span>
+              </div>
             </div>
           </div>
         </section>
