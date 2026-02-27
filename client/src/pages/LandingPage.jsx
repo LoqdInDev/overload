@@ -757,9 +757,7 @@ export default function LandingPage() {
                 Ready to put marketing<br />
                 <span style={{ color: 'rgba(255,255,255,0.65)' }}>on autopilot?</span>
               </h2>
-              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 16, maxWidth: 420, margin: '0 auto 40px', lineHeight: 1.7 }}>
-                Join 2,000+ businesses already automating their marketing. Start free, upgrade when you're ready.
-              </p>
+              <div style={{ height: 40 }} />
               <div className="flex items-center justify-center gap-4 flex-wrap">
                 <button onClick={go} className="lp-cta" style={{ padding: '18px 48px', fontSize: 16, background: '#fff', color: 'var(--lp-dark)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
                   Start your free trial
