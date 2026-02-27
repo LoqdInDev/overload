@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overload — Launch Checklist</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --cream: #FBF7F0;
+    --dark: #2C2825;
+    --ink: #332F2B;
+    --terra: #C45D3E;
+    --terra-light: #D97B5A;
+    --sage: #5E8E6E;
+    --muted: #94908A;
+    --surface: #FFFFFF;
+    --sand: #EDE5DA;
+    --blush: #F5EDE6;
+    --red: #E74C3C;
+    --amber: #F0A830;
+    --green: #27AE60;
+  }
+
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Header */
+  .header {
+    background: var(--dark);
+    padding: 40px 24px 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(196,93,62,0.15) 0%, transparent 70%);
+    filter: blur(60px);
+    pointer-events: none;
+  }
+  .header-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 100px;
+    background: rgba(196,93,62,0.12);
+    border: 1px solid rgba(196,93,62,0.2);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--terra-light);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .header h1 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 400;
+    color: #fff;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .header h1 span { color: rgba(255,255,255,0.45); }
+  .header-sub {
+    font-size: 15px;
+    color: rgba(255,255,255,0.4);
+    max-width: 500px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  /* Progress bar */
+  .progress-wrap {
+    background: var(--surface);
+    border-bottom: 1px solid rgba(44,40,37,0.06);
+    padding: 20px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(16px);
+    background: rgba(255,255,255,0.9);
+  }
+  .progress-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .progress-bar {
+    flex: 1;
+    height: 8px;
+    border-radius: 8px;
+    background: var(--sand);
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 8px;
+    background: linear-gradient(90deg, var(--terra), var(--sage));
+    transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 0%;
+  }
+  .progress-text {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+    white-space: nowrap;
+    min-width: 110px;
+    text-align: right;
+  }
+  .progress-text span { color: var(--terra); }
+
+  /* Stats row */
+  .stats-row {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 24px 24px 0;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid rgba(44,40,37,0.05);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+  }
+  .stat-val {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .stat-critical .stat-val { color: var(--red); }
+  .stat-high .stat-val { color: var(--amber); }
+  .stat-nice .stat-val { color: var(--sage); }
+  .stat-done .stat-val { color: var(--terra); }
+
+  /* Main content */
+  .main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+
+  /* Section */
+  .section {
+    margin-bottom: 32px;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .section-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .section-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .section-count {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    background: var(--sand);
+    padding: 4px 12px;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+  .section-priority {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+  .priority-critical {
+    background: rgba(231,76,60,0.08);
+    color: var(--red);
+    border: 1px solid rgba(231,76,60,0.15);
+  }
+  .priority-high {
+    background: rgba(240,168,48,0.08);
+    color: var(--amber);
+    border: 1px solid rgba(240,168,48,0.15);
+  }
+  .priority-nice {
+    background: rgba(94,142,110,0.08);
+    color: var(--sage);
+    border: 1px solid rgba(94,142,110,0.12);
+  }
+  .section-chevron {
+    transition: transform 0.3s ease;
+    color: var(--muted);
+  }
+  .section.collapsed .section-chevron { transform: rotate(-90deg); }
+  .section.collapsed .section-items { display: none; }
+
+  /* Items */
+  .section-items {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--surface);
+    border: 1px solid rgba(44,40,37,0.05);
+    border-radius: 18px;
+    overflow: hidden;
+  }
+  .item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 20px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    position: relative;
+  }
+  .item:hover { background: rgba(44,40,37,0.015); }
+  .item + .item { border-top: 1px solid rgba(44,40,37,0.04); }
+  .item.checked { opacity: 0.5; }
+  .item.checked .item-text { text-decoration: line-through; }
+
+  /* Checkbox */
+  .checkbox {
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    border: 2px solid rgba(44,40,37,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+    transition: all 0.25s ease;
+    background: transparent;
+  }
+  .item:hover .checkbox { border-color: rgba(44,40,37,0.3); }
+  .item.checked .checkbox {
+    background: var(--sage);
+    border-color: var(--sage);
+  }
+  .checkbox svg {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .item.checked .checkbox svg { opacity: 1; }
+
+  .item-text {
+    font-size: 14px;
+    color: var(--ink);
+    line-height: 1.55;
+    flex: 1;
+  }
+
+  /* Filter bar */
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 7px 16px;
+    border-radius: 100px;
+    border: 1px solid rgba(44,40,37,0.08);
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .filter-btn:hover {
+    border-color: rgba(44,40,37,0.2);
+    color: var(--ink);
+  }
+  .filter-btn.active {
+    background: var(--ink);
+    color: #fff;
+    border-color: var(--ink);
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .section-header { flex-wrap: wrap; }
+    .progress-inner { flex-direction: column; gap: 8px; align-items: stretch; }
+    .progress-text { text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-label">Pre-Launch Checklist</div>
+  <h1>Overload <span>Launch Readiness</span></h1>
+  <p class="header-sub">Every single thing needed before going live. Check items off as you complete them — progress is saved locally.</p>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-inner">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-text"><span id="progressCount">0</span> / <span id="progressTotal">0</span> completed</div>
+  </div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card stat-critical"><div class="stat-val" id="statCritical">0</div><div class="stat-label">Critical Left</div></div>
+  <div class="stat-card stat-high"><div class="stat-val" id="statHigh">0</div><div class="stat-label">High Left</div></div>
+  <div class="stat-card stat-nice"><div class="stat-val" id="statNice">0</div><div class="stat-label">Nice-to-Have</div></div>
+  <div class="stat-card stat-done"><div class="stat-val" id="statPercent">0%</div><div class="stat-label">Complete</div></div>
+</div>
+
+<div class="main">
+  <div class="filter-bar">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="pending">Pending</button>
+    <button class="filter-btn" data-filter="done">Done</button>
+    <button class="filter-btn priority-critical" data-filter="critical" style="background:rgba(231,76,60,0.06)">Critical</button>
+    <button class="filter-btn priority-high" data-filter="high" style="background:rgba(240,168,48,0.06)">High Priority</button>
+    <button class="filter-btn priority-nice" data-filter="nice" style="background:rgba(94,142,110,0.06)">Nice-to-Have</button>
+  </div>
+  <div id="sections"></div>
+</div>
+
+<script>
+const DATA = [
+  {
+    title: "Environment & Secrets",
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>`,
+    color: "196,93,62",
+    priority: "critical",
+    items: [
+      "Set ANTHROPIC_API_KEY in production env",
+      "Set ENCRYPTION_KEY (32+ chars, random, never commit)",
+      "Set JWT_SECRET (strong random value)",
+      "Set OAUTH_CALLBACK_URL to production domain",
+      "Configure all OAuth client IDs/secrets for each platform (Google, Meta, Twitter, LinkedIn, TikTok, Shopify, Stripe, Mailchimp, etc.)",
+      "Verify .env is in .gitignore",
+      "Remove or disable auto-login default owner account (owner@overload.local) — security risk in production"
+    ]
+  },
+  {
+    title: "Authentication & Security",
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+    color: "196,93,62",
+    priority: "critical",
+    items: [
+      "Disable or protect POST /api/auth/auto-login endpoint in production",
+      "Add rate limiting on /api/auth/login and /api/auth/signup (brute force protection)",
+      "Add rate limiting globally (DDoS protection)",
+      "Add CORS origin restriction (currently open to all origins)",
+      "Add CSRF protection for state-changing requests",
+      "Add helmet middleware for security headers (X-Frame-Options, CSP, etc.)",
+      "Set Secure, HttpOnly, SameSite flags if switching to cookie-based tokens",
+      "Audit all routes — confirm no protected endpoints are accidentally public"
+    ]
+  },
+  {
+    title: "Database",
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`,
+    color: "240,168,48",
+    priority: "high",
+    items: [
+      "Decide: keep SQLite or migrate to PostgreSQL/MySQL for production scale",
+      "Set up automated database backups (daily snapshots minimum)",
+      "Run full schema validation — confirm all module tables initialize correctly",
+      "Test database under concurrent load (SQLite has write-lock limitations)"
+    ]
+  },
+  {
+    title: "Domain & SSL",
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`,
+    color: "196,93,62",
+    priority: "critical",
+    items: [
+      "Purchase and configure production domain",
+      "Set up SSL/TLS certificate (auto via Vercel, or manual if self-hosting)",
+      "Configure DNS records (A/CNAME)",
+      "Set up www to apex redirect (or vice versa)",
+      "Test HTTPS enforcement (no HTTP access)"
+    ]
+  },
+  {
+    title: "Deployment & Hosting",
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="10.01" y2="16"/></svg>`,
+    color: "196,93,62",
+    priority: "critical",
+    items: [
+      "Set up production backend hosting (Railway, Render, Fly.io, or VPS) — Vercel config only deploys the frontend",
+      "Configure VITE_API_URL to point frontend to production backend",
+      "Set all environment variables in production host",
+      "Set up CI/CD pipeline (auto-deploy on push to main)",
+      "Set up staging/preview environment for testing",
+      "Test the full production build end-to-end",
+      "Verify SPA fallback routing works (all routes serve index.html)"
+    ]
+  },
+  {
+    title: "SEO & Meta Tags",
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+    color: "240,168,48",
+    priority: "high",
+    items: [
+      "Add Open Graph meta tags (og:title, og:description, og:image, og:url)",
+      "Add Twitter Card meta tags",
+      "Add meta description tag",
+      "Create and add OG image (1200x630px)",
+      "Add robots.txt to /client/public/",
+      "Add sitemap.xml",
+      "Add canonical URL tags",
+      "Add structured data / JSON-LD (Organization, SoftwareApplication)",
+      "Add Apple touch icon"
+    ]
+  },
+  {
+    title: "Performance",
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+    color: "240,168,48",
+    priority: "high",
+    items: [
+      "Run Lighthouse audit — target 90+ on all metrics",
+      "Enable gzip/brotli compression on backend",
+      "Optimize images (compress logo.png, favicon.png)",
+      "Add caching headers for static assets",
+      "Test landing page load time on 3G connection",
+      "Minimize bundle size — audit for unused dependencies"
+    ]
+  },
+  {
+    title: "Legal & Compliance",
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
+    color: "196,93,62",
+    priority: "critical",
+    items: [
+      "Write and publish Privacy Policy page (currently just a dead footer link)",
+      "Write and publish Terms of Service page",
+      "Add cookie consent banner (required in EU/UK)",
+      "Add GDPR data deletion/export functionality",
+      "Review and comply with each platform's API Terms of Service (Google, Meta, TikTok, etc.)",
+      "Ensure Anthropic API usage complies with their acceptable use policy"
+    ]
+  },
+  {
+    title: "Payments & Billing",
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`,
+    color: "196,93,62",
+    priority: "critical",
+    items: [
+      "Integrate Stripe for subscription billing",
+      "Create the 3 plans in Stripe: Manual ($49/mo), Copilot ($149/mo), Autopilot ($299/mo)",
+      "Implement subscription creation flow (signup → checkout → access)",
+      "Implement plan upgrade/downgrade",
+      "Implement cancellation flow",
+      "Add webhook handler for Stripe events (payment failed, subscription canceled, etc.)",
+      "Handle failed payments gracefully (grace period, downgrade, lockout)",
+      "Add billing/invoices page in the app",
+      "Implement the 14-day free trial (referenced on landing page)",
+      "Implement the 30% off for first 500 users early access offer",
+      "Test full payment flow end-to-end in Stripe test mode",
+      "Switch Stripe to live mode before launch"
+    ]
+  },
+  {
+    title: "Email System",
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,7 12,13 2,7"/></svg>`,
+    color: "196,93,62",
+    priority: "critical",
+    items: [
+      "Set up transactional email service (SendGrid, Resend, Postmark, etc.)",
+      "Implement welcome email on signup",
+      "Implement email verification flow",
+      "Implement password reset flow (currently missing)",
+      "Implement payment receipt emails",
+      "Implement trial expiration reminder emails",
+      "Set up email domain authentication (SPF, DKIM, DMARC)"
+    ]
+  },
+  {
+    title: "Monitoring & Error Tracking",
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+    color: "196,93,62",
+    priority: "critical",
+    items: [
+      "Add error tracking service (Sentry, LogRocket, or Bugsnag)",
+      "Add uptime monitoring (UptimeRobot, Better Stack)",
+      "Add structured server-side logging (replace console.log)",
+      "Set up alerts for 5xx error rate spikes",
+      "Add health check endpoint (GET /api/health)",
+      "Monitor database size growth"
+    ]
+  },
+  {
+    title: "Analytics",
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+    color: "240,168,48",
+    priority: "high",
+    items: [
+      "Add Google Analytics 4 or Plausible/PostHog",
+      "Add conversion tracking on signup",
+      "Add event tracking for key actions (start trial, plan selected, module used)",
+      "Set up funnel tracking (landing → signup → onboarding → active)"
+    ]
+  },
+  {
+    title: "Testing",
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+    color: "240,168,48",
+    priority: "high",
+    items: [
+      "Run existing test suite and fix any failures (npm test)",
+      "Test full signup → login → onboarding → dashboard flow",
+      "Test OAuth connection flow for each enabled platform",
+      "Test each automation mode (Manual, Copilot, Autopilot)",
+      "Test on Chrome, Firefox, Safari, Edge",
+      "Test on mobile (iOS Safari, Android Chrome)",
+      "Test responsive design at all breakpoints",
+      "Test with ad blockers enabled",
+      "Test 404/error pages",
+      "Load test the API (concurrent users capacity)"
+    ]
+  },
+  {
+    title: "Content & Copy",
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
+    color: "240,168,48",
+    priority: "high",
+    items: [
+      "Proofread all landing page copy",
+      "Verify MODULE_COUNT matches actual module count",
+      "Verify pricing is final ($49/$149/$299)",
+      "Make all footer links functional (currently dead links)",
+      "Add actual pages for: About, Blog, Careers, Contact, Partners — or remove links",
+      "Write onboarding copy and tooltips",
+      "Add empty states for all modules (what users see before data)"
+    ]
+  },
+  {
+    title: "Onboarding & UX",
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+    color: "94,142,110",
+    priority: "nice",
+    items: [
+      "Test the OnboardingWizard flow end-to-end",
+      "Ensure brand profile setup works smoothly",
+      "Add tooltips/guides for first-time users in key modules",
+      "Test the ChatBot for helpful responses",
+      "Test the Command Palette (Cmd+K)",
+      "Verify all 38+ module pages load without errors"
+    ]
+  },
+  {
+    title: "Accessibility",
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="8" r="1"/><path d="M12 12v4"/><path d="M8 14l4 4 4-4"/></svg>`,
+    color: "94,142,110",
+    priority: "nice",
+    items: [
+      "Add alt text to all images",
+      "Ensure proper heading hierarchy (h1 → h2 → h3)",
+      "Test keyboard navigation throughout the app",
+      "Ensure sufficient color contrast (WCAG AA minimum)",
+      "Add aria-label to icon-only buttons",
+      "Test with a screen reader"
+    ]
+  },
+  {
+    title: "Pre-Launch Marketing",
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+    color: "94,142,110",
+    priority: "nice",
+    items: [
+      "Set up pre-launch email list (connect the footer newsletter input)",
+      "Create social media accounts (Twitter, LinkedIn)",
+      "Prepare launch announcement content",
+      "Set up Product Hunt page (if launching there)",
+      "Prepare demo video (the Watch demo button needs a target)",
+      "Set up customer support channel (Intercom, Crisp, or email)"
+    ]
+  },
+  {
+    title: "Day-of-Launch",
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+    color: "196,93,62",
+    priority: "critical",
+    items: [
+      "Switch all services from test/dev to production mode",
+      "Verify all environment variables are set in production",
+      "Do a final production smoke test (signup, login, use modules)",
+      "Monitor error rates for the first 24 hours",
+      "Have a rollback plan ready",
+      "Be ready to scale backend if traffic spikes"
+    ]
+  }
+];
+
+const PRIORITY_LABELS = {
+  critical: "Critical Blocker",
+  high: "High Priority",
+  nice: "Nice-to-Have"
+};
+
+// Load saved state
+const STORAGE_KEY = "overload-launch-checklist";
+let checked = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(checked));
+}
+
+function getItemId(si, ii) { return `s${si}-i${ii}`; }
+
+function updateStats() {
+  let total = 0, done = 0;
+  const remaining = { critical: 0, high: 0, nice: 0 };
+
+  DATA.forEach((section, si) => {
+    section.items.forEach((_, ii) => {
+      total++;
+      const id = getItemId(si, ii);
+      if (checked[id]) {
+        done++;
+      } else {
+        remaining[section.priority]++;
+      }
+    });
+    // Update section count
+    const sectionDone = section.items.filter((_, ii) => checked[getItemId(si, ii)]).length;
+    const countEl = document.getElementById(`count-${si}`);
+    if (countEl) countEl.textContent = `${sectionDone} / ${section.items.length}`;
+  });
+
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById("progressFill").style.width = pct + "%";
+  document.getElementById("progressCount").textContent = done;
+  document.getElementById("progressTotal").textContent = total;
+  document.getElementById("statCritical").textContent = remaining.critical;
+  document.getElementById("statHigh").textContent = remaining.high;
+  document.getElementById("statNice").textContent = remaining.nice;
+  document.getElementById("statPercent").textContent = pct + "%";
+}
+
+function applyFilter(filter) {
+  document.querySelectorAll(".section").forEach(sec => {
+    const priority = sec.dataset.priority;
+    const items = sec.querySelectorAll(".item");
+    let visibleCount = 0;
+
+    items.forEach(item => {
+      let show = true;
+      if (filter === "pending") show = !item.classList.contains("checked");
+      else if (filter === "done") show = item.classList.contains("checked");
+      else if (filter === "critical") show = priority === "critical";
+      else if (filter === "high") show = priority === "high";
+      else if (filter === "nice") show = priority === "nice";
+      item.style.display = show ? "" : "none";
+      if (show) visibleCount++;
+    });
+
+    sec.style.display = (filter === "all" || visibleCount > 0) ? "" : "none";
+    if (filter === "critical" || filter === "high" || filter === "nice") {
+      sec.style.display = priority === filter ? "" : "none";
+    }
+  });
+
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.filter === filter);
+  });
+}
+
+function render() {
+  const container = document.getElementById("sections");
+  container.innerHTML = "";
+
+  DATA.forEach((section, si) => {
+    const sec = document.createElement("div");
+    sec.className = "section";
+    sec.dataset.priority = section.priority;
+
+    const priorityClass = `priority-${section.priority}`;
+
+    sec.innerHTML = `
+      <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+        <div class="section-left">
+          <div class="section-icon" style="background:rgba(${section.color},0.08);border:1px solid rgba(${section.color},0.12);color:rgb(${section.color})">
+            ${section.icon}
+          </div>
+          <div>
+            <div class="section-title">${section.title}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="section-priority ${priorityClass}">${PRIORITY_LABELS[section.priority]}</span>
+          <span class="section-count" id="count-${si}">0 / ${section.items.length}</span>
+          <svg class="section-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="section-items">
+        ${section.items.map((item, ii) => {
+          const id = getItemId(si, ii);
+          const isChecked = checked[id];
+          return `
+            <div class="item ${isChecked ? 'checked' : ''}" data-id="${id}" onclick="toggleItem(this, '${id}')">
+              <div class="checkbox">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div class="item-text">${item}</div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+    container.appendChild(sec);
+  });
+
+  updateStats();
+}
+
+function toggleItem(el, id) {
+  checked[id] = !checked[id];
+  el.classList.toggle("checked", checked[id]);
+  save();
+  updateStats();
+}
+
+// Filter buttons
+document.querySelector(".filter-bar").addEventListener("click", e => {
+  const btn = e.target.closest(".filter-btn");
+  if (btn) applyFilter(btn.dataset.filter);
+});
+
+render();
+</script>
+</body>
+</html>
