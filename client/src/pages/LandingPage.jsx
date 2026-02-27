@@ -1046,17 +1046,32 @@ export default function LandingPage() {
       </div>{/* end card stack */}
 
       {/* ═══════ FOOTER ═══════ */}
-      <footer style={{ padding: '72px 24px 36px', background: 'var(--lp-dark)', color: 'rgba(255,255,255,0.4)' }}>
-        <div className="max-w-5xl mx-auto">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <img src="/favicon.png" alt="Overload" style={{ width: 36, height: 36, borderRadius: 8 }} />
-            <span className="lp-serif" style={{ fontSize: 16, color: '#fff' }}>Overload</span>
-          </div>
-          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.4)', maxWidth: 300, lineHeight: 1.6, marginBottom: 48 }}>
-            Your marketing, automated.
-          </p>
+      <footer className="lp-footer" style={{ padding: '80px 24px 40px' }}>
+        <div className="max-w-5xl mx-auto" style={{ position: 'relative', zIndex: 1 }}>
+          {/* Top section: Brand + Link columns */}
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-12" style={{ marginBottom: 56 }}>
+            {/* Brand column — spans 2 */}
+            <div className="md:col-span-2 lp-footer-brand" style={{ marginBottom: 0 }}>
+              <div className="lp-footer-brand-logo">
+                <img src="/favicon.png" alt="Overload" />
+                <span className="lp-serif" style={{ fontSize: 18, color: '#fff' }}>Overload</span>
+              </div>
+              <p className="lp-footer-tagline">
+                Your entire marketing operation — content, ads, email, analytics — automated by AI.
+              </p>
+              {/* Social icons */}
+              <div className="lp-footer-socials">
+                {[
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5 0-.28-.03-.56-.08-.83A7.72 7.72 0 0 0 23 3z" /></svg>,
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z" /><rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" /></svg>,
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" /></svg>,
+                ].map((icon, i) => (
+                  <div key={i} className="lp-footer-social">{icon}</div>
+                ))}
+              </div>
+            </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8" style={{ marginBottom: 48 }}>
+            {/* Link columns — each spans 1 */}
             {[
               { title: 'Product', links: ['Autopilot', 'The Advisor', 'Analytics', 'Integrations', 'Pricing'] },
               { title: 'Solutions', links: ['E-commerce', 'Agencies', 'SaaS', 'Local Business', 'Enterprise'] },
@@ -1064,28 +1079,22 @@ export default function LandingPage() {
               { title: 'Legal', links: ['Privacy', 'Terms', 'Security', 'GDPR', 'Status'] },
             ].map((col, i) => (
               <div key={i}>
-                <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 18 }}>{col.title}</p>
+                <p className="lp-footer-col-title">{col.title}</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {col.links.map((l, j) => (
-                    <p key={j} style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', cursor: 'pointer', transition: 'color 0.2s' }}
-                      onMouseEnter={e => e.target.style.color = 'rgba(255,255,255,0.75)'}
-                      onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,0.35)'}
-                    >{l}</p>
+                    <span key={j} className="lp-footer-link">{l}</span>
                   ))}
                 </div>
               </div>
             ))}
           </div>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16, paddingTop: 28, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          {/* Bottom bar */}
+          <div className="lp-footer-bottom">
             <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>&copy; 2026 Overload. All rights reserved.</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com"
-                style={{ padding: '10px 16px', borderRadius: 12, fontSize: 13, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: '#fff', outline: 'none', width: 200 }}
-                onFocus={e => e.target.style.borderColor = 'rgba(196,93,62,0.3)'}
-                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
-              />
-              <button onClick={go} className="lp-cta lp-cta-terra" style={{ padding: '10px 20px', fontSize: 13 }}>Get access</button>
+            <div className="lp-footer-newsletter">
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" />
+              <button onClick={go}>Get access</button>
             </div>
           </div>
         </div>
