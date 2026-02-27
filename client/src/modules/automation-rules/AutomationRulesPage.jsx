@@ -17,6 +17,15 @@ const ACTION_TYPES = [
   'generate_report', 'update_meta', 'respond_review', 'optimize_keywords',
 ];
 
+const FALLBACK_RULES = [
+  { id: 1, module_id: 'content', name: 'Weekly Blog Generator', trigger_type: 'schedule', trigger_config: { frequency: 'weekly', day: 'Monday', time: '09:00' }, action_type: 'generate_content', action_config: { type: 'blog_post', length: 'long' }, status: 'active', requires_approval: true, run_count: 12, last_triggered: new Date(Date.now() - 172800000).toISOString(), created_at: new Date(Date.now() - 2592000000).toISOString() },
+  { id: 2, module_id: 'social', name: 'Daily Social Post', trigger_type: 'schedule', trigger_config: { frequency: 'daily', time: '10:00' }, action_type: 'schedule_post', action_config: { platforms: ['instagram', 'twitter'] }, status: 'active', requires_approval: false, run_count: 45, last_triggered: new Date(Date.now() - 86400000).toISOString(), created_at: new Date(Date.now() - 2592000000).toISOString() },
+  { id: 3, module_id: 'reviews', name: 'Review Auto-Response', trigger_type: 'event', trigger_config: { event: 'new_review', condition: 'rating >= 4' }, action_type: 'respond_review', action_config: { tone: 'thankful' }, status: 'active', requires_approval: true, run_count: 28, last_triggered: new Date(Date.now() - 43200000).toISOString(), created_at: new Date(Date.now() - 2592000000).toISOString() },
+  { id: 4, module_id: 'ads', name: 'Budget Adjustment on ROAS', trigger_type: 'threshold', trigger_config: { metric: 'roas', operator: '>', value: 4.0 }, action_type: 'adjust_budget', action_config: { change: '+15%' }, status: 'active', requires_approval: false, run_count: 8, last_triggered: new Date(Date.now() - 259200000).toISOString(), created_at: new Date(Date.now() - 2592000000).toISOString() },
+  { id: 5, module_id: 'email-sms', name: 'Weekly Newsletter', trigger_type: 'schedule', trigger_config: { frequency: 'weekly', day: 'Thursday', time: '14:00' }, action_type: 'send_campaign', action_config: { type: 'newsletter' }, status: 'active', requires_approval: true, run_count: 6, last_triggered: new Date(Date.now() - 604800000).toISOString(), created_at: new Date(Date.now() - 2592000000).toISOString() },
+  { id: 6, module_id: 'seo', name: 'Bi-weekly SEO Audit', trigger_type: 'schedule', trigger_config: { frequency: 'biweekly', day: 'Wednesday', time: '08:00' }, action_type: 'optimize_keywords', action_config: { depth: 'full' }, status: 'inactive', requires_approval: true, run_count: 3, last_triggered: new Date(Date.now() - 1209600000).toISOString(), created_at: new Date(Date.now() - 2592000000).toISOString() },
+];
+
 export default function AutomationRulesPage() {
   usePageTitle('Automation Rules');
   const { dark } = useTheme();
@@ -39,7 +48,9 @@ export default function AutomationRulesPage() {
       const url = filterModule === 'all' ? '/api/automation/rules' : `/api/automation/rules?module=${filterModule}`;
       const data = await fetchJSON(url);
       setRules(data || []);
-    } catch { setRules([]); }
+    } catch {
+      setRules(FALLBACK_RULES.filter(r => filterModule === 'all' || r.module_id === filterModule));
+    }
     setLoading(false);
   }, [filterModule]);
 

@@ -172,7 +172,7 @@ const TESTIMONIALS = [
 const PRICING = [
   {
     name: 'Manual', desc: 'Full control. You call the shots.', price: '$49', period: '/mo',
-    features: ['All 38 modules', 'AI content generation', 'Basic analytics', 'Email support', '5 campaigns/month'],
+    features: ['All 39 modules', 'AI content generation', 'Basic analytics', 'Email support', '5 campaigns/month'],
   },
   {
     name: 'Copilot', desc: 'AI recommends. You approve.', price: '$149', period: '/mo', featured: true,
@@ -282,7 +282,7 @@ export default function LandingPage() {
             <div className="max-w-4xl mx-auto">
               <div className="flex flex-wrap items-center justify-center gap-8 md:gap-0">
                 {[
-                  { val: '38', suf: '', label: 'Active Modules' },
+                  { val: '39', suf: '', label: 'Active Modules' },
                   { val: '100', suf: '%', label: 'Autonomous' },
                   { val: '3', suf: '', label: 'Automation Modes', raw: false },
                   { val: '10', suf: 'x', label: 'Faster Output' },
@@ -333,7 +333,7 @@ export default function LandingPage() {
         <section data-scroll-card="left" id="modules">
           <div className="lp-section-card lp-sc-light">
             <div className="max-w-5xl mx-auto">
-              <div className="lp-card-tab">38 Modules</div>
+              <div className="lp-card-tab">39 Modules</div>
               <h2 className="lp-serif" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', lineHeight: 1.12, letterSpacing: '-0.02em', marginBottom: 48, color: 'var(--lp-ink)' }}>
                 Everything you need.<br className="hidden md:block" />
                 <span style={{ color: 'var(--lp-muted)' }}>Nothing you don't.</span>

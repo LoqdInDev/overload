@@ -106,6 +106,8 @@ router.post('/approvals/:id/reject', (req, res) => {
     VALUES (?, ?, 'copilot', ?, 'cancelled', ?, datetime('now'), datetime('now'))
   `).run(item.module_id, item.action_type, `Rejected: ${item.title}`, item.id);
 
+  createNotification('action_failed', `Rejected: ${item.title}`, notes || item.description, item.module_id);
+
   res.json({ success: true, id: Number(req.params.id) });
 });
 
