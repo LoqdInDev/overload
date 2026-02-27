@@ -956,30 +956,57 @@ export default function LandingPage() {
 
         {/* ── CARD 8: CTA ── */}
         <section data-scroll-card="right">
-          <div className="lp-section-card lp-sc-accent">
-            <div className="max-w-3xl mx-auto text-center" style={{ padding: '40px 0' }}>
-              {/* Limited offer badge */}
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 16px', borderRadius: 100, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)', marginBottom: 28, fontSize: 12, fontWeight: 600, color: '#fff' }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff', animation: 'lp-live-dot 2s ease-in-out infinite' }} />
+          <div className="lp-section-card lp-cta-section">
+            {/* Decorative floating rings */}
+            <div className="lp-cta-ring lp-cta-ring-1" />
+            <div className="lp-cta-ring lp-cta-ring-2" />
+            <div className="lp-cta-ring lp-cta-ring-3" />
+
+            <div className="max-w-3xl mx-auto text-center" style={{ padding: '48px 0', position: 'relative', zIndex: 1 }}>
+              {/* Offer badge */}
+              <div className="lp-cta-badge">
+                <span className="lp-cta-badge-dot" />
                 Early access — 30% off for first 500 users
               </div>
 
-              <h2 className="lp-serif" style={{ fontSize: 'clamp(2rem, 5vw, 3.2rem)', lineHeight: 1.1, color: '#fff', letterSpacing: '-0.02em', marginBottom: 20 }}>
+              {/* Headline */}
+              <h2 className="lp-serif" style={{ fontSize: 'clamp(2.2rem, 5.5vw, 3.6rem)', lineHeight: 1.08, color: '#fff', letterSpacing: '-0.025em', marginBottom: 16 }}>
                 Ready to put marketing<br />
-                <span style={{ color: 'rgba(255,255,255,0.65)' }}>on autopilot?</span>
+                <span style={{ color: 'rgba(255,255,255,0.55)' }}>on autopilot?</span>
               </h2>
-              <div style={{ height: 40 }} />
-              <div className="flex items-center justify-center gap-4 flex-wrap">
-                <button onClick={go} className="lp-cta" style={{ padding: '18px 48px', fontSize: 16, background: '#fff', color: 'var(--lp-dark)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
+
+              {/* Subtext */}
+              <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', maxWidth: 420, margin: '0 auto', lineHeight: 1.7, fontWeight: 500 }}>
+                Join hundreds of brands automating their growth with Overload.
+              </p>
+
+              {/* CTA Button */}
+              <div style={{ marginTop: 40 }}>
+                <button onClick={go} className="lp-cta-main">
                   Start your free trial
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                    <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
                   </svg>
                 </button>
               </div>
-              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 20 }}>
-                No credit card required &middot; 14-day free trial &middot; Cancel anytime
-              </p>
+
+              {/* Trust signals */}
+              <div className="lp-cta-trust">
+                <div className="lp-cta-trust-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
+                  No credit card required
+                </div>
+                <div className="lp-cta-trust-dot" />
+                <div className="lp-cta-trust-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                  14-day free trial
+                </div>
+                <div className="lp-cta-trust-dot" />
+                <div className="lp-cta-trust-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
+                  Cancel anytime
+                </div>
+              </div>
             </div>
           </div>
         </section>
