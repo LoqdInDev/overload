@@ -263,7 +263,7 @@ export default function App() {
         {/* LEFT NAV */}
         <SidebarNav
           navOpen={navOpen} setNavOpen={setNavOpen}
-          mobileMenuOpen={mobileMenuOpen}
+          mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen}
           dark={dark} toggle={toggle}
           terra={terra} ink={ink} muted={muted}
           location={location}
@@ -426,7 +426,7 @@ export default function App() {
 /* ═══════════════════════════════════════
    SIDEBAR COMPONENT
    ═══════════════════════════════════════ */
-function SidebarNav({ navOpen, setNavOpen, mobileMenuOpen, dark, toggle, terra, ink, muted, location, expandedSections, toggleSection, suppressActive }) {
+function SidebarNav({ navOpen, setNavOpen, mobileMenuOpen, setMobileMenuOpen, dark, toggle, terra, ink, muted, location, expandedSections, toggleSection, suppressActive }) {
   const { user, logout } = useAuth();
   const recents = useRecentModules();
   const { pendingCount, getMode } = useAutomation();
@@ -747,18 +747,17 @@ function SidebarNav({ navOpen, setNavOpen, mobileMenuOpen, dark, toggle, terra, 
           </svg>
           {navOpen && <span>Sign Out</span>}
         </button>
-        <button onClick={() => setNavOpen(!navOpen)}
-          className={`flex md:hidden w-full items-center ${navOpen ? 'justify-start px-3' : 'justify-center'} gap-2.5 py-2 rounded-xl transition-all duration-200 text-[11.5px] font-medium`}
+        <button onClick={() => setMobileMenuOpen(false)}
+          className="flex md:hidden w-full items-center justify-start px-3 gap-2.5 py-2 rounded-xl transition-all duration-200 text-[11.5px] font-medium"
           style={{ color: muted }}
-          aria-label={navOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-          aria-expanded={navOpen}
+          aria-label="Close sidebar"
           onMouseEnter={e => { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.03)'; e.currentTarget.style.color = ink; }}
           onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = muted; }}
         >
-          <svg className={`w-4 h-4 flex-shrink-0 transition-transform duration-300 ${navOpen ? '' : 'rotate-180'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
-          {navOpen && <span>Collapse</span>}
+          <span>Close</span>
         </button>
       </div>
     </nav>
