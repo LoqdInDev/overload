@@ -654,28 +654,71 @@ export default function HomePage() {
               <span className="text-[11px] font-bold tracking-[0.08em] uppercase" style={{ color: ink }}>
                 Module Status
               </span>
+              <div className="flex-1" />
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: sage }} />
+                  <span className="text-[9px] font-semibold" style={{ color: t3 }}>Auto</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#D4915C' }} />
+                  <span className="text-[9px] font-semibold" style={{ color: t3 }}>Copilot</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: t3 }} />
+                  <span className="text-[9px] font-semibold" style={{ color: t3 }}>Manual</span>
+                </div>
+              </div>
             </div>
 
-            <div className="p-2 grid grid-cols-2 gap-px max-h-[360px] overflow-y-auto">
-              {MODULE_REGISTRY.map((mod) => {
-                const mode = getMode(mod.id);
-                const dotColor = mode === 'autopilot' ? sage : mode === 'copilot' ? '#D4915C' : t3;
+            <div className="max-h-[420px] overflow-y-auto">
+              {CATEGORIES.map(cat => {
+                const catModules = MODULE_REGISTRY.filter(m => m.category === cat.id);
+                if (catModules.length === 0) return null;
                 return (
-                  <button
-                    key={mod.id}
-                    onClick={() => nav(mod.path)}
-                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition-colors group/mod"
-                    onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.025)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <div className="w-[5px] h-[5px] rounded-full flex-shrink-0 transition-transform group-hover/mod:scale-150" style={{ background: dotColor }} />
-                    <span className="text-[10px] font-medium truncate flex-1" style={{ color: dark ? '#B5B0AA' : '#4A4541' }}>
-                      {mod.name}
-                    </span>
-                    <span className="text-[8px] font-bold uppercase tracking-wider flex-shrink-0" style={{ color: modeColor(mode), opacity: mode === 'manual' ? 0.5 : 1 }}>
-                      {mode === 'autopilot' ? 'AUTO' : mode === 'copilot' ? 'CO' : ''}
-                    </span>
-                  </button>
+                  <div key={cat.id}>
+                    <div className="flex items-center gap-2 px-4 pt-3 pb-1.5">
+                      <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0" style={{ background: `${cat.color}12` }}>
+                        <svg className="w-3 h-3" fill="none" stroke={cat.color} viewBox="0 0 24 24" strokeWidth={1.8}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d={cat.icon} />
+                        </svg>
+                      </div>
+                      <span className="text-[10px] font-bold tracking-[0.06em] uppercase" style={{ color: cat.color }}>
+                        {cat.label}
+                      </span>
+                      <div className="flex-1 h-px" style={{ background: panelBorder }} />
+                    </div>
+                    <div className="px-2 pb-1 grid grid-cols-2 gap-px">
+                      {catModules.map(mod => {
+                        const mode = getMode(mod.id);
+                        return (
+                          <button
+                            key={mod.id}
+                            onClick={() => nav(mod.path)}
+                            className="flex items-center gap-2 px-2.5 py-[7px] rounded-lg text-left transition-all duration-150 group/mod"
+                            onMouseEnter={e => { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                          >
+                            <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-transform duration-150 group-hover/mod:scale-110"
+                              style={{ background: `${mod.color}14` }}>
+                              <svg className="w-3 h-3" fill="none" stroke={mod.color} viewBox="0 0 24 24" strokeWidth={1.6}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d={mod.icon} />
+                              </svg>
+                            </div>
+                            <span className="text-[11px] font-medium truncate flex-1" style={{ color: dark ? '#B5B0AA' : '#4A4541' }}>
+                              {mod.name}
+                            </span>
+                            {mode !== 'manual' && (
+                              <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                                style={{ background: modeBg(mode), color: modeColor(mode) }}>
+                                {mode === 'autopilot' ? 'AUTO' : 'CO'}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 );
               })}
             </div>
