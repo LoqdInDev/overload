@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS pa_campaigns (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       platform TEXT NOT NULL,
       name TEXT NOT NULL,
       objective TEXT,

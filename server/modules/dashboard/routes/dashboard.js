@@ -24,31 +24,33 @@ function getRouter() {
   // ─── GET /api/dashboard/summary ───
   // Aggregates key metrics from across all modules
   router.get('/summary', (req, res) => {
+    const wsId = req.workspace.id;
+
     // Activity counts
-    const totalActivities = safeGet('SELECT COUNT(*) as count FROM activity_log')?.count || 0;
+    const totalActivities = safeGet('SELECT COUNT(*) as count FROM activity_log WHERE workspace_id = ?', [wsId])?.count || 0;
     const weekActivities = safeGet(
-      "SELECT COUNT(*) as count FROM activity_log WHERE created_at >= datetime('now', '-7 days')"
+      "SELECT COUNT(*) as count FROM activity_log WHERE workspace_id = ? AND created_at >= datetime('now', '-7 days')", [wsId]
     )?.count || 0;
     const prevWeekActivities = safeGet(
-      "SELECT COUNT(*) as count FROM activity_log WHERE created_at >= datetime('now', '-14 days') AND created_at < datetime('now', '-7 days')"
+      "SELECT COUNT(*) as count FROM activity_log WHERE workspace_id = ? AND created_at >= datetime('now', '-14 days') AND created_at < datetime('now', '-7 days')", [wsId]
     )?.count || 0;
 
     // Distinct modules used
-    const activeModules = safeGet('SELECT COUNT(DISTINCT module_id) as count FROM activity_log')?.count || 0;
+    const activeModules = safeGet('SELECT COUNT(DISTINCT module_id) as count FROM activity_log WHERE workspace_id = ?', [wsId])?.count || 0;
 
     // Content pieces created
-    const contentCount = safeGet('SELECT COUNT(*) as count FROM cc_projects')?.count || 0;
+    const contentCount = safeGet('SELECT COUNT(*) as count FROM cc_projects WHERE workspace_id = ?', [wsId])?.count || 0;
     const weekContent = safeGet(
-      "SELECT COUNT(*) as count FROM cc_projects WHERE created_at >= datetime('now', '-7 days')"
+      "SELECT COUNT(*) as count FROM cc_projects WHERE workspace_id = ? AND created_at >= datetime('now', '-7 days')", [wsId]
     )?.count || 0;
 
     // Connected integrations
     const connectedIntegrations = safeGet(
-      "SELECT COUNT(*) as count FROM int_connections WHERE status = 'connected'"
+      "SELECT COUNT(*) as count FROM int_connections WHERE workspace_id = ? AND status = 'connected'", [wsId]
     )?.count || 0;
 
     // Brand profile completeness
-    const brandProfile = safeGet('SELECT * FROM bp_profiles ORDER BY id DESC LIMIT 1');
+    const brandProfile = safeGet('SELECT * FROM bp_profiles WHERE workspace_id = ? ORDER BY id DESC LIMIT 1', [wsId]);
     let brandCompleteness = 0;
     if (brandProfile) {
       const fields = ['brand_name', 'tagline', 'mission', 'vision', 'values', 'voice_tone',
@@ -59,26 +61,26 @@ function getRouter() {
     }
 
     // CRM contacts & deal value
-    const contactCount = safeGet('SELECT COUNT(*) as count FROM crm_contacts')?.count || 0;
-    const dealPipeline = safeGet('SELECT COALESCE(SUM(value), 0) as total FROM crm_deals')?.total || 0;
+    const contactCount = safeGet('SELECT COUNT(*) as count FROM crm_contacts WHERE workspace_id = ?', [wsId])?.count || 0;
+    const dealPipeline = safeGet('SELECT COALESCE(SUM(value), 0) as total FROM crm_deals WHERE workspace_id = ?', [wsId])?.total || 0;
 
     // Email subscribers
     const subscriberCount = safeGet(
-      'SELECT COUNT(*) as count FROM es_contacts WHERE subscribed = 1'
+      'SELECT COUNT(*) as count FROM es_contacts WHERE workspace_id = ? AND subscribed = 1', [wsId]
     )?.count || 0;
 
     // E-commerce revenue (total order value)
-    const totalRevenue = safeGet('SELECT COALESCE(SUM(total), 0) as total FROM eh_orders')?.total || 0;
+    const totalRevenue = safeGet('SELECT COALESCE(SUM(total), 0) as total FROM eh_orders WHERE workspace_id = ?', [wsId])?.total || 0;
     const weekRevenue = safeGet(
-      "SELECT COALESCE(SUM(total), 0) as total FROM eh_orders WHERE created_at >= datetime('now', '-7 days')"
+      "SELECT COALESCE(SUM(total), 0) as total FROM eh_orders WHERE workspace_id = ? AND created_at >= datetime('now', '-7 days')", [wsId]
     )?.total || 0;
 
     // Campaigns (paid ads + email)
     const adCampaigns = safeGet(
-      "SELECT COUNT(*) as count FROM pa_campaigns WHERE status = 'active'"
+      "SELECT COUNT(*) as count FROM pa_campaigns WHERE workspace_id = ? AND status = 'active'", [wsId]
     )?.count || 0;
     const emailCampaigns = safeGet(
-      "SELECT COUNT(*) as count FROM es_campaigns WHERE status IN ('active', 'sending', 'scheduled')"
+      "SELECT COUNT(*) as count FROM es_campaigns WHERE workspace_id = ? AND status IN ('active', 'sending', 'scheduled')", [wsId]
     )?.count || 0;
     const activeCampaigns = adCampaigns + emailCampaigns;
 
@@ -86,18 +88,18 @@ function getRouter() {
     const dailyActivity = safeQuery(
       `SELECT date(created_at) as day, COUNT(*) as count
        FROM activity_log
-       WHERE created_at >= datetime('now', '-7 days')
+       WHERE workspace_id = ? AND created_at >= datetime('now', '-7 days')
        GROUP BY date(created_at)
-       ORDER BY day ASC`
+       ORDER BY day ASC`, [wsId]
     );
 
     // Daily revenue for sparkline (last 7 days)
     const dailyRevenue = safeQuery(
       `SELECT date(created_at) as day, COALESCE(SUM(total), 0) as total
        FROM eh_orders
-       WHERE created_at >= datetime('now', '-7 days')
+       WHERE workspace_id = ? AND created_at >= datetime('now', '-7 days')
        GROUP BY date(created_at)
-       ORDER BY day ASC`
+       ORDER BY day ASC`, [wsId]
     );
 
     // Build sparkline arrays (fill missing days with 0)
@@ -180,10 +182,11 @@ function getRouter() {
   // ─── GET /api/dashboard/feed ───
   // Real activity feed with module metadata
   router.get('/feed', (req, res) => {
+    const wsId = req.workspace.id;
     const limit = Math.min(parseInt(req.query.limit) || 20, 100);
     const activities = safeQuery(
-      'SELECT * FROM activity_log ORDER BY created_at DESC LIMIT ?',
-      [limit]
+      'SELECT * FROM activity_log WHERE workspace_id = ? ORDER BY created_at DESC LIMIT ?',
+      [wsId, limit]
     );
 
     // Module color mapping
@@ -254,10 +257,11 @@ function getRouter() {
   // ─── GET /api/dashboard/actions ───
   // Smart priority actions based on system state
   router.get('/actions', (req, res) => {
+    const wsId = req.workspace.id;
     const actions = [];
 
     // Check brand profile
-    const brandProfile = safeGet('SELECT * FROM bp_profiles ORDER BY id DESC LIMIT 1');
+    const brandProfile = safeGet('SELECT * FROM bp_profiles WHERE workspace_id = ? ORDER BY id DESC LIMIT 1', [wsId]);
     if (!brandProfile || !brandProfile.brand_name) {
       actions.push({
         id: 'brand-profile',
@@ -285,7 +289,7 @@ function getRouter() {
 
     // Check integrations
     const connectedCount = safeGet(
-      "SELECT COUNT(*) as count FROM int_connections WHERE status = 'connected'"
+      "SELECT COUNT(*) as count FROM int_connections WHERE workspace_id = ? AND status = 'connected'", [wsId]
     )?.count || 0;
     if (connectedCount === 0) {
       actions.push({
@@ -299,7 +303,7 @@ function getRouter() {
     }
 
     // Check content creation
-    const contentCount = safeGet('SELECT COUNT(*) as count FROM cc_projects')?.count || 0;
+    const contentCount = safeGet('SELECT COUNT(*) as count FROM cc_projects WHERE workspace_id = ?', [wsId])?.count || 0;
     if (contentCount === 0) {
       actions.push({
         id: 'first-content',
@@ -312,7 +316,7 @@ function getRouter() {
     }
 
     // Check CRM
-    const contactCount = safeGet('SELECT COUNT(*) as count FROM crm_contacts')?.count || 0;
+    const contactCount = safeGet('SELECT COUNT(*) as count FROM crm_contacts WHERE workspace_id = ?', [wsId])?.count || 0;
     if (contactCount === 0) {
       actions.push({
         id: 'add-contacts',
@@ -325,7 +329,7 @@ function getRouter() {
     }
 
     // Check email contacts
-    const subCount = safeGet('SELECT COUNT(*) as count FROM es_contacts WHERE subscribed = 1')?.count || 0;
+    const subCount = safeGet('SELECT COUNT(*) as count FROM es_contacts WHERE workspace_id = ? AND subscribed = 1', [wsId])?.count || 0;
     if (subCount === 0) {
       actions.push({
         id: 'email-list',
@@ -338,7 +342,7 @@ function getRouter() {
     }
 
     // Check autopilot
-    const autopilotConfig = safeGet("SELECT * FROM ap_config WHERE status = 'active' LIMIT 1");
+    const autopilotConfig = safeGet("SELECT * FROM ap_config WHERE workspace_id = ? AND status = 'active' LIMIT 1", [wsId]);
     if (!autopilotConfig) {
       actions.push({
         id: 'activate-autopilot',
@@ -360,23 +364,24 @@ function getRouter() {
   // ─── GET /api/dashboard/channels ───
   // Channel distribution from integrations & campaigns
   router.get('/channels', (req, res) => {
+    const wsId = req.workspace.id;
     const channels = [];
 
     // Get campaigns by platform
     const platformCampaigns = safeQuery(
       `SELECT platform, COUNT(*) as count FROM pa_campaigns
-       WHERE status IN ('active', 'paused')
-       GROUP BY platform ORDER BY count DESC`
+       WHERE workspace_id = ? AND status IN ('active', 'paused')
+       GROUP BY platform ORDER BY count DESC`, [wsId]
     );
 
     // Get email campaign count
     const emailCount = safeGet(
-      "SELECT COUNT(*) as count FROM es_campaigns WHERE status IN ('active', 'sending', 'scheduled')"
+      "SELECT COUNT(*) as count FROM es_campaigns WHERE workspace_id = ? AND status IN ('active', 'sending', 'scheduled')", [wsId]
     )?.count || 0;
 
     // Get connected integrations
     const connections = safeQuery(
-      "SELECT provider_id FROM int_connections WHERE status = 'connected'"
+      "SELECT provider_id FROM int_connections WHERE workspace_id = ? AND status = 'connected'", [wsId]
     );
 
     const colorMap = {
@@ -441,6 +446,7 @@ function getRouter() {
   // ─── GET /api/dashboard/weekly ───
   // Weekly revenue/activity data for chart
   router.get('/weekly', (req, res) => {
+    const wsId = req.workspace.id;
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const weekData = [];
 
@@ -452,14 +458,14 @@ function getRouter() {
 
       // Revenue for this day
       const rev = safeGet(
-        "SELECT COALESCE(SUM(total), 0) as total FROM eh_orders WHERE date(created_at) = ?",
-        [dateStr]
+        "SELECT COALESCE(SUM(total), 0) as total FROM eh_orders WHERE workspace_id = ? AND date(created_at) = ?",
+        [wsId, dateStr]
       )?.total || 0;
 
       // Activity count for this day
       const acts = safeGet(
-        "SELECT COUNT(*) as count FROM activity_log WHERE date(created_at) = ?",
-        [dateStr]
+        "SELECT COUNT(*) as count FROM activity_log WHERE workspace_id = ? AND date(created_at) = ?",
+        [wsId, dateStr]
       )?.count || 0;
 
       weekData.push({ day: dayName, rev: Math.round(rev), activity: acts, date: dateStr });

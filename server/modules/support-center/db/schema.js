@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS sc_tickets (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       subject TEXT NOT NULL,
       description TEXT,
       customer_email TEXT,
@@ -17,6 +18,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS sc_templates (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       category TEXT,
       content TEXT,

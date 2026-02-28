@@ -2,7 +2,7 @@ const express = require('express');
 const { v4: uuid } = require('uuid');
 const { generateWithClaude } = require('../../../services/claude');
 const { logActivity } = require('../../../db/database');
-const { queries } = require('../db/queries');
+const { getQueries } = require('../db/queries');
 const { buildAdCampaignPrompt } = require('../prompts/adGenerator');
 const pm = require('../../../services/platformManager');
 
@@ -10,6 +10,8 @@ const router = express.Router();
 
 // Generate ad campaign with AI
 router.post('/generate', async (req, res) => {
+  const wsId = req.workspace.id;
+  const q = getQueries(wsId);
   const { platform, name, objective, budget, audience } = req.body;
 
   if (!platform || !name) {
@@ -21,14 +23,14 @@ router.post('/generate', async (req, res) => {
     const { parsed } = await generateWithClaude(prompt, { temperature: 0.8 });
 
     const id = uuid();
-    queries.create.run(
+    q.create(
       id, platform, name, objective || 'conversions',
       budget || '', audience || '',
       JSON.stringify(parsed.ad_content || {}),
       JSON.stringify(parsed)
     );
 
-    logActivity('ads', 'generate', `Generated ${platform} ad campaign`, name, id);
+    logActivity('ads', 'generate', `Generated ${platform} ad campaign`, name, id, wsId);
 
     res.json({ id, ...parsed });
   } catch (err) {
@@ -39,14 +41,18 @@ router.post('/generate', async (req, res) => {
 
 // List all campaigns
 router.get('/campaigns', (req, res) => {
+  const wsId = req.workspace.id;
+  const q = getQueries(wsId);
   const platform = req.query.platform;
-  const campaigns = platform ? queries.getByPlatform.all(platform) : queries.getAll.all();
+  const campaigns = platform ? q.getByPlatform(platform) : q.getAll();
   res.json(campaigns);
 });
 
 // Get campaign by ID
 router.get('/campaigns/:id', (req, res) => {
-  const campaign = queries.getById.get(req.params.id);
+  const wsId = req.workspace.id;
+  const q = getQueries(wsId);
+  const campaign = q.getById(req.params.id);
   if (!campaign) return res.status(404).json({ error: 'Not found' });
 
   // Parse JSON fields
@@ -58,12 +64,14 @@ router.get('/campaigns/:id', (req, res) => {
 
 // Update campaign
 router.put('/campaigns/:id', (req, res) => {
-  const existing = queries.getById.get(req.params.id);
+  const wsId = req.workspace.id;
+  const q = getQueries(wsId);
+  const existing = q.getById(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Not found' });
 
   const { name, objective, budget, audience, ad_content, status, metadata } = req.body;
 
-  queries.update.run(
+  q.update(
     name || existing.name,
     objective || existing.objective,
     budget || existing.budget,
@@ -79,8 +87,10 @@ router.put('/campaigns/:id', (req, res) => {
 
 // Delete campaign
 router.delete('/campaigns/:id', (req, res) => {
-  queries.delete.run(req.params.id);
-  logActivity('ads', 'delete', 'Deleted ad campaign', null, req.params.id);
+  const wsId = req.workspace.id;
+  const q = getQueries(wsId);
+  q.delete(req.params.id);
+  logActivity('ads', 'delete', 'Deleted ad campaign', null, req.params.id, wsId);
   res.json({ success: true });
 });
 
@@ -133,12 +143,13 @@ router.get('/platforms/metrics', async (req, res) => {
 // POST /platforms/campaigns/:campaignId/pause - pause a campaign
 router.post('/platforms/campaigns/:campaignId/pause', async (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { provider, customerId } = req.body;
     if (!provider) return res.status(400).json({ success: false, error: 'provider required' });
     if (!pm.isConnected(provider)) return res.status(400).json({ success: false, error: `${provider} not connected` });
 
     const data = await pm.adsPause(provider, { campaignId: req.params.campaignId, customerId });
-    logActivity('ads', 'pause', `Paused ${provider} campaign`, req.params.campaignId);
+    logActivity('ads', 'pause', `Paused ${provider} campaign`, req.params.campaignId, null, wsId);
     res.json({ success: true, data });
   } catch (error) {
     console.error('Pause campaign error:', error);
@@ -149,12 +160,13 @@ router.post('/platforms/campaigns/:campaignId/pause', async (req, res) => {
 // POST /platforms/campaigns/:campaignId/enable - enable a campaign
 router.post('/platforms/campaigns/:campaignId/enable', async (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { provider, customerId } = req.body;
     if (!provider) return res.status(400).json({ success: false, error: 'provider required' });
     if (!pm.isConnected(provider)) return res.status(400).json({ success: false, error: `${provider} not connected` });
 
     const data = await pm.adsEnable(provider, { campaignId: req.params.campaignId, customerId });
-    logActivity('ads', 'enable', `Enabled ${provider} campaign`, req.params.campaignId);
+    logActivity('ads', 'enable', `Enabled ${provider} campaign`, req.params.campaignId, null, wsId);
     res.json({ success: true, data });
   } catch (error) {
     console.error('Enable campaign error:', error);

@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS fn_funnels (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       type TEXT DEFAULT 'sales',
       description TEXT,
@@ -15,6 +16,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS fn_pages (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       funnel_id TEXT NOT NULL,
       name TEXT NOT NULL,
       type TEXT DEFAULT 'landing',
@@ -28,6 +30,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS fn_conversions (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       funnel_id TEXT NOT NULL,
       page_id TEXT,
       event TEXT NOT NULL,

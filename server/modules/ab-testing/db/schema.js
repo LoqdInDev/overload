@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS abt_tests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       type TEXT,
       status TEXT DEFAULT 'draft',
@@ -18,6 +19,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS abt_variants (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       test_id INTEGER NOT NULL,
       name TEXT NOT NULL,
       content TEXT,

@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS cm_clients (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       company TEXT,
       email TEXT,
@@ -16,6 +17,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS cm_projects (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       client_id INTEGER,
       name TEXT NOT NULL,
       description TEXT,

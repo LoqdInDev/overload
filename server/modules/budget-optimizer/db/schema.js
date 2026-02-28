@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS bo_budgets (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       total_budget REAL,
       period TEXT,
@@ -15,6 +16,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS bo_allocations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       budget_id INTEGER NOT NULL,
       channel TEXT,
       amount REAL,

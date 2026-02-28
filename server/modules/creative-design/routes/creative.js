@@ -2,13 +2,15 @@ const express = require('express');
 const { v4: uuid } = require('uuid');
 const { generateWithClaude } = require('../../../services/claude');
 const { logActivity } = require('../../../db/database');
-const { queries } = require('../db/queries');
+const { getQueries } = require('../db/queries');
 const { buildImagePromptOptimizer } = require('../prompts/imagePrompt');
 
 const router = express.Router();
 
 // Generate creative — returns optimized prompts (and images if provider available)
 router.post('/generate', async (req, res) => {
+  const wsId = req.workspace.id;
+  const q = getQueries(wsId);
   const { type, prompt } = req.body;
 
   if (!type || !prompt) {
@@ -21,12 +23,12 @@ router.post('/generate', async (req, res) => {
 
     const projectId = uuid();
     const title = prompt.slice(0, 100);
-    queries.createProject.run(projectId, type, title, prompt, JSON.stringify(parsed));
+    q.createProject(projectId, type, title, prompt, JSON.stringify(parsed));
 
     // Store generated prompt variations as image entries (pending generation)
     const images = (parsed.prompts || []).map((p) => {
       const imgId = uuid();
-      queries.createImage.run(imgId, projectId, null, p.alt, 'pending', 'prompt_ready', JSON.stringify(p));
+      q.createImage(imgId, projectId, null, p.alt, 'pending', 'prompt_ready', JSON.stringify(p));
       return {
         id: imgId,
         prompt: p.prompt,
@@ -37,7 +39,7 @@ router.post('/generate', async (req, res) => {
       };
     });
 
-    logActivity('creative', 'generate', `Generated ${type} creative`, title, projectId);
+    logActivity('creative', 'generate', `Generated ${type} creative`, title, projectId, wsId);
 
     res.json({ projectId, images, prompts: parsed.prompts });
   } catch (err) {
@@ -48,22 +50,28 @@ router.post('/generate', async (req, res) => {
 
 // List all projects
 router.get('/projects', (req, res) => {
-  const projects = queries.getAllProjects.all();
+  const wsId = req.workspace.id;
+  const q = getQueries(wsId);
+  const projects = q.getAllProjects();
   res.json(projects);
 });
 
 // Get project with images
 router.get('/projects/:id', (req, res) => {
-  const project = queries.getProjectById.get(req.params.id);
+  const wsId = req.workspace.id;
+  const q = getQueries(wsId);
+  const project = q.getProjectById(req.params.id);
   if (!project) return res.status(404).json({ error: 'Not found' });
-  const images = queries.getImagesByProject.all(req.params.id);
+  const images = q.getImagesByProject(req.params.id);
   res.json({ ...project, images });
 });
 
 // Delete project
 router.delete('/projects/:id', (req, res) => {
-  queries.deleteProject.run(req.params.id);
-  logActivity('creative', 'delete', 'Deleted creative project', null, req.params.id);
+  const wsId = req.workspace.id;
+  const q = getQueries(wsId);
+  q.deleteProject(req.params.id);
+  logActivity('creative', 'delete', 'Deleted creative project', null, req.params.id, wsId);
   res.json({ success: true });
 });
 

@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS gt_goals (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       metric TEXT,
       target_value REAL DEFAULT 0,
@@ -17,6 +18,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS gt_milestones (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       goal_id INTEGER,
       value REAL,
       label TEXT,

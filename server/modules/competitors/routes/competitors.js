@@ -6,8 +6,9 @@ const { setupSSE } = require('../../../services/sse');
 
 // GET / - List all competitors
 router.get('/', (req, res) => {
+  const wsId = req.workspace.id;
   try {
-    const competitors = db.prepare('SELECT * FROM ci_competitors ORDER BY created_at DESC').all();
+    const competitors = db.prepare('SELECT * FROM ci_competitors WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(competitors);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -16,6 +17,7 @@ router.get('/', (req, res) => {
 
 // POST / - Create a competitor
 router.post('/', (req, res) => {
+  const wsId = req.workspace.id;
   try {
     const { name, website, industry, description, strengths, weaknesses } = req.body;
 
@@ -24,11 +26,11 @@ router.post('/', (req, res) => {
     }
 
     const result = db.prepare(
-      'INSERT INTO ci_competitors (name, website, industry, description, strengths, weaknesses) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(name, website || null, industry || null, description || null, strengths || null, weaknesses || null);
+      'INSERT INTO ci_competitors (name, website, industry, description, strengths, weaknesses, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run(name, website || null, industry || null, description || null, strengths || null, weaknesses || null, wsId);
 
-    const competitor = db.prepare('SELECT * FROM ci_competitors WHERE id = ?').get(result.lastInsertRowid);
-    logActivity('competitors', 'create', 'Added competitor', name);
+    const competitor = db.prepare('SELECT * FROM ci_competitors WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    logActivity('competitors', 'create', 'Added competitor', name, null, wsId);
     res.status(201).json(competitor);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -37,6 +39,7 @@ router.post('/', (req, res) => {
 
 // POST /generate - Generic AI generation (SSE) - used by frontend
 router.post('/generate', async (req, res) => {
+  const wsId = req.workspace.id;
   const sse = setupSSE(res);
 
   try {
@@ -47,7 +50,7 @@ router.post('/generate', async (req, res) => {
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
-    logActivity('competitors', 'generate', `Generated ${type || 'analysis'}`, 'AI generation');
+    logActivity('competitors', 'generate', `Generated ${type || 'analysis'}`, 'AI generation', null, wsId);
     sse.sendResult({ content: text, type });
   } catch (error) {
     console.error('Competitor generation error:', error);
@@ -57,6 +60,7 @@ router.post('/generate', async (req, res) => {
 
 // POST /analyze - AI competitor analysis (SSE streaming)
 router.post('/analyze', async (req, res) => {
+  const wsId = req.workspace.id;
   const sse = setupSSE(res);
 
   try {
@@ -115,16 +119,17 @@ Be specific, data-driven where possible, and provide actionable insights.`;
 
     // Save as report
     const reportResult = db.prepare(
-      'INSERT INTO ci_reports (competitor_id, type, title, content, raw_response) VALUES (?, ?, ?, ?, ?)'
+      'INSERT INTO ci_reports (competitor_id, type, title, content, raw_response, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(
       competitorId || null,
       analysisType || 'comprehensive',
       `${analysisType || 'Comprehensive'} analysis of ${competitorName || 'competitor'}`,
       text,
-      text
+      text,
+      wsId
     );
 
-    logActivity('competitors', 'analyze', `Analyzed competitor: ${competitorName || 'Unknown'}`, analysisType || 'comprehensive');
+    logActivity('competitors', 'analyze', `Analyzed competitor: ${competitorName || 'Unknown'}`, analysisType || 'comprehensive', null, wsId);
     sse.sendResult({ reportId: reportResult.lastInsertRowid, content: text });
   } catch (error) {
     console.error('Competitor analysis error:', error);
@@ -134,18 +139,19 @@ Be specific, data-driven where possible, and provide actionable insights.`;
 
 // GET /reports - List all reports
 router.get('/reports', (req, res) => {
+  const wsId = req.workspace.id;
   try {
     const { competitorId } = req.query;
     let reports;
 
     if (competitorId) {
       reports = db.prepare(
-        'SELECT r.*, c.name as competitor_name FROM ci_reports r LEFT JOIN ci_competitors c ON r.competitor_id = c.id WHERE r.competitor_id = ? ORDER BY r.created_at DESC'
-      ).all(competitorId);
+        'SELECT r.*, c.name as competitor_name FROM ci_reports r LEFT JOIN ci_competitors c ON r.competitor_id = c.id WHERE r.workspace_id = ? AND r.competitor_id = ? ORDER BY r.created_at DESC'
+      ).all(wsId, competitorId);
     } else {
       reports = db.prepare(
-        'SELECT r.*, c.name as competitor_name FROM ci_reports r LEFT JOIN ci_competitors c ON r.competitor_id = c.id ORDER BY r.created_at DESC'
-      ).all();
+        'SELECT r.*, c.name as competitor_name FROM ci_reports r LEFT JOIN ci_competitors c ON r.competitor_id = c.id WHERE r.workspace_id = ? ORDER BY r.created_at DESC'
+      ).all(wsId);
     }
 
     res.json(reports);
@@ -156,11 +162,12 @@ router.get('/reports', (req, res) => {
 
 // GET /stats
 router.get('/stats', (req, res) => {
+  const wsId = req.workspace.id;
   try {
-    const totalCompetitors = db.prepare('SELECT COUNT(*) as count FROM ci_competitors').get().count;
-    const totalReports = db.prepare('SELECT COUNT(*) as count FROM ci_reports').get().count;
-    const byType = db.prepare('SELECT type, COUNT(*) as count FROM ci_reports GROUP BY type').all();
-    const recentReports = db.prepare('SELECT COUNT(*) as count FROM ci_reports WHERE created_at > datetime("now", "-30 days")').get().count;
+    const totalCompetitors = db.prepare('SELECT COUNT(*) as count FROM ci_competitors WHERE workspace_id = ?').get(wsId).count;
+    const totalReports = db.prepare('SELECT COUNT(*) as count FROM ci_reports WHERE workspace_id = ?').get(wsId).count;
+    const byType = db.prepare('SELECT type, COUNT(*) as count FROM ci_reports WHERE workspace_id = ? GROUP BY type').all(wsId);
+    const recentReports = db.prepare('SELECT COUNT(*) as count FROM ci_reports WHERE workspace_id = ? AND created_at > datetime("now", "-30 days")').get(wsId).count;
     res.json({ totalCompetitors, totalReports, byType, recentReports });
   } catch (error) {
     res.status(500).json({ error: error.message });

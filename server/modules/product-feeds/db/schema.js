@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS pf_feeds (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       channel TEXT NOT NULL,
       format TEXT DEFAULT 'csv' CHECK(format IN ('csv', 'xml', 'json')),
@@ -15,6 +16,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS pf_products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       feed_id INTEGER NOT NULL,
       title TEXT NOT NULL,
       description TEXT,
@@ -31,6 +33,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS pf_rules (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       feed_id INTEGER NOT NULL,
       field TEXT NOT NULL,
       rule_type TEXT NOT NULL CHECK(rule_type IN ('replace', 'prefix', 'suffix', 'remove')),

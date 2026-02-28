@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS mc_events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       title TEXT NOT NULL,
       description TEXT,
       module_id TEXT,
@@ -16,6 +17,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS mc_campaigns (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       start_date TEXT NOT NULL,
       end_date TEXT NOT NULL,

@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS pp_releases (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       title TEXT NOT NULL,
       content TEXT,
       status TEXT DEFAULT 'draft',
@@ -15,6 +16,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS pp_contacts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       outlet TEXT,
       email TEXT,

@@ -3,6 +3,7 @@ const { db } = require('../../../db/database');
 function initDatabase() {
   db.exec(`CREATE TABLE IF NOT EXISTS tm_members (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workspace_id TEXT,
     name TEXT,
     email TEXT,
     role TEXT DEFAULT 'member',
@@ -15,6 +16,7 @@ function initDatabase() {
 
   db.exec(`CREATE TABLE IF NOT EXISTS tm_invites (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workspace_id TEXT,
     email TEXT,
     role TEXT,
     invited_by INTEGER,

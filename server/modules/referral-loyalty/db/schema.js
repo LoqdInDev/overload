@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS rl_programs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       type TEXT,
       reward_type TEXT,
@@ -16,6 +17,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS rl_members (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       program_id INTEGER,
       customer_name TEXT,
       email TEXT,

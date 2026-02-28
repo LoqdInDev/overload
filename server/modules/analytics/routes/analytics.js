@@ -6,12 +6,14 @@ const router = express.Router();
 
 // Overview stats — counts per module
 router.get('/overview', (req, res) => {
+  const wsId = req.workspace.id;
   const stats = db.prepare(`
     SELECT module_id, COUNT(*) as count
     FROM activity_log
+    WHERE workspace_id = ?
     GROUP BY module_id
     ORDER BY count DESC
-  `).all();
+  `).all(wsId);
 
   const total = stats.reduce((sum, s) => sum + s.count, 0);
 
@@ -20,15 +22,16 @@ router.get('/overview', (req, res) => {
 
 // Activity feed with pagination
 router.get('/activity', (req, res) => {
+  const wsId = req.workspace.id;
   const limit = Math.min(parseInt(req.query.limit) || 50, 200);
   const offset = parseInt(req.query.offset) || 0;
   const moduleId = req.query.module;
 
-  let query = 'SELECT * FROM activity_log';
-  const params = [];
+  let query = 'SELECT * FROM activity_log WHERE workspace_id = ?';
+  const params = [wsId];
 
   if (moduleId) {
-    query += ' WHERE module_id = ?';
+    query += ' AND module_id = ?';
     params.push(moduleId);
   }
 
@@ -41,16 +44,17 @@ router.get('/activity', (req, res) => {
 
 // Daily breakdown for charts
 router.get('/daily', (req, res) => {
+  const wsId = req.workspace.id;
   const days = Math.min(parseInt(req.query.days) || 30, 90);
   const moduleId = req.query.module;
 
   let query = `
     SELECT date(created_at) as date, module_id, COUNT(*) as count
     FROM activity_log
-    WHERE created_at >= datetime('now', '-${days} days')
+    WHERE created_at >= datetime('now', '-${days} days') AND workspace_id = ?
   `;
 
-  const params = [];
+  const params = [wsId];
   if (moduleId) {
     query += ' AND module_id = ?';
     params.push(moduleId);
@@ -64,26 +68,27 @@ router.get('/daily', (req, res) => {
 
 // Module-specific stats
 router.get('/module/:moduleId', (req, res) => {
+  const wsId = req.workspace.id;
   const { moduleId } = req.params;
 
   const total = db.prepare(
-    'SELECT COUNT(*) as count FROM activity_log WHERE module_id = ?'
-  ).get(moduleId);
+    'SELECT COUNT(*) as count FROM activity_log WHERE module_id = ? AND workspace_id = ?'
+  ).get(moduleId, wsId);
 
   const actions = db.prepare(`
     SELECT action, COUNT(*) as count
     FROM activity_log
-    WHERE module_id = ?
+    WHERE module_id = ? AND workspace_id = ?
     GROUP BY action
     ORDER BY count DESC
-  `).all(moduleId);
+  `).all(moduleId, wsId);
 
   const recent = db.prepare(`
     SELECT * FROM activity_log
-    WHERE module_id = ?
+    WHERE module_id = ? AND workspace_id = ?
     ORDER BY created_at DESC
     LIMIT 10
-  `).all(moduleId);
+  `).all(moduleId, wsId);
 
   res.json({
     module_id: moduleId,

@@ -7,6 +7,7 @@ const { setupSSE } = require('../../../services/sse');
 // POST /generate - AI product description optimization
 router.post('/generate', async (req, res) => {
   const sse = setupSSE(res);
+  const wsId = req.workspace.id;
 
   try {
     const { products, channel, tone, keywords, prompt: rawPrompt } = req.body;
@@ -16,7 +17,7 @@ router.post('/generate', async (req, res) => {
       const { text } = await generateTextWithClaude(rawPrompt, {
         onChunk: (chunk) => sse.sendChunk(chunk),
       });
-      logActivity('product-feeds', 'generate', 'Generated product content', 'AI generation');
+      logActivity('product-feeds', 'generate', 'Generated product content', 'AI generation', null, wsId);
       sse.sendResult({ content: text });
       return;
     }
@@ -57,7 +58,7 @@ Return a JSON array:
       onChunk: (text) => sse.sendChunk(text),
     });
 
-    logActivity('product-feeds', 'generate', 'Optimized product descriptions', `${(products || []).length} products`);
+    logActivity('product-feeds', 'generate', 'Optimized product descriptions', `${(products || []).length} products`, null, wsId);
     sse.sendResult({ optimizations: parsed });
   } catch (error) {
     console.error('Product feed generation error:', error);
@@ -68,11 +69,12 @@ Return a JSON array:
 // GET /feeds
 router.get('/feeds', (req, res) => {
   try {
-    const feeds = db.prepare('SELECT * FROM pf_feeds ORDER BY created_at DESC').all();
+    const wsId = req.workspace.id;
+    const feeds = db.prepare('SELECT * FROM pf_feeds WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
 
     const feedsWithCounts = feeds.map(feed => {
-      const count = db.prepare('SELECT COUNT(*) as count FROM pf_products WHERE feed_id = ?').get(feed.id);
-      const rules = db.prepare('SELECT COUNT(*) as count FROM pf_rules WHERE feed_id = ?').get(feed.id);
+      const count = db.prepare('SELECT COUNT(*) as count FROM pf_products WHERE feed_id = ? AND workspace_id = ?').get(feed.id, wsId);
+      const rules = db.prepare('SELECT COUNT(*) as count FROM pf_rules WHERE feed_id = ? AND workspace_id = ?').get(feed.id, wsId);
       return { ...feed, product_count: count.count, rule_count: rules.count };
     });
 
@@ -85,6 +87,7 @@ router.get('/feeds', (req, res) => {
 // POST /feeds
 router.post('/feeds', (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { name, channel, format, status } = req.body;
 
     if (!name || !channel) {
@@ -92,11 +95,11 @@ router.post('/feeds', (req, res) => {
     }
 
     const result = db.prepare(
-      'INSERT INTO pf_feeds (name, channel, format, status) VALUES (?, ?, ?, ?)'
-    ).run(name, channel, format || 'csv', status || 'active');
+      'INSERT INTO pf_feeds (name, channel, format, status, workspace_id) VALUES (?, ?, ?, ?, ?)'
+    ).run(name, channel, format || 'csv', status || 'active', wsId);
 
-    const feed = db.prepare('SELECT * FROM pf_feeds WHERE id = ?').get(result.lastInsertRowid);
-    logActivity('product-feeds', 'create', 'Created product feed', `${name} (${channel})`);
+    const feed = db.prepare('SELECT * FROM pf_feeds WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    logActivity('product-feeds', 'create', 'Created product feed', `${name} (${channel})`, null, wsId);
     res.status(201).json(feed);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -106,13 +109,14 @@ router.post('/feeds', (req, res) => {
 // GET /feeds/:id
 router.get('/feeds/:id', (req, res) => {
   try {
-    const feed = db.prepare('SELECT * FROM pf_feeds WHERE id = ?').get(req.params.id);
+    const wsId = req.workspace.id;
+    const feed = db.prepare('SELECT * FROM pf_feeds WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!feed) {
       return res.status(404).json({ error: 'Feed not found' });
     }
 
-    const products = db.prepare('SELECT * FROM pf_products WHERE feed_id = ? ORDER BY created_at DESC').all(req.params.id);
-    const rules = db.prepare('SELECT * FROM pf_rules WHERE feed_id = ? ORDER BY created_at ASC').all(req.params.id);
+    const products = db.prepare('SELECT * FROM pf_products WHERE feed_id = ? AND workspace_id = ? ORDER BY created_at DESC').all(req.params.id, wsId);
+    const rules = db.prepare('SELECT * FROM pf_rules WHERE feed_id = ? AND workspace_id = ? ORDER BY created_at ASC').all(req.params.id, wsId);
     res.json({ ...feed, products, rules });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -122,9 +126,10 @@ router.get('/feeds/:id', (req, res) => {
 // GET /products
 router.get('/products', (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { feed_id, category, brand, search } = req.query;
-    let sql = 'SELECT p.*, f.name as feed_name, f.channel FROM pf_products p JOIN pf_feeds f ON p.feed_id = f.id WHERE 1=1';
-    const params = [];
+    let sql = 'SELECT p.*, f.name as feed_name, f.channel FROM pf_products p JOIN pf_feeds f ON p.feed_id = f.id WHERE p.workspace_id = ?';
+    const params = [wsId];
 
     if (feed_id) { sql += ' AND p.feed_id = ?'; params.push(feed_id); }
     if (category) { sql += ' AND p.category = ?'; params.push(category); }
@@ -142,27 +147,28 @@ router.get('/products', (req, res) => {
 // POST /products
 router.post('/products', (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { feed_id, title, description, price, sale_price, image_url, category, brand, sku, availability } = req.body;
 
     if (!feed_id || !title) {
       return res.status(400).json({ error: 'feed_id and title are required' });
     }
 
-    const feed = db.prepare('SELECT * FROM pf_feeds WHERE id = ?').get(feed_id);
+    const feed = db.prepare('SELECT * FROM pf_feeds WHERE id = ? AND workspace_id = ?').get(feed_id, wsId);
     if (!feed) {
       return res.status(404).json({ error: 'Feed not found' });
     }
 
     const result = db.prepare(
-      'INSERT INTO pf_products (feed_id, title, description, price, sale_price, image_url, category, brand, sku, availability) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(feed_id, title, description || null, price || null, sale_price || null, image_url || null, category || null, brand || null, sku || null, availability || 'in_stock');
+      'INSERT INTO pf_products (feed_id, title, description, price, sale_price, image_url, category, brand, sku, availability, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(feed_id, title, description || null, price || null, sale_price || null, image_url || null, category || null, brand || null, sku || null, availability || 'in_stock', wsId);
 
     // Update feed product count
-    const count = db.prepare('SELECT COUNT(*) as count FROM pf_products WHERE feed_id = ?').get(feed_id);
-    db.prepare('UPDATE pf_feeds SET product_count = ? WHERE id = ?').run(count.count, feed_id);
+    const count = db.prepare('SELECT COUNT(*) as count FROM pf_products WHERE feed_id = ? AND workspace_id = ?').get(feed_id, wsId);
+    db.prepare('UPDATE pf_feeds SET product_count = ? WHERE id = ? AND workspace_id = ?').run(count.count, feed_id, wsId);
 
-    const product = db.prepare('SELECT * FROM pf_products WHERE id = ?').get(result.lastInsertRowid);
-    logActivity('product-feeds', 'create', 'Added product', `${title} to ${feed.name}`);
+    const product = db.prepare('SELECT * FROM pf_products WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    logActivity('product-feeds', 'create', 'Added product', `${title} to ${feed.name}`, null, wsId);
     res.status(201).json(product);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -172,6 +178,7 @@ router.post('/products', (req, res) => {
 // POST /optimize - Bulk optimize existing products
 router.post('/optimize', async (req, res) => {
   const sse = setupSSE(res);
+  const wsId = req.workspace.id;
 
   try {
     const { feed_id, product_ids, channel } = req.body;
@@ -179,9 +186,9 @@ router.post('/optimize', async (req, res) => {
     let products;
     if (product_ids && product_ids.length > 0) {
       const placeholders = product_ids.map(() => '?').join(',');
-      products = db.prepare(`SELECT * FROM pf_products WHERE id IN (${placeholders})`).all(...product_ids);
+      products = db.prepare(`SELECT * FROM pf_products WHERE id IN (${placeholders}) AND workspace_id = ?`).all(...product_ids, wsId);
     } else if (feed_id) {
-      products = db.prepare('SELECT * FROM pf_products WHERE feed_id = ? LIMIT 20').all(feed_id);
+      products = db.prepare('SELECT * FROM pf_products WHERE feed_id = ? AND workspace_id = ? LIMIT 20').all(feed_id, wsId);
     } else {
       return sse.sendError({ message: 'feed_id or product_ids required' });
     }
@@ -190,7 +197,7 @@ router.post('/optimize', async (req, res) => {
       return sse.sendError({ message: 'No products found to optimize' });
     }
 
-    const feed = feed_id ? db.prepare('SELECT * FROM pf_feeds WHERE id = ?').get(feed_id) : null;
+    const feed = feed_id ? db.prepare('SELECT * FROM pf_feeds WHERE id = ? AND workspace_id = ?').get(feed_id, wsId) : null;
     const targetChannel = channel || feed?.channel || 'Google Shopping';
 
     const productList = products.map((p, i) =>
@@ -221,7 +228,7 @@ Include the correct product_id for each entry. Product IDs in order: ${products.
       onChunk: (text) => sse.sendChunk(text),
     });
 
-    logActivity('product-feeds', 'optimize', 'Bulk optimized products', `${products.length} products on ${targetChannel}`);
+    logActivity('product-feeds', 'optimize', 'Bulk optimized products', `${products.length} products on ${targetChannel}`, null, wsId);
     sse.sendResult({ optimizations: parsed });
   } catch (error) {
     console.error('Product optimization error:', error);

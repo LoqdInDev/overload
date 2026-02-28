@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS cc_projects (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       type TEXT NOT NULL,
       title TEXT NOT NULL,
       prompt TEXT,

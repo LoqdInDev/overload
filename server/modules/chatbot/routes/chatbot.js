@@ -6,6 +6,7 @@ const { setupSSE } = require('../../../services/sse');
 
 // SSE - AI bot personality, flow, and content generation
 router.post('/generate', async (req, res) => {
+  const wsId = req.workspace.id;
   const sse = setupSSE(res);
 
   try {
@@ -16,7 +17,7 @@ router.post('/generate', async (req, res) => {
       const { text } = await generateTextWithClaude(rawPrompt, {
         onChunk: (chunk) => sse.sendChunk(chunk),
       });
-      logActivity('chatbot', 'generate', `Generated ${type || 'chatbot'} content`, 'AI generation');
+      logActivity('chatbot', 'generate', `Generated ${type || 'chatbot'} content`, 'AI generation', null, wsId);
       sse.sendResult({ content: text, type: type || 'custom' });
       return;
     }
@@ -102,7 +103,7 @@ Return a JSON object:
       onChunk: (text) => sse.sendChunk(text),
     });
 
-    logActivity('chatbot', 'generate', `Generated bot ${type || 'personality'}`, botName || 'AI Chatbot');
+    logActivity('chatbot', 'generate', `Generated bot ${type || 'personality'}`, botName || 'AI Chatbot', null, wsId);
     sse.sendResult(parsed);
   } catch (error) {
     console.error('Chatbot generation error:', error);
@@ -112,8 +113,9 @@ Return a JSON object:
 
 // GET /bots
 router.get('/bots', (req, res) => {
+  const wsId = req.workspace.id;
   try {
-    const bots = db.prepare('SELECT * FROM cb_bots ORDER BY created_at DESC').all();
+    const bots = db.prepare('SELECT * FROM cb_bots WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(bots);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -122,6 +124,7 @@ router.get('/bots', (req, res) => {
 
 // POST /bots
 router.post('/bots', (req, res) => {
+  const wsId = req.workspace.id;
   try {
     const { name, description, personality, knowledge_base, welcome_message, channels, status } = req.body;
 
@@ -130,7 +133,7 @@ router.post('/bots', (req, res) => {
     }
 
     const result = db.prepare(
-      'INSERT INTO cb_bots (name, description, personality, knowledge_base, welcome_message, channels, status) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO cb_bots (name, description, personality, knowledge_base, welcome_message, channels, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(
       name,
       description || null,
@@ -138,11 +141,12 @@ router.post('/bots', (req, res) => {
       knowledge_base ? JSON.stringify(knowledge_base) : null,
       welcome_message || null,
       channels ? JSON.stringify(channels) : '[]',
-      status || 'draft'
+      status || 'draft',
+      wsId
     );
 
-    const bot = db.prepare('SELECT * FROM cb_bots WHERE id = ?').get(result.lastInsertRowid);
-    logActivity('chatbot', 'create', 'Created chatbot', name);
+    const bot = db.prepare('SELECT * FROM cb_bots WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    logActivity('chatbot', 'create', 'Created chatbot', name, null, wsId);
     res.status(201).json(bot);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -151,14 +155,15 @@ router.post('/bots', (req, res) => {
 
 // GET /bots/:id
 router.get('/bots/:id', (req, res) => {
+  const wsId = req.workspace.id;
   try {
-    const bot = db.prepare('SELECT * FROM cb_bots WHERE id = ?').get(req.params.id);
+    const bot = db.prepare('SELECT * FROM cb_bots WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!bot) {
       return res.status(404).json({ error: 'Bot not found' });
     }
 
-    const flows = db.prepare('SELECT * FROM cb_flows WHERE bot_id = ? ORDER BY created_at ASC').all(req.params.id);
-    const conversationCount = db.prepare('SELECT COUNT(*) as count FROM cb_conversations WHERE bot_id = ?').get(req.params.id);
+    const flows = db.prepare('SELECT * FROM cb_flows WHERE bot_id = ? AND workspace_id = ? ORDER BY created_at ASC').all(req.params.id, wsId);
+    const conversationCount = db.prepare('SELECT COUNT(*) as count FROM cb_conversations WHERE bot_id = ? AND workspace_id = ?').get(req.params.id, wsId);
 
     res.json({ ...bot, flows, conversationCount: conversationCount.count });
   } catch (error) {
@@ -168,6 +173,7 @@ router.get('/bots/:id', (req, res) => {
 
 // POST /test - Test chat interaction
 router.post('/test', async (req, res) => {
+  const wsId = req.workspace.id;
   const sse = setupSSE(res);
 
   try {
@@ -175,7 +181,7 @@ router.post('/test', async (req, res) => {
 
     let botContext = '';
     if (bot_id) {
-      const bot = db.prepare('SELECT * FROM cb_bots WHERE id = ?').get(bot_id);
+      const bot = db.prepare('SELECT * FROM cb_bots WHERE id = ? AND workspace_id = ?').get(bot_id, wsId);
       if (bot) {
         botContext = `
 Bot Name: ${bot.name}
@@ -206,8 +212,8 @@ Return a JSON object: { "response": "your response text", "confidence": 0.95, "i
     if (bot_id) {
       const messages = [...(history || []), { role: 'user', content: message }, { role: 'bot', content: parsed?.response || raw }];
       db.prepare(
-        'INSERT INTO cb_conversations (bot_id, messages) VALUES (?, ?)'
-      ).run(bot_id, JSON.stringify(messages));
+        'INSERT INTO cb_conversations (bot_id, messages, workspace_id) VALUES (?, ?, ?)'
+      ).run(bot_id, JSON.stringify(messages), wsId);
     }
 
     sse.sendResult(parsed);
@@ -219,13 +225,14 @@ Return a JSON object: { "response": "your response text", "confidence": 0.95, "i
 
 // GET /conversations
 router.get('/conversations', (req, res) => {
+  const wsId = req.workspace.id;
   try {
     const { bot_id, limit = 50 } = req.query;
-    let sql = 'SELECT c.*, b.name as bot_name FROM cb_conversations c LEFT JOIN cb_bots b ON c.bot_id = b.id';
-    const params = [];
+    let sql = 'SELECT c.*, b.name as bot_name FROM cb_conversations c LEFT JOIN cb_bots b ON c.bot_id = b.id WHERE c.workspace_id = ?';
+    const params = [wsId];
 
     if (bot_id) {
-      sql += ' WHERE c.bot_id = ?';
+      sql += ' AND c.bot_id = ?';
       params.push(bot_id);
     }
 

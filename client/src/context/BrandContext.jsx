@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { fetchJSON } from '../lib/api';
 
 const BrandContext = createContext({ brand: null, loading: true, refreshBrand: () => {} });
 
@@ -8,8 +9,7 @@ export function BrandProvider({ children }) {
 
   const refreshBrand = useCallback(async () => {
     try {
-      const res = await fetch('/api/brand-profile/profile');
-      const data = await res.json();
+      const data = await fetchJSON('/api/brand-profile/profile');
       setBrand(data && data.brand_name ? data : null);
     } catch (e) {
       console.error('Failed to fetch brand profile:', e);

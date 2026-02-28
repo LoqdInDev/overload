@@ -4,10 +4,11 @@ const { db } = require('../../../db/database');
 
 // GET /activity-log — merged, filtered, paginated log
 router.get('/activity-log', (req, res) => {
+  const wsId = req.workspace.id;
   const { module: moduleId, status, dateFrom, dateTo, limit = 20, offset = 0 } = req.query;
 
-  let where = ' WHERE 1=1';
-  const params = [];
+  let where = ' WHERE workspace_id = ?';
+  const params = [wsId];
 
   if (moduleId) { where += ' AND module_id = ?'; params.push(moduleId); }
   if (status) { where += ' AND status = ?'; params.push(status); }
@@ -51,17 +52,18 @@ router.get('/activity-log', (req, res) => {
 
 // GET /activity-log/stats — summary statistics
 router.get('/activity-log/stats', (req, res) => {
-  const total = db.prepare('SELECT COUNT(*) as count FROM ae_action_log').get();
-  const completed = db.prepare("SELECT COUNT(*) as count FROM ae_action_log WHERE status = 'completed'").get();
+  const wsId = req.workspace.id;
+  const total = db.prepare('SELECT COUNT(*) as count FROM ae_action_log WHERE workspace_id = ?').get(wsId);
+  const completed = db.prepare("SELECT COUNT(*) as count FROM ae_action_log WHERE status = 'completed' AND workspace_id = ?").get(wsId);
   const successRate = total.count > 0 ? Math.round((completed.count / total.count) * 100) : 0;
 
   const mostActive = db.prepare(
-    'SELECT module_id, COUNT(*) as count FROM ae_action_log GROUP BY module_id ORDER BY count DESC LIMIT 1'
-  ).get();
+    'SELECT module_id, COUNT(*) as count FROM ae_action_log WHERE workspace_id = ? GROUP BY module_id ORDER BY count DESC LIMIT 1'
+  ).get(wsId);
 
   const avgDuration = db.prepare(
-    'SELECT AVG(duration_ms) as avg FROM ae_action_log WHERE duration_ms IS NOT NULL'
-  ).get();
+    'SELECT AVG(duration_ms) as avg FROM ae_action_log WHERE duration_ms IS NOT NULL AND workspace_id = ?'
+  ).get(wsId);
 
   res.json({
     total: total.count,

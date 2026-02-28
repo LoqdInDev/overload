@@ -9,6 +9,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS ae_module_modes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       module_id TEXT NOT NULL UNIQUE,
       mode TEXT NOT NULL DEFAULT 'manual',
       config TEXT,
@@ -21,6 +22,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS ae_approval_queue (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       module_id TEXT NOT NULL,
       action_type TEXT NOT NULL,
       title TEXT NOT NULL,
@@ -41,6 +43,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS ae_action_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       module_id TEXT NOT NULL,
       action_type TEXT NOT NULL,
       mode TEXT NOT NULL,
@@ -59,6 +62,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS ae_rules (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       module_id TEXT NOT NULL,
       name TEXT NOT NULL,
       trigger_type TEXT NOT NULL,
@@ -76,6 +80,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS ae_notifications (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       type TEXT NOT NULL,
       title TEXT NOT NULL,
       message TEXT,
@@ -88,6 +93,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS ae_settings (
       key TEXT PRIMARY KEY,
+      workspace_id TEXT,
       value TEXT NOT NULL,
       updated_at TEXT DEFAULT (datetime('now'))
     )

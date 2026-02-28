@@ -3,13 +3,15 @@ const path = require('path');
 const fs = require('fs');
 const archiver = require('archiver');
 const videoManager = require('../services/videoManager');
-const { videoQueries } = require('../db/queries');
+const { getVideoQueries } = require('../db/queries');
 const { generateWithClaude } = require('../../../services/claude');
 const { getVideoPromptOptimizerPrompt } = require('../prompts/videoPromptOptimizer');
 
 const router = express.Router();
 
 router.post('/generate-scene', async (req, res) => {
+  const wsId = req.workspace.id;
+  const videoQueries = getVideoQueries(wsId);
   const { campaignId, scene, productImages, provider } = req.body;
   try {
     const jobId = videoQueries.createVideoJob(
@@ -29,6 +31,8 @@ router.post('/generate-scene', async (req, res) => {
 });
 
 router.post('/generate-all', async (req, res) => {
+  const wsId = req.workspace.id;
+  const videoQueries = getVideoQueries(wsId);
   const { campaignId, scenes, productImages, provider } = req.body;
 
   const jobs = scenes.map((scene) => ({
@@ -54,6 +58,8 @@ router.post('/generate-all', async (req, res) => {
 });
 
 router.post('/generate-quick', async (req, res) => {
+  const wsId = req.workspace.id;
+  const videoQueries = getVideoQueries(wsId);
   const { campaignId, hookText, productImageUrl, provider } = req.body;
   const scene = {
     scene_number: 0,
@@ -100,12 +106,16 @@ router.post('/optimize-prompt', async (req, res) => {
 });
 
 router.get('/status/:jobId', (req, res) => {
+  const wsId = req.workspace.id;
+  const videoQueries = getVideoQueries(wsId);
   const job = videoQueries.getVideoJob(Number(req.params.jobId));
   if (!job) return res.status(404).json({ error: 'Job not found' });
   res.json({ ...job, result: job.result ? JSON.parse(job.result) : null });
 });
 
 router.get('/campaign/:campaignId', (req, res) => {
+  const wsId = req.workspace.id;
+  const videoQueries = getVideoQueries(wsId);
   const jobs = videoQueries.getVideoJobs(req.params.campaignId);
   res.json(
     jobs.map((j) => ({ ...j, result: j.result ? JSON.parse(j.result) : null }))
@@ -120,6 +130,8 @@ router.get('/download/:filename', (req, res) => {
 });
 
 router.get('/download-all/:campaignId', (req, res) => {
+  const wsId = req.workspace.id;
+  const videoQueries = getVideoQueries(wsId);
   const jobs = videoQueries
     .getVideoJobs(req.params.campaignId)
     .filter((j) => j.status === 'completed');
@@ -150,6 +162,8 @@ router.get('/download-all/:campaignId', (req, res) => {
 });
 
 router.delete('/:jobId', (req, res) => {
+  const wsId = req.workspace.id;
+  const videoQueries = getVideoQueries(wsId);
   const job = videoQueries.getVideoJob(Number(req.params.jobId));
   if (job?.result) {
     const result = typeof job.result === 'string' ? JSON.parse(job.result) : job.result;

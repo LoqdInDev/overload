@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS eh_stores (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       platform TEXT,
       store_name TEXT NOT NULL,
       store_url TEXT,
@@ -15,6 +16,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS eh_orders (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       store_id INTEGER,
       order_number TEXT,
       customer TEXT,
@@ -27,6 +29,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS eh_products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       store_id INTEGER,
       name TEXT NOT NULL,
       sku TEXT,

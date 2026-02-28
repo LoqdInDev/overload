@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS api_keys (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       key_hash TEXT NOT NULL,
       permissions TEXT,
@@ -18,6 +19,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS api_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       key_id INTEGER NOT NULL,
       endpoint TEXT,
       method TEXT,

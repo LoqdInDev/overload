@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS vm_campaigns (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       product_name TEXT NOT NULL,
       product_data TEXT NOT NULL,
       created_at TEXT DEFAULT (datetime('now')),
@@ -12,6 +13,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS vm_generations (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       campaign_id TEXT NOT NULL,
       stage TEXT NOT NULL CHECK(stage IN ('angles', 'scripts', 'hooks', 'storyboard', 'ugc', 'iteration')),
       output TEXT NOT NULL,
@@ -22,6 +24,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS vm_favorites (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       campaign_id TEXT NOT NULL,
       generation_id TEXT NOT NULL,
       item_index INTEGER NOT NULL,
@@ -32,6 +35,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS vm_video_jobs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       campaign_id TEXT,
       scene_number INTEGER,
       provider TEXT DEFAULT 'wavespeed',

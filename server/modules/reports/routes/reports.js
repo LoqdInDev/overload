@@ -7,6 +7,7 @@ const { setupSSE } = require('../../../services/sse');
 // SSE - AI report narrative generation
 router.post('/generate', async (req, res) => {
   const sse = setupSSE(res);
+  const wsId = req.workspace.id;
 
   try {
     const { client_name, modules, dateRange, template, metrics, goals, branding, prompt: rawPrompt } = req.body;
@@ -16,7 +17,7 @@ router.post('/generate', async (req, res) => {
       const { text } = await generateTextWithClaude(rawPrompt, {
         onChunk: (chunk) => sse.sendChunk(chunk),
       });
-      logActivity('reports', 'generate', 'Generated report content', 'AI generation');
+      logActivity('reports', 'generate', 'Generated report content', 'AI generation', null, wsId);
       sse.sendResult({ content: text });
       return;
     }
@@ -47,7 +48,7 @@ Format tables in markdown. Use bullet points for recommendations.`;
       maxTokens: 8192,
     });
 
-    logActivity('reports', 'generate', 'Generated client report', client_name || 'AI Report');
+    logActivity('reports', 'generate', 'Generated client report', client_name || 'AI Report', null, wsId);
     sse.sendResult({ content: text, client_name, dateRange });
   } catch (error) {
     console.error('Report generation error:', error);
@@ -58,9 +59,10 @@ Format tables in markdown. Use bullet points for recommendations.`;
 // GET /reports
 router.get('/reports', (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { client_name, status } = req.query;
-    let sql = 'SELECT * FROM cr_reports WHERE 1=1';
-    const params = [];
+    let sql = 'SELECT * FROM cr_reports WHERE workspace_id = ?';
+    const params = [wsId];
 
     if (client_name) { sql += ' AND client_name = ?'; params.push(client_name); }
     if (status) { sql += ' AND status = ?'; params.push(status); }
@@ -76,6 +78,7 @@ router.get('/reports', (req, res) => {
 // POST /reports
 router.post('/reports', (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { name, client_name, date_range, modules, content, template, branding, status } = req.body;
 
     if (!name) {
@@ -83,7 +86,7 @@ router.post('/reports', (req, res) => {
     }
 
     const result = db.prepare(
-      'INSERT INTO cr_reports (name, client_name, date_range, modules, content, template, branding, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO cr_reports (name, client_name, date_range, modules, content, template, branding, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(
       name,
       client_name || null,
@@ -92,11 +95,12 @@ router.post('/reports', (req, res) => {
       content ? JSON.stringify(content) : '{}',
       template || null,
       branding ? JSON.stringify(branding) : '{}',
-      status || 'draft'
+      status || 'draft',
+      wsId
     );
 
-    const report = db.prepare('SELECT * FROM cr_reports WHERE id = ?').get(result.lastInsertRowid);
-    logActivity('reports', 'create', 'Created report', `${name} for ${client_name || 'unknown client'}`);
+    const report = db.prepare('SELECT * FROM cr_reports WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    logActivity('reports', 'create', 'Created report', `${name} for ${client_name || 'unknown client'}`, null, wsId);
     res.status(201).json(report);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -106,12 +110,13 @@ router.post('/reports', (req, res) => {
 // GET /reports/:id
 router.get('/reports/:id', (req, res) => {
   try {
-    const report = db.prepare('SELECT * FROM cr_reports WHERE id = ?').get(req.params.id);
+    const wsId = req.workspace.id;
+    const report = db.prepare('SELECT * FROM cr_reports WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!report) {
       return res.status(404).json({ error: 'Report not found' });
     }
 
-    const schedules = db.prepare('SELECT * FROM cr_schedules WHERE report_id = ?').all(req.params.id);
+    const schedules = db.prepare('SELECT * FROM cr_schedules WHERE report_id = ? AND workspace_id = ?').all(req.params.id, wsId);
     res.json({ ...report, schedules });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -121,7 +126,8 @@ router.get('/reports/:id', (req, res) => {
 // GET /templates
 router.get('/templates', (req, res) => {
   try {
-    const templates = db.prepare('SELECT * FROM cr_templates ORDER BY created_at DESC').all();
+    const wsId = req.workspace.id;
+    const templates = db.prepare('SELECT * FROM cr_templates WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(templates);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -131,23 +137,24 @@ router.get('/templates', (req, res) => {
 // POST /schedules
 router.post('/schedules', (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { report_id, frequency, next_run, recipients } = req.body;
 
     if (!report_id || !frequency) {
       return res.status(400).json({ error: 'report_id and frequency are required' });
     }
 
-    const report = db.prepare('SELECT * FROM cr_reports WHERE id = ?').get(report_id);
+    const report = db.prepare('SELECT * FROM cr_reports WHERE id = ? AND workspace_id = ?').get(report_id, wsId);
     if (!report) {
       return res.status(404).json({ error: 'Report not found' });
     }
 
     const result = db.prepare(
-      'INSERT INTO cr_schedules (report_id, frequency, next_run, recipients) VALUES (?, ?, ?, ?)'
-    ).run(report_id, frequency, next_run || null, recipients || null);
+      'INSERT INTO cr_schedules (report_id, frequency, next_run, recipients, workspace_id) VALUES (?, ?, ?, ?, ?)'
+    ).run(report_id, frequency, next_run || null, recipients || null, wsId);
 
-    const schedule = db.prepare('SELECT * FROM cr_schedules WHERE id = ?').get(result.lastInsertRowid);
-    logActivity('reports', 'create', 'Scheduled report', `${report.name} - ${frequency}`);
+    const schedule = db.prepare('SELECT * FROM cr_schedules WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    logActivity('reports', 'create', 'Scheduled report', `${report.name} - ${frequency}`, null, wsId);
     res.status(201).json(schedule);
   } catch (error) {
     res.status(500).json({ error: error.message });

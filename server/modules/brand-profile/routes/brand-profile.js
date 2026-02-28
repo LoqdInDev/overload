@@ -32,16 +32,17 @@ const upload = multer({
 
 // Generate brand profile content with AI
 router.post('/generate', async (req, res) => {
+  const wsId = req.workspace.id;
   const sse = setupSSE(res);
   try {
     const { type, prompt } = req.body;
-    const brand = getBrandContext();
+    const brand = getBrandContext(wsId);
     const brandBlock = buildBrandSystemPrompt(brand);
     const fullPrompt = `${prompt || `Generate ${type || 'content'} for Brand Profile`}${brandBlock}`;
     const { text } = await generateTextWithClaude(fullPrompt, {
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
-    logActivity('brand-profile', 'generate', `Generated ${type || 'content'}`, 'AI generation');
+    logActivity('brand-profile', 'generate', `Generated ${type || 'content'}`, 'AI generation', null, wsId);
     sse.sendResult({ content: text, type });
   } catch (error) {
     console.error('Brand Profile generation error:', error);
@@ -51,8 +52,9 @@ router.post('/generate', async (req, res) => {
 
 // Get the brand profile
 router.get('/profile', (req, res) => {
+  const wsId = req.workspace.id;
   try {
-    const profile = db.prepare('SELECT * FROM bp_profiles ORDER BY created_at DESC LIMIT 1').get();
+    const profile = db.prepare('SELECT * FROM bp_profiles WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 1').get(wsId);
     res.json(profile || {});
   } catch (error) {
     console.error('Error fetching profile:', error);
@@ -62,6 +64,7 @@ router.get('/profile', (req, res) => {
 
 // Create a new brand profile
 router.post('/profile', (req, res) => {
+  const wsId = req.workspace.id;
   try {
     const {
       brand_name, tagline, mission, vision, values, voice_tone, voice_personality,
@@ -72,19 +75,20 @@ router.post('/profile', (req, res) => {
     const result = db.prepare(
       `INSERT INTO bp_profiles (brand_name, tagline, mission, vision, values, voice_tone, voice_personality,
         target_audience, competitors, colors, fonts, logo_url, guidelines, keywords, industry, website, social_links,
-        words_to_use, words_to_avoid)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        words_to_use, words_to_avoid, workspace_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       brand_name, tagline, mission, vision, JSON.stringify(values || []),
       voice_tone, voice_personality, JSON.stringify(target_audience || {}),
       JSON.stringify(competitors || []), JSON.stringify(colors || {}),
       JSON.stringify(fonts || {}), logo_url, guidelines,
       JSON.stringify(keywords || []), industry, website,
-      JSON.stringify(social_links || {}), words_to_use, words_to_avoid
+      JSON.stringify(social_links || {}), words_to_use, words_to_avoid,
+      wsId
     );
 
     invalidateCache();
-    logActivity('brand-profile', 'create', `Created brand profile: ${brand_name}`, 'Profile');
+    logActivity('brand-profile', 'create', `Created brand profile: ${brand_name}`, 'Profile', null, wsId);
     res.json({ id: result.lastInsertRowid, brand_name });
   } catch (error) {
     console.error('Error creating profile:', error);
@@ -94,8 +98,9 @@ router.post('/profile', (req, res) => {
 
 // Update an existing brand profile
 router.put('/profile/:id', (req, res) => {
+  const wsId = req.workspace.id;
   try {
-    const profile = db.prepare('SELECT * FROM bp_profiles WHERE id = ?').get(req.params.id);
+    const profile = db.prepare('SELECT * FROM bp_profiles WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!profile) {
       return res.status(404).json({ error: 'Profile not found' });
     }
@@ -110,7 +115,7 @@ router.put('/profile/:id', (req, res) => {
       `UPDATE bp_profiles SET brand_name = ?, tagline = ?, mission = ?, vision = ?, values = ?,
         voice_tone = ?, voice_personality = ?, target_audience = ?, competitors = ?, colors = ?,
         fonts = ?, logo_url = ?, guidelines = ?, keywords = ?, industry = ?, website = ?,
-        social_links = ?, words_to_use = ?, words_to_avoid = ?, updated_at = datetime('now') WHERE id = ?`
+        social_links = ?, words_to_use = ?, words_to_avoid = ?, updated_at = datetime('now') WHERE id = ? AND workspace_id = ?`
     ).run(
       brand_name || profile.brand_name, tagline || profile.tagline,
       mission || profile.mission, vision || profile.vision,
@@ -126,11 +131,11 @@ router.put('/profile/:id', (req, res) => {
       social_links ? JSON.stringify(social_links) : profile.social_links,
       words_to_use !== undefined ? words_to_use : profile.words_to_use,
       words_to_avoid !== undefined ? words_to_avoid : profile.words_to_avoid,
-      req.params.id
+      req.params.id, wsId
     );
 
     invalidateCache();
-    logActivity('brand-profile', 'update', `Updated brand profile: ${brand_name || profile.brand_name}`, 'Profile');
+    logActivity('brand-profile', 'update', `Updated brand profile: ${brand_name || profile.brand_name}`, 'Profile', null, wsId);
     res.json({ id: req.params.id, updated: true });
   } catch (error) {
     console.error('Error updating profile:', error);
@@ -144,13 +149,14 @@ router.put('/profile/:id', (req, res) => {
 
 // POST /media - upload media files
 router.post('/media', upload.array('files', 20), (req, res) => {
+  const wsId = req.workspace.id;
   try {
     const category = req.body.category || 'other';
     const inserted = [];
     for (const file of req.files) {
       const result = db.prepare(
-        'INSERT INTO bp_media (filename, original_name, category, mimetype, size) VALUES (?, ?, ?, ?, ?)'
-      ).run(file.filename, file.originalname, category, file.mimetype, file.size);
+        'INSERT INTO bp_media (filename, original_name, category, mimetype, size, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
+      ).run(file.filename, file.originalname, category, file.mimetype, file.size, wsId);
       inserted.push({
         id: result.lastInsertRowid,
         filename: file.filename,
@@ -161,7 +167,7 @@ router.post('/media', upload.array('files', 20), (req, res) => {
         url: `/uploads/brand-media/${file.filename}`,
       });
     }
-    logActivity('brand-profile', 'upload', `Uploaded ${inserted.length} media file(s)`, category);
+    logActivity('brand-profile', 'upload', `Uploaded ${inserted.length} media file(s)`, category, null, wsId);
     res.json({ success: true, data: inserted });
   } catch (error) {
     console.error('Media upload error:', error);
@@ -171,13 +177,14 @@ router.post('/media', upload.array('files', 20), (req, res) => {
 
 // GET /media - list all media
 router.get('/media', (req, res) => {
+  const wsId = req.workspace.id;
   try {
     const { category } = req.query;
     let rows;
     if (category && category !== 'all') {
-      rows = db.prepare('SELECT * FROM bp_media WHERE category = ? ORDER BY created_at DESC').all(category);
+      rows = db.prepare('SELECT * FROM bp_media WHERE workspace_id = ? AND category = ? ORDER BY created_at DESC').all(wsId, category);
     } else {
-      rows = db.prepare('SELECT * FROM bp_media ORDER BY created_at DESC').all();
+      rows = db.prepare('SELECT * FROM bp_media WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     }
     const data = rows.map(r => ({ ...r, url: `/uploads/brand-media/${r.filename}` }));
     res.json({ success: true, data });
@@ -188,11 +195,12 @@ router.get('/media', (req, res) => {
 
 // PUT /media/:id - update media category
 router.put('/media/:id', (req, res) => {
+  const wsId = req.workspace.id;
   try {
     const { category } = req.body;
-    const existing = db.prepare('SELECT * FROM bp_media WHERE id = ?').get(req.params.id);
+    const existing = db.prepare('SELECT * FROM bp_media WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Media not found' });
-    db.prepare('UPDATE bp_media SET category = ? WHERE id = ?').run(category, req.params.id);
+    db.prepare('UPDATE bp_media SET category = ? WHERE id = ? AND workspace_id = ?').run(category, req.params.id, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -201,13 +209,14 @@ router.put('/media/:id', (req, res) => {
 
 // DELETE /media/:id - delete a media file
 router.delete('/media/:id', (req, res) => {
+  const wsId = req.workspace.id;
   try {
-    const media = db.prepare('SELECT * FROM bp_media WHERE id = ?').get(req.params.id);
+    const media = db.prepare('SELECT * FROM bp_media WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!media) return res.status(404).json({ error: 'Media not found' });
     const filepath = path.join(mediaDir, media.filename);
     if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
-    db.prepare('DELETE FROM bp_media WHERE id = ?').run(req.params.id);
-    logActivity('brand-profile', 'delete', `Deleted media: ${media.original_name}`, media.category);
+    db.prepare('DELETE FROM bp_media WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    logActivity('brand-profile', 'delete', `Deleted media: ${media.original_name}`, media.category, null, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });

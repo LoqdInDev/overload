@@ -6,6 +6,7 @@ const { setupSSE } = require('../../../services/sse');
 
 // POST /generate - AI content generation (SSE) - used by frontend
 router.post('/generate', async (req, res) => {
+  const wsId = req.workspace.id;
   const sse = setupSSE(res);
 
   try {
@@ -16,7 +17,7 @@ router.post('/generate', async (req, res) => {
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
-    logActivity('affiliates', 'generate', `Generated ${type || 'content'}`, 'AI generation');
+    logActivity('affiliates', 'generate', `Generated ${type || 'content'}`, 'AI generation', null, wsId);
     sse.sendResult({ content: text, type });
   } catch (error) {
     console.error('Affiliate generation error:', error);
@@ -26,8 +27,9 @@ router.post('/generate', async (req, res) => {
 
 // GET /programs - List all programs
 router.get('/programs', (req, res) => {
+  const wsId = req.workspace.id;
   try {
-    const programs = db.prepare('SELECT * FROM af_programs ORDER BY created_at DESC').all();
+    const programs = db.prepare('SELECT * FROM af_programs WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(programs);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -36,6 +38,7 @@ router.get('/programs', (req, res) => {
 
 // POST /programs - Create a program
 router.post('/programs', (req, res) => {
+  const wsId = req.workspace.id;
   try {
     const { name, description, commissionRate, commissionType, cookieDuration, terms } = req.body;
 
@@ -44,11 +47,11 @@ router.post('/programs', (req, res) => {
     }
 
     const result = db.prepare(
-      'INSERT INTO af_programs (name, description, commission_rate, commission_type, cookie_duration, terms) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(name, description || null, commissionRate || 0, commissionType || 'percentage', cookieDuration || 30, terms || null);
+      'INSERT INTO af_programs (name, description, commission_rate, commission_type, cookie_duration, terms, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run(name, description || null, commissionRate || 0, commissionType || 'percentage', cookieDuration || 30, terms || null, wsId);
 
-    const program = db.prepare('SELECT * FROM af_programs WHERE id = ?').get(result.lastInsertRowid);
-    logActivity('affiliates', 'create', `Created program: ${name}`, null);
+    const program = db.prepare('SELECT * FROM af_programs WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    logActivity('affiliates', 'create', `Created program: ${name}`, null, null, wsId);
     res.status(201).json(program);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -57,18 +60,19 @@ router.post('/programs', (req, res) => {
 
 // GET /affiliates - List all affiliates
 router.get('/affiliates', (req, res) => {
+  const wsId = req.workspace.id;
   try {
     const { programId } = req.query;
     let affiliates;
 
     if (programId) {
       affiliates = db.prepare(
-        'SELECT a.*, p.name as program_name FROM af_affiliates a LEFT JOIN af_programs p ON a.program_id = p.id WHERE a.program_id = ? ORDER BY a.created_at DESC'
-      ).all(programId);
+        'SELECT a.*, p.name as program_name FROM af_affiliates a LEFT JOIN af_programs p ON a.program_id = p.id WHERE a.workspace_id = ? AND a.program_id = ? ORDER BY a.created_at DESC'
+      ).all(wsId, programId);
     } else {
       affiliates = db.prepare(
-        'SELECT a.*, p.name as program_name FROM af_affiliates a LEFT JOIN af_programs p ON a.program_id = p.id ORDER BY a.created_at DESC'
-      ).all();
+        'SELECT a.*, p.name as program_name FROM af_affiliates a LEFT JOIN af_programs p ON a.program_id = p.id WHERE a.workspace_id = ? ORDER BY a.created_at DESC'
+      ).all(wsId);
     }
 
     res.json(affiliates);
@@ -79,6 +83,7 @@ router.get('/affiliates', (req, res) => {
 
 // POST /affiliates - Create an affiliate
 router.post('/affiliates', (req, res) => {
+  const wsId = req.workspace.id;
   try {
     const { programId, name, email, website } = req.body;
 
@@ -89,11 +94,11 @@ router.post('/affiliates', (req, res) => {
     const affiliateCode = `AFF-${Date.now().toString(36).toUpperCase()}`;
 
     const result = db.prepare(
-      'INSERT INTO af_affiliates (program_id, name, email, website, affiliate_code) VALUES (?, ?, ?, ?, ?)'
-    ).run(programId, name, email || null, website || null, affiliateCode);
+      'INSERT INTO af_affiliates (program_id, name, email, website, affiliate_code, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run(programId, name, email || null, website || null, affiliateCode, wsId);
 
-    const affiliate = db.prepare('SELECT * FROM af_affiliates WHERE id = ?').get(result.lastInsertRowid);
-    logActivity('affiliates', 'create', `Added affiliate: ${name}`, affiliateCode);
+    const affiliate = db.prepare('SELECT * FROM af_affiliates WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    logActivity('affiliates', 'create', `Added affiliate: ${name}`, affiliateCode, null, wsId);
     res.status(201).json(affiliate);
   } catch (error) {
     if (error.message.includes('UNIQUE constraint')) {
@@ -105,10 +110,11 @@ router.post('/affiliates', (req, res) => {
 
 // GET /commissions - List commissions
 router.get('/commissions', (req, res) => {
+  const wsId = req.workspace.id;
   try {
     const { affiliateId, programId, status } = req.query;
-    let query = 'SELECT c.*, a.name as affiliate_name, p.name as program_name FROM af_commissions c LEFT JOIN af_affiliates a ON c.affiliate_id = a.id LEFT JOIN af_programs p ON c.program_id = p.id WHERE 1=1';
-    const params = [];
+    let query = 'SELECT c.*, a.name as affiliate_name, p.name as program_name FROM af_commissions c LEFT JOIN af_affiliates a ON c.affiliate_id = a.id LEFT JOIN af_programs p ON c.program_id = p.id WHERE c.workspace_id = ?';
+    const params = [wsId];
 
     if (affiliateId) {
       query += ' AND c.affiliate_id = ?';

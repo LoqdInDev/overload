@@ -3,7 +3,7 @@ const { v4: uuid } = require('uuid');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
 const { logActivity } = require('../../../db/database');
-const { queries } = require('../db/queries');
+const { getQueries } = require('../db/queries');
 const { buildContentPrompt } = require('../prompts/contentGenerator');
 const { getSeoKeywordsForContent, getContentForSocial } = require('../../../services/crossModuleData');
 
@@ -11,6 +11,8 @@ const router = express.Router();
 
 // Generate content via SSE streaming
 router.post('/generate', async (req, res) => {
+  const wsId = req.workspace.id;
+  const q = getQueries(wsId);
   const { type, prompt } = req.body;
 
   if (!type || !prompt) {
@@ -31,9 +33,9 @@ router.post('/generate', async (req, res) => {
     // Save to database
     const id = uuid();
     const title = prompt.slice(0, 100);
-    queries.create.run(id, type, title, prompt, text, null);
+    q.create(id, type, title, prompt, text, null);
 
-    logActivity('content', 'generate', `Generated ${type} content`, title, id);
+    logActivity('content', 'generate', `Generated ${type} content`, title, id, wsId);
 
     sse.sendResult({ id, content: text, type });
   } catch (err) {
@@ -44,25 +46,31 @@ router.post('/generate', async (req, res) => {
 
 // List all projects
 router.get('/projects', (req, res) => {
+  const wsId = req.workspace.id;
+  const q = getQueries(wsId);
   const type = req.query.type;
-  const projects = type ? queries.getByType.all(type) : queries.getAll.all();
+  const projects = type ? q.getByType(type) : q.getAll();
   res.json(projects);
 });
 
 // Get project by ID
 router.get('/projects/:id', (req, res) => {
-  const project = queries.getById.get(req.params.id);
+  const wsId = req.workspace.id;
+  const q = getQueries(wsId);
+  const project = q.getById(req.params.id);
   if (!project) return res.status(404).json({ error: 'Not found' });
   res.json(project);
 });
 
 // Update project
 router.put('/projects/:id', (req, res) => {
+  const wsId = req.workspace.id;
+  const q = getQueries(wsId);
   const { title, content, metadata } = req.body;
-  const existing = queries.getById.get(req.params.id);
+  const existing = q.getById(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Not found' });
 
-  queries.update.run(
+  q.update(
     title || existing.title,
     content || existing.content,
     metadata ? JSON.stringify(metadata) : existing.metadata,
@@ -73,8 +81,10 @@ router.put('/projects/:id', (req, res) => {
 
 // Delete project
 router.delete('/projects/:id', (req, res) => {
-  queries.delete.run(req.params.id);
-  logActivity('content', 'delete', 'Deleted content project', null, req.params.id);
+  const wsId = req.workspace.id;
+  const q = getQueries(wsId);
+  q.delete(req.params.id);
+  logActivity('content', 'delete', 'Deleted content project', null, req.params.id, wsId);
   res.json({ success: true });
 });
 

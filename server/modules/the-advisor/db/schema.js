@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS adv_briefings (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       date TEXT UNIQUE,
       yesterday_summary TEXT,
       today_recommendations TEXT,
@@ -13,6 +14,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS adv_actions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       briefing_id INTEGER,
       priority TEXT,
       title TEXT,

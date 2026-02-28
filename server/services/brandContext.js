@@ -1,23 +1,29 @@
 const { db } = require('../db/database');
 
-// In-memory cache to avoid repeated DB hits on every generation call
-let _cache = null;
-let _cacheTime = 0;
+// Per-workspace cache to avoid repeated DB hits on every generation call
+const _cache = new Map(); // workspaceId -> { data, time }
 const CACHE_TTL = 60000; // 60 seconds
 
-function getBrandContext() {
+function getBrandContext(workspaceId) {
+  const cacheKey = workspaceId || '__global__';
   const now = Date.now();
-  if (_cache !== undefined && _cache !== null && (now - _cacheTime) < CACHE_TTL) return _cache;
-  if (_cache === null && (now - _cacheTime) < CACHE_TTL) return null;
+  const cached = _cache.get(cacheKey);
+  if (cached !== undefined && cached !== null && (now - cached.time) < CACHE_TTL) return cached.data;
 
   try {
-    const profile = db.prepare(
-      'SELECT * FROM bp_profiles ORDER BY updated_at DESC LIMIT 1'
-    ).get();
+    let profile;
+    if (workspaceId) {
+      profile = db.prepare(
+        'SELECT * FROM bp_profiles WHERE workspace_id = ? ORDER BY updated_at DESC LIMIT 1'
+      ).get(workspaceId);
+    } else {
+      profile = db.prepare(
+        'SELECT * FROM bp_profiles ORDER BY updated_at DESC LIMIT 1'
+      ).get();
+    }
 
     if (!profile || !profile.brand_name) {
-      _cache = null;
-      _cacheTime = now;
+      _cache.set(cacheKey, { data: null, time: now });
       return null;
     }
 
@@ -26,7 +32,7 @@ function getBrandContext() {
       try { return JSON.parse(val); } catch { return val; }
     };
 
-    _cache = {
+    const data = {
       brandName: profile.brand_name,
       tagline: profile.tagline,
       mission: profile.mission,
@@ -42,8 +48,8 @@ function getBrandContext() {
       wordsToUse: profile.words_to_use,
       wordsToAvoid: profile.words_to_avoid,
     };
-    _cacheTime = now;
-    return _cache;
+    _cache.set(cacheKey, { data, time: now });
+    return data;
   } catch (e) {
     console.error('Failed to fetch brand context:', e);
     return null;
@@ -81,9 +87,12 @@ function buildBrandSystemPrompt(brand) {
   return parts.filter(Boolean).join('\n');
 }
 
-function invalidateCache() {
-  _cache = null;
-  _cacheTime = 0;
+function invalidateCache(workspaceId) {
+  if (workspaceId) {
+    _cache.delete(workspaceId);
+  } else {
+    _cache.clear();
+  }
 }
 
 module.exports = { getBrandContext, buildBrandSystemPrompt, invalidateCache };

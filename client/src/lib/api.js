@@ -1,9 +1,14 @@
 const TOKEN_KEY = 'overload_access_token';
 const REFRESH_KEY = 'overload_refresh_token';
+const WORKSPACE_KEY = 'overload_workspace_id';
 
 function getAuthHeaders() {
   const token = localStorage.getItem(TOKEN_KEY);
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  const wsId = localStorage.getItem(WORKSPACE_KEY);
+  const headers = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  if (wsId) headers['X-Workspace-Id'] = wsId;
+  return headers;
 }
 
 async function attemptTokenRefresh() {

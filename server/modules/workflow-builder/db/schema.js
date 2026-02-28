@@ -3,6 +3,7 @@ const { db } = require('../../../db/database');
 function initDatabase() {
   db.exec(`CREATE TABLE IF NOT EXISTS wf_workflows (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workspace_id TEXT,
     name TEXT,
     description TEXT,
     trigger_type TEXT,
@@ -15,6 +16,7 @@ function initDatabase() {
 
   db.exec(`CREATE TABLE IF NOT EXISTS wf_steps (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workspace_id TEXT,
     workflow_id INTEGER,
     step_order INTEGER,
     module TEXT,
@@ -25,6 +27,7 @@ function initDatabase() {
 
   db.exec(`CREATE TABLE IF NOT EXISTS wf_runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workspace_id TEXT,
     workflow_id INTEGER,
     status TEXT,
     started_at TEXT,

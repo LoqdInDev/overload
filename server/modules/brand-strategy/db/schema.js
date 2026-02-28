@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS bs_brands (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       industry TEXT,
       description TEXT,
@@ -16,6 +17,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS bs_guidelines (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       brand_id INTEGER NOT NULL,
       type TEXT NOT NULL,
       title TEXT NOT NULL,
@@ -27,6 +29,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS bs_personas (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       brand_id INTEGER NOT NULL,
       name TEXT NOT NULL,
       demographics TEXT,

@@ -3,6 +3,7 @@ const { db } = require('../../../db/database');
 function initDatabase() {
   db.exec(`CREATE TABLE IF NOT EXISTS sc_scheduled_tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workspace_id TEXT,
     name TEXT,
     module TEXT,
     action TEXT,
@@ -17,6 +18,7 @@ function initDatabase() {
 
   db.exec(`CREATE TABLE IF NOT EXISTS sc_task_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workspace_id TEXT,
     task_id INTEGER,
     status TEXT,
     output TEXT,

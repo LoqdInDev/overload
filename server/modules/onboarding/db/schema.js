@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS onboarding_state (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       user_id TEXT,
       completed INTEGER DEFAULT 0,
       dismissed INTEGER DEFAULT 0,

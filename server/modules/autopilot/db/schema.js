@@ -3,6 +3,7 @@ const { db } = require('../../../db/database');
 function initDatabase() {
   db.exec(`CREATE TABLE IF NOT EXISTS ap_config (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workspace_id TEXT,
     brand_id INTEGER,
     modules_enabled TEXT,
     strategy TEXT,
@@ -14,6 +15,7 @@ function initDatabase() {
 
   db.exec(`CREATE TABLE IF NOT EXISTS ap_actions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workspace_id TEXT,
     config_id INTEGER,
     module TEXT,
     action_type TEXT,
@@ -26,6 +28,7 @@ function initDatabase() {
 
   db.exec(`CREATE TABLE IF NOT EXISTS ap_insights (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workspace_id TEXT,
     config_id INTEGER,
     type TEXT,
     title TEXT,

@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS ab_audiences (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       platform TEXT,
       type TEXT,
@@ -17,6 +18,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS ab_segments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       audience_id INTEGER NOT NULL,
       name TEXT NOT NULL,
       filters TEXT,

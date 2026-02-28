@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS int_connections (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       provider_id TEXT NOT NULL UNIQUE,
       display_name TEXT NOT NULL,
       auth_type TEXT NOT NULL,
@@ -27,6 +28,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS int_sync_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       connection_id INTEGER NOT NULL,
       provider_id TEXT NOT NULL,
       action TEXT,
@@ -40,6 +42,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS int_oauth_states (
       state TEXT PRIMARY KEY,
+      workspace_id TEXT,
       provider_id TEXT NOT NULL,
       extra_params TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP

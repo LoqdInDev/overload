@@ -9,6 +9,7 @@ const { getBrandContext, buildBrandSystemPrompt } = require('../../../services/b
 // POST /generate - SSE: generate social media content
 router.post('/generate', async (req, res) => {
   const sse = setupSSE(res);
+  const wsId = req.workspace.id;
 
   try {
     const { platform, postType, topic, tone, count, includeHashtags, template, customPrompt, brand, prompt: rawPrompt } = req.body;
@@ -18,7 +19,7 @@ router.post('/generate', async (req, res) => {
       const { text } = await generateTextWithClaude(rawPrompt, {
         onChunk: (chunk) => sse.sendChunk(chunk),
       });
-      logActivity('social', 'generate', `Generated ${platform || 'social'} content`, 'AI generation');
+      logActivity('social', 'generate', `Generated ${platform || 'social'} content`, 'AI generation', null, wsId);
       sse.sendResult({ content: text, platform });
       return;
     }
@@ -143,7 +144,7 @@ Make each post feel authentic and native to the platform, not like AI-generated 
     }
 
     // Inject brand context into prompt
-    const brandBlock = buildBrandSystemPrompt(getBrandContext());
+    const brandBlock = buildBrandSystemPrompt(getBrandContext(wsId));
     if (brandBlock) prompt += brandBlock;
 
     const { text } = await generateTextWithClaude(prompt, {
@@ -154,16 +155,17 @@ Make each post feel authentic and native to the platform, not like AI-generated 
 
     // Save to database
     const result = db.prepare(
-      'INSERT INTO sm_posts (platform, post_type, caption, hashtags, metadata) VALUES (?, ?, ?, ?, ?)'
+      'INSERT INTO sm_posts (platform, post_type, caption, hashtags, metadata, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(
       platform || 'multi',
       postType || 'feed',
       text,
       null,
-      JSON.stringify({ topic, tone, count, template, brand })
+      JSON.stringify({ topic, tone, count, template, brand }),
+      wsId
     );
 
-    logActivity('social', 'generate', `Generated ${platform || 'multi-platform'} ${postType || 'feed'} content`, topic, String(result.lastInsertRowid));
+    logActivity('social', 'generate', `Generated ${platform || 'multi-platform'} ${postType || 'feed'} content`, topic, String(result.lastInsertRowid), wsId);
 
     sse.sendResult({ id: result.lastInsertRowid, content: text, platform, postType });
   } catch (error) {
@@ -175,10 +177,11 @@ Make each post feel authentic and native to the platform, not like AI-generated 
 // GET /posts - list all posts
 router.get('/posts', (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { platform, status, post_type } = req.query;
     let query = 'SELECT * FROM sm_posts';
-    const conditions = [];
-    const params = [];
+    const conditions = ['workspace_id = ?'];
+    const params = [wsId];
 
     if (platform) {
       conditions.push('platform = ?');
@@ -208,7 +211,8 @@ router.get('/posts', (req, res) => {
 // GET /posts/:id - get single post
 router.get('/posts/:id', (req, res) => {
   try {
-    const post = db.prepare('SELECT * FROM sm_posts WHERE id = ?').get(req.params.id);
+    const wsId = req.workspace.id;
+    const post = db.prepare('SELECT * FROM sm_posts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!post) return res.status(404).json({ error: 'Post not found' });
     res.json(post);
   } catch (error) {
@@ -219,12 +223,13 @@ router.get('/posts/:id', (req, res) => {
 // POST /posts - create a post
 router.post('/posts', (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { platform, post_type, caption, hashtags, media_notes, best_time, scheduled_at, status, metadata } = req.body;
     const result = db.prepare(
-      'INSERT INTO sm_posts (platform, post_type, caption, hashtags, media_notes, best_time, scheduled_at, status, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(platform, post_type || 'feed', caption || null, hashtags || null, media_notes || null, best_time || null, scheduled_at || null, status || 'draft', metadata ? JSON.stringify(metadata) : null);
-    const post = db.prepare('SELECT * FROM sm_posts WHERE id = ?').get(result.lastInsertRowid);
-    logActivity('social', 'create', `Created ${platform} post`, caption?.slice(0, 80), String(result.lastInsertRowid));
+      'INSERT INTO sm_posts (platform, post_type, caption, hashtags, media_notes, best_time, scheduled_at, status, metadata, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(platform, post_type || 'feed', caption || null, hashtags || null, media_notes || null, best_time || null, scheduled_at || null, status || 'draft', metadata ? JSON.stringify(metadata) : null, wsId);
+    const post = db.prepare('SELECT * FROM sm_posts WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    logActivity('social', 'create', `Created ${platform} post`, caption?.slice(0, 80), String(result.lastInsertRowid), wsId);
     res.status(201).json(post);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -234,12 +239,13 @@ router.post('/posts', (req, res) => {
 // PUT /posts/:id - update a post
 router.put('/posts/:id', (req, res) => {
   try {
-    const existing = db.prepare('SELECT * FROM sm_posts WHERE id = ?').get(req.params.id);
+    const wsId = req.workspace.id;
+    const existing = db.prepare('SELECT * FROM sm_posts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Post not found' });
 
     const { platform, post_type, caption, hashtags, media_notes, best_time, scheduled_at, status } = req.body;
     db.prepare(
-      `UPDATE sm_posts SET platform = ?, post_type = ?, caption = ?, hashtags = ?, media_notes = ?, best_time = ?, scheduled_at = ?, status = ?, updated_at = datetime('now') WHERE id = ?`
+      `UPDATE sm_posts SET platform = ?, post_type = ?, caption = ?, hashtags = ?, media_notes = ?, best_time = ?, scheduled_at = ?, status = ?, updated_at = datetime('now') WHERE id = ? AND workspace_id = ?`
     ).run(
       platform || existing.platform,
       post_type || existing.post_type,
@@ -249,10 +255,11 @@ router.put('/posts/:id', (req, res) => {
       best_time !== undefined ? best_time : existing.best_time,
       scheduled_at !== undefined ? scheduled_at : existing.scheduled_at,
       status || existing.status,
-      req.params.id
+      req.params.id,
+      wsId
     );
 
-    const updated = db.prepare('SELECT * FROM sm_posts WHERE id = ?').get(req.params.id);
+    const updated = db.prepare('SELECT * FROM sm_posts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -262,10 +269,11 @@ router.put('/posts/:id', (req, res) => {
 // DELETE /posts/:id - delete a post
 router.delete('/posts/:id', (req, res) => {
   try {
-    const existing = db.prepare('SELECT * FROM sm_posts WHERE id = ?').get(req.params.id);
+    const wsId = req.workspace.id;
+    const existing = db.prepare('SELECT * FROM sm_posts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Post not found' });
-    db.prepare('DELETE FROM sm_posts WHERE id = ?').run(req.params.id);
-    logActivity('social', 'delete', `Deleted ${existing.platform} post`, null, req.params.id);
+    db.prepare('DELETE FROM sm_posts WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    logActivity('social', 'delete', `Deleted ${existing.platform} post`, null, req.params.id, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -275,10 +283,11 @@ router.delete('/posts/:id', (req, res) => {
 // GET /calendar - get calendar entries
 router.get('/calendar', (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { month, year, platform } = req.query;
     let query = 'SELECT * FROM sm_calendar';
-    const conditions = [];
-    const params = [];
+    const conditions = ['workspace_id = ?'];
+    const params = [wsId];
 
     if (month && year) {
       conditions.push("strftime('%m', scheduled_date) = ? AND strftime('%Y', scheduled_date) = ?");
@@ -304,11 +313,12 @@ router.get('/calendar', (req, res) => {
 // POST /calendar - create calendar entry
 router.post('/calendar', (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { title, platform, post_type, content_summary, scheduled_date, scheduled_time, status, post_id } = req.body;
     const result = db.prepare(
-      'INSERT INTO sm_calendar (title, platform, post_type, content_summary, scheduled_date, scheduled_time, status, post_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(title, platform || null, post_type || null, content_summary || null, scheduled_date, scheduled_time || null, status || 'planned', post_id || null);
-    const entry = db.prepare('SELECT * FROM sm_calendar WHERE id = ?').get(result.lastInsertRowid);
+      'INSERT INTO sm_calendar (title, platform, post_type, content_summary, scheduled_date, scheduled_time, status, post_id, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(title, platform || null, post_type || null, content_summary || null, scheduled_date, scheduled_time || null, status || 'planned', post_id || null, wsId);
+    const entry = db.prepare('SELECT * FROM sm_calendar WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(entry);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -318,9 +328,10 @@ router.post('/calendar', (req, res) => {
 // DELETE /calendar/:id - delete calendar entry
 router.delete('/calendar/:id', (req, res) => {
   try {
-    const existing = db.prepare('SELECT * FROM sm_calendar WHERE id = ?').get(req.params.id);
+    const wsId = req.workspace.id;
+    const existing = db.prepare('SELECT * FROM sm_calendar WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Calendar entry not found' });
-    db.prepare('DELETE FROM sm_calendar WHERE id = ?').run(req.params.id);
+    db.prepare('DELETE FROM sm_calendar WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -334,12 +345,13 @@ router.delete('/calendar/:id', (req, res) => {
 // GET /accounts - list connected social media accounts
 router.get('/accounts', async (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const socialProviders = ['twitter', 'linkedin', 'meta', 'google', 'tiktok', 'pinterest'];
     const connected = pm.getConnectedProviders().filter(p => socialProviders.includes(p.provider_id));
 
     // Enrich with cached account info from sm_accounts
     const accounts = connected.map(c => {
-      const cached = db.prepare('SELECT * FROM sm_accounts WHERE provider_id = ? ORDER BY updated_at DESC LIMIT 1').get(c.provider_id);
+      const cached = db.prepare('SELECT * FROM sm_accounts WHERE provider_id = ? AND workspace_id = ? ORDER BY updated_at DESC LIMIT 1').get(c.provider_id, wsId);
       return {
         providerId: c.provider_id,
         displayName: c.display_name,
@@ -362,6 +374,7 @@ router.get('/accounts', async (req, res) => {
 // POST /accounts/:providerId/sync - refresh account profile info
 router.post('/accounts/:providerId/sync', async (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { providerId } = req.params;
     if (!pm.isConnected(providerId)) {
       return res.status(400).json({ success: false, error: `${providerId} is not connected` });
@@ -370,13 +383,13 @@ router.post('/accounts/:providerId/sync', async (req, res) => {
     const profile = await pm.socialProfile(providerId);
     if (!profile) return res.status(404).json({ success: false, error: 'Could not fetch profile' });
 
-    const existing = db.prepare('SELECT id FROM sm_accounts WHERE provider_id = ?').get(providerId);
+    const existing = db.prepare('SELECT id FROM sm_accounts WHERE provider_id = ? AND workspace_id = ?').get(providerId, wsId);
     if (existing) {
-      db.prepare(`UPDATE sm_accounts SET username = ?, display_name = ?, avatar_url = ?, followers = ?, account_id = ?, updated_at = datetime('now') WHERE id = ?`)
-        .run(profile.username || profile.name, profile.name, profile.avatar || null, profile.followers || 0, profile.id, existing.id);
+      db.prepare(`UPDATE sm_accounts SET username = ?, display_name = ?, avatar_url = ?, followers = ?, account_id = ?, updated_at = datetime('now') WHERE id = ? AND workspace_id = ?`)
+        .run(profile.username || profile.name, profile.name, profile.avatar || null, profile.followers || 0, profile.id, existing.id, wsId);
     } else {
-      db.prepare('INSERT INTO sm_accounts (provider_id, platform, account_id, username, display_name, avatar_url, followers) VALUES (?, ?, ?, ?, ?, ?, ?)')
-        .run(providerId, providerId, profile.id, profile.username || profile.name, profile.name, profile.avatar || null, profile.followers || 0);
+      db.prepare('INSERT INTO sm_accounts (provider_id, platform, account_id, username, display_name, avatar_url, followers, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+        .run(providerId, providerId, profile.id, profile.username || profile.name, profile.name, profile.avatar || null, profile.followers || 0, wsId);
     }
 
     res.json({ success: true, data: profile });
@@ -389,6 +402,7 @@ router.post('/accounts/:providerId/sync', async (req, res) => {
 // POST /publish - publish a post to a connected platform
 router.post('/publish', async (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { providerId, text, caption, mediaUrl, imageUrl, postId, pageId, pageToken, boardId, title, link } = req.body;
 
     if (!pm.isConnected(providerId)) {
@@ -432,11 +446,11 @@ router.post('/publish', async (req, res) => {
 
     // Update post status in DB if postId provided
     if (postId) {
-      db.prepare("UPDATE sm_posts SET status = 'published', published_at = datetime('now'), external_post_id = ?, updated_at = datetime('now') WHERE id = ?")
-        .run(result?.data?.id || result?.id || null, postId);
+      db.prepare("UPDATE sm_posts SET status = 'published', published_at = datetime('now'), external_post_id = ?, updated_at = datetime('now') WHERE id = ? AND workspace_id = ?")
+        .run(result?.data?.id || result?.id || null, postId, wsId);
     }
 
-    logActivity('social', 'publish', `Published to ${providerId}`, postText.slice(0, 80));
+    logActivity('social', 'publish', `Published to ${providerId}`, postText.slice(0, 80), null, wsId);
     res.json({ success: true, data: result });
   } catch (error) {
     console.error('Publish error:', error);

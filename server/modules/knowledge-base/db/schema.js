@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS kb_articles (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       title TEXT NOT NULL,
       slug TEXT,
       content TEXT,
@@ -17,6 +18,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS kb_categories (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       description TEXT,
       icon TEXT,

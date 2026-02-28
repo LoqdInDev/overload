@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS rv_reviews (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       source TEXT NOT NULL,
       author TEXT,
       rating INTEGER,
@@ -17,6 +18,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS rv_responses (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       review_id TEXT NOT NULL,
       content TEXT NOT NULL,
       status TEXT DEFAULT 'draft',
@@ -28,6 +30,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS rv_sources (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       type TEXT NOT NULL,
       url TEXT,

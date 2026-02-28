@@ -6,6 +6,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS an_snapshots (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       date TEXT NOT NULL,
       module_id TEXT NOT NULL,
       action_count INTEGER DEFAULT 0,

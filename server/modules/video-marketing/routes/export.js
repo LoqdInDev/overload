@@ -1,18 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const { queries } = require('../db/queries');
+const { getQueries } = require('../db/queries');
 const { exportJSON, exportMarkdown, exportPDF } = require('../services/exporter');
 
-function getCampaignData(campaignId) {
-  const campaign = queries.getCampaign.get(campaignId);
+function getCampaignData(wsId, campaignId) {
+  const q = getQueries(wsId);
+  const campaign = q.getCampaign(campaignId);
   if (!campaign) return null;
 
-  const generations = queries.getAllGenerationsForCampaign.all(campaignId);
+  const generations = q.getAllGenerationsForCampaign(campaignId);
   return { campaign, generations };
 }
 
 router.get('/:campaignId/json', (req, res) => {
-  const data = getCampaignData(req.params.campaignId);
+  const wsId = req.workspace.id;
+  const data = getCampaignData(wsId, req.params.campaignId);
   if (!data) return res.status(404).json({ error: 'Campaign not found' });
 
   const json = exportJSON(data);
@@ -22,7 +24,8 @@ router.get('/:campaignId/json', (req, res) => {
 });
 
 router.get('/:campaignId/markdown', (req, res) => {
-  const data = getCampaignData(req.params.campaignId);
+  const wsId = req.workspace.id;
+  const data = getCampaignData(wsId, req.params.campaignId);
   if (!data) return res.status(404).json({ error: 'Campaign not found' });
 
   const md = exportMarkdown(data);
@@ -32,7 +35,8 @@ router.get('/:campaignId/markdown', (req, res) => {
 });
 
 router.get('/:campaignId/pdf', (req, res) => {
-  const data = getCampaignData(req.params.campaignId);
+  const wsId = req.workspace.id;
+  const data = getCampaignData(wsId, req.params.campaignId);
   if (!data) return res.status(404).json({ error: 'Campaign not found' });
 
   try {

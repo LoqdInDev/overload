@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS af_programs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       commission_type TEXT DEFAULT 'percentage' CHECK(commission_type IN ('percentage', 'flat')),
       commission_value REAL DEFAULT 10,
@@ -15,6 +16,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS af_affiliates (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       program_id INTEGER,
       name TEXT NOT NULL,
       email TEXT,
@@ -29,6 +31,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS af_payouts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       affiliate_id INTEGER,
       amount REAL DEFAULT 0,
       period TEXT,

@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS wb_sites (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       domain TEXT,
       template TEXT,
@@ -15,6 +16,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS wb_pages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       site_id INTEGER NOT NULL,
       name TEXT NOT NULL,
       slug TEXT,

@@ -7,6 +7,7 @@ const { setupSSE } = require('../../../services/sse');
 // POST /search - AI influencer discovery (SSE)
 router.post('/search', async (req, res) => {
   const sse = setupSSE(res);
+  const wsId = req.workspace.id;
 
   try {
     const { niche, platform, followerMin, followerMax, engagementRate, budget } = req.body;
@@ -41,10 +42,10 @@ Also provide:
 
     // Save search to database
     const result = db.prepare(
-      'INSERT INTO inf_searches (niche, platform, criteria, results) VALUES (?, ?, ?, ?)'
-    ).run(niche, platform, JSON.stringify({ followerMin, followerMax, engagementRate, budget }), text);
+      'INSERT INTO inf_searches (niche, platform, criteria, results, workspace_id) VALUES (?, ?, ?, ?, ?)'
+    ).run(niche, platform, JSON.stringify({ followerMin, followerMax, engagementRate, budget }), text, wsId);
 
-    logActivity('influencers', 'search', `Searched ${platform || 'Instagram'} influencers`, niche || 'general');
+    logActivity('influencers', 'search', `Searched ${platform || 'Instagram'} influencers`, niche || 'general', null, wsId);
     sse.sendResult({ content: text, searchId: result.lastInsertRowid });
   } catch (error) {
     console.error('Influencer search error:', error);
@@ -55,6 +56,7 @@ Also provide:
 // POST /generate-outreach - AI outreach template generation (SSE)
 router.post('/generate-outreach', async (req, res) => {
   const sse = setupSSE(res);
+  const wsId = req.workspace.id;
 
   try {
     const { templateType, influencerName, niche, platform, product, budget, campaignGoal } = req.body;
@@ -98,7 +100,7 @@ Also include:
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
-    logActivity('influencers', 'outreach', `Generated ${templateType || 'outreach'} template`, influencerName || 'general');
+    logActivity('influencers', 'outreach', `Generated ${templateType || 'outreach'} template`, influencerName || 'general', null, wsId);
     sse.sendResult({ content: text, templateType: templateType || 'initial' });
   } catch (error) {
     console.error('Outreach generation error:', error);
@@ -109,6 +111,7 @@ Also include:
 // POST /generate - Generic AI generation (SSE) - used by frontend for all tool types
 router.post('/generate', async (req, res) => {
   const sse = setupSSE(res);
+  const wsId = req.workspace.id;
 
   try {
     const { type, prompt } = req.body;
@@ -118,7 +121,7 @@ router.post('/generate', async (req, res) => {
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
-    logActivity('influencers', 'generate', `Generated ${type || 'content'}`, 'AI generation');
+    logActivity('influencers', 'generate', `Generated ${type || 'content'}`, 'AI generation', null, wsId);
     sse.sendResult({ content: text, type });
   } catch (error) {
     console.error('Influencer generation error:', error);
@@ -129,7 +132,8 @@ router.post('/generate', async (req, res) => {
 // GET /campaigns - List all campaigns
 router.get('/campaigns', (req, res) => {
   try {
-    const campaigns = db.prepare('SELECT * FROM inf_campaigns ORDER BY created_at DESC').all();
+    const wsId = req.workspace.id;
+    const campaigns = db.prepare('SELECT * FROM inf_campaigns WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(campaigns);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -139,14 +143,15 @@ router.get('/campaigns', (req, res) => {
 // POST /campaigns - Create a campaign
 router.post('/campaigns', (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { name, influencers, budget, status } = req.body;
 
     const result = db.prepare(
-      'INSERT INTO inf_campaigns (name, influencers, budget, status) VALUES (?, ?, ?, ?)'
-    ).run(name, influencers ? JSON.stringify(influencers) : null, budget || 0, status || 'planning');
+      'INSERT INTO inf_campaigns (name, influencers, budget, status, workspace_id) VALUES (?, ?, ?, ?, ?)'
+    ).run(name, influencers ? JSON.stringify(influencers) : null, budget || 0, status || 'planning', wsId);
 
-    const campaign = db.prepare('SELECT * FROM inf_campaigns WHERE id = ?').get(result.lastInsertRowid);
-    logActivity('influencers', 'create', 'Created campaign', name);
+    const campaign = db.prepare('SELECT * FROM inf_campaigns WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    logActivity('influencers', 'create', 'Created campaign', name, null, wsId);
     res.status(201).json(campaign);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -156,7 +161,8 @@ router.post('/campaigns', (req, res) => {
 // GET /searches - List recent searches
 router.get('/searches', (req, res) => {
   try {
-    const searches = db.prepare('SELECT * FROM inf_searches ORDER BY created_at DESC LIMIT 20').all();
+    const wsId = req.workspace.id;
+    const searches = db.prepare('SELECT * FROM inf_searches WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 20').all(wsId);
     res.json(searches);
   } catch (error) {
     res.status(500).json({ error: error.message });

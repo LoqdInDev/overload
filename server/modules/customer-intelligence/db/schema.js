@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS ci_segments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       description TEXT,
       criteria TEXT,
@@ -14,6 +15,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS ci_insights (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       segment_id INTEGER,
       type TEXT,
       title TEXT,

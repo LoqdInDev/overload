@@ -9,6 +9,7 @@ const { getBrandContext, buildBrandSystemPrompt } = require('../../../services/b
 // POST /generate - SSE: generate email or SMS content
 router.post('/generate', async (req, res) => {
   const sse = setupSSE(res);
+  const wsId = req.workspace.id;
 
   try {
     const { type, campaignType, topic, audience, tone, goal, template, customPrompt, prompt: rawPrompt } = req.body;
@@ -18,7 +19,7 @@ router.post('/generate', async (req, res) => {
       const { text } = await generateTextWithClaude(rawPrompt, {
         onChunk: (chunk) => sse.sendChunk(chunk),
       });
-      logActivity('email-sms', 'generate', `Generated ${type || 'email'} content`, 'AI generation');
+      logActivity('email-sms', 'generate', `Generated ${type || 'email'} content`, 'AI generation', null, wsId);
       sse.sendResult({ content: text, type: type || 'custom' });
       return;
     }
@@ -173,7 +174,7 @@ Format the output cleanly and professionally.`;
     }
 
     // Inject brand context into prompt
-    const brandBlock = buildBrandSystemPrompt(getBrandContext());
+    const brandBlock = buildBrandSystemPrompt(getBrandContext(wsId));
     if (brandBlock) prompt += brandBlock;
 
     const { text } = await generateTextWithClaude(prompt, {
@@ -184,7 +185,7 @@ Format the output cleanly and professionally.`;
 
     // Save campaign to database
     const result = db.prepare(
-      'INSERT INTO es_campaigns (name, type, campaign_type, body, tone, audience, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO es_campaigns (name, type, campaign_type, body, tone, audience, metadata, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(
       topic || `${type} campaign`,
       type === 'sms' ? 'sms' : 'email',
@@ -192,10 +193,11 @@ Format the output cleanly and professionally.`;
       text,
       tone || 'professional',
       audience || null,
-      JSON.stringify({ goal, template, customPrompt })
+      JSON.stringify({ goal, template, customPrompt }),
+      wsId
     );
 
-    logActivity('email-sms', 'generate', `Generated ${type} campaign: ${campaignType || 'general'}`, topic, String(result.lastInsertRowid));
+    logActivity('email-sms', 'generate', `Generated ${type} campaign: ${campaignType || 'general'}`, topic, String(result.lastInsertRowid), wsId);
 
     sse.sendResult({ id: result.lastInsertRowid, content: text, type, campaignType });
   } catch (error) {
@@ -207,10 +209,11 @@ Format the output cleanly and professionally.`;
 // GET /campaigns - list all campaigns
 router.get('/campaigns', (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { type, status } = req.query;
     let query = 'SELECT * FROM es_campaigns';
-    const conditions = [];
-    const params = [];
+    const conditions = ['workspace_id = ?'];
+    const params = [wsId];
 
     if (type) {
       conditions.push('type = ?');
@@ -236,7 +239,8 @@ router.get('/campaigns', (req, res) => {
 // GET /campaigns/:id - get single campaign
 router.get('/campaigns/:id', (req, res) => {
   try {
-    const campaign = db.prepare('SELECT * FROM es_campaigns WHERE id = ?').get(req.params.id);
+    const wsId = req.workspace.id;
+    const campaign = db.prepare('SELECT * FROM es_campaigns WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
     res.json(campaign);
   } catch (error) {
@@ -247,12 +251,13 @@ router.get('/campaigns/:id', (req, res) => {
 // POST /campaigns - create a campaign
 router.post('/campaigns', (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { name, type, campaign_type, subject, preview_text, body, tone, audience, status, variants, metadata, scheduled_at } = req.body;
     const result = db.prepare(
-      'INSERT INTO es_campaigns (name, type, campaign_type, subject, preview_text, body, tone, audience, status, variants, metadata, scheduled_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(name, type, campaign_type || null, subject || null, preview_text || null, body || null, tone || 'professional', audience || null, status || 'draft', variants ? JSON.stringify(variants) : null, metadata ? JSON.stringify(metadata) : null, scheduled_at || null);
-    const campaign = db.prepare('SELECT * FROM es_campaigns WHERE id = ?').get(result.lastInsertRowid);
-    logActivity('email-sms', 'create', `Created ${type} campaign`, name, String(result.lastInsertRowid));
+      'INSERT INTO es_campaigns (name, type, campaign_type, subject, preview_text, body, tone, audience, status, variants, metadata, scheduled_at, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(name, type, campaign_type || null, subject || null, preview_text || null, body || null, tone || 'professional', audience || null, status || 'draft', variants ? JSON.stringify(variants) : null, metadata ? JSON.stringify(metadata) : null, scheduled_at || null, wsId);
+    const campaign = db.prepare('SELECT * FROM es_campaigns WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    logActivity('email-sms', 'create', `Created ${type} campaign`, name, String(result.lastInsertRowid), wsId);
     res.status(201).json(campaign);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -262,12 +267,13 @@ router.post('/campaigns', (req, res) => {
 // PUT /campaigns/:id - update a campaign
 router.put('/campaigns/:id', (req, res) => {
   try {
-    const existing = db.prepare('SELECT * FROM es_campaigns WHERE id = ?').get(req.params.id);
+    const wsId = req.workspace.id;
+    const existing = db.prepare('SELECT * FROM es_campaigns WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Campaign not found' });
 
     const { name, subject, preview_text, body, tone, audience, status, variants, metadata, scheduled_at } = req.body;
     db.prepare(
-      `UPDATE es_campaigns SET name = ?, subject = ?, preview_text = ?, body = ?, tone = ?, audience = ?, status = ?, variants = ?, metadata = ?, scheduled_at = ?, updated_at = datetime('now') WHERE id = ?`
+      `UPDATE es_campaigns SET name = ?, subject = ?, preview_text = ?, body = ?, tone = ?, audience = ?, status = ?, variants = ?, metadata = ?, scheduled_at = ?, updated_at = datetime('now') WHERE id = ? AND workspace_id = ?`
     ).run(
       name || existing.name,
       subject !== undefined ? subject : existing.subject,
@@ -279,10 +285,11 @@ router.put('/campaigns/:id', (req, res) => {
       variants ? JSON.stringify(variants) : existing.variants,
       metadata ? JSON.stringify(metadata) : existing.metadata,
       scheduled_at !== undefined ? scheduled_at : existing.scheduled_at,
-      req.params.id
+      req.params.id,
+      wsId
     );
 
-    const updated = db.prepare('SELECT * FROM es_campaigns WHERE id = ?').get(req.params.id);
+    const updated = db.prepare('SELECT * FROM es_campaigns WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -292,10 +299,11 @@ router.put('/campaigns/:id', (req, res) => {
 // DELETE /campaigns/:id - delete a campaign
 router.delete('/campaigns/:id', (req, res) => {
   try {
-    const existing = db.prepare('SELECT * FROM es_campaigns WHERE id = ?').get(req.params.id);
+    const wsId = req.workspace.id;
+    const existing = db.prepare('SELECT * FROM es_campaigns WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Campaign not found' });
-    db.prepare('DELETE FROM es_campaigns WHERE id = ?').run(req.params.id);
-    logActivity('email-sms', 'delete', `Deleted ${existing.type} campaign`, existing.name, req.params.id);
+    db.prepare('DELETE FROM es_campaigns WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    logActivity('email-sms', 'delete', `Deleted ${existing.type} campaign`, existing.name, req.params.id, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -305,12 +313,13 @@ router.delete('/campaigns/:id', (req, res) => {
 // GET /templates - list all templates
 router.get('/templates', (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { type } = req.query;
     let templates;
     if (type) {
-      templates = db.prepare('SELECT * FROM es_templates WHERE type = ? ORDER BY created_at DESC').all(type);
+      templates = db.prepare('SELECT * FROM es_templates WHERE type = ? AND workspace_id = ? ORDER BY created_at DESC').all(type, wsId);
     } else {
-      templates = db.prepare('SELECT * FROM es_templates ORDER BY created_at DESC').all();
+      templates = db.prepare('SELECT * FROM es_templates WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     }
     res.json(templates);
   } catch (error) {
@@ -321,11 +330,12 @@ router.get('/templates', (req, res) => {
 // POST /templates - create a template
 router.post('/templates', (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { name, type, category, subject, content, variables } = req.body;
     const result = db.prepare(
-      'INSERT INTO es_templates (name, type, category, subject, content, variables) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(name, type, category || null, subject || null, content || null, variables ? JSON.stringify(variables) : null);
-    const template = db.prepare('SELECT * FROM es_templates WHERE id = ?').get(result.lastInsertRowid);
+      'INSERT INTO es_templates (name, type, category, subject, content, variables, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run(name, type, category || null, subject || null, content || null, variables ? JSON.stringify(variables) : null, wsId);
+    const template = db.prepare('SELECT * FROM es_templates WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(template);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -383,6 +393,7 @@ router.get('/platforms/campaigns', async (req, res) => {
 // POST /platforms/send - send a campaign through a connected provider
 router.post('/platforms/send', async (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { provider, listId, subject, fromName, fromEmail, replyTo, html, name } = req.body;
     if (!provider || !listId) return res.status(400).json({ success: false, error: 'provider and listId required' });
     if (!pm.isConnected(provider)) return res.status(400).json({ success: false, error: `${provider} not connected` });
@@ -391,7 +402,7 @@ router.post('/platforms/send', async (req, res) => {
       listId, subject, fromName, fromEmail, replyTo, html, name: name || subject,
     });
 
-    logActivity('email-sms', 'send', `Sent campaign via ${provider}`, subject);
+    logActivity('email-sms', 'send', `Sent campaign via ${provider}`, subject, null, wsId);
     res.json({ success: true, data });
   } catch (error) {
     console.error('Platform send error:', error);

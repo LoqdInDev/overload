@@ -4,10 +4,11 @@ const { db } = require('../../../db/database');
 
 // GET /actions — action log
 router.get('/actions', (req, res) => {
+  const wsId = req.workspace.id;
   const { module: moduleId, status, limit = 30, offset = 0 } = req.query;
 
-  let sql = 'SELECT * FROM ae_action_log WHERE 1=1';
-  const params = [];
+  let sql = 'SELECT * FROM ae_action_log WHERE workspace_id = ?';
+  const params = [wsId];
 
   if (moduleId) {
     sql += ' AND module_id = ?';
@@ -31,12 +32,13 @@ router.get('/actions', (req, res) => {
 
 // GET /actions/stats/:moduleId — per-module stats
 router.get('/actions/stats/:moduleId', (req, res) => {
+  const wsId = req.workspace.id;
   const { moduleId } = req.params;
   const today = new Date().toISOString().split('T')[0];
 
   const todayRows = db.prepare(
-    'SELECT status, COUNT(*) as count FROM ae_action_log WHERE module_id = ? AND date(created_at) = ? GROUP BY status'
-  ).all(moduleId, today);
+    'SELECT status, COUNT(*) as count FROM ae_action_log WHERE module_id = ? AND date(created_at) = ? AND workspace_id = ? GROUP BY status'
+  ).all(moduleId, today, wsId);
 
   let todayTotal = 0, completed = 0, failed = 0;
   for (const r of todayRows) {
@@ -55,19 +57,20 @@ router.get('/actions/stats/:moduleId', (req, res) => {
 
 // GET /actions/stats — summary counts
 router.get('/actions/stats', (req, res) => {
+  const wsId = req.workspace.id;
   const today = new Date().toISOString().split('T')[0];
 
   const todayCount = db.prepare(
-    'SELECT COUNT(*) as count FROM ae_action_log WHERE date(created_at) = ?'
-  ).get(today);
+    'SELECT COUNT(*) as count FROM ae_action_log WHERE date(created_at) = ? AND workspace_id = ?'
+  ).get(today, wsId);
 
   const byStatus = db.prepare(
-    'SELECT status, COUNT(*) as count FROM ae_action_log GROUP BY status'
-  ).all();
+    'SELECT status, COUNT(*) as count FROM ae_action_log WHERE workspace_id = ? GROUP BY status'
+  ).all(wsId);
 
   const byModule = db.prepare(
-    'SELECT module_id, COUNT(*) as count FROM ae_action_log WHERE date(created_at) = ? GROUP BY module_id'
-  ).all(today);
+    'SELECT module_id, COUNT(*) as count FROM ae_action_log WHERE date(created_at) = ? AND workspace_id = ? GROUP BY module_id'
+  ).all(today, wsId);
 
   const statusMap = {};
   for (const row of byStatus) statusMap[row.status] = row.count;
@@ -86,7 +89,8 @@ router.get('/actions/stats', (req, res) => {
 
 // GET /status — global automation status for Command Center
 router.get('/status', (req, res) => {
-  const modes = db.prepare('SELECT module_id, mode FROM ae_module_modes').all();
+  const wsId = req.workspace.id;
+  const modes = db.prepare('SELECT module_id, mode FROM ae_module_modes WHERE workspace_id = ?').all(wsId);
   const modeDistribution = { manual: 0, copilot: 0, autopilot: 0 };
   const moduleStatuses = {};
   for (const row of modes) {
@@ -95,17 +99,17 @@ router.get('/status', (req, res) => {
   }
 
   const pendingCount = db.prepare(
-    'SELECT COUNT(*) as count FROM ae_approval_queue WHERE status = ?'
-  ).get('pending');
+    'SELECT COUNT(*) as count FROM ae_approval_queue WHERE status = ? AND workspace_id = ?'
+  ).get('pending', wsId);
 
   const today = new Date().toISOString().split('T')[0];
   const todayActions = db.prepare(
-    'SELECT COUNT(*) as count FROM ae_action_log WHERE date(created_at) = ?'
-  ).get(today);
+    'SELECT COUNT(*) as count FROM ae_action_log WHERE date(created_at) = ? AND workspace_id = ?'
+  ).get(today, wsId);
 
   const recentActions = db.prepare(
-    'SELECT * FROM ae_action_log ORDER BY created_at DESC LIMIT 15'
-  ).all();
+    'SELECT * FROM ae_action_log WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 15'
+  ).all(wsId);
 
   res.json({
     modes: modeDistribution,

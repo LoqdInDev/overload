@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS ci_competitors (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       website TEXT,
       industry TEXT,
@@ -17,6 +18,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS ci_reports (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       competitor_id INTEGER,
       type TEXT NOT NULL,
       title TEXT,
@@ -28,6 +30,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS ci_alerts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       competitor_id INTEGER NOT NULL,
       type TEXT NOT NULL,
       message TEXT NOT NULL,

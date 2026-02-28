@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS cd_projects (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       type TEXT NOT NULL,
       title TEXT NOT NULL,
       prompt TEXT,
@@ -14,6 +15,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS cd_images (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       project_id TEXT NOT NULL,
       url TEXT,
       alt TEXT,

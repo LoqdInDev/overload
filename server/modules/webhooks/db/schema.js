@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS wh_webhooks (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       url TEXT NOT NULL,
       events TEXT,
@@ -17,6 +18,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS wh_webhook_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       webhook_id INTEGER NOT NULL,
       event TEXT,
       payload TEXT,

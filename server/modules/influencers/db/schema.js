@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS inf_influencers (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       platform TEXT NOT NULL,
       handle TEXT,
@@ -19,6 +20,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS inf_campaigns (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       description TEXT,
       budget REAL,
@@ -32,6 +34,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS inf_outreach (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       influencer_id TEXT NOT NULL,
       campaign_id TEXT,
       message TEXT,

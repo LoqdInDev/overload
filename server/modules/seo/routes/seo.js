@@ -81,11 +81,12 @@ Be specific and actionable in your recommendations.`;
 // POST /audit - create a new SEO audit
 router.post('/audit', async (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { url, results, score } = req.body;
     const result = db.prepare(
-      'INSERT INTO seo_audits (url, results, score) VALUES (?, ?, ?)'
-    ).run(url, results || null, score || null);
-    const audit = db.prepare('SELECT * FROM seo_audits WHERE id = ?').get(result.lastInsertRowid);
+      'INSERT INTO seo_audits (url, results, score, workspace_id) VALUES (?, ?, ?, ?)'
+    ).run(url, results || null, score || null, wsId);
+    const audit = db.prepare('SELECT * FROM seo_audits WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(audit);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -95,7 +96,8 @@ router.post('/audit', async (req, res) => {
 // GET /audits - list all audits
 router.get('/audits', (req, res) => {
   try {
-    const audits = db.prepare('SELECT * FROM seo_audits ORDER BY created_at DESC').all();
+    const wsId = req.workspace.id;
+    const audits = db.prepare('SELECT * FROM seo_audits WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(audits);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -105,12 +107,13 @@ router.get('/audits', (req, res) => {
 // GET /keywords - list keywords, optionally filtered by audit_id
 router.get('/keywords', (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { audit_id } = req.query;
     let keywords;
     if (audit_id) {
-      keywords = db.prepare('SELECT * FROM seo_keywords WHERE audit_id = ? ORDER BY opportunity DESC').all(audit_id);
+      keywords = db.prepare('SELECT * FROM seo_keywords WHERE audit_id = ? AND workspace_id = ? ORDER BY opportunity DESC').all(audit_id, wsId);
     } else {
-      keywords = db.prepare('SELECT * FROM seo_keywords ORDER BY created_at DESC').all();
+      keywords = db.prepare('SELECT * FROM seo_keywords WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     }
     res.json(keywords);
   } catch (error) {

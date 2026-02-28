@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS es_campaigns (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       type TEXT NOT NULL DEFAULT 'email',
       subject TEXT,
@@ -17,6 +18,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS es_templates (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       type TEXT NOT NULL DEFAULT 'email',
       subject TEXT,
@@ -29,6 +31,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS es_contacts (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       email TEXT,
       phone TEXT,
       name TEXT,

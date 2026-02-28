@@ -8,7 +8,8 @@ const { PROVIDERS } = require('../providers');
 // GET /providers — list all platforms with live connection status
 router.get('/providers', (req, res) => {
   try {
-    const connections = db.prepare('SELECT * FROM int_connections').all();
+    const wsId = req.workspace.id;
+    const connections = db.prepare('SELECT * FROM int_connections WHERE workspace_id = ?').all(wsId);
     const connMap = {};
     for (const c of connections) connMap[c.provider_id] = c;
 
@@ -45,6 +46,7 @@ router.get('/providers', (req, res) => {
 // GET /oauth/authorize/:providerId — generate auth URL
 router.get('/oauth/authorize/:providerId', (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { providerId } = req.params;
     const provider = PROVIDERS[providerId];
     if (!provider) return res.status(404).json({ success: false, error: 'Unknown provider' });
@@ -108,6 +110,7 @@ router.get('/oauth/callback', async (req, res) => {
 // POST /connections/api-key — save API key credentials
 router.post('/connections/api-key', async (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { providerId, credentials } = req.body;
     const provider = PROVIDERS[providerId];
     if (!provider) return res.status(404).json({ success: false, error: 'Unknown provider' });
@@ -139,23 +142,23 @@ router.post('/connections/api-key', async (req, res) => {
     }
 
     const encryptedCreds = encrypt(JSON.stringify(credentials));
-    const existing = db.prepare('SELECT id FROM int_connections WHERE provider_id = ?').get(providerId);
+    const existing = db.prepare('SELECT id FROM int_connections WHERE provider_id = ? AND workspace_id = ?').get(providerId, wsId);
 
     if (existing) {
       db.prepare(`
         UPDATE int_connections SET
           status = 'connected', credentials_enc = ?, error_message = NULL,
           connected_at = datetime('now'), updated_at = datetime('now')
-        WHERE provider_id = ?
-      `).run(encryptedCreds, providerId);
+        WHERE provider_id = ? AND workspace_id = ?
+      `).run(encryptedCreds, providerId, wsId);
     } else {
       db.prepare(`
-        INSERT INTO int_connections (provider_id, display_name, auth_type, status, credentials_enc, connected_at)
-        VALUES (?, ?, 'api_key', 'connected', ?, datetime('now'))
-      `).run(providerId, provider.name, encryptedCreds);
+        INSERT INTO int_connections (provider_id, display_name, auth_type, status, credentials_enc, connected_at, workspace_id)
+        VALUES (?, ?, 'api_key', 'connected', ?, datetime('now'), ?)
+      `).run(providerId, provider.name, encryptedCreds, wsId);
     }
 
-    logActivity('integrations', 'connect', `Connected ${provider.name}`, 'API Key');
+    logActivity('integrations', 'connect', `Connected ${provider.name}`, 'API Key', null, wsId);
     res.json({ success: true });
   } catch (error) {
     console.error('API key save error:', error);
@@ -166,6 +169,7 @@ router.post('/connections/api-key', async (req, res) => {
 // DELETE /connections/:providerId — disconnect
 router.delete('/connections/:providerId', (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { providerId } = req.params;
     const provider = PROVIDERS[providerId];
     if (!provider) return res.status(404).json({ success: false, error: 'Unknown provider' });
@@ -179,10 +183,10 @@ router.delete('/connections/:providerId', (req, res) => {
         account_name = NULL, account_id = NULL,
         error_message = NULL, connected_at = NULL,
         updated_at = datetime('now')
-      WHERE provider_id = ?
-    `).run(providerId);
+      WHERE provider_id = ? AND workspace_id = ?
+    `).run(providerId, wsId);
 
-    logActivity('integrations', 'disconnect', `Disconnected ${provider.name}`, '');
+    logActivity('integrations', 'disconnect', `Disconnected ${provider.name}`, '', null, wsId);
     res.json({ success: true });
   } catch (error) {
     console.error('Disconnect error:', error);
@@ -193,8 +197,9 @@ router.delete('/connections/:providerId', (req, res) => {
 // POST /connections/:providerId/test — test if connection is valid
 router.post('/connections/:providerId/test', async (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { providerId } = req.params;
-    const conn = db.prepare('SELECT * FROM int_connections WHERE provider_id = ?').get(providerId);
+    const conn = db.prepare('SELECT * FROM int_connections WHERE provider_id = ? AND workspace_id = ?').get(providerId, wsId);
     if (!conn || conn.status === 'disconnected') {
       return res.json({ success: true, valid: false, error: 'Not connected' });
     }

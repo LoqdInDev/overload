@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS crm_contacts (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       email TEXT,
       phone TEXT,
@@ -19,6 +20,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS crm_deals (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       contact_id TEXT,
       title TEXT NOT NULL,
       value REAL DEFAULT 0,
@@ -34,6 +36,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS crm_activities (
       id TEXT PRIMARY KEY,
+      workspace_id TEXT,
       contact_id TEXT,
       deal_id TEXT,
       type TEXT NOT NULL,

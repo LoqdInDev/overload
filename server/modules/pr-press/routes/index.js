@@ -7,7 +7,8 @@ const { setupSSE } = require('../../../services/sse');
 // GET / - list all press releases
 router.get('/', (req, res) => {
   try {
-    const items = db.prepare('SELECT * FROM pp_releases ORDER BY created_at DESC').all();
+    const wsId = req.workspace.id;
+    const items = db.prepare('SELECT * FROM pp_releases WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(items);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -17,7 +18,8 @@ router.get('/', (req, res) => {
 // GET /:id - get a single press release
 router.get('/:id', (req, res) => {
   try {
-    const item = db.prepare('SELECT * FROM pp_releases WHERE id = ?').get(req.params.id);
+    const wsId = req.workspace.id;
+    const item = db.prepare('SELECT * FROM pp_releases WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!item) return res.status(404).json({ error: 'Not found' });
     res.json(item);
   } catch (error) {
@@ -28,11 +30,12 @@ router.get('/:id', (req, res) => {
 // POST / - create a press release
 router.post('/', (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { title, content, status, target_date, distribution_list } = req.body;
     const result = db.prepare(
-      'INSERT INTO pp_releases (title, content, status, target_date, distribution_list) VALUES (?, ?, ?, ?, ?)'
-    ).run(title, content || null, status || 'draft', target_date || null, distribution_list || null);
-    const item = db.prepare('SELECT * FROM pp_releases WHERE id = ?').get(result.lastInsertRowid);
+      'INSERT INTO pp_releases (title, content, status, target_date, distribution_list, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run(title, content || null, status || 'draft', target_date || null, distribution_list || null, wsId);
+    const item = db.prepare('SELECT * FROM pp_releases WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(item);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -42,21 +45,23 @@ router.post('/', (req, res) => {
 // PUT /:id - update a press release
 router.put('/:id', (req, res) => {
   try {
-    const existing = db.prepare('SELECT * FROM pp_releases WHERE id = ?').get(req.params.id);
+    const wsId = req.workspace.id;
+    const existing = db.prepare('SELECT * FROM pp_releases WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
     const { title, content, status, target_date, distribution_list } = req.body;
     db.prepare(
-      'UPDATE pp_releases SET title = ?, content = ?, status = ?, target_date = ?, distribution_list = ?, updated_at = datetime(\'now\') WHERE id = ?'
+      'UPDATE pp_releases SET title = ?, content = ?, status = ?, target_date = ?, distribution_list = ?, updated_at = datetime(\'now\') WHERE id = ? AND workspace_id = ?'
     ).run(
       title || existing.title,
       content !== undefined ? content : existing.content,
       status || existing.status,
       target_date !== undefined ? target_date : existing.target_date,
       distribution_list !== undefined ? distribution_list : existing.distribution_list,
-      req.params.id
+      req.params.id,
+      wsId
     );
-    const updated = db.prepare('SELECT * FROM pp_releases WHERE id = ?').get(req.params.id);
+    const updated = db.prepare('SELECT * FROM pp_releases WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -66,9 +71,10 @@ router.put('/:id', (req, res) => {
 // DELETE /:id - delete a press release
 router.delete('/:id', (req, res) => {
   try {
-    const existing = db.prepare('SELECT * FROM pp_releases WHERE id = ?').get(req.params.id);
+    const wsId = req.workspace.id;
+    const existing = db.prepare('SELECT * FROM pp_releases WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Not found' });
-    db.prepare('DELETE FROM pp_releases WHERE id = ?').run(req.params.id);
+    db.prepare('DELETE FROM pp_releases WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -78,7 +84,8 @@ router.delete('/:id', (req, res) => {
 // GET /contacts/list - list all media contacts
 router.get('/contacts/list', (req, res) => {
   try {
-    const contacts = db.prepare('SELECT * FROM pp_contacts ORDER BY created_at DESC').all();
+    const wsId = req.workspace.id;
+    const contacts = db.prepare('SELECT * FROM pp_contacts WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(contacts);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -88,11 +95,12 @@ router.get('/contacts/list', (req, res) => {
 // POST /contacts - create a media contact
 router.post('/contacts', (req, res) => {
   try {
+    const wsId = req.workspace.id;
     const { name, outlet, email, beat, relationship } = req.body;
     const result = db.prepare(
-      'INSERT INTO pp_contacts (name, outlet, email, beat, relationship) VALUES (?, ?, ?, ?, ?)'
-    ).run(name, outlet || null, email || null, beat || null, relationship || null);
-    const contact = db.prepare('SELECT * FROM pp_contacts WHERE id = ?').get(result.lastInsertRowid);
+      'INSERT INTO pp_contacts (name, outlet, email, beat, relationship, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run(name, outlet || null, email || null, beat || null, relationship || null, wsId);
+    const contact = db.prepare('SELECT * FROM pp_contacts WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(contact);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -102,7 +110,8 @@ router.post('/contacts', (req, res) => {
 // DELETE /contacts/:id - delete a media contact
 router.delete('/contacts/:id', (req, res) => {
   try {
-    db.prepare('DELETE FROM pp_contacts WHERE id = ?').run(req.params.id);
+    const wsId = req.workspace.id;
+    db.prepare('DELETE FROM pp_contacts WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });

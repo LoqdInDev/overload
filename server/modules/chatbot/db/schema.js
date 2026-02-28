@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS cb_bots (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       description TEXT,
       personality TEXT,
@@ -16,6 +17,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS cb_flows (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       bot_id INTEGER NOT NULL,
       name TEXT NOT NULL,
       trigger TEXT,
@@ -26,6 +28,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS cb_conversations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       bot_id INTEGER NOT NULL,
       messages TEXT DEFAULT '[]',
       rating INTEGER,

@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS cr_reports (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       client_name TEXT,
       date_range TEXT,
@@ -17,6 +18,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS cr_templates (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       name TEXT NOT NULL,
       layout TEXT DEFAULT '{}',
       sections TEXT DEFAULT '[]',
@@ -25,6 +27,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS cr_schedules (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       report_id INTEGER NOT NULL,
       frequency TEXT NOT NULL CHECK(frequency IN ('weekly', 'monthly', 'quarterly')),
       next_run TEXT,

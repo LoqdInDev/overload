@@ -7,6 +7,7 @@ const fs = require('fs');
 const { initSharedTables } = require('./db/database');
 const { initAuthTables, cleanExpiredTokens } = require('./services/auth');
 const { requireAuth } = require('./middleware/requireAuth');
+const { requireWorkspace } = require('./middleware/requireWorkspace');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -19,15 +20,25 @@ app.use(express.json({ limit: '10mb' }));
 initSharedTables();
 initAuthTables();
 
+// Run workspace migration (idempotent — adds workspace_id to tables that lack it)
+const { runMigration } = require('./db/migrations/add-workspace-id');
+runMigration();
+
 // Auth routes (public — no auth required)
 app.use('/api/auth', require('./routes/auth'));
 
-// Protect all other API routes
+// Workspace routes (require auth but NOT workspace context)
+app.use('/api/workspaces', require('./routes/workspaces'));
+
+// Protect all other API routes with auth + workspace
 app.use('/api', (req, res, next) => {
   // Allow unauthenticated access to auth routes (already handled above)
   // and to the modules registry (used by landing page)
   if (req.path === '/modules') return next();
-  requireAuth(req, res, next);
+  requireAuth(req, res, (err) => {
+    if (err) return next(err);
+    requireWorkspace(req, res, next);
+  });
 });
 
 // Auto-discover and mount modules
@@ -69,7 +80,7 @@ app.get('/api/modules', (req, res) => {
 const { getRecentActivity } = require('./db/database');
 app.get('/api/activity', (req, res) => {
   const limit = parseInt(req.query.limit) || 20;
-  res.json(getRecentActivity(limit));
+  res.json(getRecentActivity(limit, req.workspace?.id));
 });
 
 // Serve generated videos

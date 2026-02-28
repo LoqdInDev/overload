@@ -5,10 +5,11 @@ const { createNotification } = require('../db/schema');
 
 // GET /approvals — list queue items
 router.get('/approvals', (req, res) => {
+  const wsId = req.workspace.id;
   const { module: moduleId, status, priority, limit = 50, offset = 0 } = req.query;
 
-  let sql = 'SELECT * FROM ae_approval_queue WHERE 1=1';
-  const params = [];
+  let sql = 'SELECT * FROM ae_approval_queue WHERE workspace_id = ?';
+  const params = [wsId];
 
   if (moduleId) {
     sql += ' AND module_id = ?';
@@ -31,7 +32,7 @@ router.get('/approvals', (req, res) => {
   params.push(Number(limit), Number(offset));
 
   const rows = db.prepare(sql).all(...params);
-  const total = db.prepare('SELECT COUNT(*) as count FROM ae_approval_queue WHERE status = ?').get('pending');
+  const total = db.prepare('SELECT COUNT(*) as count FROM ae_approval_queue WHERE status = ? AND workspace_id = ?').get('pending', wsId);
 
   res.json({
     items: rows.map(r => ({
@@ -54,10 +55,11 @@ router.get('/approvals', (req, res) => {
 
 // GET /approvals/count — pending counts
 router.get('/approvals/count', (req, res) => {
-  const total = db.prepare('SELECT COUNT(*) as count FROM ae_approval_queue WHERE status = ?').get('pending');
+  const wsId = req.workspace.id;
+  const total = db.prepare('SELECT COUNT(*) as count FROM ae_approval_queue WHERE status = ? AND workspace_id = ?').get('pending', wsId);
   const byModule = db.prepare(
-    'SELECT module_id, COUNT(*) as count FROM ae_approval_queue WHERE status = ? GROUP BY module_id'
-  ).all('pending');
+    'SELECT module_id, COUNT(*) as count FROM ae_approval_queue WHERE status = ? AND workspace_id = ? GROUP BY module_id'
+  ).all('pending', wsId);
 
   const pendingByModule = {};
   for (const row of byModule) {
@@ -72,7 +74,8 @@ router.get('/approvals/count', (req, res) => {
 
 // GET /approvals/:id — single item
 router.get('/approvals/:id', (req, res) => {
-  const row = db.prepare('SELECT * FROM ae_approval_queue WHERE id = ?').get(req.params.id);
+  const wsId = req.workspace.id;
+  const row = db.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
   if (!row) return res.status(404).json({ error: 'Approval item not found' });
   res.json({
     id: row.id,
@@ -92,21 +95,22 @@ router.get('/approvals/:id', (req, res) => {
 
 // POST /approvals/:id/approve
 router.post('/approvals/:id/approve', (req, res) => {
-  const item = db.prepare('SELECT * FROM ae_approval_queue WHERE id = ?').get(req.params.id);
+  const wsId = req.workspace.id;
+  const item = db.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
   if (!item) return res.status(404).json({ error: 'Approval item not found' });
   if (item.status !== 'pending') return res.status(400).json({ error: 'Item is not pending' });
 
   db.prepare(`
-    UPDATE ae_approval_queue SET status = 'approved', reviewed_at = datetime('now'), reviewed_by = ? WHERE id = ?
-  `).run(req.user?.id || 'system', req.params.id);
+    UPDATE ae_approval_queue SET status = 'approved', reviewed_at = datetime('now'), reviewed_by = ? WHERE id = ? AND workspace_id = ?
+  `).run(req.user?.id || 'system', req.params.id, wsId);
 
   // Log the approval action
   db.prepare(`
-    INSERT INTO ae_action_log (module_id, action_type, mode, description, status, approval_id, created_at, completed_at)
-    VALUES (?, ?, 'copilot', ?, 'completed', ?, datetime('now'), datetime('now'))
-  `).run(item.module_id, item.action_type, `Approved: ${item.title}`, item.id);
+    INSERT INTO ae_action_log (module_id, action_type, mode, description, status, approval_id, created_at, completed_at, workspace_id)
+    VALUES (?, ?, 'copilot', ?, 'completed', ?, datetime('now'), datetime('now'), ?)
+  `).run(item.module_id, item.action_type, `Approved: ${item.title}`, item.id, wsId);
 
-  logActivity(item.module_id, 'approved', item.title, `Approved automation action: ${item.description}`);
+  logActivity(item.module_id, 'approved', item.title, `Approved automation action: ${item.description}`, null, wsId);
   createNotification('action_completed', `Approved: ${item.title}`, item.description, item.module_id);
 
   res.json({ success: true, id: Number(req.params.id) });
@@ -114,20 +118,21 @@ router.post('/approvals/:id/approve', (req, res) => {
 
 // POST /approvals/:id/reject
 router.post('/approvals/:id/reject', (req, res) => {
-  const item = db.prepare('SELECT * FROM ae_approval_queue WHERE id = ?').get(req.params.id);
+  const wsId = req.workspace.id;
+  const item = db.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
   if (!item) return res.status(404).json({ error: 'Approval item not found' });
   if (item.status !== 'pending') return res.status(400).json({ error: 'Item is not pending' });
 
   const { notes } = req.body || {};
 
   db.prepare(`
-    UPDATE ae_approval_queue SET status = 'rejected', reviewed_at = datetime('now'), reviewed_by = ?, review_notes = ? WHERE id = ?
-  `).run(req.user?.id || 'system', notes || null, req.params.id);
+    UPDATE ae_approval_queue SET status = 'rejected', reviewed_at = datetime('now'), reviewed_by = ?, review_notes = ? WHERE id = ? AND workspace_id = ?
+  `).run(req.user?.id || 'system', notes || null, req.params.id, wsId);
 
   db.prepare(`
-    INSERT INTO ae_action_log (module_id, action_type, mode, description, status, approval_id, created_at, completed_at)
-    VALUES (?, ?, 'copilot', ?, 'cancelled', ?, datetime('now'), datetime('now'))
-  `).run(item.module_id, item.action_type, `Rejected: ${item.title}`, item.id);
+    INSERT INTO ae_action_log (module_id, action_type, mode, description, status, approval_id, created_at, completed_at, workspace_id)
+    VALUES (?, ?, 'copilot', ?, 'cancelled', ?, datetime('now'), datetime('now'), ?)
+  `).run(item.module_id, item.action_type, `Rejected: ${item.title}`, item.id, wsId);
 
   createNotification('action_failed', `Rejected: ${item.title}`, notes || item.description, item.module_id);
 
@@ -136,26 +141,28 @@ router.post('/approvals/:id/reject', (req, res) => {
 
 // POST /approvals/:id/edit — edit payload then approve
 router.post('/approvals/:id/edit', (req, res) => {
-  const item = db.prepare('SELECT * FROM ae_approval_queue WHERE id = ?').get(req.params.id);
+  const wsId = req.workspace.id;
+  const item = db.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
   if (!item) return res.status(404).json({ error: 'Approval item not found' });
   if (item.status !== 'pending') return res.status(400).json({ error: 'Item is not pending' });
 
   const { payload } = req.body;
 
   db.prepare(`
-    UPDATE ae_approval_queue SET status = 'approved', payload = ?, reviewed_at = datetime('now'), reviewed_by = ?, review_notes = 'edited' WHERE id = ?
-  `).run(JSON.stringify(payload), req.user?.id || 'system', req.params.id);
+    UPDATE ae_approval_queue SET status = 'approved', payload = ?, reviewed_at = datetime('now'), reviewed_by = ?, review_notes = 'edited' WHERE id = ? AND workspace_id = ?
+  `).run(JSON.stringify(payload), req.user?.id || 'system', req.params.id, wsId);
 
   db.prepare(`
-    INSERT INTO ae_action_log (module_id, action_type, mode, description, status, approval_id, created_at, completed_at)
-    VALUES (?, ?, 'copilot', ?, 'completed', ?, datetime('now'), datetime('now'))
-  `).run(item.module_id, item.action_type, `Edited & approved: ${item.title}`, item.id);
+    INSERT INTO ae_action_log (module_id, action_type, mode, description, status, approval_id, created_at, completed_at, workspace_id)
+    VALUES (?, ?, 'copilot', ?, 'completed', ?, datetime('now'), datetime('now'), ?)
+  `).run(item.module_id, item.action_type, `Edited & approved: ${item.title}`, item.id, wsId);
 
   res.json({ success: true, id: Number(req.params.id) });
 });
 
 // POST /approvals/batch — batch approve/reject
 router.post('/approvals/batch', (req, res) => {
+  const wsId = req.workspace.id;
   const { ids, action } = req.body;
   if (!ids || !Array.isArray(ids) || !['approve', 'reject'].includes(action)) {
     return res.status(400).json({ error: 'Invalid batch request' });
@@ -163,12 +170,12 @@ router.post('/approvals/batch', (req, res) => {
 
   const newStatus = action === 'approve' ? 'approved' : 'rejected';
   const stmt = db.prepare(`
-    UPDATE ae_approval_queue SET status = ?, reviewed_at = datetime('now'), reviewed_by = ? WHERE id = ? AND status = 'pending'
+    UPDATE ae_approval_queue SET status = ?, reviewed_at = datetime('now'), reviewed_by = ? WHERE id = ? AND status = 'pending' AND workspace_id = ?
   `);
 
   let updated = 0;
   for (const id of ids) {
-    const result = stmt.run(newStatus, req.user?.id || 'system', id);
+    const result = stmt.run(newStatus, req.user?.id || 'system', id, wsId);
     updated += result.changes;
   }
 

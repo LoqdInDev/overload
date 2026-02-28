@@ -6,6 +6,7 @@ const { setupSSE } = require('../../../services/sse');
 
 // SSE - AI campaign planning
 router.post('/generate', async (req, res) => {
+  const wsId = req.workspace.id;
   const sse = setupSSE(res);
 
   try {
@@ -16,7 +17,7 @@ router.post('/generate', async (req, res) => {
       const { text } = await generateTextWithClaude(rawPrompt, {
         onChunk: (chunk) => sse.sendChunk(chunk),
       });
-      logActivity('calendar', 'generate', 'Generated calendar content', 'AI generation');
+      logActivity('calendar', 'generate', 'Generated calendar content', 'AI generation', null, wsId);
       sse.sendResult({ content: text });
       return;
     }
@@ -54,7 +55,7 @@ Return a JSON object with this structure:
       onChunk: (text) => sse.sendChunk(text),
     });
 
-    logActivity('calendar', 'generate', 'Generated campaign plan', parsed.campaign?.name || 'AI Campaign');
+    logActivity('calendar', 'generate', 'Generated campaign plan', parsed.campaign?.name || 'AI Campaign', null, wsId);
     sse.sendResult(parsed);
   } catch (error) {
     console.error('Calendar generation error:', error);
@@ -64,10 +65,11 @@ Return a JSON object with this structure:
 
 // GET /events
 router.get('/events', (req, res) => {
+  const wsId = req.workspace.id;
   try {
     const { start, end, module_id, status } = req.query;
-    let sql = 'SELECT * FROM mc_events WHERE 1=1';
-    const params = [];
+    let sql = 'SELECT * FROM mc_events WHERE workspace_id = ?';
+    const params = [wsId];
 
     if (start) { sql += ' AND date >= ?'; params.push(start); }
     if (end) { sql += ' AND date <= ?'; params.push(end); }
@@ -84,6 +86,7 @@ router.get('/events', (req, res) => {
 
 // POST /events
 router.post('/events', (req, res) => {
+  const wsId = req.workspace.id;
   try {
     const { title, description, module_id, date, end_date, color, status } = req.body;
 
@@ -92,11 +95,11 @@ router.post('/events', (req, res) => {
     }
 
     const result = db.prepare(
-      'INSERT INTO mc_events (title, description, module_id, date, end_date, color, status) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).run(title, description || null, module_id || null, date, end_date || null, color || null, status || 'planned');
+      'INSERT INTO mc_events (title, description, module_id, date, end_date, color, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(title, description || null, module_id || null, date, end_date || null, color || null, status || 'planned', wsId);
 
-    const event = db.prepare('SELECT * FROM mc_events WHERE id = ?').get(result.lastInsertRowid);
-    logActivity('calendar', 'create', 'Created calendar event', title);
+    const event = db.prepare('SELECT * FROM mc_events WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    logActivity('calendar', 'create', 'Created calendar event', title, null, wsId);
     res.status(201).json(event);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -105,16 +108,17 @@ router.post('/events', (req, res) => {
 
 // PUT /events/:id
 router.put('/events/:id', (req, res) => {
+  const wsId = req.workspace.id;
   try {
     const { title, description, module_id, date, end_date, color, status } = req.body;
 
-    const existing = db.prepare('SELECT * FROM mc_events WHERE id = ?').get(req.params.id);
+    const existing = db.prepare('SELECT * FROM mc_events WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) {
       return res.status(404).json({ error: 'Event not found' });
     }
 
     db.prepare(
-      'UPDATE mc_events SET title = ?, description = ?, module_id = ?, date = ?, end_date = ?, color = ?, status = ? WHERE id = ?'
+      'UPDATE mc_events SET title = ?, description = ?, module_id = ?, date = ?, end_date = ?, color = ?, status = ? WHERE id = ? AND workspace_id = ?'
     ).run(
       title || existing.title,
       description !== undefined ? description : existing.description,
@@ -123,10 +127,10 @@ router.put('/events/:id', (req, res) => {
       end_date !== undefined ? end_date : existing.end_date,
       color !== undefined ? color : existing.color,
       status || existing.status,
-      req.params.id
+      req.params.id, wsId
     );
 
-    const updated = db.prepare('SELECT * FROM mc_events WHERE id = ?').get(req.params.id);
+    const updated = db.prepare('SELECT * FROM mc_events WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -135,14 +139,15 @@ router.put('/events/:id', (req, res) => {
 
 // DELETE /events/:id
 router.delete('/events/:id', (req, res) => {
+  const wsId = req.workspace.id;
   try {
-    const existing = db.prepare('SELECT * FROM mc_events WHERE id = ?').get(req.params.id);
+    const existing = db.prepare('SELECT * FROM mc_events WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) {
       return res.status(404).json({ error: 'Event not found' });
     }
 
-    db.prepare('DELETE FROM mc_events WHERE id = ?').run(req.params.id);
-    logActivity('calendar', 'delete', 'Deleted calendar event', existing.title);
+    db.prepare('DELETE FROM mc_events WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    logActivity('calendar', 'delete', 'Deleted calendar event', existing.title, null, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -151,8 +156,9 @@ router.delete('/events/:id', (req, res) => {
 
 // GET /campaigns
 router.get('/campaigns', (req, res) => {
+  const wsId = req.workspace.id;
   try {
-    const campaigns = db.prepare('SELECT * FROM mc_campaigns ORDER BY created_at DESC').all();
+    const campaigns = db.prepare('SELECT * FROM mc_campaigns WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(campaigns);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -161,6 +167,7 @@ router.get('/campaigns', (req, res) => {
 
 // POST /campaigns
 router.post('/campaigns', (req, res) => {
+  const wsId = req.workspace.id;
   try {
     const { name, start_date, end_date, modules, notes } = req.body;
 
@@ -169,11 +176,11 @@ router.post('/campaigns', (req, res) => {
     }
 
     const result = db.prepare(
-      'INSERT INTO mc_campaigns (name, start_date, end_date, modules, notes) VALUES (?, ?, ?, ?, ?)'
-    ).run(name, start_date, end_date, modules ? JSON.stringify(modules) : null, notes || null);
+      'INSERT INTO mc_campaigns (name, start_date, end_date, modules, notes, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run(name, start_date, end_date, modules ? JSON.stringify(modules) : null, notes || null, wsId);
 
-    const campaign = db.prepare('SELECT * FROM mc_campaigns WHERE id = ?').get(result.lastInsertRowid);
-    logActivity('calendar', 'create', 'Created campaign', name);
+    const campaign = db.prepare('SELECT * FROM mc_campaigns WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    logActivity('calendar', 'create', 'Created campaign', name, null, wsId);
     res.status(201).json(campaign);
   } catch (error) {
     res.status(500).json({ error: error.message });

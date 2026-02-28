@@ -4,9 +4,10 @@ const { db, logActivity } = require('../../../db/database');
 
 // GET /rules — list all rules
 router.get('/rules', (req, res) => {
+  const wsId = req.workspace.id;
   const { module: moduleId } = req.query;
-  let sql = 'SELECT * FROM ae_rules WHERE 1=1';
-  const params = [];
+  let sql = 'SELECT * FROM ae_rules WHERE workspace_id = ?';
+  const params = [wsId];
   if (moduleId) {
     sql += ' AND module_id = ?';
     params.push(moduleId);
@@ -23,27 +24,30 @@ router.get('/rules', (req, res) => {
 
 // POST /rules — create rule
 router.post('/rules', (req, res) => {
+  const wsId = req.workspace.id;
   const { module_id, name, trigger_type, trigger_config, action_type, action_config, requires_approval } = req.body;
   if (!module_id || !name || !trigger_type || !trigger_config || !action_type) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   const result = db.prepare(`
-    INSERT INTO ae_rules (module_id, name, trigger_type, trigger_config, action_type, action_config, requires_approval)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO ae_rules (module_id, name, trigger_type, trigger_config, action_type, action_config, requires_approval, workspace_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     module_id, name, trigger_type,
     JSON.stringify(trigger_config),
     action_type,
     action_config ? JSON.stringify(action_config) : null,
-    requires_approval ? 1 : 0
+    requires_approval ? 1 : 0,
+    wsId
   );
-  logActivity(module_id, 'rule_created', name, `Created automation rule: ${name}`);
+  logActivity(module_id, 'rule_created', name, `Created automation rule: ${name}`, null, wsId);
   res.json({ success: true, id: result.lastInsertRowid });
 });
 
 // PUT /rules/:id — update rule
 router.put('/rules/:id', (req, res) => {
-  const rule = db.prepare('SELECT * FROM ae_rules WHERE id = ?').get(req.params.id);
+  const wsId = req.workspace.id;
+  const rule = db.prepare('SELECT * FROM ae_rules WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
   if (!rule) return res.status(404).json({ error: 'Rule not found' });
 
   const fields = [];
@@ -66,17 +70,18 @@ router.put('/rules/:id', (req, res) => {
 
   if (fields.length === 0) return res.status(400).json({ error: 'No fields to update' });
 
-  params.push(req.params.id);
-  db.prepare(`UPDATE ae_rules SET ${fields.join(', ')} WHERE id = ?`).run(...params);
+  params.push(req.params.id, wsId);
+  db.prepare(`UPDATE ae_rules SET ${fields.join(', ')} WHERE id = ? AND workspace_id = ?`).run(...params);
   res.json({ success: true, id: Number(req.params.id) });
 });
 
 // DELETE /rules/:id — delete rule
 router.delete('/rules/:id', (req, res) => {
-  const rule = db.prepare('SELECT * FROM ae_rules WHERE id = ?').get(req.params.id);
+  const wsId = req.workspace.id;
+  const rule = db.prepare('SELECT * FROM ae_rules WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
   if (!rule) return res.status(404).json({ error: 'Rule not found' });
-  db.prepare('DELETE FROM ae_rules WHERE id = ?').run(req.params.id);
-  logActivity(rule.module_id, 'rule_deleted', rule.name, `Deleted automation rule: ${rule.name}`);
+  db.prepare('DELETE FROM ae_rules WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+  logActivity(rule.module_id, 'rule_deleted', rule.name, `Deleted automation rule: ${rule.name}`, null, wsId);
   res.json({ success: true });
 });
 

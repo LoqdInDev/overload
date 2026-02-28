@@ -4,6 +4,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS sm_posts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       platform TEXT NOT NULL,
       post_type TEXT DEFAULT 'feed',
       caption TEXT,
@@ -24,6 +25,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS sm_accounts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       provider_id TEXT NOT NULL,
       platform TEXT NOT NULL,
       account_id TEXT,
@@ -41,6 +43,7 @@ function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS sm_calendar (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
       title TEXT,
       platform TEXT,
       post_type TEXT,

@@ -3,6 +3,7 @@ const { db } = require('../../../db/database');
 function initDatabase() {
   db.exec(`CREATE TABLE IF NOT EXISTS bp_profiles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workspace_id TEXT,
     brand_name TEXT,
     tagline TEXT,
     mission TEXT,
@@ -29,6 +30,7 @@ function initDatabase() {
   // Media assets table
   db.exec(`CREATE TABLE IF NOT EXISTS bp_media (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workspace_id TEXT,
     filename TEXT NOT NULL,
     original_name TEXT NOT NULL,
     category TEXT DEFAULT 'other',
