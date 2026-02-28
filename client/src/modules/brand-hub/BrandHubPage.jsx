@@ -5,6 +5,8 @@ import { useBrand } from '../../context/BrandContext';
 import { fetchJSON, postJSON, connectSSE } from '../../lib/api';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 const COLOR = '#C45D3E';
 
 /* ── Profile constants ── */
@@ -130,7 +132,7 @@ export default function BrandHubPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch('/api/brand-profile/profile');
+        const res = await fetch(`${API_BASE}/api/brand-profile/profile`);
         const data = await res.json();
         if (data && data.id) {
           const parse = (v) => { try { return JSON.parse(v); } catch { return v; } };
@@ -232,7 +234,7 @@ export default function BrandHubPage() {
     }).join(', ');
 
     try {
-      const res = await fetch('/api/brand/generate', {
+      const res = await fetch(`${API_BASE}/api/brand/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -278,7 +280,7 @@ export default function BrandHubPage() {
 
   const saveBrand = async () => {
     try {
-      const res = await fetch('/api/brand/brands', {
+      const res = await fetch(`${API_BASE}/api/brand/brands`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -329,7 +331,7 @@ export default function BrandHubPage() {
       const form = new FormData();
       for (const file of files) form.append('files', file);
       form.append('category', category);
-      const res = await fetch('/api/brand-profile/media', { method: 'POST', body: form });
+      const res = await fetch(`${API_BASE}/api/brand-profile/media`, { method: 'POST', body: form });
       const data = await res.json();
       if (data.success) loadMedia(mediaCategory);
     } catch (e) {

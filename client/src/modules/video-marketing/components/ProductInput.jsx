@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useTheme } from '../../../context/ThemeContext';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 export default function ProductInput({ onSubmit, welcome }) {
   const { dark } = useTheme();
   const [mode, setMode] = useState('url');
@@ -18,7 +20,7 @@ export default function ProductInput({ onSubmit, welcome }) {
     setScraping(true);
     setScrapeError('');
     try {
-      const res = await fetch('/api/scrape', {
+      const res = await fetch(`${API_BASE}/api/scrape`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url }),

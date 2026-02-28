@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 const AuthContext = createContext({
   user: null,
   loading: true,
@@ -22,7 +24,7 @@ export function AuthProvider({ children }) {
   // Auto-login: creates default owner and returns tokens
   const autoLogin = async () => {
     try {
-      const res = await fetch('/api/auth/auto-login', {
+      const res = await fetch(`${API_BASE}/api/auth/auto-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -45,7 +47,7 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    fetch('/api/auth/me', {
+    fetch(`${API_BASE}/api/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => {
@@ -62,7 +64,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async (email, password) => {
-    const res = await fetch('/api/auth/login', {
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -78,7 +80,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signup = useCallback(async (email, password, displayName) => {
-    const res = await fetch('/api/auth/signup', {
+    const res = await fetch(`${API_BASE}/api/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, displayName }),
@@ -96,7 +98,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     const refreshToken = localStorage.getItem(REFRESH_KEY);
     try {
-      await fetch('/api/auth/logout', {
+      await fetch(`${API_BASE}/api/auth/logout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken }),

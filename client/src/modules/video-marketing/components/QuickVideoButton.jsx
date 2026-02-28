@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 export default function QuickVideoButton({ hookText, campaignId, productImageUrl }) {
   const [status, setStatus] = useState('idle');
   const [jobId, setJobId] = useState(null);
@@ -13,7 +15,7 @@ export default function QuickVideoButton({ hookText, campaignId, productImageUrl
     setError('');
 
     try {
-      const res = await fetch('/api/video/generate-quick', {
+      const res = await fetch(`${API_BASE}/api/video/generate-quick`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

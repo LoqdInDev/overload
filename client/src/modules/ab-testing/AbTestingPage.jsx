@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 const MOCK_TESTS = [
   { id: 1, name: 'Homepage Hero CTA', type: 'copy', status: 'running', variants: 3, lift: '+18.2%' },
   { id: 2, name: 'Checkout Flow Layout', type: 'creative', status: 'running', variants: 2, lift: '+7.5%' },
@@ -36,7 +38,7 @@ export default function AbTestingPage() {
   const generate = async (template) => {
     setSelectedTemplate(template); setGenerating(true); setOutput('');
     try {
-      const res = await fetch('/api/ab-testing/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'content', prompt: template.prompt }) });
+      const res = await fetch(`${API_BASE}/api/ab-testing/generate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'content', prompt: template.prompt }) });
       const reader = res.body.getReader(); const decoder = new TextDecoder();
       while (true) { const { done, value } = await reader.read(); if (done) break; const lines = decoder.decode(value, { stream: true }).split('\n').filter(l => l.startsWith('data: ')); for (const line of lines) { try { const d = JSON.parse(line.slice(6)); if (d.type === 'chunk') setOutput(p => p + d.text); else if (d.type === 'result') setOutput(d.data.content); } catch {} } }
     } catch (e) { console.error(e); } finally { setGenerating(false); }

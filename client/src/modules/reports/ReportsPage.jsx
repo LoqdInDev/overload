@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 const REPORT_TYPES = [
   { id: 'overview', name: 'Business Overview', desc: 'Full marketing performance summary across all channels', icon: 'M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5' },
   { id: 'campaign', name: 'Campaign Report', desc: 'Performance metrics for a specific campaign', icon: 'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75z' },
@@ -36,7 +38,7 @@ export default function ReportsPage() {
     const type = REPORT_TYPES.find(r => r.id === selectedType);
     const prompt = customPrompt || `Generate a comprehensive ${type?.name} for the period: ${period}. Include key metrics, trends, insights, and actionable recommendations. Format the report with clear sections, bullet points, and data summaries.`;
     try {
-      const res = await fetch('/api/reports/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: selectedType, prompt }) });
+      const res = await fetch(`${API_BASE}/api/reports/generate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: selectedType, prompt }) });
       const reader = res.body.getReader(); const decoder = new TextDecoder();
       while (true) { const { done, value } = await reader.read(); if (done) break; const lines = decoder.decode(value, { stream: true }).split('\n').filter(l => l.startsWith('data: ')); for (const line of lines) { try { const d = JSON.parse(line.slice(6)); if (d.type === 'chunk') setOutput(p => p + d.text); else if (d.type === 'result') setOutput(d.data.content); } catch {} } }
     } catch (e) { console.error(e); } finally { setGenerating(false); }

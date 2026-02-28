@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 const MOCK_AUDIENCES = [
   { id: 1, name: 'High-Value Purchasers', platform: 'Meta', type: 'custom', size: '45K', status: 'active' },
   { id: 2, name: 'Cart Abandoners 30d', platform: 'Google', type: 'custom', size: '120K', status: 'active' },
@@ -39,7 +41,7 @@ export default function AudienceBuilderPage() {
   const generate = async (template) => {
     setSelectedTemplate(template); setGenerating(true); setOutput('');
     try {
-      const res = await fetch('/api/audience-builder/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'content', prompt: template.prompt }) });
+      const res = await fetch(`${API_BASE}/api/audience-builder/generate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'content', prompt: template.prompt }) });
       const reader = res.body.getReader(); const decoder = new TextDecoder();
       while (true) { const { done, value } = await reader.read(); if (done) break; const lines = decoder.decode(value, { stream: true }).split('\n').filter(l => l.startsWith('data: ')); for (const line of lines) { try { const d = JSON.parse(line.slice(6)); if (d.type === 'chunk') setOutput(p => p + d.text); else if (d.type === 'result') setOutput(d.data.content); } catch {} } }
     } catch (e) { console.error(e); } finally { setGenerating(false); }

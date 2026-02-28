@@ -3,6 +3,8 @@ import { usePageTitle } from '../../hooks/usePageTitle';
 import AIToolsTab from '../../components/shared/AIToolsTab';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 // Map integration IDs to brand SVG filenames in /brands/
 const BRAND_ICON_MAP = {
   'shopify': 'shopify', 'google-ads': 'google', 'meta-ads': 'meta',
@@ -90,7 +92,7 @@ export default function IntegrationsPage() {
 
   const fetchProviders = useCallback(async () => {
     try {
-      const res = await fetch('/api/integrations/providers');
+      const res = await fetch(`${API_BASE}/api/integrations/providers`);
       const data = await res.json();
       if (data.success && data.data?.length > 0) {
         setProviders(data.data);
@@ -171,7 +173,7 @@ export default function IntegrationsPage() {
     setApiKeySaving(true);
     setApiKeyError('');
     try {
-      const res = await fetch('/api/integrations/connections/api-key', {
+      const res = await fetch(`${API_BASE}/api/integrations/connections/api-key`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ providerId: apiKeyModal.id, credentials: apiKeyForm }),

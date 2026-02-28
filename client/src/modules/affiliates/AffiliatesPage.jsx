@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 const MOCK_PROGRAMS = [
   { id: 1, name: 'Pro Plan Referral', type: 'percentage', rate: 25, affiliates: 48, revenue: 12400, status: 'active' },
   { id: 2, name: 'Course Affiliate', type: 'flat', rate: 50, affiliates: 23, revenue: 8200, status: 'active' },
@@ -32,7 +34,7 @@ export default function AffiliatesPage() {
   const generate = async (template) => {
     setSelectedTemplate(template); setGenerating(true); setOutput('');
     try {
-      const res = await fetch('/api/affiliates/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'content', prompt: template.prompt }) });
+      const res = await fetch(`${API_BASE}/api/affiliates/generate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'content', prompt: template.prompt }) });
       const reader = res.body.getReader(); const decoder = new TextDecoder();
       while (true) { const { done, value } = await reader.read(); if (done) break; const lines = decoder.decode(value, { stream: true }).split('\n').filter(l => l.startsWith('data: ')); for (const line of lines) { try { const d = JSON.parse(line.slice(6)); if (d.type === 'chunk') setOutput(p => p + d.text); else if (d.type === 'result') setOutput(d.data.content); } catch {} } }
     } catch (e) { console.error(e); } finally { setGenerating(false); }

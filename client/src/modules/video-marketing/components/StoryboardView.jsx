@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { EmptyState } from './AngleCards';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 export default function StoryboardView({ storyboards, onGenerate, generating, hasScripts, campaignId, productImages, onGoToVideos }) {
   const [activeBoard, setActiveBoard] = useState(0);
   const [copiedPrompt, setCopiedPrompt] = useState(null);
@@ -15,7 +17,7 @@ export default function StoryboardView({ storyboards, onGenerate, generating, ha
   const generateSceneVideo = async (scene, sceneKey) => {
     setSceneVideoStatus(prev => ({ ...prev, [sceneKey]: 'loading' }));
     try {
-      const res = await fetch('/api/video/generate-scene', {
+      const res = await fetch(`${API_BASE}/api/video/generate-scene`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

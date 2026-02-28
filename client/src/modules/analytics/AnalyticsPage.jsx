@@ -4,6 +4,8 @@ import { MODULE_REGISTRY, CATEGORIES } from '../../config/modules';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 function AnimatedNumber({ value }) {
   const [display, setDisplay] = useState(0);
 
@@ -33,8 +35,8 @@ export default function AnalyticsPage() {
   const [expandedCat, setExpandedCat] = useState(null);
 
   useEffect(() => {
-    fetch('/api/analytics/overview').then(r => r.json()).then(setOverview).catch(() => {});
-    fetch('/api/analytics/activity?limit=50').then(r => r.json()).then(setActivity).catch(() => {});
+    fetch(`${API_BASE}/api/analytics/overview`).then(r => r.json()).then(setOverview).catch(() => {});
+    fetch(`${API_BASE}/api/analytics/activity?limit=50`).then(r => r.json()).then(setActivity).catch(() => {});
   }, []);
 
   const moduleStats = MODULE_REGISTRY.filter(m => m.id !== 'analytics').map(mod => {

@@ -3,6 +3,8 @@ import { useTheme } from '../../context/ThemeContext';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 const MODULE_COLOR = '#3b82f6';
 
 const SOCIAL_PLATFORMS = [
@@ -84,8 +86,8 @@ export default function SocialPage() {
   const fetchAccounts = useCallback(async () => {
     try {
       const [acctRes, provRes] = await Promise.all([
-        fetch('/api/social/accounts'),
-        fetch('/api/integrations/providers'),
+        fetch(`${API_BASE}/api/social/accounts`),
+        fetch(`${API_BASE}/api/integrations/providers`),
       ]);
       const acctData = await acctRes.json();
       const provData = await provRes.json();
@@ -168,7 +170,7 @@ export default function SocialPage() {
     setGenError(null);
     const fullPrompt = `[Platform: ${activeType}] [Tone: ${tone}] [Length: ${postLength}] [Hashtags: ${includeHashtags ? 'Yes' : 'No'}] [Emojis: ${includeEmojis ? 'Yes' : 'No'}]\n\n${prompt}`;
     try {
-      const res = await fetch('/api/social/generate', {
+      const res = await fetch(`${API_BASE}/api/social/generate`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ platform: activeType, prompt: fullPrompt, tone, includeHashtags, includeEmojis, postLength }),
       });
@@ -203,7 +205,7 @@ export default function SocialPage() {
     setPublishing(true);
     setPublishStatus(null);
     try {
-      const res = await fetch('/api/social/publish', {
+      const res = await fetch(`${API_BASE}/api/social/publish`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ providerId, text, caption: text }),
       });

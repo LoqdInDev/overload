@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 const TOOLS = [
   { id: 'keywords', name: 'Keyword Research', icon: 'M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z' },
   { id: 'meta', name: 'Meta Tag Generator', icon: 'M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5' },
@@ -60,7 +62,7 @@ export default function SeoPage() {
     if (!prompt.trim()) return;
     setGenerating(true); setOutput('');
     try {
-      const res = await fetch('/api/seo/generate', {
+      const res = await fetch(`${API_BASE}/api/seo/generate`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: activeTool, prompt: `[Tool: ${activeTool}] [Country: ${country}] [Intent: ${intent}]\n\n${prompt}` }),
       });

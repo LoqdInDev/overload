@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 const MODULE_COLOR = '#d4a017';
 
 const MOCK_RECOMMENDATIONS = [
@@ -62,7 +64,7 @@ export default function TheAdvisorPage() {
   const generateBriefing = async () => {
     setGenerating(true); setOutput('');
     try {
-      const res = await fetch('/api/the-advisor/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'briefing', prompt: 'Generate today\'s comprehensive marketing briefing including performance summary, key insights, priority actions, and strategic recommendations based on all active campaigns and recent data.' }) });
+      const res = await fetch(`${API_BASE}/api/the-advisor/generate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'briefing', prompt: 'Generate today\'s comprehensive marketing briefing including performance summary, key insights, priority actions, and strategic recommendations based on all active campaigns and recent data.' }) });
       const reader = res.body.getReader(); const decoder = new TextDecoder();
       while (true) { const { done, value } = await reader.read(); if (done) break; const lines = decoder.decode(value, { stream: true }).split('\n').filter(l => l.startsWith('data: ')); for (const line of lines) { try { const d = JSON.parse(line.slice(6)); if (d.type === 'chunk') setOutput(p => p + d.text); else if (d.type === 'result') setOutput(d.data.content); } catch {} } }
     } catch (e) { console.error(e); } finally { setGenerating(false); }

@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { EmptyState } from './AngleCards';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 const COST_PER_SCENE = {
   wavespeed: 0.05,
   kling: 0.28,
@@ -79,7 +81,7 @@ export default function VideoGenerator({ storyboards, campaignId, productProfile
 
     if (optimizePrompts && productProfile) {
       try {
-        const optRes = await fetch('/api/video/optimize-prompt', {
+        const optRes = await fetch(`${API_BASE}/api/video/optimize-prompt`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sceneDescription: prompt, productProfile, videoProvider: provider }),
@@ -94,7 +96,7 @@ export default function VideoGenerator({ storyboards, campaignId, productProfile
     delete scenePayload._sceneIndex;
     delete scenePayload._key;
 
-    const res = await fetch('/api/video/generate-scene', {
+    const res = await fetch(`${API_BASE}/api/video/generate-scene`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ campaignId, scene: scenePayload, productImages: productProfile?.images || [], provider }),
@@ -117,7 +119,7 @@ export default function VideoGenerator({ storyboards, campaignId, productProfile
       return payload;
     });
 
-    const res = await fetch('/api/video/generate-all', {
+    const res = await fetch(`${API_BASE}/api/video/generate-all`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ campaignId, scenes, productImages: productProfile?.images || [], provider }),

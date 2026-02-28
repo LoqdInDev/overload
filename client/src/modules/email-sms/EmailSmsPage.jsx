@@ -3,6 +3,8 @@ import { useTheme } from '../../context/ThemeContext';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 const MODULE_COLOR = '#f59e0b';
 
 const EMAIL_TYPES = [
@@ -70,7 +72,7 @@ export default function EmailSmsPage() {
     setStreamText('');
     const fullPrompt = `[Type: ${activeType}] [Tone: ${tone}] [Length: ${length}] [Include CTA: ${includeCta ? 'Yes' : 'No'}]${subjectLine ? `\n[Subject Line: ${subjectLine}]` : ''}\n\n${prompt}`;
     try {
-      const res = await fetch('/api/email-sms/generate', {
+      const res = await fetch(`${API_BASE}/api/email-sms/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: activeType, prompt: fullPrompt, tone, length, includeCta }),

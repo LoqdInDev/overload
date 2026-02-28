@@ -6,6 +6,8 @@ import ProductInput from './components/ProductInput';
 import Dashboard from './components/Dashboard';
 import CampaignHistory from './components/CampaignHistory';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 const STEPS = [
   { key: 'Product', icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
   { key: 'Angles', icon: 'M13 10V3L4 14h7v7l9-11h-7z' },
@@ -28,7 +30,7 @@ export default function VideoMarketingPage() {
 
   const fetchCampaigns = useCallback(async () => {
     try {
-      const res = await fetch('/api/campaigns');
+      const res = await fetch(`${API_BASE}/api/campaigns`);
       const data = await res.json();
       setCampaigns(data);
     } catch (e) {
@@ -60,7 +62,7 @@ export default function VideoMarketingPage() {
 
   const createCampaign = async (productData) => {
     try {
-      const res = await fetch('/api/campaigns', {
+      const res = await fetch(`${API_BASE}/api/campaigns`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productName: productData.name, productData }),
