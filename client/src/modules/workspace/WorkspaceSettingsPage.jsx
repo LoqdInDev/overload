@@ -120,68 +120,77 @@ export default function WorkspaceSettingsPage() {
         </div>
 
         {/* Workspace Switcher */}
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-start gap-4 flex-wrap">
           {workspaces.map(ws => {
             const isActive = ws.id === current.id;
             return (
-              <button key={ws.id} title={ws.name}
+              <button key={ws.id}
                 onClick={() => { if (!isActive) switchWorkspace(ws); }}
-                className="relative flex items-center justify-center rounded-xl transition-all duration-200"
-                style={{
-                  width: 48, height: 48,
-                  background: isActive ? `${terra}18` : (dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)'),
-                  border: `2px solid ${isActive ? terra : borderColor}`,
-                  cursor: isActive ? 'default' : 'pointer',
-                }}
-                onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.08)' : 'rgba(44,40,37,0.08)'; e.currentTarget.style.borderColor = terra; } }}
-                onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)'; e.currentTarget.style.borderColor = borderColor; } }}
+                className="flex flex-col items-center gap-2 group transition-all duration-200"
+                style={{ cursor: isActive ? 'default' : 'pointer' }}
               >
-                <svg className="w-5 h-5" fill="none" stroke={isActive ? terra : muted} viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-                </svg>
+                <div className="flex items-center justify-center rounded-2xl transition-all duration-200"
+                  style={{
+                    width: 72, height: 72,
+                    background: isActive
+                      ? (dark ? `linear-gradient(135deg, ${terra}25, ${terra}12)` : `linear-gradient(135deg, ${terra}15, ${terra}08)`)
+                      : (dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)'),
+                    border: `2px solid ${isActive ? terra : borderColor}`,
+                    boxShadow: isActive ? `0 4px 16px -4px ${terra}30` : 'none',
+                  }}
+                  onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.08)' : 'rgba(44,40,37,0.08)'; e.currentTarget.style.borderColor = terra; e.currentTarget.style.boxShadow = `0 4px 12px -4px ${terra}20`; } }}
+                  onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)'; e.currentTarget.style.borderColor = borderColor; e.currentTarget.style.boxShadow = 'none'; } }}
+                >
+                  <svg className="w-7 h-7" fill="none" stroke={isActive ? terra : muted} viewBox="0 0 24 24" strokeWidth={1.3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                  </svg>
+                </div>
+                <span className="text-[11px] font-medium max-w-[80px] truncate" style={{ color: isActive ? terra : muted }}>
+                  {ws.name}
+                </span>
               </button>
             );
           })}
 
           {creating ? (
-            <form className="flex items-center gap-2" onSubmit={async (e) => {
-              e.preventDefault();
-              if (!newWsName.trim()) return;
-              try {
-                const ws = await createWorkspace(newWsName.trim());
-                setNewWsName('');
-                setCreating(false);
-                switchWorkspace(ws);
-              } catch (err) {
-                toast.error(err.message);
-              }
-            }}>
-              <input
-                autoFocus
-                value={newWsName}
-                onChange={e => setNewWsName(e.target.value)}
-                placeholder="Workspace name..."
-                className="px-3 py-2 rounded-xl text-sm border outline-none"
-                style={{ background: dark ? '#1E1B18' : '#FDFBF8', borderColor, color: ink, height: 48 }}
-                onKeyDown={e => { if (e.key === 'Escape') { setCreating(false); setNewWsName(''); } }}
-                onBlur={() => { if (!newWsName.trim()) { setCreating(false); setNewWsName(''); } }}
-              />
-            </form>
+            <div className="flex flex-col items-center gap-2">
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                if (!newWsName.trim()) return;
+                try {
+                  const ws = await createWorkspace(newWsName.trim());
+                  setNewWsName(''); setCreating(false);
+                  switchWorkspace(ws);
+                } catch (err) { toast.error(err.message); }
+              }}>
+                <input autoFocus value={newWsName} onChange={e => setNewWsName(e.target.value)}
+                  placeholder="Name..."
+                  className="px-3 py-2 rounded-2xl text-sm border outline-none text-center"
+                  style={{ background: dark ? '#1E1B18' : '#FDFBF8', borderColor, color: ink, width: 72, height: 72 }}
+                  onKeyDown={e => { if (e.key === 'Escape') { setCreating(false); setNewWsName(''); } }}
+                  onBlur={() => { if (!newWsName.trim()) { setCreating(false); setNewWsName(''); } }}
+                />
+              </form>
+              <span className="text-[11px] font-medium" style={{ color: muted }}>New</span>
+            </div>
           ) : (
-            <button title="New Workspace"
-              onClick={() => setCreating(true)}
-              className="flex items-center justify-center rounded-xl transition-all duration-200"
-              style={{
-                width: 48, height: 48,
-                background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)',
-                border: `2px dashed ${dark ? 'rgba(255,255,255,0.12)' : 'rgba(44,40,37,0.15)'}`,
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.08)' : 'rgba(44,40,37,0.08)'; e.currentTarget.style.borderColor = terra; }}
-              onMouseLeave={e => { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)'; e.currentTarget.style.borderColor = dark ? 'rgba(255,255,255,0.12)' : 'rgba(44,40,37,0.15)'; }}
+            <button onClick={() => setCreating(true)}
+              className="flex flex-col items-center gap-2 group transition-all duration-200"
             >
-              <svg className="w-5 h-5" fill="none" stroke={muted} viewBox="0 0 24 24" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
+              <div className="flex items-center justify-center rounded-2xl transition-all duration-200"
+                style={{
+                  width: 72, height: 72,
+                  background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)',
+                  border: `2px dashed ${dark ? 'rgba(255,255,255,0.12)' : 'rgba(44,40,37,0.15)'}`,
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.08)' : 'rgba(44,40,37,0.08)'; e.currentTarget.style.borderColor = terra; }}
+                onMouseLeave={e => { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)'; e.currentTarget.style.borderColor = dark ? 'rgba(255,255,255,0.12)' : 'rgba(44,40,37,0.15)'; }}
+              >
+                <svg className="w-7 h-7" fill="none" stroke={muted} viewBox="0 0 24 24" strokeWidth={1.3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+              </div>
+              <span className="text-[11px] font-medium" style={{ color: muted }}>New</span>
             </button>
           )}
         </div>

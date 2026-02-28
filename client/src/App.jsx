@@ -436,7 +436,6 @@ function SidebarNav({ navOpen, setNavOpen, mobileMenuOpen, setMobileMenuOpen, da
   const recents = useRecentModules();
   const { pendingCount, getMode } = useAutomation();
   const { workspaces, current: currentWorkspace, switchWorkspace, createWorkspace } = useWorkspace();
-  const [wsDropdownOpen, setWsDropdownOpen] = useState(false);
   const [wsCreateMode, setWsCreateMode] = useState(false);
   const [wsNewName, setWsNewName] = useState('');
 
@@ -478,97 +477,58 @@ function SidebarNav({ navOpen, setNavOpen, mobileMenuOpen, setMobileMenuOpen, da
       <div className="relative mx-4 h-px" style={{ background: dark ? 'rgba(255,255,255,0.05)' : '#EDE5DA' }} />
 
       {/* Workspace Switcher */}
-      {navOpen && currentWorkspace && (
-        <div className="relative px-3 pt-3 pb-1 flex-shrink-0">
-          <button
-            onClick={() => { setWsDropdownOpen(o => !o); setWsCreateMode(false); }}
-            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all duration-200 text-left"
-            style={{ background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)' }}
-            onMouseEnter={e => { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.07)' : 'rgba(44,40,37,0.07)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)'; }}
-          >
-            <div className="w-[26px] h-[26px] rounded-md flex items-center justify-center flex-shrink-0 text-[11px] font-bold"
-              style={{ background: `${terra}18`, color: terra }}>
-              {currentWorkspace.name.charAt(0).toUpperCase()}
-            </div>
-            <span className="flex-1 text-[12px] font-medium truncate" style={{ color: ink }}>
-              {currentWorkspace.name}
-            </span>
-            <svg className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${wsDropdownOpen ? 'rotate-180' : ''}`}
-              fill="none" stroke={muted} viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-            </svg>
-          </button>
-
-          {wsDropdownOpen && (
-            <div className="absolute left-3 right-3 top-full mt-1 rounded-lg shadow-lg border z-50 py-1 max-h-[240px] overflow-y-auto"
-              style={{ background: dark ? '#2A2623' : '#fff', borderColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(44,40,37,0.1)' }}>
-              {workspaces.map(ws => (
-                <button key={ws.id}
-                  onClick={() => { if (ws.id !== currentWorkspace.id) switchWorkspace(ws); setWsDropdownOpen(false); }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors duration-150"
+      {currentWorkspace && (
+        <div className="px-3 pt-3 pb-1 flex-shrink-0">
+          <div className={`flex items-center ${navOpen ? 'gap-2' : 'flex-col gap-2'}`}>
+            {workspaces.map(ws => {
+              const isActive = ws.id === currentWorkspace.id;
+              return (
+                <button key={ws.id} title={ws.name}
+                  onClick={() => { if (!isActive) switchWorkspace(ws); }}
+                  className="relative flex-shrink-0 flex items-center justify-center rounded-lg transition-all duration-200"
                   style={{
-                    background: ws.id === currentWorkspace.id ? (dark ? 'rgba(196,93,62,0.12)' : 'rgba(196,93,62,0.06)') : 'transparent',
-                    color: ws.id === currentWorkspace.id ? terra : ink,
+                    width: navOpen ? 36 : 32, height: navOpen ? 36 : 32,
+                    background: isActive ? `${terra}18` : (dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)'),
+                    border: `1.5px solid ${isActive ? terra : 'transparent'}`,
+                    cursor: isActive ? 'default' : 'pointer',
                   }}
-                  onMouseEnter={e => { if (ws.id !== currentWorkspace.id) e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.05)' : 'rgba(44,40,37,0.04)'; }}
-                  onMouseLeave={e => { if (ws.id !== currentWorkspace.id) e.currentTarget.style.background = 'transparent'; }}
+                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.08)' : 'rgba(44,40,37,0.08)'; }}
+                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)'; }}
                 >
-                  <div className="w-[22px] h-[22px] rounded flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-                    style={{ background: ws.id === currentWorkspace.id ? `${terra}20` : (dark ? 'rgba(255,255,255,0.06)' : 'rgba(44,40,37,0.06)'), color: ws.id === currentWorkspace.id ? terra : muted }}>
-                    {ws.name.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="text-[12px] truncate">{ws.name}</span>
-                  {ws.id === currentWorkspace.id && (
-                    <svg className="w-3.5 h-3.5 ml-auto flex-shrink-0" fill={terra} viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                </button>
-              ))}
-
-              <div className="mx-2 my-1 h-px" style={{ background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(44,40,37,0.08)' }} />
-
-              {wsCreateMode ? (
-                <form className="px-3 py-2" onSubmit={async (e) => {
-                  e.preventDefault();
-                  if (!wsNewName.trim()) return;
-                  const ws = await createWorkspace(wsNewName.trim());
-                  setWsNewName('');
-                  setWsCreateMode(false);
-                  setWsDropdownOpen(false);
-                  switchWorkspace(ws);
-                }}>
-                  <input
-                    autoFocus
-                    value={wsNewName}
-                    onChange={e => setWsNewName(e.target.value)}
-                    placeholder="Workspace name..."
-                    className="w-full px-2.5 py-1.5 text-[12px] rounded-md border outline-none"
-                    style={{
-                      background: dark ? '#1E1B18' : '#FDFBF8',
-                      borderColor: dark ? 'rgba(255,255,255,0.1)' : 'rgba(44,40,37,0.15)',
-                      color: ink,
-                    }}
-                    onKeyDown={e => { if (e.key === 'Escape') { setWsCreateMode(false); setWsNewName(''); } }}
-                  />
-                </form>
-              ) : (
-                <button
-                  onClick={() => setWsCreateMode(true)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors duration-150"
-                  style={{ color: terra }}
-                  onMouseEnter={e => { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.03)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  <svg className="w-4 h-4" fill="none" stroke={isActive ? terra : muted} viewBox="0 0 24 24" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
                   </svg>
-                  <span className="text-[12px] font-medium">New Workspace</span>
                 </button>
-              )}
-            </div>
-          )}
+              );
+            })}
+            {wsCreateMode ? (
+              <form className={navOpen ? 'flex-1 min-w-0' : 'w-full'} onSubmit={async (e) => {
+                e.preventDefault();
+                if (!wsNewName.trim()) return;
+                const ws = await createWorkspace(wsNewName.trim());
+                setWsNewName(''); setWsCreateMode(false);
+                switchWorkspace(ws);
+              }}>
+                <input autoFocus value={wsNewName} onChange={e => setWsNewName(e.target.value)}
+                  placeholder="Name..." className="w-full px-2 py-1.5 text-[11px] rounded-lg border outline-none"
+                  style={{ background: dark ? '#1E1B18' : '#FDFBF8', borderColor: dark ? 'rgba(255,255,255,0.1)' : 'rgba(44,40,37,0.15)', color: ink, height: navOpen ? 36 : 32 }}
+                  onKeyDown={e => { if (e.key === 'Escape') { setWsCreateMode(false); setWsNewName(''); } }}
+                  onBlur={() => { if (!wsNewName.trim()) { setWsCreateMode(false); setWsNewName(''); } }}
+                />
+              </form>
+            ) : (
+              <button title="New Workspace" onClick={() => setWsCreateMode(true)}
+                className="flex-shrink-0 flex items-center justify-center rounded-lg transition-all duration-200"
+                style={{ width: navOpen ? 36 : 32, height: navOpen ? 36 : 32, background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)', border: `1.5px dashed ${dark ? 'rgba(255,255,255,0.12)' : 'rgba(44,40,37,0.15)'}` }}
+                onMouseEnter={e => { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.08)' : 'rgba(44,40,37,0.08)'; e.currentTarget.style.borderColor = terra; }}
+                onMouseLeave={e => { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)'; e.currentTarget.style.borderColor = dark ? 'rgba(255,255,255,0.12)' : 'rgba(44,40,37,0.15)'; }}
+              >
+                <svg className="w-4 h-4" fill="none" stroke={muted} viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
       )}
 
