@@ -3,9 +3,14 @@
   "build": {
     "builder": "NIXPACKS",
     "nixpacksPlan": {
-      "providers": ["node"]
+      "providers": ["node"],
+      "phases": {
+        "setup": {
+          "nixPkgs": ["python3", "gcc", "gnumake", "pkg-config"]
+        }
+      }
     },
-    "buildCommand": "cd server && npm install"
+    "buildCommand": "cd server && npm install --build-from-source"
   },
   "deploy": {
     "startCommand": "cd server && npm start",
