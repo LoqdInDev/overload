@@ -6,7 +6,7 @@ import { useToast } from '../../context/ToastContext';
 
 export default function WorkspaceSettingsPage() {
   const { dark } = useTheme();
-  const { current, updateWorkspace, deleteWorkspace, workspaces } = useWorkspace();
+  const { current, updateWorkspace, deleteWorkspace, workspaces, switchWorkspace, createWorkspace } = useWorkspace();
   const { toast } = useToast();
 
   const [name, setName] = useState('');
@@ -14,6 +14,8 @@ export default function WorkspaceSettingsPage() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('editor');
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [newWsName, setNewWsName] = useState('');
 
   const ink = dark ? '#F5EDE6' : '#2C2825';
   const muted = dark ? '#A39B91' : '#8C857D';
@@ -115,6 +117,73 @@ export default function WorkspaceSettingsPage() {
         <div>
           <h1 className="text-2xl font-semibold" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>Workspace Settings</h1>
           <p className="text-sm mt-1" style={{ color: muted }}>Manage your workspace name, members, and permissions.</p>
+        </div>
+
+        {/* Workspace Switcher */}
+        <div className="flex items-center gap-3 flex-wrap">
+          {workspaces.map(ws => {
+            const isActive = ws.id === current.id;
+            return (
+              <button key={ws.id} title={ws.name}
+                onClick={() => { if (!isActive) switchWorkspace(ws); }}
+                className="relative flex items-center justify-center rounded-xl transition-all duration-200"
+                style={{
+                  width: 48, height: 48,
+                  background: isActive ? `${terra}18` : (dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)'),
+                  border: `2px solid ${isActive ? terra : borderColor}`,
+                  cursor: isActive ? 'default' : 'pointer',
+                }}
+                onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.08)' : 'rgba(44,40,37,0.08)'; e.currentTarget.style.borderColor = terra; } }}
+                onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)'; e.currentTarget.style.borderColor = borderColor; } }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke={isActive ? terra : muted} viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                </svg>
+              </button>
+            );
+          })}
+
+          {creating ? (
+            <form className="flex items-center gap-2" onSubmit={async (e) => {
+              e.preventDefault();
+              if (!newWsName.trim()) return;
+              try {
+                const ws = await createWorkspace(newWsName.trim());
+                setNewWsName('');
+                setCreating(false);
+                switchWorkspace(ws);
+              } catch (err) {
+                toast.error(err.message);
+              }
+            }}>
+              <input
+                autoFocus
+                value={newWsName}
+                onChange={e => setNewWsName(e.target.value)}
+                placeholder="Workspace name..."
+                className="px-3 py-2 rounded-xl text-sm border outline-none"
+                style={{ background: dark ? '#1E1B18' : '#FDFBF8', borderColor, color: ink, height: 48 }}
+                onKeyDown={e => { if (e.key === 'Escape') { setCreating(false); setNewWsName(''); } }}
+                onBlur={() => { if (!newWsName.trim()) { setCreating(false); setNewWsName(''); } }}
+              />
+            </form>
+          ) : (
+            <button title="New Workspace"
+              onClick={() => setCreating(true)}
+              className="flex items-center justify-center rounded-xl transition-all duration-200"
+              style={{
+                width: 48, height: 48,
+                background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)',
+                border: `2px dashed ${dark ? 'rgba(255,255,255,0.12)' : 'rgba(44,40,37,0.15)'}`,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.08)' : 'rgba(44,40,37,0.08)'; e.currentTarget.style.borderColor = terra; }}
+              onMouseLeave={e => { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)'; e.currentTarget.style.borderColor = dark ? 'rgba(255,255,255,0.12)' : 'rgba(44,40,37,0.15)'; }}
+            >
+              <svg className="w-5 h-5" fill="none" stroke={muted} viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Rename */}
