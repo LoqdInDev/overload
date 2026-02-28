@@ -29,9 +29,27 @@ export function WorkspaceProvider({ children }) {
       if (match) {
         setCurrent(match);
         localStorage.setItem(WORKSPACE_KEY, match.id);
+      } else if (data.length === 0) {
+        // No workspaces exist — create a default one
+        try {
+          const ws = await postJSON('/api/workspaces', { name: 'My Workspace' });
+          setWorkspaces([ws]);
+          setCurrent(ws);
+          localStorage.setItem(WORKSPACE_KEY, ws.id);
+        } catch (createErr) {
+          console.error('Failed to create default workspace:', createErr);
+          // Use a local fallback so the UI still works
+          const fallback = { id: 'local', name: 'My Workspace', role: 'owner' };
+          setCurrent(fallback);
+          setWorkspaces([fallback]);
+        }
       }
     } catch (e) {
       console.error('Failed to fetch workspaces:', e);
+      // Fallback workspace when API is unreachable
+      const fallback = { id: 'local', name: 'My Workspace', role: 'owner' };
+      setCurrent(fallback);
+      setWorkspaces([fallback]);
     } finally {
       setLoading(false);
     }

@@ -24,7 +24,8 @@ export default function WorkspaceSettingsPage() {
   useEffect(() => {
     if (current) {
       setName(current.name);
-      fetchMembers();
+      if (current.id !== 'local') fetchMembers();
+      else setLoading(false);
     }
   }, [current?.id]);
 
@@ -100,7 +101,13 @@ export default function WorkspaceSettingsPage() {
     }
   }
 
-  if (!current) return null;
+  if (!current) return (
+    <div className="flex-1 overflow-y-auto p-6 md:p-8 flex items-center justify-center" style={{ color: muted }}>
+      <div className="text-center">
+        <p className="text-sm">Loading workspace...</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex-1 overflow-y-auto p-6 md:p-8" style={{ color: ink }}>
