@@ -15,13 +15,14 @@ export default function WorkspaceSettingsPage() {
   const { current, updateWorkspace, deleteWorkspace, workspaces, switchWorkspace, createWorkspace } = useWorkspace();
   const { toast } = useToast();
 
-  const [name, setName] = useState('');
   const [members, setMembers] = useState([]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('editor');
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [newWsName, setNewWsName] = useState('');
+  const [renaming, setRenaming] = useState(false);
+  const [renameName, setRenameName] = useState('');
 
   const ink = dark ? '#F5EDE6' : '#2C2825';
   const sub = dark ? '#C4BAB0' : '#5C5650';
@@ -36,7 +37,6 @@ export default function WorkspaceSettingsPage() {
 
   useEffect(() => {
     if (current) {
-      setName(current.name);
       if (current.id !== 'local') fetchMembers();
       else setLoading(false);
     }
@@ -57,10 +57,11 @@ export default function WorkspaceSettingsPage() {
 
   async function handleRename(e) {
     e.preventDefault();
-    if (!name.trim() || name.trim() === current.name) return;
+    if (!renameName.trim() || renameName.trim() === current.name) { setRenaming(false); return; }
     try {
-      await updateWorkspace(current.id, name.trim());
+      await updateWorkspace(current.id, renameName.trim());
       toast.success('Workspace renamed');
+      setRenaming(false);
     } catch (e) {
       toast.error(e.message);
     }
@@ -158,14 +159,13 @@ export default function WorkspaceSettingsPage() {
               const isActive = ws.id === current.id;
               const color = getWsColor(i);
               return (
-                <button key={ws.id}
-                  onClick={() => { if (!isActive) switchWorkspace(ws); }}
-                  className="flex flex-col items-center gap-2.5 group transition-all duration-200"
-                  style={{ cursor: isActive ? 'default' : 'pointer' }}
-                >
-                  <div className="relative flex items-center justify-center rounded-2xl transition-all duration-200"
+                <div key={ws.id} className="flex flex-col items-center gap-2.5 group transition-all duration-200">
+                  <button
+                    onClick={() => { if (!isActive) switchWorkspace(ws); }}
+                    className="relative flex items-center justify-center rounded-2xl transition-all duration-200"
                     style={{
                       width: 80, height: 80,
+                      cursor: isActive ? 'default' : 'pointer',
                       background: isActive
                         ? (dark ? `linear-gradient(145deg, ${color}30, ${color}15)` : `linear-gradient(145deg, ${color}18, ${color}08)`)
                         : (dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.03)'),
@@ -186,11 +186,34 @@ export default function WorkspaceSettingsPage() {
                         </svg>
                       </div>
                     )}
-                  </div>
-                  <span className="text-[12px] font-medium max-w-[88px] truncate leading-tight" style={{ color: isActive ? color : muted }}>
-                    {ws.name}
-                  </span>
-                </button>
+                  </button>
+                  {isActive && renaming ? (
+                    <form onSubmit={handleRename} className="flex items-center gap-1">
+                      <input autoFocus value={renameName} onChange={e => setRenameName(e.target.value)}
+                        className="w-[88px] text-[12px] font-medium text-center px-1.5 py-0.5 rounded-md border outline-none"
+                        style={{ background: inputBg, borderColor: color, color: ink, boxShadow: `0 0 0 2px ${color}15` }}
+                        onKeyDown={e => { if (e.key === 'Escape') setRenaming(false); }}
+                        onBlur={() => { if (!renameName.trim() || renameName.trim() === current.name) setRenaming(false); }}
+                      />
+                    </form>
+                  ) : (
+                    <button
+                      onClick={() => { if (isActive) { setRenameName(current.name); setRenaming(true); } }}
+                      className="flex items-center gap-1 max-w-[100px] transition-colors duration-150"
+                      style={{ cursor: isActive ? 'pointer' : 'default' }}
+                      title={isActive ? 'Click to rename' : ws.name}
+                    >
+                      <span className="text-[12px] font-medium truncate leading-tight" style={{ color: isActive ? color : muted }}>
+                        {ws.name}
+                      </span>
+                      {isActive && (
+                        <svg className="w-3 h-3 flex-shrink-0 opacity-0 group-hover:opacity-60 transition-opacity" fill="none" stroke={color} viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
+                </div>
               );
             })}
 
@@ -236,42 +259,6 @@ export default function WorkspaceSettingsPage() {
                 <span className="text-[12px] font-medium" style={{ color: muted }}>New</span>
               </button>
             )}
-          </div>
-        </div>
-
-        {/* General Section */}
-        <div className="rounded-2xl overflow-hidden mb-6" style={{ background: cardBg, border: `1px solid ${borderColor}`, boxShadow: dark ? 'none' : '0 1px 3px rgba(44,40,37,0.04)' }}>
-          <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: `1px solid ${borderColor}` }}>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: dark ? 'rgba(255,255,255,0.05)' : 'rgba(44,40,37,0.04)' }}>
-              <svg className="w-4 h-4" fill="none" stroke={sub} viewBox="0 0 24 24" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-              </svg>
-            </div>
-            <div>
-              <h2 className="text-[14px] font-semibold" style={{ color: ink }}>General</h2>
-              <p className="text-[11px]" style={{ color: muted }}>Basic workspace information</p>
-            </div>
-          </div>
-          <div className="p-6">
-            <label className="text-[12px] font-medium mb-2 block" style={{ color: sub }}>Workspace Name</label>
-            <form onSubmit={handleRename} className="flex gap-3">
-              <input
-                value={name}
-                onChange={e => setName(e.target.value)}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm border outline-none transition-all duration-200"
-                style={{ background: inputBg, borderColor, color: ink }}
-                onFocus={e => { e.currentTarget.style.borderColor = terra; e.currentTarget.style.boxShadow = `0 0 0 3px ${terra}10`; }}
-                onBlur={e => { e.currentTarget.style.borderColor = borderColor; e.currentTarget.style.boxShadow = 'none'; }}
-              />
-              <button type="submit"
-                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:shadow-lg"
-                style={{ background: terra, boxShadow: `0 2px 8px ${terra}30` }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = `0 4px 12px ${terra}40`; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 2px 8px ${terra}30`; }}
-              >
-                Save
-              </button>
-            </form>
           </div>
         </div>
 
