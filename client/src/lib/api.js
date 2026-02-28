@@ -1,3 +1,4 @@
+const API_BASE = import.meta.env.VITE_API_URL || '';
 const TOKEN_KEY = 'overload_access_token';
 const REFRESH_KEY = 'overload_refresh_token';
 const WORKSPACE_KEY = 'overload_workspace_id';
@@ -16,7 +17,7 @@ async function attemptTokenRefresh() {
   if (!refreshToken) return false;
 
   try {
-    const res = await fetch('/api/auth/refresh', {
+    const res = await fetch(`${API_BASE}/api/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken }),
@@ -34,7 +35,8 @@ async function attemptTokenRefresh() {
 }
 
 export async function fetchJSON(url, options = {}) {
-  const res = await fetch(url, {
+  const fullUrl = url.startsWith('http') ? url : `${API_BASE}${url}`;
+  const res = await fetch(fullUrl, {
     headers: { 'Content-Type': 'application/json', ...getAuthHeaders(), ...options.headers },
     ...options,
   });
@@ -42,7 +44,7 @@ export async function fetchJSON(url, options = {}) {
   if (res.status === 401) {
     const refreshed = await attemptTokenRefresh();
     if (refreshed) {
-      const retry = await fetch(url, {
+      const retry = await fetch(fullUrl, {
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders(), ...options.headers },
         ...options,
       });
@@ -85,8 +87,9 @@ export async function deleteJSON(url) {
 
 export function connectSSE(url, body, { onChunk, onResult, onError }) {
   const controller = new AbortController();
+  const fullUrl = url.startsWith('http') ? url : `${API_BASE}${url}`;
 
-  fetch(url, {
+  fetch(fullUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify(body),
@@ -97,7 +100,7 @@ export function connectSSE(url, body, { onChunk, onResult, onError }) {
         const refreshed = await attemptTokenRefresh();
         if (refreshed) {
           // Retry the SSE connection
-          const retry = await fetch(url, {
+          const retry = await fetch(fullUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
             body: JSON.stringify(body),

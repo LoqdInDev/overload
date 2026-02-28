@@ -13,7 +13,17 @@ const { errorHandler } = require('./middleware/errorHandler');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// CORS — allow Vercel frontend in production, localhost in dev
+const corsOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.CORS_ORIGIN,
+].filter(Boolean);
+
+app.use(cors({
+  origin: corsOrigins.length ? corsOrigins : true,
+  credentials: true,
+}));
 app.use(express.json({ limit: '10mb' }));
 
 // Initialize database tables
@@ -83,20 +93,21 @@ app.get('/api/activity', (req, res) => {
   res.json(getRecentActivity(limit, req.workspace?.id));
 });
 
-// Serve generated videos
-app.use('/videos', express.static(path.join(process.cwd(), 'videos')));
+// Serve generated videos and brand media (use volume in production)
+const dataDir = process.env.DB_PATH ? path.dirname(process.env.DB_PATH) : process.cwd();
+app.use('/videos', express.static(path.join(dataDir, 'videos')));
+app.use('/uploads/brand-media', express.static(path.join(dataDir, 'uploads', 'brand-media')));
 
-// Serve brand media uploads
-app.use('/uploads/brand-media', express.static(path.join(process.cwd(), 'uploads', 'brand-media')));
-
-// Serve static frontend in production
-const clientDist = path.join(__dirname, '..', 'client', 'dist');
-app.use(express.static(clientDist));
-app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api')) {
-    res.sendFile(path.join(clientDist, 'index.html'));
-  }
-});
+// Serve static frontend only when running locally (Vercel handles this in production)
+if (!process.env.RAILWAY_ENVIRONMENT) {
+  const clientDist = path.join(__dirname, '..', 'client', 'dist');
+  app.use(express.static(clientDist));
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(clientDist, 'index.html'));
+    }
+  });
+}
 
 // Global error handler (must be last)
 app.use(errorHandler);
