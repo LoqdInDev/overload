@@ -8,6 +8,8 @@ const MODES = [
     label: 'Manual',
     icon: 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z',
     color: '#94908A',
+    activeText: '#fff',
+    activeBg: 'rgba(148,144,138,0.9)',
     desc: 'You control everything manually',
   },
   {
@@ -15,6 +17,8 @@ const MODES = [
     label: 'Copilot',
     icon: 'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z',
     color: '#D4A017',
+    activeText: '#fff',
+    activeBg: 'rgba(212,160,23,0.85)',
     desc: 'AI suggests, you approve',
   },
   {
@@ -22,6 +26,8 @@ const MODES = [
     label: 'Autopilot',
     icon: 'M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z',
     color: '#22c55e',
+    activeText: '#fff',
+    activeBg: 'rgba(34,197,94,0.85)',
     desc: 'AI runs autonomously',
   },
 ];
@@ -39,7 +45,6 @@ export default function ModeToggle({ moduleId }) {
   async function handleClick(mode) {
     if (mode.id === currentMode || changing) return;
 
-    // Manual doesn't need confirmation
     if (mode.id === 'manual') {
       setChanging(true);
       try {
@@ -51,7 +56,6 @@ export default function ModeToggle({ moduleId }) {
       return;
     }
 
-    // Show confirmation for copilot/autopilot
     if (confirming === mode.id) {
       setChanging(true);
       try {
@@ -66,24 +70,30 @@ export default function ModeToggle({ moduleId }) {
     }
   }
 
-  const bg = dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)';
-  const border = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+  const bg = dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)';
+  const border = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+  const activeMode = MODES[currentIdx];
 
   return (
     <div className="flex items-center gap-3">
       <div
-        className="relative flex items-center rounded-lg p-0.5"
-        style={{ background: bg, border: `1px solid ${border}` }}
+        className="relative flex items-center rounded-full p-1"
+        style={{
+          background: bg,
+          border: `1px solid ${border}`,
+          boxShadow: dark
+            ? 'inset 0 1px 2px rgba(0,0,0,0.15)'
+            : 'inset 0 1px 2px rgba(0,0,0,0.04), 0 1px 0 rgba(255,255,255,0.8)',
+        }}
       >
-        {/* Sliding pill indicator */}
+        {/* Sliding pill */}
         <div
-          className="absolute top-0.5 bottom-0.5 rounded-md transition-all duration-300 ease-out"
+          className="absolute top-1 bottom-1 rounded-full transition-all duration-300 ease-out"
           style={{
-            width: `calc(${100 / 3}% - 2px)`,
-            left: `calc(${(currentIdx * 100) / 3}% + 1px)`,
-            background: MODES[currentIdx].color,
-            opacity: 0.15,
-            boxShadow: `0 0 12px ${MODES[currentIdx].color}33`,
+            width: `calc(${100 / 3}% - 4px)`,
+            left: `calc(${(currentIdx * 100) / 3}% + 2px)`,
+            background: activeMode.activeBg,
+            boxShadow: `0 2px 8px ${activeMode.color}40, 0 1px 3px rgba(0,0,0,0.1)`,
           }}
         />
 
@@ -98,19 +108,23 @@ export default function ModeToggle({ moduleId }) {
               disabled={changing}
               onMouseEnter={() => setHoveredMode(mode.id)}
               onMouseLeave={() => setHoveredMode(null)}
-              className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
-                color: isActive ? mode.color : (dark ? '#94908A' : '#6b7280'),
-                fontWeight: isActive ? 600 : 500,
+                color: isActive
+                  ? mode.activeText
+                  : isHovered
+                    ? mode.color
+                    : (dark ? '#7a7672' : '#9ca3af'),
                 zIndex: 1,
+                minWidth: 80,
               }}
               title={mode.desc}
             >
               <svg
-                className="w-3.5 h-3.5 transition-transform duration-200"
+                className="w-3.5 h-3.5 transition-all duration-200"
                 style={{
-                  transform: isActive ? 'scale(1.1)' : 'scale(1)',
-                  filter: isActive ? `drop-shadow(0 0 4px ${mode.color}44)` : 'none',
+                  transform: isActive ? 'scale(1.15)' : isHovered ? 'scale(1.05)' : 'scale(1)',
+                  filter: isActive ? `drop-shadow(0 1px 2px rgba(0,0,0,0.2))` : 'none',
                 }}
                 fill={mode.id === 'manual' ? 'none' : 'currentColor'}
                 stroke={mode.id === 'manual' ? 'currentColor' : 'none'}
@@ -124,8 +138,8 @@ export default function ModeToggle({ moduleId }) {
                 <span
                   className="w-1.5 h-1.5 rounded-full"
                   style={{
-                    background: mode.color,
-                    boxShadow: `0 0 6px ${mode.color}`,
+                    background: '#fff',
+                    boxShadow: '0 0 6px rgba(255,255,255,0.8)',
                     animation: mode.id === 'autopilot' ? 'auto-breathe 3s ease-in-out infinite' : 'auto-pulse 2s ease-in-out infinite',
                   }}
                 />
@@ -138,7 +152,7 @@ export default function ModeToggle({ moduleId }) {
       {/* Confirmation tooltip */}
       {confirming && (
         <div
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium animate-fade-in"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium animate-fade-in"
           style={{
             background: dark ? 'rgba(212, 160, 23, 0.1)' : 'rgba(212, 160, 23, 0.08)',
             border: '1px solid rgba(212, 160, 23, 0.2)',
