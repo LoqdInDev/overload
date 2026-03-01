@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTheme } from '../../context/ThemeContext';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import AIToolsTab from '../../components/shared/AIToolsTab';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
@@ -70,6 +71,7 @@ const STATUS_STYLES = {
 
 export default function IntegrationsPage() {
   usePageTitle('Integrations Hub');
+  const { dark } = useTheme();
   const [tab, setTab] = useState('connected');
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -81,6 +83,7 @@ export default function IntegrationsPage() {
   const [apiKeyForm, setApiKeyForm] = useState({});
   const [apiKeyError, setApiKeyError] = useState('');
   const [apiKeySaving, setApiKeySaving] = useState(false);
+  const [showPasswords, setShowPasswords] = useState({});
 
   // Shopify shop modal
   const [shopModal, setShopModal] = useState(false);
@@ -166,6 +169,7 @@ export default function IntegrationsPage() {
     setApiKeyModal(provider);
     setApiKeyForm({});
     setApiKeyError('');
+    setShowPasswords({});
   };
 
   const submitApiKey = async () => {
@@ -346,50 +350,225 @@ export default function IntegrationsPage() {
 
       {/* API Key Modal */}
       {apiKeyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setApiKeyModal(null)}>
-          <div className="bg-[#0c0c14] border border-white/[0.06] rounded-2xl p-5 sm:p-8 w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-white mb-1">Connect {apiKeyModal.name}</h3>
-            <p className="text-sm text-gray-500 mb-2">Enter your credentials to connect {apiKeyModal.name}.</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={() => setApiKeyModal(null)} />
 
-            {apiKeyModal.helpText && (
-              <div className="mb-4 px-3.5 py-2.5 rounded-lg bg-indigo-500/5 border border-indigo-500/15">
-                <p className="text-[11px] text-indigo-300/80 leading-relaxed">{apiKeyModal.helpText}</p>
-                {apiKeyModal.helpUrl && (
-                  <a href={apiKeyModal.helpUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 mt-1.5 transition-colors">
-                    Open {apiKeyModal.name} Developer Portal
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
-                  </a>
-                )}
+          {/* Modal */}
+          <div
+            className="relative w-full max-w-md rounded-2xl shadow-2xl animate-fade-up overflow-hidden"
+            style={{ background: dark ? '#1E1B18' : '#FFFFFF', border: `1px solid ${dark ? 'rgba(255,255,255,0.08)' : 'rgba(44,40,37,0.1)'}` }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Accent gradient bar */}
+            <div className="h-1" style={{ background: 'linear-gradient(90deg, #C45D3E, #D4915C, #5E8E6E)' }} />
+
+            {/* Close button */}
+            <button
+              onClick={() => setApiKeyModal(null)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg transition-colors z-10"
+              style={{ color: '#94908A' }}
+              onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Header */}
+            <div className="px-6 pt-5 pb-4">
+              <div className="flex items-center gap-3.5 mb-4">
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden"
+                  style={{
+                    background: dark ? 'rgba(196,93,62,0.1)' : 'rgba(196,93,62,0.06)',
+                    border: `1px solid ${dark ? 'rgba(196,93,62,0.15)' : 'rgba(196,93,62,0.1)'}`,
+                  }}
+                >
+                  {BRAND_ICON_MAP[apiKeyModal.id] ? (
+                    <img src={`/brands/${BRAND_ICON_MAP[apiKeyModal.id]}.svg`} alt={apiKeyModal.name} className="w-7 h-7" />
+                  ) : (
+                    <span className="text-base font-bold" style={{ color: '#C45D3E' }}>{apiKeyModal.name.charAt(0)}</span>
+                  )}
+                </div>
+                <div>
+                  <h2 className="text-[17px] font-bold" style={{
+                    color: dark ? '#E8E4DE' : '#332F2B',
+                    fontFamily: "'Fraunces', Georgia, serif",
+                    fontStyle: 'italic',
+                  }}>
+                    Connect {apiKeyModal.name}
+                  </h2>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{
+                      background: dark ? 'rgba(196,93,62,0.1)' : 'rgba(196,93,62,0.06)',
+                      color: '#C45D3E',
+                      border: `1px solid ${dark ? 'rgba(196,93,62,0.2)' : 'rgba(196,93,62,0.1)'}`,
+                    }}>
+                      {apiKeyModal.category || 'platform'}
+                    </span>
+                    <span className="text-[11px]" style={{ color: '#94908A' }}>API Key Auth</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Help callout */}
+              {apiKeyModal.helpText && (
+                <div className="rounded-xl px-4 py-3" style={{
+                  background: dark ? 'rgba(94,142,110,0.06)' : 'rgba(94,142,110,0.04)',
+                  border: `1px solid ${dark ? 'rgba(94,142,110,0.12)' : 'rgba(94,142,110,0.08)'}`,
+                }}>
+                  <div className="flex items-start gap-2.5">
+                    <svg className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#5E8E6E' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
+                    </svg>
+                    <div>
+                      <p className="text-[11px] leading-relaxed" style={{ color: dark ? 'rgba(94,142,110,0.9)' : '#5E8E6E' }}>
+                        {apiKeyModal.helpText}
+                      </p>
+                      {apiKeyModal.helpUrl && (
+                        <a
+                          href={apiKeyModal.helpUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold mt-1.5 transition-opacity hover:opacity-70"
+                          style={{ color: '#5E8E6E' }}
+                        >
+                          Get credentials from {apiKeyModal.name}
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                          </svg>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Divider */}
+            <div className="mx-6" style={{ height: 1, background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(44,40,37,0.06)' }} />
+
+            {/* Credential fields */}
+            <div className="px-6 py-5 space-y-4">
+              {apiKeyModal.credentials?.map(field => {
+                const isSecret = field.key.includes('token') || field.key.includes('secret') || field.key.includes('key');
+                return (
+                  <div key={field.key}>
+                    <label className="flex items-center gap-1.5 text-[11px] font-semibold mb-2 uppercase tracking-wider" style={{ color: dark ? '#6B6660' : '#94908A' }}>
+                      {isSecret && (
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                        </svg>
+                      )}
+                      {field.label}
+                      {field.required !== false && <span style={{ color: '#C45D3E', marginLeft: 2 }}>*</span>}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={isSecret && !showPasswords[field.key] ? 'password' : 'text'}
+                        value={apiKeyForm[field.key] || ''}
+                        onChange={e => setApiKeyForm(prev => ({ ...prev, [field.key]: e.target.value }))}
+                        placeholder={`Enter ${field.label.toLowerCase()}`}
+                        className="w-full px-4 py-3 rounded-xl text-[13px] transition-all duration-200 focus:outline-none"
+                        style={{
+                          background: dark ? 'rgba(255,255,255,0.04)' : '#F5F0E8',
+                          border: `1.5px solid ${dark ? 'rgba(255,255,255,0.08)' : 'rgba(44,40,37,0.08)'}`,
+                          color: dark ? '#E8E4DE' : '#332F2B',
+                          paddingRight: isSecret ? '2.75rem' : undefined,
+                        }}
+                        onFocus={e => e.target.style.borderColor = dark ? 'rgba(196,93,62,0.35)' : 'rgba(196,93,62,0.4)'}
+                        onBlur={e => e.target.style.borderColor = dark ? 'rgba(255,255,255,0.08)' : 'rgba(44,40,37,0.08)'}
+                      />
+                      {isSecret && (
+                        <button
+                          type="button"
+                          onClick={() => setShowPasswords(prev => ({ ...prev, [field.key]: !prev[field.key] }))}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors"
+                          style={{ color: '#94908A' }}
+                          onMouseEnter={e => e.currentTarget.style.color = dark ? '#E8E4DE' : '#332F2B'}
+                          onMouseLeave={e => e.currentTarget.style.color = '#94908A'}
+                        >
+                          {showPasswords[field.key] ? (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              }) || <p className="text-sm" style={{ color: '#94908A' }}>No credential fields configured for this provider.</p>}
+            </div>
+
+            {/* Error */}
+            {apiKeyError && (
+              <div className="mx-6 mb-4 px-4 py-3 rounded-xl" style={{
+                background: dark ? 'rgba(239,68,68,0.06)' : 'rgba(239,68,68,0.04)',
+                border: '1px solid rgba(239,68,68,0.15)',
+              }}>
+                <div className="flex items-center gap-2">
+                  <svg className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#ef4444' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                  </svg>
+                  <p className="text-[12px]" style={{ color: '#ef4444' }}>{apiKeyError}</p>
+                </div>
               </div>
             )}
 
-            <div className="space-y-4">
-              {apiKeyModal.credentials?.map(field => (
-                <div key={field.key}>
-                  <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">{field.label}</label>
-                  <input
-                    type={field.type || (field.key.includes('token') || field.key.includes('secret') || field.key.includes('key') ? 'password' : 'text')}
-                    value={apiKeyForm[field.key] || ''}
-                    onChange={e => setApiKeyForm(prev => ({ ...prev, [field.key]: e.target.value }))}
-                    placeholder={`Enter ${field.label.toLowerCase()}`}
-                    className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-base text-gray-200 placeholder-gray-600 focus:outline-none focus:border-indigo-500/30 transition-colors"
-                  />
-                </div>
-              )) || <p className="text-sm text-gray-500">No credential fields configured for this provider.</p>}
+            {/* Security note */}
+            <div className="mx-6 mb-4 flex items-center gap-1.5">
+              <svg className="w-3 h-3 flex-shrink-0" style={{ color: '#94908A' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+              </svg>
+              <p className="text-[10px]" style={{ color: '#94908A' }}>Credentials are encrypted and stored securely on the server.</p>
             </div>
 
-            {apiKeyError && (
-              <p className="mt-3 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">{apiKeyError}</p>
-            )}
-
-            <div className="flex gap-3 mt-5">
-              <button onClick={() => setApiKeyModal(null)}
-                className="flex-1 px-5 py-3 rounded-xl border border-white/[0.08] text-base text-gray-400 hover:bg-white/[0.04] transition-colors">
+            {/* Footer */}
+            <div className="px-6 pb-6 flex gap-3">
+              <button
+                onClick={() => setApiKeyModal(null)}
+                className="flex-1 px-5 py-3 rounded-xl text-[13px] font-medium transition-colors"
+                style={{
+                  background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)',
+                  color: dark ? '#6B6660' : '#94908A',
+                  border: `1px solid ${dark ? 'rgba(255,255,255,0.06)' : 'rgba(44,40,37,0.08)'}`,
+                }}
+              >
                 Cancel
               </button>
-              <button onClick={submitApiKey} disabled={apiKeySaving}
-                className="flex-1 px-5 py-3 rounded-xl bg-indigo-600 text-base font-semibold text-white hover:bg-indigo-500 transition-colors disabled:opacity-50">
-                {apiKeySaving ? 'Saving...' : 'Connect'}
+              <button
+                onClick={submitApiKey}
+                disabled={apiKeySaving}
+                className="flex-1 px-5 py-3 rounded-xl text-[13px] font-bold text-white transition-all disabled:opacity-50"
+                style={{
+                  background: 'linear-gradient(135deg, #C45D3E, #C45D3Edd)',
+                  boxShadow: '0 4px 14px -3px rgba(196,93,62,0.35)',
+                }}
+              >
+                {apiKeySaving ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Connecting...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                    </svg>
+                    Connect {apiKeyModal.name}
+                  </span>
+                )}
               </button>
             </div>
           </div>
