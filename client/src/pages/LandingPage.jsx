@@ -1102,7 +1102,7 @@ export default function LandingPage() {
             {/* Brand column — spans 2 */}
             <div className="md:col-span-2 lp-footer-brand" style={{ marginBottom: 0 }}>
               <div className="lp-footer-brand-logo">
-                <img src="/favicon.png" alt="Overload" />
+                <img src="/logo.png" alt="Overload" />
                 <span className="lp-serif" style={{ fontSize: 18, color: '#fff' }}>Overload</span>
               </div>
               <p className="lp-footer-tagline">
