@@ -109,10 +109,14 @@ export default function CreativePage() {
         body: JSON.stringify({ type: activeType, prompt: fullPrompt }),
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
       if (data.images) setImages(data.images);
+      if (data.warning) console.warn('Creative warning:', data.warning);
     } catch (e) {
       console.error('Generation error:', e);
-      setError(e.message || 'Failed to generate creatives. Please try again.');
+      setError(e.message === 'Failed to fetch'
+        ? 'Could not reach the server. Please check your connection and try again.'
+        : (e.message || 'Failed to generate creatives. Please try again.'));
     } finally {
       setGenerating(false);
     }
