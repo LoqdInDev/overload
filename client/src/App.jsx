@@ -63,7 +63,6 @@ const AutomationRulesPage = lazy(() => import('./modules/automation-rules/Automa
 const ActivityLogPage = lazy(() => import('./modules/activity-log/ActivityLogPage'));
 const AutomationSettingsPage = lazy(() => import('./modules/automation-settings/AutomationSettingsPage'));
 const TutorialPage = lazy(() => import('./modules/tutorial/TutorialPage'));
-const MissionControlPage = lazy(() => import('./modules/mission-control/MissionControlPage'));
 
 function Loader() {
   return (
@@ -365,7 +364,6 @@ export default function App() {
                     <Route path="/approvals/*" element={<M component={ApprovalsPage} name="Approval Queue" />} />
                     <Route path="/automation-rules/*" element={<M component={AutomationRulesPage} name="Automation Rules" />} />
                     <Route path="/activity-log/*" element={<M component={ActivityLogPage} name="Activity Log" />} />
-                    <Route path="/mission-control" element={<M component={MissionControlPage} name="Mission Control" />} />
                     <Route path="/automation-settings/*" element={<M component={AutomationSettingsPage} name="Automation Settings" />} />
                     <Route path="/tutorial/*" element={<TutorialPage />} />
                     <Route path="/video-marketing/*" element={<M component={VideoMarketingPage} name="Video Marketing" />} />
@@ -667,26 +665,6 @@ function SidebarNav({ navOpen, setNavOpen, mobileMenuOpen, setMobileMenuOpen, da
             </svg>
           </div>
           {navOpen && <span className="text-[12.5px]">Activity Log</span>}
-        </NavLink>
-
-        {/* Mission Control */}
-        <NavLink to="/mission-control"
-          className={`flex items-center gap-3 rounded-xl transition-all duration-200 group mt-1 ${navOpen ? 'px-3 py-2.5' : 'p-2.5 justify-center'}`}
-          style={{
-            color: location.pathname === '/mission-control' ? (dark ? '#F5EDE6' : '#2C2825') : muted,
-            fontWeight: location.pathname === '/mission-control' ? 600 : 500,
-            background: location.pathname === '/mission-control' ? (dark ? 'rgba(196,93,62,0.12)' : 'rgba(196,93,62,0.07)') : undefined,
-          }}
-          onMouseEnter={e => { if (location.pathname !== '/mission-control') { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.03)'; e.currentTarget.style.color = ink; } }}
-          onMouseLeave={e => { if (location.pathname !== '/mission-control') { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = muted; } }}
-        >
-          <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ background: location.pathname === '/mission-control' ? (dark ? 'rgba(196,93,62,0.2)' : 'rgba(196,93,62,0.1)') : (dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)') }}>
-            <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" strokeWidth={1.6} stroke={location.pathname === '/mission-control' ? '#C45D3E' : 'currentColor'}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.348 14.652a3.75 3.75 0 010-5.304m5.304 0a3.75 3.75 0 010 5.304m-7.425 2.121a6.75 6.75 0 010-9.546m9.546 0a6.75 6.75 0 010 9.546M5.106 18.894c-3.808-3.807-3.808-9.98 0-13.788m13.788 0c3.808 3.807 3.808 9.98 0 13.788M12 12h.008v.008H12V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-            </svg>
-          </div>
-          {navOpen && <span className="text-[12.5px]">Mission Control</span>}
         </NavLink>
 
         {/* Tutorial */}
