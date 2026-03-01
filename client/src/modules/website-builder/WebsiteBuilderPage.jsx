@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchJSON, postJSON, connectSSE } from '../../lib/api';
+import { fetchJSON, postJSON, putJSON, connectSSE } from '../../lib/api';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
@@ -33,6 +33,11 @@ const SECTIONS = [
   { id: 'gallery', name: 'Image Gallery' },
 ];
 
+const extractHTML = (code) => {
+  const fenceMatch = code.match(/```(?:html)?\s*\n([\s\S]*?)```/);
+  return fenceMatch ? fenceMatch[1] : code;
+};
+
 export default function WebsiteBuilderPage() {
   usePageTitle('Website Builder');
   const [pageType, setPageType] = useState(null);
@@ -51,6 +56,16 @@ export default function WebsiteBuilderPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  // Refinement
+  const [refinePrompt, setRefinePrompt] = useState('');
+  const [versions, setVersions] = useState([]);
+
+  // Multi-page management
+  const [activeSite, setActiveSite] = useState(null);
+  const [sitePages, setSitePages] = useState([]);
+  const [loadingPages, setLoadingPages] = useState(false);
+  const [editingPageId, setEditingPageId] = useState(null);
+
   useEffect(() => {
     fetchJSON('/api/website-builder/sites')
       .then(data => setSites(data))
@@ -61,21 +76,81 @@ export default function WebsiteBuilderPage() {
   const toggleSection = (id) => setSelectedSections(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
 
   const generate = async (templatePrompt) => {
-    setGenerating(true); setOutput(''); setSaved(false);
+    setGenerating(true); setOutput(''); setSaved(false); setVersions([]); setEditingPageId(null);
     const sections = selectedSections.map(id => SECTIONS.find(s => s.id === id)?.name).join(', ');
-    const prompt = templatePrompt || `Generate a ${style.toLowerCase()} ${PAGE_TYPES.find(p => p.id === pageType)?.name || 'landing page'} using ${framework}.\n\nBrand: ${brandName || 'My Brand'}\nDescription: ${brandDesc || 'A modern business'}\nPrimary Color: ${colorPrimary}\nSections: ${sections}\n\nGenerate clean, production-ready code with responsive design and modern UI patterns.`;
-    const cancel = connectSSE('/api/website-builder/generate', { type: pageType || 'landing', prompt }, {
+    const prompt = templatePrompt || `Generate a ${style.toLowerCase()} ${PAGE_TYPES.find(p => p.id === pageType)?.name || 'landing page'} using ${framework}.\n\nBrand: ${brandName || 'My Brand'}\nDescription: ${brandDesc || 'A modern business'}\nPrimary Color: ${colorPrimary}\nSections: ${sections}\n\nGenerate clean, production-ready code with responsive design and modern UI patterns. Return only the complete HTML code without markdown code fences.`;
+    connectSSE('/api/website-builder/generate', { type: pageType || 'landing', prompt }, {
       onChunk: (text) => setOutput(prev => prev + text),
       onResult: (data) => { setOutput(data.content); setGenerating(false); },
       onError: (err) => { console.error(err); setGenerating(false); }
     });
-    return cancel;
+  };
+
+  const refine = async () => {
+    if (!refinePrompt.trim() || generating) return;
+    setVersions(prev => [...prev, output]);
+    const currentCode = extractHTML(output);
+    setGenerating(true); setOutput(''); setSaved(false);
+    const prompt = `Here is the current HTML/CSS code for a webpage:\n\n${currentCode}\n\nPlease make the following changes:\n${refinePrompt}\n\nReturn the complete updated HTML code. Do not wrap in markdown code fences. Return only the raw HTML.`;
+    setRefinePrompt('');
+    connectSSE('/api/website-builder/generate', { type: pageType || 'landing', prompt }, {
+      onChunk: (text) => setOutput(prev => prev + text),
+      onResult: (data) => { setOutput(data.content); setGenerating(false); },
+      onError: (err) => { console.error(err); setGenerating(false); }
+    });
+  };
+
+  const undo = () => {
+    if (versions.length === 0) return;
+    setOutput(versions[versions.length - 1]);
+    setVersions(prev => prev.slice(0, -1));
+    setSaved(false);
+  };
+
+  const downloadHTML = () => {
+    const html = extractHTML(output);
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(brandName || 'page').toLowerCase().replace(/\s+/g, '-')}-${pageType || 'landing'}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const loadSiteDetail = async (site) => {
+    setActiveSite(site);
+    setLoadingPages(true);
+    try {
+      const data = await fetchJSON(`/api/website-builder/sites/${site.id}`);
+      setSitePages(data.pageList || []);
+    } catch (err) {
+      console.error('Failed to load site:', err);
+    } finally {
+      setLoadingPages(false);
+    }
+  };
+
+  const loadPage = (page) => {
+    setPageType(page.slug || 'landing');
+    setOutput(page.content || '');
+    setEditingPageId(page.id);
+    setActiveSite(null);
+    setSaved(false);
+    setVersions([]);
+    setActiveTab('preview');
   };
 
   const handleSavePage = async () => {
     if (!output || saving) return;
     setSaving(true);
     try {
+      if (editingPageId) {
+        await putJSON(`/api/website-builder/pages/${editingPageId}`, { content: output });
+        setSaved(true);
+        return;
+      }
+
       let siteId;
       if (sites.length > 0) {
         siteId = sites[0].id;
@@ -85,12 +160,13 @@ export default function WebsiteBuilderPage() {
         setSites(prev => [newSite, ...prev]);
       }
       const typeName = PAGE_TYPES.find(p => p.id === pageType)?.name || pageType || 'landing';
-      await postJSON('/api/website-builder/pages', {
+      const newPage = await postJSON('/api/website-builder/pages', {
         site_id: siteId,
         name: typeName,
         slug: pageType || 'landing',
         content: output
       });
+      setEditingPageId(newPage.id);
       setSaved(true);
     } catch (err) {
       console.error('Failed to save page:', err);
@@ -99,6 +175,59 @@ export default function WebsiteBuilderPage() {
     }
   };
 
+  // ── Site Detail View ──
+  if (!pageType && activeSite) return (
+    <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
+      <div className="flex items-center gap-3 sm:gap-5 mb-6 sm:mb-8">
+        <button onClick={() => setActiveSite(null)} className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white transition-all">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+        </button>
+        <div>
+          <p className="hud-label text-[11px]" style={{ color: '#d946ef' }}>SITE</p>
+          <h2 className="text-lg font-bold text-white">{activeSite.name}</h2>
+        </div>
+        <button onClick={() => { setActiveSite(null); }} className="ml-auto px-4 py-2 rounded-lg text-xs font-bold" style={{ background: '#d946ef', color: 'white' }}>
+          + New Page
+        </button>
+      </div>
+
+      {loadingPages ? (
+        <div className="panel rounded-2xl p-8 text-center">
+          <div className="w-6 h-6 border-2 border-gray-600 border-t-white rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-gray-500">Loading pages...</p>
+        </div>
+      ) : sitePages.length === 0 ? (
+        <div className="panel rounded-2xl p-8 text-center">
+          <p className="text-sm text-gray-500 mb-4">No pages yet. Create your first page.</p>
+          <button onClick={() => setActiveSite(null)} className="px-5 py-2.5 rounded-lg text-sm font-bold" style={{ background: '#d946ef', color: 'white' }}>
+            Create Page
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 stagger">
+          {sitePages.map(page => (
+            <button key={page.id} onClick={() => loadPage(page)} className="panel-interactive rounded-2xl p-4 sm:p-6 text-left group">
+              <p className="text-base font-bold text-gray-200 group-hover:text-white transition-colors mb-1">{page.name}</p>
+              <p className="text-xs text-gray-600 font-mono mb-2">/{page.slug}</p>
+              {page.content && (
+                <div className="rounded-lg overflow-hidden border border-white/5 h-32">
+                  <iframe
+                    srcDoc={extractHTML(page.content)}
+                    title={page.name}
+                    className="w-full h-full border-0 bg-white pointer-events-none"
+                    style={{ transform: 'scale(0.3)', transformOrigin: 'top left', width: '333%', height: '333%' }}
+                  />
+                </div>
+              )}
+              <p className="text-[10px] text-gray-600 mt-2">{page.created_at ? new Date(page.created_at).toLocaleDateString() : ''}</p>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  // ── Home View ──
   if (!pageType) return (
     <div className="p-4 sm:p-6 lg:p-12">
       <div className="mb-6 sm:mb-8 animate-fade-in"><p className="hud-label text-[11px] mb-2" style={{ color: '#d946ef' }}>WEBSITE BUILDER</p><h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">AI Website Builder</h1><p className="text-base text-gray-500">Generate production-ready pages, sections, and components with AI</p></div>
@@ -114,14 +243,14 @@ export default function WebsiteBuilderPage() {
           <p className="hud-label text-[11px] mb-3" style={{ color: '#d946ef' }}>MY SITES</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 stagger">
             {sites.map(site => (
-              <div key={site.id} className="panel rounded-2xl p-4 sm:p-6">
-                <p className="text-base font-bold text-gray-200 mb-1">{site.name}</p>
+              <button key={site.id} onClick={() => loadSiteDetail(site)} className="panel-interactive rounded-2xl p-4 sm:p-6 text-left group">
+                <p className="text-base font-bold text-gray-200 group-hover:text-white transition-colors mb-1">{site.name}</p>
                 <div className="flex items-center gap-3 text-xs text-gray-500">
                   <span>{site.pages || site.pageList?.length || 0} pages</span>
                   <span>{site.created_at ? new Date(site.created_at).toLocaleDateString() : ''}</span>
                 </div>
                 {site.domain && <p className="text-xs text-gray-600 mt-1 font-mono">{site.domain}</p>}
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -148,11 +277,15 @@ export default function WebsiteBuilderPage() {
     </div>
   );
 
+  // ── Editor View ──
   return (
     <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
       <div className="flex items-center gap-3 sm:gap-5 mb-6 sm:mb-8">
-        <button onClick={() => { setPageType(null); setOutput(''); setSaved(false); }} className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg></button>
-        <div><p className="hud-label text-[11px]" style={{ color: '#d946ef' }}>{PAGE_TYPES.find(p => p.id === pageType)?.name?.toUpperCase()}</p><h2 className="text-lg font-bold text-white">{PAGE_TYPES.find(p => p.id === pageType)?.name}</h2></div>
+        <button onClick={() => { setPageType(null); setOutput(''); setSaved(false); setVersions([]); setEditingPageId(null); }} className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg></button>
+        <div>
+          <p className="hud-label text-[11px]" style={{ color: '#d946ef' }}>{PAGE_TYPES.find(p => p.id === pageType)?.name?.toUpperCase() || pageType?.toUpperCase()}</p>
+          <h2 className="text-lg font-bold text-white">{PAGE_TYPES.find(p => p.id === pageType)?.name || pageType}{editingPageId && <span className="text-xs text-gray-500 font-normal ml-2">(editing)</span>}</h2>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -182,7 +315,7 @@ export default function WebsiteBuilderPage() {
           </div>
 
           <button onClick={() => generate()} disabled={generating} className="btn-accent w-full py-3 sm:py-4 rounded-lg text-sm sm:text-base" style={{ background: generating ? '#1e1e2e' : '#d946ef', boxShadow: generating ? 'none' : '0 4px 20px -4px rgba(217,70,239,0.4)' }}>
-            {generating ? <span className="flex items-center justify-center gap-2"><span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />GENERATING CODE...</span> : 'GENERATE PAGE'}
+            {generating ? <span className="flex items-center justify-center gap-2"><span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />GENERATING CODE...</span> : (editingPageId ? 'REGENERATE PAGE' : 'GENERATE PAGE')}
           </button>
         </div>
 
@@ -214,20 +347,36 @@ export default function WebsiteBuilderPage() {
             <div className="panel rounded-2xl overflow-hidden" style={{ height: '70vh' }}>
               <iframe
                 title="Preview"
-                srcDoc={(() => {
-                  // Extract HTML from markdown code fences if present
-                  const fenceMatch = output.match(/```(?:html)?\s*\n([\s\S]*?)```/);
-                  return fenceMatch ? fenceMatch[1] : output;
-                })()}
+                srcDoc={extractHTML(output)}
                 sandbox="allow-scripts"
                 className="w-full h-full border-0 bg-white"
               />
             </div>
           )}
 
-          {/* Save Page Button */}
+          {/* Refine Bar */}
           {!generating && (
-            <div className="mt-4 flex items-center gap-3">
+            <div className="mt-4 panel rounded-2xl p-3 sm:p-4">
+              <p className="hud-label text-[10px] mb-2" style={{ color: '#d946ef' }}>REFINE</p>
+              <div className="flex gap-2">
+                <input
+                  value={refinePrompt}
+                  onChange={e => setRefinePrompt(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && refine()}
+                  placeholder="e.g. Make the hero bigger, change colors to blue, add a testimonials section..."
+                  className="input-field rounded-xl px-4 py-3 text-sm flex-1"
+                />
+                <button onClick={refine} disabled={!refinePrompt.trim()} className="px-5 py-3 rounded-xl text-sm font-bold tracking-wide transition-all whitespace-nowrap"
+                  style={{ background: refinePrompt.trim() ? '#d946ef' : '#1e1e2e', color: 'white', opacity: refinePrompt.trim() ? 1 : 0.5 }}>
+                  Refine
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          {!generating && (
+            <div className="mt-4 flex flex-wrap items-center gap-3">
               <button onClick={handleSavePage} disabled={saving || saved} className="px-6 py-3 rounded-xl text-sm font-bold tracking-wide transition-all"
                 style={{
                   background: saved ? '#22c55e' : saving ? '#1e1e2e' : '#d946ef',
@@ -235,11 +384,23 @@ export default function WebsiteBuilderPage() {
                   color: 'white',
                   opacity: saving ? 0.7 : 1,
                 }}>
-                {saved ? 'Page Saved' : saving ? (
+                {saved ? (editingPageId ? 'Page Updated' : 'Page Saved') : saving ? (
                   <span className="flex items-center gap-2"><span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />Saving...</span>
-                ) : 'Save Page'}
+                ) : (editingPageId ? 'Update Page' : 'Save Page')}
               </button>
-              {saved && <span className="text-xs text-emerald-400">Page saved to your site successfully.</span>}
+
+              <button onClick={downloadHTML} className="px-5 py-3 rounded-xl text-sm font-bold tracking-wide border border-white/10 text-gray-300 hover:text-white hover:border-white/20 transition-all">
+                Download HTML
+              </button>
+
+              {versions.length > 0 && (
+                <button onClick={undo} className="px-4 py-3 rounded-xl text-sm font-medium border border-white/10 text-gray-400 hover:text-white hover:border-white/20 transition-all flex items-center gap-1.5">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" /></svg>
+                  Undo ({versions.length})
+                </button>
+              )}
+
+              {saved && <span className="text-xs text-emerald-400">{editingPageId ? 'Page updated successfully.' : 'Page saved to your site.'}</span>}
             </div>
           )}
         </div>
