@@ -8,13 +8,17 @@ const API_BASE = import.meta.env.VITE_API_URL || '';
 
 // Map integration IDs to brand SVG filenames in /brands/
 const BRAND_ICON_MAP = {
-  'shopify': 'shopify', 'google-ads': 'google', 'meta-ads': 'meta',
-  'klaviyo': 'klaviyo', 'tiktok': 'tiktok', 'google-analytics': 'google',
-  'stripe': 'stripe', 'slack': 'slack', 'hubspot': 'hubspot',
-  'mailchimp': 'mailchimp', 'zapier': 'zapier', 'intercom': 'intercom',
-  'segment': 'segment', 'mixpanel': 'mixpanel', 'airtable': 'airtable',
-  'notion': 'notion', 'pinterest-ads': 'pinterest', 'snapchat-ads': 'snapchat',
-  'twilio': 'twilio', 'bigcommerce': 'bigcommerce',
+  'google': 'google', 'meta': 'meta', 'twitter': 'x',
+  'linkedin': 'linkedin', 'tiktok': 'tiktok', 'shopify': 'shopify',
+  'stripe': 'stripe', 'mailchimp': 'mailchimp', 'hubspot': 'hubspot',
+  'slack': 'slack', 'amazon': 'amazon', 'notion': 'notion',
+  'airtable': 'airtable', 'pinterest': 'pinterest', 'snapchat': 'snapchat',
+  'intercom': 'intercom', 'bigcommerce': 'bigcommerce', 'klaviyo': 'klaviyo',
+  'segment': 'segment', 'mixpanel': 'mixpanel', 'twilio': 'twilio',
+  'zapier': 'zapier',
+  // Legacy IDs
+  'google-ads': 'google', 'meta-ads': 'meta', 'google-analytics': 'google',
+  'pinterest-ads': 'pinterest', 'snapchat-ads': 'snapchat',
 };
 
 const FALLBACK_AVAILABLE = [
