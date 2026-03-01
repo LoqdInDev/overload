@@ -803,12 +803,12 @@ export default function LandingPage() {
                   const phaseColor = step.phase === 'setup' ? 'var(--lp-sage)' : step.phase === 'grow' ? 'var(--lp-terra)' : 'var(--lp-ink)';
                   const nodeStyle = isActive ? { background: phaseColor, borderColor: phaseColor, boxShadow: `0 0 0 4px ${step.phase === 'setup' ? 'rgba(94,142,110,0.15)' : step.phase === 'grow' ? 'rgba(196,93,62,0.15)' : 'rgba(51,47,43,0.12)'}` } : {};
                   return (
-                    <div key={i} className="contents" data-journey-step={i}>
+                    <div key={i} className="contents">
                       {/* Desktop: alternating left/right with timeline */}
                       {isLeft ? (
                         <>
                           <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 0' }}>
-                            <div className="lp-hiw-step" style={{ maxWidth: 420 }}>
+                            <div className="lp-hiw-step" data-journey-step={i} style={{ maxWidth: 420 }}>
                               <div className="lp-hiw-mobile-node">
                                 <div className={nodeClass} style={nodeStyle}><span>{num}</span></div>
                                 <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--lp-muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Step {num}</span>
@@ -833,7 +833,7 @@ export default function LandingPage() {
                             <div className={nodeClass} style={{ marginTop: 28, ...nodeStyle }}><span>{num}</span></div>
                           </div>
                           <div style={{ display: 'flex', justifyContent: 'flex-start', padding: '12px 0' }}>
-                            <div className="lp-hiw-step" style={{ maxWidth: 420 }}>
+                            <div className="lp-hiw-step" data-journey-step={i} style={{ maxWidth: 420 }}>
                               <div className="lp-hiw-mobile-node">
                                 <div className={nodeClass} style={nodeStyle}><span>{num}</span></div>
                                 <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--lp-muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Step {num}</span>
