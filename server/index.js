@@ -42,6 +42,7 @@ app.use(cors({
 // Stripe webhook needs raw body — must be registered BEFORE express.json()
 app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), require('./routes/billing').webhookHandler);
 
+app.set('trust proxy', 1);
 app.use(express.json({ limit: '10mb' }));
 app.use(helmet());
 app.use(rateLimit({
