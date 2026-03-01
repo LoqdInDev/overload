@@ -192,12 +192,22 @@ export default function OnboardingWizard({ onComplete, onDismiss }) {
             )}
 
             {current.path ? (
-              <button onClick={() => handleNavigate(current.path)} className="text-[12px] font-bold px-5 py-2.5 rounded-xl text-white transition-all" style={{
-                background: `linear-gradient(135deg, ${current.color}, ${current.color}dd)`,
-                boxShadow: `0 4px 12px -2px ${current.color}40`,
-              }}>
-                {current.cta}
-              </button>
+              <>
+                <button onClick={() => goTo(step + 1)} className="text-[12px] font-medium px-4 py-2 rounded-lg transition-colors" style={{
+                  color: muted,
+                }}
+                  onMouseEnter={e => e.currentTarget.style.color = ink}
+                  onMouseLeave={e => e.currentTarget.style.color = muted}
+                >
+                  Next
+                </button>
+                <button onClick={() => handleNavigate(current.path)} className="text-[12px] font-bold px-5 py-2.5 rounded-xl text-white transition-all" style={{
+                  background: `linear-gradient(135deg, ${current.color}, ${current.color}dd)`,
+                  boxShadow: `0 4px 12px -2px ${current.color}40`,
+                }}>
+                  {current.cta}
+                </button>
+              </>
             ) : isLast ? (
               <button onClick={handleComplete} className="text-[12px] font-bold px-5 py-2.5 rounded-xl text-white transition-all" style={{
                 background: 'linear-gradient(135deg, #5E8E6E, #5E8E6Edd)',
