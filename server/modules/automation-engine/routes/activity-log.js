@@ -2,6 +2,11 @@ const express = require('express');
 const router = express.Router();
 const { db } = require('../../../db/database');
 
+function safeParse(str) {
+  if (!str) return null;
+  try { return JSON.parse(str); } catch { return str; }
+}
+
 // GET /activity-log — merged, filtered, paginated log
 router.get('/activity-log', (req, res) => {
   const wsId = req.workspace.id;
@@ -43,8 +48,8 @@ router.get('/activity-log', (req, res) => {
   res.json({
     items: rows.map(r => ({
       ...r,
-      input_data: r.input_data ? JSON.parse(r.input_data) : null,
-      output_data: r.output_data ? JSON.parse(r.output_data) : null,
+      input_data: safeParse(r.input_data),
+      output_data: safeParse(r.output_data),
     })),
     total: total.count,
   });

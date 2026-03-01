@@ -2,6 +2,11 @@ const express = require('express');
 const router = express.Router();
 const { db } = require('../../../db/database');
 
+function safeParse(str) {
+  if (!str) return null;
+  try { return JSON.parse(str); } catch { return str; }
+}
+
 // GET /actions — action log
 router.get('/actions', (req, res) => {
   const wsId = req.workspace.id;
@@ -25,8 +30,8 @@ router.get('/actions', (req, res) => {
   const rows = db.prepare(sql).all(...params);
   res.json(rows.map(r => ({
     ...r,
-    input_data: r.input_data ? JSON.parse(r.input_data) : null,
-    output_data: r.output_data ? JSON.parse(r.output_data) : null,
+    input_data: safeParse(r.input_data),
+    output_data: safeParse(r.output_data),
   })));
 });
 
@@ -118,8 +123,8 @@ router.get('/status', (req, res) => {
     todayActions: todayActions.count,
     recentActions: recentActions.map(r => ({
       ...r,
-      input_data: r.input_data ? JSON.parse(r.input_data) : null,
-      output_data: r.output_data ? JSON.parse(r.output_data) : null,
+      input_data: safeParse(r.input_data),
+      output_data: safeParse(r.output_data),
     })),
   });
 });
