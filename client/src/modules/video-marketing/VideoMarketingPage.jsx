@@ -28,17 +28,21 @@ export default function VideoMarketingPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(typeof window !== 'undefined' && window.innerWidth >= 768);
 
-  const fetchCampaigns = useCallback(async () => {
+  const fetchCampaigns = useCallback(async (autoSelect = false) => {
     try {
       const res = await fetch(`${API_BASE}/api/campaigns`);
       const data = await res.json();
       setCampaigns(data);
+      // Auto-select the most recent campaign on initial load
+      if (autoSelect && data.length > 0 && !activeCampaign) {
+        loadCampaign(data[0].id);
+      }
     } catch (e) {
       console.error('Failed to fetch campaigns:', e);
     }
-  }, []);
+  }, [activeCampaign]);
 
-  useEffect(() => { fetchCampaigns(); }, [fetchCampaigns]);
+  useEffect(() => { fetchCampaigns(true); }, []);
 
   const loadCampaign = async (id) => {
     try {
