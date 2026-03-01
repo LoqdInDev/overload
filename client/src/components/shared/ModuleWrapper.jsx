@@ -82,18 +82,17 @@ export default function ModuleWrapper({ moduleId, children }) {
         </div>
       )}
 
-      {/* Module content — mode-responsive */}
-      {mode === 'autopilot' ? (
-        <AutopilotDashboard moduleId={moduleId}>
-          {children}
-        </AutopilotDashboard>
-      ) : (
-        <>
-          {children}
-          {mode === 'copilot' && (
-            <CopilotSuggestions moduleId={moduleId} />
-          )}
-        </>
+      {/* Autopilot stats panel (above module content) */}
+      {mode === 'autopilot' && (
+        <AutopilotDashboard moduleId={moduleId} />
+      )}
+
+      {/* Module content — always visible */}
+      {children}
+
+      {/* Copilot suggestions (below module content) */}
+      {mode === 'copilot' && (
+        <CopilotSuggestions moduleId={moduleId} />
       )}
     </div>
   );
