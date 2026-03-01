@@ -82,7 +82,7 @@ function SkeletonCard({ dark }) {
    APPROVAL CARD
    ═══════════════════════════════════════════ */
 
-function ApprovalCard({ item, dark, selected, onToggleSelect, onApprove, onEditApprove, onReject, acting }) {
+function ApprovalCard({ item, dark, selected, onToggleSelect, onApprove, onEditApprove, onReject, acting, isPending }) {
   const [expanded, setExpanded] = useState(false);
   const mod = getModuleInfo(item.moduleId);
   const priority = PRIORITY_CONFIG[item.priority] || PRIORITY_CONFIG.low;
@@ -103,23 +103,25 @@ function ApprovalCard({ item, dark, selected, onToggleSelect, onApprove, onEditA
       <div className="p-5">
         {/* Top row: checkbox + module badge + priority + time */}
         <div className="flex items-start gap-3">
-          {/* Checkbox */}
-          <button
-            onClick={() => onToggleSelect(item.id)}
-            className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all"
-            style={{
-              borderColor: selected
-                ? '#5E8E6E'
-                : (dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.15)'),
-              background: selected ? '#5E8E6E' : 'transparent',
-            }}
-          >
-            {selected && (
-              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-              </svg>
-            )}
-          </button>
+          {/* Checkbox (pending only) */}
+          {isPending && (
+            <button
+              onClick={() => onToggleSelect(item.id)}
+              className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all"
+              style={{
+                borderColor: selected
+                  ? '#5E8E6E'
+                  : (dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.15)'),
+                background: selected ? '#5E8E6E' : 'transparent',
+              }}
+            >
+              {selected && (
+                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              )}
+            </button>
+          )}
 
           {/* Module badge */}
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -209,7 +211,7 @@ function ApprovalCard({ item, dark, selected, onToggleSelect, onApprove, onEditA
           </div>
         )}
 
-        {/* Preview toggle + Action buttons */}
+        {/* Preview toggle + Action buttons / Review info */}
         <div className="mt-4 ml-8 flex flex-wrap items-center gap-2">
           {/* Preview button */}
           {item.payload && (
@@ -237,43 +239,68 @@ function ApprovalCard({ item, dark, selected, onToggleSelect, onApprove, onEditA
           {/* Spacer */}
           <div className="flex-1" />
 
-          {/* Action buttons */}
-          <button
-            onClick={() => onApprove(item.id)}
-            disabled={acting}
-            className="text-[11px] font-bold px-4 py-2 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{
-              background: dark ? 'rgba(94,142,110,0.15)' : 'rgba(94,142,110,0.1)',
-              color: '#5E8E6E',
-              border: '1px solid rgba(94,142,110,0.25)',
-            }}
-          >
-            {acting ? 'Processing...' : 'Approve'}
-          </button>
-          <button
-            onClick={() => onEditApprove(item.id)}
-            disabled={acting}
-            className="text-[11px] font-bold px-4 py-2 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{
-              background: dark ? 'rgba(212,160,23,0.12)' : 'rgba(212,160,23,0.08)',
-              color: '#D4A017',
-              border: '1px solid rgba(212,160,23,0.25)',
-            }}
-          >
-            {acting ? 'Processing...' : 'Edit & Approve'}
-          </button>
-          <button
-            onClick={() => onReject(item.id)}
-            disabled={acting}
-            className="text-[11px] font-bold px-4 py-2 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{
-              background: dark ? 'rgba(196,93,62,0.12)' : 'rgba(196,93,62,0.08)',
-              color: '#C45D3E',
-              border: '1px solid rgba(196,93,62,0.25)',
-            }}
-          >
-            {acting ? 'Processing...' : 'Reject'}
-          </button>
+          {isPending ? (
+            <>
+              {/* Action buttons */}
+              <button
+                onClick={() => onApprove(item.id)}
+                disabled={acting}
+                className="text-[11px] font-bold px-4 py-2 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{
+                  background: dark ? 'rgba(94,142,110,0.15)' : 'rgba(94,142,110,0.1)',
+                  color: '#5E8E6E',
+                  border: '1px solid rgba(94,142,110,0.25)',
+                }}
+              >
+                {acting ? 'Processing...' : 'Approve'}
+              </button>
+              <button
+                onClick={() => onEditApprove(item.id)}
+                disabled={acting}
+                className="text-[11px] font-bold px-4 py-2 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{
+                  background: dark ? 'rgba(212,160,23,0.12)' : 'rgba(212,160,23,0.08)',
+                  color: '#D4A017',
+                  border: '1px solid rgba(212,160,23,0.25)',
+                }}
+              >
+                {acting ? 'Processing...' : 'Edit & Approve'}
+              </button>
+              <button
+                onClick={() => onReject(item.id)}
+                disabled={acting}
+                className="text-[11px] font-bold px-4 py-2 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{
+                  background: dark ? 'rgba(196,93,62,0.12)' : 'rgba(196,93,62,0.08)',
+                  color: '#C45D3E',
+                  border: '1px solid rgba(196,93,62,0.25)',
+                }}
+              >
+                {acting ? 'Processing...' : 'Reject'}
+              </button>
+            </>
+          ) : (
+            /* Review info for approved/rejected items */
+            <div className="flex items-center gap-2">
+              <span
+                className="text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider"
+                style={{
+                  background: item.status === 'approved'
+                    ? (dark ? 'rgba(94,142,110,0.15)' : 'rgba(94,142,110,0.1)')
+                    : (dark ? 'rgba(196,93,62,0.12)' : 'rgba(196,93,62,0.08)'),
+                  color: item.status === 'approved' ? '#5E8E6E' : '#C45D3E',
+                  border: `1px solid ${item.status === 'approved' ? 'rgba(94,142,110,0.25)' : 'rgba(196,93,62,0.25)'}`,
+                }}
+              >
+                {item.status === 'approved' ? 'Approved' : 'Rejected'}
+              </span>
+              {item.reviewedAt && (
+                <span className={`text-[10px] ${dark ? 'text-gray-600' : 'text-gray-400'}`}>
+                  {relativeTime(item.reviewedAt)}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Expandable payload preview */}
@@ -341,6 +368,12 @@ function EmptyState({ dark }) {
    MAIN PAGE COMPONENT
    ═══════════════════════════════════════════ */
 
+const STATUS_TABS = [
+  { key: 'pending',  label: 'Pending',  color: '#D4A017' },
+  { key: 'approved', label: 'Approved', color: '#5E8E6E' },
+  { key: 'rejected', label: 'Rejected', color: '#C45D3E' },
+];
+
 export default function ApprovalsPage() {
   usePageTitle('Approval Queue');
   const { dark } = useTheme();
@@ -354,22 +387,27 @@ export default function ApprovalsPage() {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [moduleFilter, setModuleFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('pending');
 
   /* ── Fetch approvals ── */
   const fetchApprovals = useCallback(async () => {
     try {
       setError(null);
-      const data = await fetchJSON('/api/automation/approvals');
+      const data = await fetchJSON(`/api/automation/approvals?status=${statusFilter}`);
       setApprovals(Array.isArray(data) ? data : data.items || []);
     } catch (err) {
       console.error('Failed to load approvals:', err);
-      setApprovals(FALLBACK_APPROVALS);
+      if (statusFilter === 'pending') setApprovals(FALLBACK_APPROVALS);
+      else setApprovals([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [statusFilter]);
 
   useEffect(() => {
+    setLoading(true);
+    setApprovals([]);
+    setSelectedIds(new Set());
     fetchApprovals();
   }, [fetchApprovals]);
 
@@ -441,8 +479,10 @@ export default function ApprovalsPage() {
   const subtitle = loading
     ? 'Loading...'
     : approvals.length === 0
-      ? 'All caught up'
-      : `${approvals.length} item${approvals.length !== 1 ? 's' : ''} awaiting your review`;
+      ? (statusFilter === 'pending' ? 'All caught up' : `No ${statusFilter} items`)
+      : statusFilter === 'pending'
+        ? `${approvals.length} item${approvals.length !== 1 ? 's' : ''} awaiting your review`
+        : `${approvals.length} ${statusFilter} item${approvals.length !== 1 ? 's' : ''}`;
 
   /* ── Shared styles ── */
   const panelCls = dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm';
@@ -473,6 +513,31 @@ export default function ApprovalsPage() {
         <p className={`text-base ${dark ? 'text-gray-500' : 'text-gray-500'}`}>
           {subtitle}
         </p>
+      </div>
+
+      {/* ── Status tabs ── */}
+      <div className="flex items-center gap-1 mb-6">
+        {STATUS_TABS.map(tab => {
+          const active = statusFilter === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => { setStatusFilter(tab.key); setModuleFilter('all'); setPriorityFilter('all'); }}
+              className="text-[11px] font-bold px-4 py-2 rounded-lg transition-all"
+              style={{
+                background: active
+                  ? `${tab.color}${dark ? '20' : '12'}`
+                  : 'transparent',
+                color: active
+                  ? tab.color
+                  : (dark ? '#6b7280' : '#9ca3af'),
+                border: `1px solid ${active ? `${tab.color}35` : 'transparent'}`,
+              }}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* ── Error banner ── */}
@@ -589,15 +654,29 @@ export default function ApprovalsPage() {
       {/* ── Empty state ── */}
       {!loading && approvals.length === 0 && !error && (
         <div className={`${panelCls} rounded-2xl`}>
-          <EmptyState dark={dark} />
+          {statusFilter === 'pending' ? (
+            <EmptyState dark={dark} />
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in">
+              <svg className="w-12 h-12 mb-4" fill="none" stroke={dark ? '#4b5563' : '#9ca3af'} viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z" />
+              </svg>
+              <p className={`text-sm font-semibold ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
+                No {statusFilter} items yet
+              </p>
+              <p className={`text-xs mt-1 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>
+                {statusFilter === 'approved' ? 'Approved actions will appear here' : 'Rejected actions will appear here'}
+              </p>
+            </div>
+          )}
         </div>
       )}
 
       {/* ── List with batch controls ── */}
       {!loading && filtered.length > 0 && (
         <>
-          {/* Batch controls */}
-          <div
+          {/* Batch controls (pending only) */}
+          {statusFilter === 'pending' && <div
             className="rounded-xl px-4 py-3 mb-4 flex flex-wrap items-center gap-3"
             style={{
               background: dark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
@@ -669,7 +748,7 @@ export default function ApprovalsPage() {
             >
               Reject Selected
             </button>
-          </div>
+          </div>}
 
           {/* Approval cards */}
           <div className="space-y-3">
@@ -684,6 +763,7 @@ export default function ApprovalsPage() {
                 onEditApprove={handleEditApprove}
                 onReject={handleReject}
                 acting={acting}
+                isPending={statusFilter === 'pending'}
               />
             ))}
           </div>

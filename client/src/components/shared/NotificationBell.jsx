@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../../context/NotificationContext';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -9,9 +10,23 @@ const TYPE_CONFIG = {
   rule_triggered: { icon: 'M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z', color: '#8b5cf6', fill: true },
 };
 
+function getNotificationLink(notification) {
+  switch (notification.type) {
+    case 'suggestion_ready':
+      return '/approvals';
+    case 'action_completed':
+    case 'action_failed':
+    case 'rule_triggered':
+      return '/activity-log';
+    default:
+      return null;
+  }
+}
+
 export default function NotificationBell() {
   const { notifications, unreadCount, markRead, markAllRead } = useNotifications();
   const { dark } = useTheme();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -84,12 +99,19 @@ export default function NotificationBell() {
               const config = TYPE_CONFIG[n.type] || TYPE_CONFIG.action_completed;
               return (
                 <div key={n.id}
-                  className="px-4 py-3 flex items-start gap-3 cursor-pointer transition-colors"
+                  className="px-4 py-3 flex items-start gap-3 cursor-pointer transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
                   style={{
                     background: n.read ? 'transparent' : (dark ? 'rgba(212,160,23,0.04)' : 'rgba(212,160,23,0.02)'),
                     borderBottom: `1px solid ${dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)'}`,
                   }}
-                  onClick={() => { if (!n.read) markRead(n.id); }}>
+                  onClick={() => {
+                    if (!n.read) markRead(n.id);
+                    const link = getNotificationLink(n);
+                    if (link) {
+                      setOpen(false);
+                      navigate(link);
+                    }
+                  }}>
                   <svg className="w-4 h-4 flex-shrink-0 mt-0.5"
                     fill={config.fill ? config.color : 'none'}
                     stroke={config.fill ? 'none' : config.color}
