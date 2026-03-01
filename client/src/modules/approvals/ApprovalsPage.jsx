@@ -48,6 +48,205 @@ const FALLBACK_APPROVALS = [
 ];
 
 /* ═══════════════════════════════════════════
+   PAYLOAD RESULT RENDERER
+   ═══════════════════════════════════════════ */
+
+function ResultRow({ label, value, dark, accent }) {
+  if (value == null || value === '') return null;
+  return (
+    <div className="flex items-baseline gap-2 py-1">
+      <span className={`text-[10px] font-bold uppercase tracking-wider flex-shrink-0 w-28 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>
+        {label}
+      </span>
+      <span className="text-[12px] leading-relaxed" style={{ color: accent || (dark ? '#d4d4d8' : '#374151') }}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function ResultBadge({ text, color, dark }) {
+  return (
+    <span
+      className="inline-flex text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider"
+      style={{
+        background: `${color}${dark ? '20' : '12'}`,
+        color,
+        border: `1px solid ${color}30`,
+      }}
+    >
+      {text}
+    </span>
+  );
+}
+
+function PayloadResult({ payload, actionType, dark }) {
+  if (!payload || typeof payload !== 'object') return null;
+  const p = payload;
+  const label = dark ? '#9ca3af' : '#6b7280';
+
+  // Blog / content
+  if (actionType === 'publish_blog' || actionType === 'generate_content' || p.type === 'blog' || p.type === 'guide') {
+    return (
+      <div className="space-y-1">
+        {p.headline && (
+          <p className="text-[13px] font-bold leading-snug mb-2" style={{ color: dark ? '#e5e5e5' : '#1f2937' }}>
+            {p.headline}
+          </p>
+        )}
+        {p.preview && (
+          <p className="text-[12px] leading-relaxed mb-3" style={{ color: dark ? '#a1a1aa' : '#52525b' }}>
+            {p.preview}
+          </p>
+        )}
+        <div className="flex flex-wrap gap-3 pt-1">
+          {p.word_count && <ResultBadge text={`${p.word_count.toLocaleString()} words`} color="#3b82f6" dark={dark} />}
+          {p.seo_score && <ResultBadge text={`SEO ${p.seo_score}/100`} color="#5E8E6E" dark={dark} />}
+          {p.tone && <ResultBadge text={p.tone} color="#8b5cf6" dark={dark} />}
+          {p.target_keyword && <ResultBadge text={p.target_keyword} color="#D4A017" dark={dark} />}
+        </div>
+        {p.estimated_traffic && (
+          <ResultRow label="Est. Traffic" value={p.estimated_traffic} dark={dark} />
+        )}
+      </div>
+    );
+  }
+
+  // Social post
+  if (actionType === 'schedule_post' || p.platform === 'instagram' || p.platform === 'twitter' || p.platform === 'linkedin') {
+    return (
+      <div className="space-y-1">
+        <div className="flex flex-wrap gap-2 mb-2">
+          {p.platform && <ResultBadge text={p.platform} color="#8b5cf6" dark={dark} />}
+          {p.post_type && <ResultBadge text={p.post_type} color="#3b82f6" dark={dark} />}
+          {p.slides && <ResultBadge text={`${p.slides} slides`} color="#D4A017" dark={dark} />}
+        </div>
+        {p.caption && (
+          <p className="text-[12px] leading-relaxed" style={{ color: dark ? '#d4d4d8' : '#374151' }}>
+            "{p.caption}"
+          </p>
+        )}
+        {p.hashtags && p.hashtags.length > 0 && (
+          <p className="text-[11px] mt-1" style={{ color: '#3b82f6' }}>
+            {p.hashtags.join('  ')}
+          </p>
+        )}
+        {p.scheduled_time && (
+          <ResultRow label="Scheduled" value={new Date(p.scheduled_time).toLocaleString()} dark={dark} />
+        )}
+      </div>
+    );
+  }
+
+  // Email / SMS campaign
+  if (actionType === 'send_campaign' || p.campaign_type || p.recipients) {
+    return (
+      <div className="space-y-1">
+        {p.subject_line && (
+          <p className="text-[13px] font-bold leading-snug mb-2" style={{ color: dark ? '#e5e5e5' : '#1f2937' }}>
+            Subject: {p.subject_line}
+          </p>
+        )}
+        <div className="flex flex-wrap gap-2 mb-2">
+          {p.campaign_type && <ResultBadge text={p.campaign_type.replace('_', ' ')} color="#8b5cf6" dark={dark} />}
+          {p.discount && <ResultBadge text={`${p.discount} off`} color="#5E8E6E" dark={dark} />}
+        </div>
+        {p.recipients && <ResultRow label="Recipients" value={p.recipients.toLocaleString()} dark={dark} accent="#D4A017" />}
+        {p.estimated_open_rate && <ResultRow label="Est. Open Rate" value={`${Math.round(p.estimated_open_rate * 100)}%`} dark={dark} />}
+        {p.segments && p.segments.length > 0 && (
+          <ResultRow label="Segments" value={p.segments.join(', ').replace(/_/g, ' ')} dark={dark} />
+        )}
+      </div>
+    );
+  }
+
+  // Ad budget
+  if (actionType === 'adjust_budget' || p.current_budget != null) {
+    return (
+      <div className="space-y-1">
+        <div className="flex flex-wrap gap-2 mb-2">
+          {p.platform && <ResultBadge text={p.platform} color="#8b5cf6" dark={dark} />}
+          {p.current_roas && <ResultBadge text={`${p.current_roas}x ROAS`} color="#5E8E6E" dark={dark} />}
+        </div>
+        {p.campaign && <ResultRow label="Campaign" value={p.campaign} dark={dark} />}
+        {p.current_budget != null && p.proposed_budget != null && (
+          <div className="flex items-center gap-2 py-1">
+            <span className={`text-[10px] font-bold uppercase tracking-wider w-28 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>
+              Budget
+            </span>
+            <span className="text-[12px]" style={{ color: dark ? '#6b7280' : '#9ca3af' }}>
+              ${p.current_budget}/day
+            </span>
+            <svg className="w-3 h-3" fill="none" stroke={dark ? '#6b7280' : '#9ca3af'} viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+            <span className="text-[12px] font-bold" style={{ color: '#5E8E6E' }}>
+              ${p.proposed_budget}/day
+            </span>
+          </div>
+        )}
+        {p.recommendation && (
+          <p className="text-[11px] mt-1 leading-relaxed" style={{ color: dark ? '#a1a1aa' : '#6b7280' }}>
+            {p.recommendation}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // SEO meta updates
+  if (actionType === 'update_meta' || p.pages_affected) {
+    return (
+      <div className="space-y-1">
+        {p.pages_affected && <ResultRow label="Pages" value={`${p.pages_affected} pages updated`} dark={dark} />}
+        {p.avg_current_score != null && p.avg_proposed_score != null && (
+          <div className="flex items-center gap-2 py-1">
+            <span className={`text-[10px] font-bold uppercase tracking-wider w-28 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>
+              SEO Score
+            </span>
+            <span className="text-[12px]" style={{ color: '#C45D3E' }}>{p.avg_current_score}</span>
+            <svg className="w-3 h-3" fill="none" stroke={dark ? '#6b7280' : '#9ca3af'} viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+            <span className="text-[12px] font-bold" style={{ color: '#5E8E6E' }}>{p.avg_proposed_score}</span>
+          </div>
+        )}
+        {p.changes && p.changes.length > 0 && (
+          <ResultRow label="Changes" value={p.changes.join(', ')} dark={dark} />
+        )}
+      </div>
+    );
+  }
+
+  // Review responses
+  if (actionType === 'respond_review' || p.responses_drafted) {
+    return (
+      <div className="space-y-1">
+        <div className="flex flex-wrap gap-2 mb-2">
+          {p.platform && <ResultBadge text={p.platform} color="#8b5cf6" dark={dark} />}
+          {p.reviews && <ResultBadge text={`${p.reviews} reviews`} color="#3b82f6" dark={dark} />}
+        </div>
+        {p.positive > 0 && <ResultRow label="Positive" value={`${p.positive} reviews`} dark={dark} accent="#5E8E6E" />}
+        {p.neutral > 0 && <ResultRow label="Neutral" value={`${p.neutral} reviews`} dark={dark} accent="#D4A017" />}
+        {p.negative > 0 && <ResultRow label="Negative" value={`${p.negative} reviews`} dark={dark} accent="#C45D3E" />}
+        {p.responses_drafted && <ResultRow label="Responses" value={`${p.responses_drafted} drafted`} dark={dark} />}
+      </div>
+    );
+  }
+
+  // Fallback — render key-value pairs cleanly
+  return (
+    <div className="space-y-1">
+      {Object.entries(p).map(([key, val]) => {
+        if (val == null || val === '') return null;
+        const display = typeof val === 'object' ? JSON.stringify(val) : String(val);
+        return <ResultRow key={key} label={key.replace(/_/g, ' ')} value={display} dark={dark} />;
+      })}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
    SKELETON LOADER
    ═══════════════════════════════════════════ */
 
@@ -83,7 +282,7 @@ function SkeletonCard({ dark }) {
    ═══════════════════════════════════════════ */
 
 function ApprovalCard({ item, dark, selected, onToggleSelect, onApprove, onEditApprove, onReject, acting, isPending }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(!isPending);
   const mod = getModuleInfo(item.moduleId);
   const priority = PRIORITY_CONFIG[item.priority] || PRIORITY_CONFIG.low;
 
@@ -213,7 +412,7 @@ function ApprovalCard({ item, dark, selected, onToggleSelect, onApprove, onEditA
 
         {/* Preview toggle + Action buttons / Review info */}
         <div className="mt-4 ml-8 flex flex-wrap items-center gap-2">
-          {/* Preview button */}
+          {/* Preview / View Result toggle */}
           {item.payload && (
             <button
               onClick={() => setExpanded(prev => !prev)}
@@ -231,7 +430,7 @@ function ApprovalCard({ item, dark, selected, onToggleSelect, onApprove, onEditA
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                 </svg>
-                Preview
+                {isPending ? 'Preview' : (expanded ? 'Hide Result' : 'View Result')}
               </span>
             </button>
           )}
@@ -303,22 +502,31 @@ function ApprovalCard({ item, dark, selected, onToggleSelect, onApprove, onEditA
           )}
         </div>
 
-        {/* Expandable payload preview */}
+        {/* Expandable payload / result */}
         {expanded && item.payload && (
           <div
-            className="mt-3 ml-8 rounded-xl p-4 text-[12px] leading-relaxed overflow-auto max-h-64"
+            className="mt-3 ml-8 rounded-xl p-4 overflow-auto max-h-80"
             style={{
               background: dark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)',
               border: `1px solid ${dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)'}`,
-              color: dark ? '#a1a1aa' : '#52525b',
-              fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace',
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
             }}
           >
-            {typeof item.payload === 'string'
-              ? item.payload
-              : JSON.stringify(item.payload, null, 2)}
+            {isPending ? (
+              <pre
+                className="text-[12px] leading-relaxed"
+                style={{
+                  color: dark ? '#a1a1aa' : '#52525b',
+                  fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  margin: 0,
+                }}
+              >
+                {typeof item.payload === 'string' ? item.payload : JSON.stringify(item.payload, null, 2)}
+              </pre>
+            ) : (
+              <PayloadResult payload={item.payload} actionType={item.actionType} dark={dark} />
+            )}
           </div>
         )}
       </div>
