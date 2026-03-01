@@ -2,19 +2,95 @@ const express = require('express');
 const cheerio = require('cheerio');
 
 const router = express.Router();
-const SCRAPE_TIMEOUT = 10000;
+const SCRAPE_TIMEOUT = 12000;
 
 const HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Accept': 'text/html,application/xhtml+xml,application/json',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Accept-Encoding': 'gzip, deflate, br',
+  'Cache-Control': 'no-cache',
+  'Sec-Fetch-Dest': 'document',
+  'Sec-Fetch-Mode': 'navigate',
+  'Sec-Fetch-Site': 'none',
+  'Sec-Fetch-User': '?1',
+  'Upgrade-Insecure-Requests': '1',
 };
 
+const JSON_HEADERS = {
+  'User-Agent': HEADERS['User-Agent'],
+  'Accept': 'application/json',
+};
+
+/**
+ * Try the Shopify .json product API — works even when HTML is blocked by Cloudflare.
+ * Returns a product object or null if the endpoint isn't available.
+ */
+async function tryShopifyJsonApi(url) {
+  const productJsonUrl = url.replace(/\?.*$/, '').replace(/\/$/, '') + '.json';
+  try {
+    const res = await fetch(productJsonUrl, {
+      headers: JSON_HEADERS,
+      signal: AbortSignal.timeout(6000),
+      redirect: 'follow',
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const shopifyData = json.product;
+    if (!shopifyData) return null;
+
+    const variant = shopifyData.variants?.[0];
+    const descHtml = shopifyData.body_html || '';
+    const desc$ = cheerio.load(descHtml);
+    const descText = desc$.text().trim();
+
+    const features = [];
+    desc$('li').each((_, el) => {
+      const t = desc$(el).text().trim();
+      if (t && t.length < 200) features.push(t);
+    });
+    if (!features.length && descText) {
+      descText.split(/\n|•|✓|✔|—|–/).forEach(line => {
+        const t = line.trim();
+        if (t && t.length > 5 && t.length < 200) features.push(t);
+      });
+    }
+
+    const images = (shopifyData.images || []).map(img => img.src).slice(0, 5);
+
+    return {
+      name: shopifyData.title || 'Unknown Product',
+      price: variant?.price ? `$${variant.price}` : '',
+      description: descText,
+      features: features.slice(0, 5),
+      images,
+      reviews: [],
+      rating: '',
+      url,
+      platform: 'shopify',
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function scrapeProductURL(url) {
+  // Strategy 0: Try Shopify JSON API first (fastest, bypasses bot protection)
+  const shopifyResult = await tryShopifyJsonApi(url);
+  if (shopifyResult && shopifyResult.name !== 'Unknown Product') {
+    return shopifyResult;
+  }
+
+  // Strategy 1: Full HTML scrape
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), SCRAPE_TIMEOUT);
 
   try {
-    const response = await fetch(url, { signal: controller.signal, headers: HEADERS });
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: HEADERS,
+      redirect: 'follow',
+    });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const html = await response.text();
@@ -51,8 +127,11 @@ async function scrapeProductURL(url) {
 
     return result;
   } catch (error) {
+    // If HTML scrape failed but we got a partial Shopify result, use it
+    if (shopifyResult) return shopifyResult;
+
     if (error.name === 'AbortError') {
-      throw new Error('Scraping timed out after 10 seconds');
+      throw new Error('Scraping timed out — the site may be blocking requests');
     }
     throw error;
   } finally {
@@ -126,7 +205,7 @@ async function scrapeShopify($, url, jsonLd) {
   let shopifyData = null;
   const productJsonUrl = url.replace(/\?.*$/, '').replace(/\/$/, '') + '.json';
   try {
-    const jsonRes = await fetch(productJsonUrl, { headers: HEADERS, signal: AbortSignal.timeout(5000) });
+    const jsonRes = await fetch(productJsonUrl, { headers: JSON_HEADERS, signal: AbortSignal.timeout(5000) });
     if (jsonRes.ok) {
       const json = await jsonRes.json();
       shopifyData = json.product;
@@ -277,7 +356,7 @@ router.post('/', async (req, res) => {
     res.json({
       success: false,
       error: error.message,
-      message: 'Could not scrape this URL. Please enter product details manually.',
+      message: `Could not scrape this URL (${error.message}). Please enter product details manually.`,
     });
   }
 });

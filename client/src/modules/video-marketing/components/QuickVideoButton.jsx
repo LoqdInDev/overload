@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-
-const API_BASE = import.meta.env.VITE_API_URL || '';
+import { fetchJSON, postJSON } from '../../../lib/api';
 
 export default function QuickVideoButton({ hookText, campaignId, productImageUrl }) {
   const [status, setStatus] = useState('idle');
@@ -15,16 +14,11 @@ export default function QuickVideoButton({ hookText, campaignId, productImageUrl
     setError('');
 
     try {
-      const res = await fetch(`${API_BASE}/api/video/generate-quick`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          campaignId,
-          hookText,
-          productImageUrl: productImageUrl || null,
-        }),
+      const data = await postJSON('/api/video/generate-quick', {
+        campaignId,
+        hookText,
+        productImageUrl: productImageUrl || null,
       });
-      const data = await res.json();
       if (data.jobId) {
         setJobId(data.jobId);
       } else {
@@ -42,18 +36,19 @@ export default function QuickVideoButton({ hookText, campaignId, productImageUrl
 
     pollRef.current = setInterval(async () => {
       try {
-        const res = await fetch(`/api/video/status/${jobId}`);
-        const data = await res.json();
+        const data = await fetchJSON(`/api/video/status/${jobId}`);
         if (data.status === 'completed') {
           clearInterval(pollRef.current);
           setVideoPath(data.result?.localPath);
           setStatus('done');
         } else if (data.status === 'failed') {
           clearInterval(pollRef.current);
-          setError(data.result?.error || 'Failed');
+          setError(data.result?.error || 'Video generation failed');
           setStatus('error');
         }
-      } catch (e) { /* ignore */ }
+      } catch (e) {
+        // If polling fails, don't crash — just keep trying
+      }
     }, 3000);
 
     return () => clearInterval(pollRef.current);
@@ -63,7 +58,12 @@ export default function QuickVideoButton({ hookText, campaignId, productImageUrl
     return (
       <div className="inline-flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
         <video src={videoPath} controls className="h-16 rounded-lg" />
-        <a href={videoPath} download className="text-[10px] text-violet-400 hover:text-violet-300 transition-colors font-medium">
+        <a
+          href={videoPath}
+          download
+          className="text-[10px] font-medium transition-colors"
+          style={{ color: '#5E8E6E' }}
+        >
           DL
         </a>
       </div>
@@ -72,7 +72,11 @@ export default function QuickVideoButton({ hookText, campaignId, productImageUrl
 
   if (status === 'loading') {
     return (
-      <span className="inline-flex items-center gap-1.5 text-[10px] text-amber-400 font-medium" onClick={(e) => e.stopPropagation()}>
+      <span
+        className="inline-flex items-center gap-1.5 text-[10px] font-medium"
+        style={{ color: '#C45D3E' }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -97,8 +101,9 @@ export default function QuickVideoButton({ hookText, campaignId, productImageUrl
   return (
     <button
       onClick={generate}
-      className="text-[10px] text-fuchsia-400 hover:text-fuchsia-300 whitespace-nowrap transition-colors font-medium flex items-center gap-1"
+      className="text-[10px] whitespace-nowrap transition-all font-medium flex items-center gap-1 hover:opacity-80"
       title="Generate a quick 5s video from this hook"
+      style={{ color: '#C45D3E' }}
     >
       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /></svg>
       Quick Video

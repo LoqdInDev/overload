@@ -9,6 +9,11 @@ const { getVideoPromptOptimizerPrompt } = require('../prompts/videoPromptOptimiz
 
 const router = express.Router();
 
+function safeParse(str) {
+  if (!str) return null;
+  try { return JSON.parse(str); } catch { return str; }
+}
+
 router.post('/generate-scene', async (req, res) => {
   const wsId = req.workspace.id;
   const videoQueries = getVideoQueries(wsId);
@@ -110,7 +115,7 @@ router.get('/status/:jobId', (req, res) => {
   const videoQueries = getVideoQueries(wsId);
   const job = videoQueries.getVideoJob(Number(req.params.jobId));
   if (!job) return res.status(404).json({ error: 'Job not found' });
-  res.json({ ...job, result: job.result ? JSON.parse(job.result) : null });
+  res.json({ ...job, result: safeParse(job.result) });
 });
 
 router.get('/campaign/:campaignId', (req, res) => {
@@ -118,7 +123,7 @@ router.get('/campaign/:campaignId', (req, res) => {
   const videoQueries = getVideoQueries(wsId);
   const jobs = videoQueries.getVideoJobs(req.params.campaignId);
   res.json(
-    jobs.map((j) => ({ ...j, result: j.result ? JSON.parse(j.result) : null }))
+    jobs.map((j) => ({ ...j, result: safeParse(j.result) }))
   );
 });
 
@@ -148,7 +153,7 @@ router.get('/download-all/:campaignId', (req, res) => {
 
   jobs.forEach((job) => {
     if (job.result) {
-      const result = typeof job.result === 'string' ? JSON.parse(job.result) : job.result;
+      const result = typeof job.result === 'string' ? safeParse(job.result) : job.result;
       if (result.filename) {
         const filepath = path.join(process.cwd(), 'videos', result.filename);
         if (fs.existsSync(filepath)) {
@@ -166,7 +171,7 @@ router.delete('/:jobId', (req, res) => {
   const videoQueries = getVideoQueries(wsId);
   const job = videoQueries.getVideoJob(Number(req.params.jobId));
   if (job?.result) {
-    const result = typeof job.result === 'string' ? JSON.parse(job.result) : job.result;
+    const result = typeof job.result === 'string' ? safeParse(job.result) : job.result;
     if (result.filename) {
       const filepath = path.join(process.cwd(), 'videos', result.filename);
       if (fs.existsSync(filepath)) fs.unlinkSync(filepath);

@@ -97,6 +97,10 @@ app.use('/api/workspaces', require('./routes/workspaces'));
 // GDPR routes (require auth but NOT workspace context)
 app.use('/api/gdpr', require('./routes/gdpr'));
 
+// Scrape route (require auth but NOT workspace context — scrapes public URLs)
+const scrapeRoutes = require('./services/scraper').router;
+app.use('/api/scrape', requireAuth, scrapeRoutes);
+
 // Protect all other API routes with auth + workspace
 app.use('/api', (req, res, next) => {
   // Allow unauthenticated access to auth routes (already handled above)
@@ -140,10 +144,6 @@ for (const moduleName of moduleEntries) {
     console.error(`  Failed to load module "${moduleName}":`, err.message);
   }
 }
-
-// Shared API routes
-const scrapeRoutes = require('./services/scraper').router;
-app.use('/api/scrape', scrapeRoutes);
 
 // Module registry endpoint
 app.get('/api/modules', (req, res) => {
