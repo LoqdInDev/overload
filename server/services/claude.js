@@ -29,7 +29,9 @@ async function generateWithClaude(prompt, { onChunk, system, temperature = 0.9, 
         temperature,
         messages: [{ role: 'user', content: prompt }],
       };
-      if (system) params.system = system;
+      if (system) {
+        params.system = [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }];
+      }
 
       if (onChunk) {
         let fullText = '';
@@ -78,7 +80,9 @@ async function generateTextWithClaude(prompt, { onChunk, system, temperature = 0
         temperature,
         messages: [{ role: 'user', content: prompt }],
       };
-      if (system) params.system = system;
+      if (system) {
+        params.system = [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }];
+      }
 
       if (onChunk) {
         let fullText = '';
