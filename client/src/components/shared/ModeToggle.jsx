@@ -75,9 +75,9 @@ export default function ModeToggle({ moduleId }) {
   const activeMode = MODES[currentIdx];
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-col gap-3">
       <div
-        className="relative flex items-center rounded-full p-1"
+        className="relative flex items-center w-full rounded-full p-1"
         style={{
           background: bg,
           border: `1px solid ${border}`,
@@ -108,7 +108,7 @@ export default function ModeToggle({ moduleId }) {
               disabled={changing}
               onMouseEnter={() => setHoveredMode(mode.id)}
               onMouseLeave={() => setHoveredMode(null)}
-              className="relative flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative flex-1 flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 color: isActive
                   ? mode.activeText
@@ -116,7 +116,6 @@ export default function ModeToggle({ moduleId }) {
                     ? mode.color
                     : (dark ? '#7a7672' : '#9ca3af'),
                 zIndex: 1,
-                minWidth: 80,
               }}
               title={mode.desc}
             >
@@ -151,7 +150,7 @@ export default function ModeToggle({ moduleId }) {
       {/* Confirmation tooltip */}
       {confirming && (
         <div
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium animate-fade-in"
+          className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium animate-fade-in self-center"
           style={{
             background: dark ? 'rgba(212, 160, 23, 0.1)' : 'rgba(212, 160, 23, 0.08)',
             border: '1px solid rgba(212, 160, 23, 0.2)',
