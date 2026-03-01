@@ -206,9 +206,24 @@ export default function WebsiteBuilderPage() {
               {['code', 'preview'].map(t => (<button key={t} onClick={() => setActiveTab(t)} className={`chip text-[9px] ${activeTab === t ? 'active' : ''}`} style={activeTab === t ? { background: 'rgba(217,70,239,0.15)', borderColor: 'rgba(217,70,239,0.3)', color: '#e879f9' } : {}}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>))}
             </div>
           </div>
-          <div className="panel rounded-2xl p-4 sm:p-7 overflow-x-auto">
-            <pre className="text-sm sm:text-base text-gray-300 whitespace-pre-wrap font-mono leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-fuchsia-400 ml-0.5 animate-pulse" />}</pre>
-          </div>
+          {activeTab === 'code' ? (
+            <div className="panel rounded-2xl p-4 sm:p-7 overflow-x-auto">
+              <pre className="text-sm sm:text-base text-gray-300 whitespace-pre-wrap font-mono leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-fuchsia-400 ml-0.5 animate-pulse" />}</pre>
+            </div>
+          ) : (
+            <div className="panel rounded-2xl overflow-hidden" style={{ height: '70vh' }}>
+              <iframe
+                title="Preview"
+                srcDoc={(() => {
+                  // Extract HTML from markdown code fences if present
+                  const fenceMatch = output.match(/```(?:html)?\s*\n([\s\S]*?)```/);
+                  return fenceMatch ? fenceMatch[1] : output;
+                })()}
+                sandbox="allow-scripts"
+                className="w-full h-full border-0 bg-white"
+              />
+            </div>
+          )}
 
           {/* Save Page Button */}
           {!generating && (
