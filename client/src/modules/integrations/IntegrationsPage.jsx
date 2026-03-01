@@ -321,7 +321,7 @@ export default function IntegrationsPage() {
                   <p className="text-base font-semibold text-gray-200">{p.name}</p>
                   <p className="text-xs text-gray-500 mt-0.5 truncate">{p.description}</p>
                 </div>
-                <span className="text-[9px] text-gray-500 font-mono flex-shrink-0">{p.category}</span>
+                <span className="text-[11px] text-gray-500 font-mono flex-shrink-0 italic">{p.category}</span>
               </div>
               <button
                 onClick={() => connectApiKey(p)}
