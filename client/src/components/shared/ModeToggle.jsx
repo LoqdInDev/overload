@@ -131,7 +131,7 @@ export default function ModeToggle({ moduleId }) {
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d={mode.icon} />
               </svg>
-              <span className="sr-only sm:not-sr-only">{mode.label}</span>
+              <span>{mode.label}</span>
               {isActive && mode.id !== 'manual' && (
                 <span
                   className="w-1.5 h-1.5 rounded-full"

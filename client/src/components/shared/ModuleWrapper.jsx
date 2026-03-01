@@ -40,25 +40,8 @@ export default function ModuleWrapper({ moduleId, children }) {
   return (
     <div>
       {/* Mode Toggle Bar */}
-      <div
-        className="flex items-center justify-between gap-4 mb-4 px-1"
-        style={{ minHeight: 36 }}
-      >
+      <div className="mb-4 px-1">
         <ModeToggle moduleId={moduleId} />
-
-        {mode !== 'manual' && (
-          <div className="flex items-center gap-2 text-xs font-medium" style={{ color: banner.color }}>
-            <span
-              className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-              style={{
-                background: banner.color,
-                boxShadow: `0 0 6px ${banner.color}66`,
-                animation: banner.dotAnimation,
-              }}
-            />
-            <span style={{ opacity: 0.9 }}>{mode === 'copilot' ? 'AI Copilot' : 'Autopilot'} Active</span>
-          </div>
-        )}
       </div>
 
       {/* Status Banner (copilot only — autopilot has its own compact dashboard) */}
