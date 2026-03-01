@@ -85,4 +85,21 @@ router.delete('/rules/:id', (req, res) => {
   res.json({ success: true });
 });
 
+// POST /rules/trigger-event — trigger event-based rules from webhooks
+router.post('/rules/trigger-event', async (req, res) => {
+  const wsId = req.workspace.id;
+  const { event, moduleId } = req.body;
+  if (!event || !moduleId) {
+    return res.status(400).json({ error: 'event and moduleId are required' });
+  }
+
+  try {
+    const { triggerEvent } = require('../../../services/ruleEngine');
+    const triggered = await triggerEvent(event, moduleId, wsId, req.body.data || {});
+    res.json({ success: true, triggered });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

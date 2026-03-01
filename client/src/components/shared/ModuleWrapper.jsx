@@ -61,8 +61,8 @@ export default function ModuleWrapper({ moduleId, children }) {
         )}
       </div>
 
-      {/* Status Banner (copilot/autopilot only) */}
-      {banner && (
+      {/* Status Banner (copilot only — autopilot has its own compact dashboard) */}
+      {mode === 'copilot' && banner && (
         <div
           className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg mb-5 text-xs"
           style={{

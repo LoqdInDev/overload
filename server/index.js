@@ -194,6 +194,10 @@ app.use(errorHandler);
 // Clean up expired refresh tokens every hour
 setInterval(cleanExpiredTokens, 60 * 60 * 1000);
 
+// Start the automation rule engine
+const { startRuleEngine } = require('./services/ruleEngine');
+startRuleEngine();
+
 const server = app.listen(PORT, () => {
   logger.info(`Overload server running on http://localhost:${PORT}`, { modules: loadedModules.length });
 });
