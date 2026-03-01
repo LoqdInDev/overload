@@ -4,33 +4,52 @@ const cheerio = require('cheerio');
 const router = express.Router();
 const SCRAPE_TIMEOUT = 10000;
 
+const HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Accept': 'text/html,application/xhtml+xml,application/json',
+};
+
 async function scrapeProductURL(url) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), SCRAPE_TIMEOUT);
 
   try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
+    const response = await fetch(url, { signal: controller.signal, headers: HEADERS });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const html = await response.text();
     const $ = cheerio.load(html);
 
+    // Extract JSON-LD structured data (works across most modern sites)
+    const jsonLd = extractJsonLd($);
+
+    let result;
     if (url.includes('amazon.')) {
-      return scrapeAmazon($, url);
+      result = scrapeAmazon($, url);
     } else if (isShopify($)) {
-      return scrapeShopify($, url);
+      result = await scrapeShopify($, url, jsonLd);
     } else {
-      return scrapeGeneric($, url);
+      result = scrapeGeneric($, url, jsonLd);
     }
+
+    // Merge JSON-LD data as fallback for any missing fields
+    if (jsonLd) {
+      if (!result.name || result.name === 'Unknown Product') result.name = jsonLd.name || result.name;
+      if (!result.description) result.description = jsonLd.description || '';
+      if (!result.price) {
+        const offer = jsonLd.offers?.[0] || jsonLd.offers || {};
+        result.price = offer.price ? `$${offer.price}` : '';
+      }
+      if (!result.images?.length && jsonLd.image) {
+        const imgs = Array.isArray(jsonLd.image) ? jsonLd.image : [jsonLd.image];
+        result.images = imgs.slice(0, 5);
+      }
+      if (!result.rating && jsonLd.aggregateRating?.ratingValue) {
+        result.rating = `${jsonLd.aggregateRating.ratingValue} / 5`;
+      }
+    }
+
+    return result;
   } catch (error) {
     if (error.name === 'AbortError') {
       throw new Error('Scraping timed out after 10 seconds');
@@ -39,6 +58,23 @@ async function scrapeProductURL(url) {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+/** Extract Product JSON-LD from the page */
+function extractJsonLd($) {
+  let product = null;
+  $('script[type="application/ld+json"]').each((_, el) => {
+    if (product) return;
+    try {
+      const data = JSON.parse($(el).html());
+      // Could be a single object or an array
+      const items = Array.isArray(data) ? data : data['@graph'] || [data];
+      for (const item of items) {
+        if (item['@type'] === 'Product') { product = item; return; }
+      }
+    } catch {}
+  });
+  return product;
 }
 
 function isShopify($) {
@@ -80,49 +116,105 @@ function scrapeAmazon($, url) {
 
   return {
     name: name || 'Unknown Product',
-    price,
-    description,
-    features,
-    images,
-    reviews,
-    rating,
-    url,
-    platform: 'amazon',
+    price, description, features, images, reviews, rating,
+    url, platform: 'amazon',
   };
 }
 
-function scrapeShopify($, url) {
-  const name = $('h1.product-single__title, h1.product__title, .product-title h1, h1').first().text().trim();
-  const price = $('span.price, .product-price, .product__price, [data-product-price]').first().text().trim();
-  const description = $('div.product-single__description, .product-description, .product__description, [data-product-description]')
-    .first().text().trim();
+async function scrapeShopify($, url, jsonLd) {
+  // Strategy 1: Try Shopify product JSON API (most reliable)
+  let shopifyData = null;
+  const productJsonUrl = url.replace(/\?.*$/, '').replace(/\/$/, '') + '.json';
+  try {
+    const jsonRes = await fetch(productJsonUrl, { headers: HEADERS, signal: AbortSignal.timeout(5000) });
+    if (jsonRes.ok) {
+      const json = await jsonRes.json();
+      shopifyData = json.product;
+    }
+  } catch {}
+
+  if (shopifyData) {
+    const variant = shopifyData.variants?.[0];
+    const descHtml = shopifyData.body_html || '';
+    const desc$ = cheerio.load(descHtml);
+    const descText = desc$.text().trim();
+
+    // Extract features from description list items
+    const features = [];
+    desc$('li').each((_, el) => {
+      const t = desc$(el).text().trim();
+      if (t && t.length < 200) features.push(t);
+    });
+
+    // If no list items, try to extract bullet-like lines from text
+    if (!features.length && descText) {
+      descText.split(/\n|•|✓|✔|—|–/).forEach(line => {
+        const t = line.trim();
+        if (t && t.length > 5 && t.length < 200) features.push(t);
+      });
+    }
+
+    const images = (shopifyData.images || []).map(img => img.src).slice(0, 5);
+
+    return {
+      name: shopifyData.title || 'Unknown Product',
+      price: variant?.price ? `$${variant.price}` : '',
+      description: descText,
+      features: features.slice(0, 5),
+      images,
+      reviews: [],
+      rating: '',
+      url,
+      platform: 'shopify',
+    };
+  }
+
+  // Strategy 2: CSS selectors (broader set for modern themes)
+  const name = $(
+    'h1.product-single__title, h1.product__title, .product-title h1, ' +
+    '.product__heading, .product-info h1, [data-product-title], h1'
+  ).first().text().trim();
+
+  const price = $(
+    'span.price, .product-price, .product__price, [data-product-price], ' +
+    '.price--main, .current-price, .money, [class*="price"] [class*="money"]'
+  ).first().text().trim();
+
+  const description = $(
+    'div.product-single__description, .product-description, .product__description, ' +
+    '[data-product-description], .product__text, .product-info__description, ' +
+    '.product__body, .rte'
+  ).first().text().trim();
 
   const features = [];
-  $('div.product-single__description li, .product-description li').each((_, el) => {
+  $(
+    'div.product-single__description li, .product-description li, .product__description li, ' +
+    '.product__text li, .rte li, [data-product-description] li'
+  ).each((_, el) => {
     const text = $(el).text().trim();
-    if (text) features.push(text);
+    if (text && text.length < 200) features.push(text);
   });
 
   const images = [];
-  $('img.product-single__photo, img.product__photo, .product-image img, [data-product-media] img').each((_, el) => {
+  $(
+    'img.product-single__photo, img.product__photo, .product-image img, ' +
+    '[data-product-media] img, .product__media img, .product-gallery img'
+  ).each((_, el) => {
     const src = $(el).attr('data-src') || $(el).attr('src');
     if (src) images.push(src.startsWith('//') ? `https:${src}` : src);
   });
 
   return {
     name: name || 'Unknown Product',
-    price,
-    description,
+    price, description,
     features: features.slice(0, 5),
-    images,
-    reviews: [],
-    rating: '',
-    url,
-    platform: 'shopify',
+    images: images.slice(0, 5),
+    reviews: [], rating: '',
+    url, platform: 'shopify',
   };
 }
 
-function scrapeGeneric($, url) {
+function scrapeGeneric($, url, jsonLd) {
   const ogTitle = $('meta[property="og:title"]').attr('content');
   const ogDesc = $('meta[property="og:description"]').attr('content');
   const ogImage = $('meta[property="og:image"]').attr('content');
@@ -133,6 +225,7 @@ function scrapeGeneric($, url) {
 
   const description = ogDesc
     || $('meta[name="description"]').attr('content')
+    || $('[itemprop="description"]').first().text().trim()
     || $('p').first().text().trim();
 
   const price = $('[class*="price"], [data-price], [itemprop="price"]').first().text().trim()
@@ -146,21 +239,26 @@ function scrapeGeneric($, url) {
   });
 
   const features = [];
-  $('ul li, .features li, .benefits li').slice(0, 5).each((_, el) => {
+  $('[itemprop="description"] li, .product-details li, .features li, .benefits li').each((_, el) => {
     const text = $(el).text().trim();
     if (text && text.length < 200) features.push(text);
   });
+  // Broader fallback if no features found yet
+  if (!features.length) {
+    $('ul li').slice(0, 10).each((_, el) => {
+      const text = $(el).text().trim();
+      if (text && text.length > 5 && text.length < 200) features.push(text);
+    });
+  }
 
   return {
     name: name || 'Unknown Product',
     price: price || '',
     description: description || '',
-    features,
+    features: features.slice(0, 5),
     images: images.slice(0, 5),
-    reviews: [],
-    rating: '',
-    url,
-    platform: 'generic',
+    reviews: [], rating: '',
+    url, platform: 'generic',
   };
 }
 
