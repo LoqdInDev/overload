@@ -113,7 +113,7 @@ router.post('/approvals/:id/approve', (req, res) => {
   approveItem();
 
   logActivity(item.module_id, 'approved', item.title, `Approved automation action: ${item.description}`, null, wsId);
-  createNotification('action_completed', `Approved: ${item.title}`, item.description, item.module_id);
+  createNotification('action_completed', `Approved: ${item.title}`, item.description, item.module_id, wsId);
 
   res.json({ success: true, id: Number(req.params.id) });
 });
@@ -139,7 +139,7 @@ router.post('/approvals/:id/reject', (req, res) => {
   });
   rejectItem();
 
-  createNotification('action_failed', `Rejected: ${item.title}`, notes || item.description, item.module_id);
+  createNotification('action_failed', `Rejected: ${item.title}`, notes || item.description, item.module_id, wsId);
 
   res.json({ success: true, id: Number(req.params.id) });
 });
