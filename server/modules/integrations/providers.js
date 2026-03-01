@@ -1,26 +1,19 @@
 const PROVIDERS = {
-  // ── OAuth2 Platforms (require server-side app credentials) ──
+  // ── Social & Advertising Platforms ──
 
   google: {
     id: 'google',
     name: 'Google',
     description: 'Google Ads, Analytics & YouTube',
     category: 'ads',
-    authType: 'oauth2',
-    authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
-    tokenUrl: 'https://oauth2.googleapis.com/token',
-    scopes: [
-      'https://www.googleapis.com/auth/adwords',
-      'https://www.googleapis.com/auth/analytics.readonly',
-      'https://www.googleapis.com/auth/youtube.readonly',
-      'https://www.googleapis.com/auth/youtube.upload',
-      'https://www.googleapis.com/auth/youtube.force-ssl',
-      'openid', 'email', 'profile',
+    authType: 'api_key',
+    credentials: [
+      { key: 'client_id', label: 'OAuth Client ID', type: 'text', required: true },
+      { key: 'client_secret', label: 'OAuth Client Secret', type: 'password', required: true },
+      { key: 'refresh_token', label: 'Refresh Token', type: 'password', required: true },
     ],
-    envClientId: 'GOOGLE_CLIENT_ID',
-    envClientSecret: 'GOOGLE_CLIENT_SECRET',
-    extraAuthParams: { access_type: 'offline', prompt: 'consent' },
-    profileUrl: 'https://www.googleapis.com/oauth2/v2/userinfo',
+    helpUrl: 'https://console.cloud.google.com/apis/credentials',
+    helpText: 'Create OAuth credentials at Google Cloud Console, then use the OAuth Playground to get a refresh token.',
   },
 
   meta: {
@@ -28,17 +21,14 @@ const PROVIDERS = {
     name: 'Meta',
     description: 'Facebook, Instagram & Ads',
     category: 'social',
-    authType: 'oauth2',
-    authUrl: 'https://www.facebook.com/v19.0/dialog/oauth',
-    tokenUrl: 'https://graph.facebook.com/v19.0/oauth/access_token',
-    scopes: [
-      'ads_management', 'ads_read', 'business_management',
-      'pages_manage_posts', 'pages_read_engagement', 'pages_show_list',
-      'instagram_basic', 'instagram_content_publish', 'instagram_manage_insights',
+    authType: 'api_key',
+    credentials: [
+      { key: 'access_token', label: 'Long-Lived Access Token', type: 'password', required: true },
+      { key: 'ad_account_id', label: 'Ad Account ID (act_XXX)', type: 'text', required: false },
+      { key: 'page_id', label: 'Page ID (optional)', type: 'text', required: false },
     ],
-    envClientId: 'META_CLIENT_ID',
-    envClientSecret: 'META_CLIENT_SECRET',
-    profileUrl: 'https://graph.facebook.com/me?fields=name,email',
+    helpUrl: 'https://developers.facebook.com/tools/explorer/',
+    helpText: 'Generate a long-lived token from the Meta Graph API Explorer or your app dashboard.',
   },
 
   twitter: {
@@ -59,13 +49,13 @@ const PROVIDERS = {
     name: 'LinkedIn',
     description: 'Post updates and professional networking',
     category: 'social',
-    authType: 'oauth2',
-    authUrl: 'https://www.linkedin.com/oauth/v2/authorization',
-    tokenUrl: 'https://www.linkedin.com/oauth/v2/accessToken',
-    scopes: ['openid', 'profile', 'email', 'w_member_social'],
-    envClientId: 'LINKEDIN_CLIENT_ID',
-    envClientSecret: 'LINKEDIN_CLIENT_SECRET',
-    profileUrl: 'https://api.linkedin.com/v2/me',
+    authType: 'api_key',
+    credentials: [
+      { key: 'access_token', label: 'Access Token', type: 'password', required: true },
+      { key: 'organization_id', label: 'Organization ID (optional)', type: 'text', required: false },
+    ],
+    helpUrl: 'https://www.linkedin.com/developers/apps',
+    helpText: 'Create an app at LinkedIn Developers, then generate an access token with posting permissions.',
   },
 
   tiktok: {
@@ -73,13 +63,13 @@ const PROVIDERS = {
     name: 'TikTok',
     description: 'TikTok content posting and ads',
     category: 'social',
-    authType: 'oauth2',
-    authUrl: 'https://business-api.tiktok.com/portal/auth',
-    tokenUrl: 'https://business-api.tiktok.com/open_api/v1.3/oauth2/access_token/',
-    scopes: ['user.info.basic', 'video.publish', 'video.list'],
-    envClientId: 'TIKTOK_CLIENT_ID',
-    envClientSecret: 'TIKTOK_CLIENT_SECRET',
-    authParamMapping: { client_id: 'app_id' },
+    authType: 'api_key',
+    credentials: [
+      { key: 'access_token', label: 'Access Token', type: 'password', required: true },
+      { key: 'advertiser_id', label: 'Advertiser ID (optional)', type: 'text', required: false },
+    ],
+    helpUrl: 'https://business-api.tiktok.com/portal/docs',
+    helpText: 'Get your access token from the TikTok Business API portal.',
   },
 
   shopify: {

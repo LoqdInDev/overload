@@ -17,11 +17,11 @@ const BRAND_ICON_MAP = {
 };
 
 const FALLBACK_AVAILABLE = [
-  { id: 'google', name: 'Google', description: 'Google Ads, Analytics & YouTube', category: 'ads', status: 'disconnected', authType: 'oauth2' },
-  { id: 'meta', name: 'Meta', description: 'Facebook, Instagram & Ads', category: 'social', status: 'disconnected', authType: 'oauth2' },
+  { id: 'google', name: 'Google', description: 'Google Ads, Analytics & YouTube', category: 'ads', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'client_id', label: 'OAuth Client ID' }, { key: 'client_secret', label: 'OAuth Client Secret' }, { key: 'refresh_token', label: 'Refresh Token' }], helpUrl: 'https://console.cloud.google.com/apis/credentials', helpText: 'Create OAuth credentials at Google Cloud Console, then use the OAuth Playground to get a refresh token.' },
+  { id: 'meta', name: 'Meta', description: 'Facebook, Instagram & Ads', category: 'social', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'access_token', label: 'Long-Lived Access Token' }, { key: 'ad_account_id', label: 'Ad Account ID (act_XXX)' }, { key: 'page_id', label: 'Page ID (optional)' }], helpUrl: 'https://developers.facebook.com/tools/explorer/', helpText: 'Generate a long-lived token from the Meta Graph API Explorer.' },
   { id: 'twitter', name: 'Twitter / X', description: 'Post tweets and track engagement', category: 'social', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'api_key', label: 'API Key' }, { key: 'api_secret', label: 'API Secret' }, { key: 'bearer_token', label: 'Bearer Token' }] },
-  { id: 'linkedin', name: 'LinkedIn', description: 'Post updates and professional networking', category: 'social', status: 'disconnected', authType: 'oauth2' },
-  { id: 'tiktok', name: 'TikTok', description: 'TikTok content posting and ads', category: 'social', status: 'disconnected', authType: 'oauth2' },
+  { id: 'linkedin', name: 'LinkedIn', description: 'Post updates and professional networking', category: 'social', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'access_token', label: 'Access Token' }, { key: 'organization_id', label: 'Organization ID (optional)' }], helpUrl: 'https://www.linkedin.com/developers/apps', helpText: 'Create an app at LinkedIn Developers and generate an access token.' },
+  { id: 'tiktok', name: 'TikTok', description: 'TikTok content posting and ads', category: 'social', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'access_token', label: 'Access Token' }, { key: 'advertiser_id', label: 'Advertiser ID (optional)' }], helpUrl: 'https://business-api.tiktok.com/portal/docs', helpText: 'Get your access token from the TikTok Business API portal.' },
   { id: 'shopify', name: 'Shopify', description: 'E-commerce platform', category: 'ecommerce', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'shop_domain', label: 'Shop Domain' }, { key: 'access_token', label: 'Admin API Access Token' }] },
   { id: 'stripe', name: 'Stripe', description: 'Payment processing', category: 'payments', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'api_key', label: 'Secret Key' }] },
   { id: 'mailchimp', name: 'Mailchimp', description: 'Email marketing and automation', category: 'email', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'api_key', label: 'API Key' }] },
@@ -315,25 +315,12 @@ export default function IntegrationsPage() {
                 </div>
                 <span className="text-[9px] text-gray-500 font-mono flex-shrink-0">{p.category}</span>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {p.authType === 'oauth2' ? (
-                  <button
-                    onClick={() => connectOAuth(p)}
-                    disabled={connectingId === p.id || !p.configured}
-                    className="text-xs font-bold px-4 py-2 rounded-xl border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/10 transition-colors disabled:opacity-50 w-full sm:w-auto"
-                    title={!p.configured ? 'Requires OAuth app credentials (CLIENT_ID/SECRET) configured on the server' : ''}
-                  >
-                    {connectingId === p.id ? 'Connecting...' : !p.configured ? 'OAuth Setup Required' : 'Connect'}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => connectApiKey(p)}
-                    className="text-xs font-bold px-4 py-2 rounded-xl border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/10 transition-colors w-full sm:w-auto"
-                  >
-                    Connect
-                  </button>
-                )}
-              </div>
+              <button
+                onClick={() => connectApiKey(p)}
+                className="text-xs font-bold px-4 py-2 rounded-xl border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/10 transition-colors w-full sm:w-auto"
+              >
+                Connect
+              </button>
             </div>
           ))}
         </div>
@@ -362,21 +349,33 @@ export default function IntegrationsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setApiKeyModal(null)}>
           <div className="bg-[#0c0c14] border border-white/[0.06] rounded-2xl p-5 sm:p-8 w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold text-white mb-1">Connect {apiKeyModal.name}</h3>
-            <p className="text-sm text-gray-500 mb-5">Enter your credentials to connect {apiKeyModal.name}.</p>
+            <p className="text-sm text-gray-500 mb-2">Enter your credentials to connect {apiKeyModal.name}.</p>
+
+            {apiKeyModal.helpText && (
+              <div className="mb-4 px-3.5 py-2.5 rounded-lg bg-indigo-500/5 border border-indigo-500/15">
+                <p className="text-[11px] text-indigo-300/80 leading-relaxed">{apiKeyModal.helpText}</p>
+                {apiKeyModal.helpUrl && (
+                  <a href={apiKeyModal.helpUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 mt-1.5 transition-colors">
+                    Open {apiKeyModal.name} Developer Portal
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+                  </a>
+                )}
+              </div>
+            )}
 
             <div className="space-y-4">
-              {apiKeyModal.credentials.map(field => (
+              {apiKeyModal.credentials?.map(field => (
                 <div key={field.key}>
                   <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">{field.label}</label>
                   <input
-                    type={field.type || 'text'}
+                    type={field.type || (field.key.includes('token') || field.key.includes('secret') || field.key.includes('key') ? 'password' : 'text')}
                     value={apiKeyForm[field.key] || ''}
                     onChange={e => setApiKeyForm(prev => ({ ...prev, [field.key]: e.target.value }))}
                     placeholder={`Enter ${field.label.toLowerCase()}`}
                     className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-base text-gray-200 placeholder-gray-600 focus:outline-none focus:border-indigo-500/30 transition-colors"
                   />
                 </div>
-              ))}
+              )) || <p className="text-sm text-gray-500">No credential fields configured for this provider.</p>}
             </div>
 
             {apiKeyError && (
