@@ -102,16 +102,27 @@ function initDatabase() {
     )
   `);
 
+  // Add indexes for query performance (IF NOT EXISTS is implicit — SQLite ignores duplicates)
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ae_approval_queue_ws_status ON ae_approval_queue(workspace_id, status)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ae_action_log_ws_created ON ae_action_log(workspace_id, created_at DESC)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ae_action_log_ws_module ON ae_action_log(workspace_id, module_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ae_notifications_ws_read ON ae_notifications(workspace_id, read)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ae_rules_ws_status ON ae_rules(workspace_id, status)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ae_module_modes_ws ON ae_module_modes(workspace_id)`);
+
   // Seed default mode rows for all automatable modules per workspace
   const workspaces = db.prepare('SELECT id FROM workspaces').all();
   const insert = db.prepare(
     'INSERT OR IGNORE INTO ae_module_modes (module_id, mode, workspace_id) VALUES (?, ?, ?)'
   );
-  for (const ws of workspaces) {
-    for (const moduleId of AUTOMATABLE_MODULES) {
-      insert.run(moduleId, 'manual', ws.id);
+  const seedModes = db.transaction(() => {
+    for (const ws of workspaces) {
+      for (const moduleId of AUTOMATABLE_MODULES) {
+        insert.run(moduleId, 'manual', ws.id);
+      }
     }
-  }
+  });
+  seedModes();
 
   // Seed demo data if tables are empty
   if (workspaces.length > 0) {
@@ -130,6 +141,12 @@ function seedDemoData(wsId) {
   const existing = db.prepare('SELECT COUNT(*) as count FROM ae_approval_queue WHERE workspace_id = ?').get(wsId);
   if (existing.count > 0) return;
 
+  // Wrap all demo inserts in a single transaction for speed
+  const runSeed = db.transaction(_seedDemoDataInner);
+  runSeed(wsId);
+}
+
+function _seedDemoDataInner(wsId) {
   // Set some modules to copilot/autopilot
   const updateMode = db.prepare('UPDATE ae_module_modes SET mode = ?, updated_at = datetime(\'now\') WHERE module_id = ? AND workspace_id = ?');
   updateMode.run('copilot', 'content', wsId);

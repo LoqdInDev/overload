@@ -314,10 +314,12 @@ async function tick() {
 // ── Public API ───────────────────────────────────────────────────
 
 function startRuleEngine() {
-  console.log('  Rule engine started (60s interval)');
-  // Run first tick after a short delay to let server fully initialize
-  setTimeout(() => tick(), 5000);
-  engineTimer = setInterval(tick, TICK_INTERVAL);
+  console.log('  Rule engine started (60s interval, first tick in 30s)');
+  // Defer first tick by 30s so the server can handle initial dashboard requests first
+  setTimeout(() => {
+    tick();
+    engineTimer = setInterval(tick, TICK_INTERVAL);
+  }, 30000);
 }
 
 function stopRuleEngine() {
