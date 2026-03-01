@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { db, logActivity } = require('../../../db/database');
 const { createNotification } = require('../db/schema');
+const { generateTextWithClaude } = require('../../../services/claude');
 
 // GET /approvals — list queue items
 router.get('/approvals', (req, res) => {
@@ -167,6 +168,120 @@ router.post('/approvals/:id/edit', (req, res) => {
 
   res.json({ success: true, id: Number(req.params.id) });
 });
+
+// POST /approvals/:id/generate — generate full content for an approved item
+router.post('/approvals/:id/generate', async (req, res) => {
+  const wsId = req.workspace.id;
+  const item = db.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+  if (!item) return res.status(404).json({ error: 'Approval item not found' });
+  if (item.status !== 'approved') return res.status(400).json({ error: 'Item must be approved before generating content' });
+
+  const payload = item.payload ? JSON.parse(item.payload) : {};
+
+  // If content was already generated, return it
+  if (payload.generated_content) {
+    return res.json({ success: true, content: payload.generated_content });
+  }
+
+  // Build a prompt based on the action type and payload
+  const prompt = buildGeneratePrompt(item.action_type, item.title, item.description, payload);
+
+  try {
+    const { text } = await generateTextWithClaude(prompt, {
+      system: 'You are a professional marketing content writer. Write polished, ready-to-publish content. Do not include any meta-commentary or instructions — just the final content.',
+      temperature: 0.7,
+      maxTokens: 4096,
+    });
+
+    // Store the generated content back into the payload
+    payload.generated_content = text;
+    db.prepare('UPDATE ae_approval_queue SET payload = ? WHERE id = ? AND workspace_id = ?')
+      .run(JSON.stringify(payload), req.params.id, wsId);
+
+    res.json({ success: true, content: text });
+  } catch (err) {
+    console.error('Content generation failed:', err.message);
+    res.status(500).json({ error: 'Failed to generate content. Please try again.' });
+  }
+});
+
+function buildGeneratePrompt(actionType, title, description, payload) {
+  const p = payload;
+
+  switch (actionType) {
+    case 'publish_blog':
+    case 'generate_content':
+      return `Write a full blog post with the following details:
+Title: ${p.headline || title}
+Target length: ${p.word_count || 1200} words
+${p.tone ? `Tone: ${p.tone}` : 'Tone: professional'}
+${p.target_keyword ? `Target SEO keyword: ${p.target_keyword}` : ''}
+${p.preview ? `Brief/outline: ${p.preview}` : `Topic: ${description}`}
+
+Write the complete article in markdown format with proper headings (##, ###), paragraphs, and a conclusion. Make it engaging and SEO-optimized.`;
+
+    case 'schedule_post':
+      return `Write a complete social media post for ${p.platform || 'social media'}:
+Topic: ${title}
+${p.caption ? `Draft caption: ${p.caption}` : `Description: ${description}`}
+${p.post_type ? `Format: ${p.post_type}` : ''}
+${p.slides ? `Number of slides: ${p.slides} (write copy for each slide)` : ''}
+${p.hashtags ? `Hashtags to include: ${p.hashtags.join(', ')}` : ''}
+
+Write the full caption, slide-by-slide copy if applicable, and any call-to-action text.`;
+
+    case 'send_campaign':
+      return `Write a complete email for the following campaign:
+Campaign: ${title}
+${p.subject_line ? `Subject line: ${p.subject_line}` : ''}
+${p.campaign_type ? `Type: ${p.campaign_type}` : ''}
+${p.discount ? `Include offer: ${p.discount} discount` : ''}
+Description: ${description}
+
+Write the full email body in HTML-friendly format with a greeting, main content, call-to-action, and sign-off. Keep it concise and compelling.`;
+
+    case 'update_meta':
+      return `Generate SEO meta tag updates for the following:
+Task: ${title}
+${p.pages_affected ? `Pages to update: ${p.pages_affected}` : ''}
+${p.changes ? `Changes needed: ${p.changes.join(', ')}` : ''}
+${p.avg_current_score ? `Current avg SEO score: ${p.avg_current_score}` : ''}
+Description: ${description}
+
+For each page, provide: new meta title (under 60 chars), meta description (under 160 chars), and recommended H1. Format as a numbered list.`;
+
+    case 'adjust_budget':
+      return `Write a brief budget adjustment summary report:
+Campaign: ${p.campaign || title}
+Platform: ${p.platform || 'Unknown'}
+Current budget: $${p.current_budget}/day
+Proposed budget: $${p.proposed_budget}/day
+${p.current_roas ? `Current ROAS: ${p.current_roas}x` : ''}
+${p.recommendation ? `Recommendation: ${p.recommendation}` : ''}
+
+Write a short executive summary explaining the rationale, expected impact, and any risks. Include key metrics.`;
+
+    case 'respond_review':
+      return `Draft professional review responses:
+Task: ${title}
+${p.reviews ? `Number of reviews: ${p.reviews}` : ''}
+${p.positive ? `Positive: ${p.positive}` : ''}
+${p.neutral ? `Neutral: ${p.neutral}` : ''}
+${p.negative ? `Negative: ${p.negative}` : ''}
+Platform: ${p.platform || 'Google'}
+Description: ${description}
+
+Write a personalized response for each review. Be genuine, reference specific details, and keep each response under 100 words.`;
+
+    default:
+      return `Generate detailed content for the following approved action:
+Title: ${title}
+Description: ${description}
+Details: ${JSON.stringify(payload, null, 2)}
+
+Write comprehensive, ready-to-use content based on these details.`;
+  }
+}
 
 // POST /approvals/batch — batch approve/reject
 router.post('/approvals/batch', (req, res) => {

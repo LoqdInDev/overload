@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import { useTheme } from '../../context/ThemeContext';
 import { useAutomation } from '../../context/AutomationContext';
@@ -242,6 +242,155 @@ function PayloadResult({ payload, actionType, dark }) {
         const display = typeof val === 'object' ? JSON.stringify(val) : String(val);
         return <ResultRow key={key} label={key.replace(/_/g, ' ')} value={display} dark={dark} />;
       })}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   GENERATED CONTENT VIEWER
+   ═══════════════════════════════════════════ */
+
+function GeneratedContent({ itemId, payload, dark }) {
+  const [content, setContent] = useState(payload?.generated_content || null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const contentRef = useRef(null);
+
+  const generate = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await postJSON(`/api/automation/approvals/${itemId}/generate`, {});
+      setContent(data.content);
+    } catch (err) {
+      setError(err.message || 'Generation failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyToClipboard = async () => {
+    if (!content) return;
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* fallback */ }
+  };
+
+  const download = () => {
+    if (!content) return;
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `content-${itemId}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  if (!content && !loading) {
+    return (
+      <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)'}` }}>
+        <button
+          onClick={generate}
+          disabled={loading}
+          className="text-[11px] font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-2"
+          style={{
+            background: dark ? 'rgba(94,142,110,0.15)' : 'rgba(94,142,110,0.1)',
+            color: '#5E8E6E',
+            border: '1px solid rgba(94,142,110,0.25)',
+          }}
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+          </svg>
+          Generate Full Content
+        </button>
+        {error && (
+          <p className="text-[11px] mt-2" style={{ color: '#C45D3E' }}>{error}</p>
+        )}
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)'}` }}>
+        <div className="flex items-center gap-3 py-4">
+          <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: '#5E8E6E', borderTopColor: 'transparent' }} />
+          <span className={`text-[12px] ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
+            Generating content with AI...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)'}` }}>
+      {/* Toolbar */}
+      <div className="flex items-center gap-2 mb-3">
+        <span className={`text-[10px] font-bold uppercase tracking-wider ${dark ? 'text-gray-500' : 'text-gray-400'}`}>
+          Generated Content
+        </span>
+        <div className="flex-1" />
+        <button
+          onClick={copyToClipboard}
+          className="text-[10px] font-semibold px-2.5 py-1 rounded-md transition-all flex items-center gap-1"
+          style={{
+            background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+            color: copied ? '#5E8E6E' : (dark ? '#9ca3af' : '#6b7280'),
+            border: `1px solid ${dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)'}`,
+          }}
+        >
+          {copied ? (
+            <>
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+              Copied
+            </>
+          ) : (
+            <>
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+              </svg>
+              Copy
+            </>
+          )}
+        </button>
+        <button
+          onClick={download}
+          className="text-[10px] font-semibold px-2.5 py-1 rounded-md transition-all flex items-center gap-1"
+          style={{
+            background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+            color: dark ? '#9ca3af' : '#6b7280',
+            border: `1px solid ${dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)'}`,
+          }}
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+          </svg>
+          Download
+        </button>
+      </div>
+
+      {/* Content */}
+      <div
+        ref={contentRef}
+        className="rounded-lg p-4 text-[12px] leading-relaxed overflow-auto max-h-96"
+        style={{
+          background: dark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.02)',
+          border: `1px solid ${dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)'}`,
+          color: dark ? '#d4d4d8' : '#374151',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+        }}
+      >
+        {content}
+      </div>
     </div>
   );
 }
@@ -525,7 +674,12 @@ function ApprovalCard({ item, dark, selected, onToggleSelect, onApprove, onEditA
                 {typeof item.payload === 'string' ? item.payload : JSON.stringify(item.payload, null, 2)}
               </pre>
             ) : (
-              <PayloadResult payload={item.payload} actionType={item.actionType} dark={dark} />
+              <>
+                <PayloadResult payload={item.payload} actionType={item.actionType} dark={dark} />
+                {item.status === 'approved' && (
+                  <GeneratedContent itemId={item.id} payload={item.payload} dark={dark} />
+                )}
+              </>
             )}
           </div>
         )}
