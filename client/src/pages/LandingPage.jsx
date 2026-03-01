@@ -363,12 +363,31 @@ export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [email, setEmail] = useState('');
   const progressRef = useRef(null);
+  const [activeSteps, setActiveSteps] = useState(new Set());
   useCardScroll(progressRef);
 
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 30);
     window.addEventListener('scroll', h, { passive: true });
     return () => window.removeEventListener('scroll', h);
+  }, []);
+
+  // Journey step scroll observer
+  useEffect(() => {
+    const nodes = document.querySelectorAll('[data-journey-step]');
+    if (!nodes.length) return;
+    const observer = new IntersectionObserver((entries) => {
+      setActiveSteps(prev => {
+        const next = new Set(prev);
+        entries.forEach(e => {
+          const idx = Number(e.target.dataset.journeyStep);
+          if (e.isIntersecting) next.add(idx);
+        });
+        return next.size !== prev.size ? next : prev;
+      });
+    }, { threshold: 0.4 });
+    nodes.forEach(n => observer.observe(n));
+    return () => observer.disconnect();
   }, []);
 
   const go = () => navigate('/dashboard');
@@ -779,15 +798,19 @@ export default function LandingPage() {
                 {JOURNEY.map((step, i) => {
                   const num = String(i + 1).padStart(2, '0');
                   const isLeft = i % 2 === 0;
+                  const isActive = activeSteps.has(i);
+                  const nodeClass = `lp-hiw-node${isActive ? ' lp-hiw-node-active' : ''}`;
+                  const phaseColor = step.phase === 'setup' ? 'var(--lp-sage)' : step.phase === 'grow' ? 'var(--lp-terra)' : 'var(--lp-ink)';
+                  const nodeStyle = isActive ? { background: phaseColor, borderColor: phaseColor, boxShadow: `0 0 0 4px ${step.phase === 'setup' ? 'rgba(94,142,110,0.15)' : step.phase === 'grow' ? 'rgba(196,93,62,0.15)' : 'rgba(51,47,43,0.12)'}` } : {};
                   return (
-                    <div key={i} className="contents">
+                    <div key={i} className="contents" data-journey-step={i}>
                       {/* Desktop: alternating left/right with timeline */}
                       {isLeft ? (
                         <>
                           <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 0' }}>
                             <div className="lp-hiw-step" style={{ maxWidth: 420 }}>
                               <div className="lp-hiw-mobile-node">
-                                <div className="lp-hiw-node"><span>{num}</span></div>
+                                <div className={nodeClass} style={nodeStyle}><span>{num}</span></div>
                                 <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--lp-muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Step {num}</span>
                               </div>
                               <div className="lp-hiw-step-icon" style={{ background: `linear-gradient(135deg, ${step.iconBg}, transparent)`, border: `1px solid ${step.iconBorder}` }}>
@@ -799,7 +822,7 @@ export default function LandingPage() {
                             </div>
                           </div>
                           <div className="lp-hiw-timeline" style={{ padding: '12px 0' }}>
-                            <div className="lp-hiw-node" style={{ marginTop: 28 }}><span>{num}</span></div>
+                            <div className={nodeClass} style={{ marginTop: 28, ...nodeStyle }}><span>{num}</span></div>
                           </div>
                           <div className="lp-hiw-spacer" />
                         </>
@@ -807,12 +830,12 @@ export default function LandingPage() {
                         <>
                           <div className="lp-hiw-spacer" />
                           <div className="lp-hiw-timeline" style={{ padding: '12px 0' }}>
-                            <div className="lp-hiw-node" style={{ marginTop: 28 }}><span>{num}</span></div>
+                            <div className={nodeClass} style={{ marginTop: 28, ...nodeStyle }}><span>{num}</span></div>
                           </div>
                           <div style={{ display: 'flex', justifyContent: 'flex-start', padding: '12px 0' }}>
                             <div className="lp-hiw-step" style={{ maxWidth: 420 }}>
                               <div className="lp-hiw-mobile-node">
-                                <div className="lp-hiw-node"><span>{num}</span></div>
+                                <div className={nodeClass} style={nodeStyle}><span>{num}</span></div>
                                 <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--lp-muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Step {num}</span>
                               </div>
                               <div className="lp-hiw-step-icon" style={{ background: `linear-gradient(135deg, ${step.iconBg}, transparent)`, border: `1px solid ${step.iconBorder}` }}>
