@@ -110,7 +110,6 @@ export default function VideoMarketingPage() {
 
   return (
     <div className="flex h-full overflow-hidden">
-      <ModuleWrapper moduleId="video-marketing">
       {/* Mobile overlay when sidebar is open */}
       {sidebarOpen && <div className="fixed inset-0 bg-black/40 z-20 md:hidden" onClick={() => setSidebarOpen(false)} />}
 
@@ -145,7 +144,7 @@ export default function VideoMarketingPage() {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Step nav */}
         {activeCampaign && (
           <div className={`flex items-center gap-0.5 px-3 sm:px-6 py-2 overflow-x-auto no-scrollbar flex-shrink-0 relative border-b ${dark ? 'border-indigo-500/[0.06]' : 'border-[#e8e0d4]'}`}>
@@ -205,6 +204,7 @@ export default function VideoMarketingPage() {
         {/* Content area */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-3 sm:p-6 lg:p-8">
+            <ModuleWrapper moduleId="video-marketing">
             {showingForm ? (
               <div className="max-w-3xl mx-auto">
                 <ProductInput onSubmit={createCampaign} />
@@ -217,10 +217,10 @@ export default function VideoMarketingPage() {
                 setCurrentStep={setCurrentStep}
               />
             )}
+            </ModuleWrapper>
           </div>
         </div>
       </div>
-      </ModuleWrapper>
     </div>
   );
 }
