@@ -90,8 +90,8 @@ export default function ModeToggle({ moduleId }) {
         <div
           className="absolute top-1 bottom-1 rounded-full transition-all duration-300 ease-out"
           style={{
-            width: `calc(${100 / 3}% - 4px)`,
-            left: `calc(${(currentIdx * 100) / 3}% + 2px)`,
+            width: `calc(${100 / 3}%)`,
+            left: `calc(${(currentIdx * 100) / 3}%)`,
             background: activeMode.activeBg,
             boxShadow: `0 2px 8px ${activeMode.color}40, 0 1px 3px rgba(0,0,0,0.1)`,
           }}
@@ -121,9 +121,8 @@ export default function ModeToggle({ moduleId }) {
               title={mode.desc}
             >
               <svg
-                className="w-3.5 h-3.5 transition-all duration-200"
+                className="w-3.5 h-3.5 flex-shrink-0 transition-all duration-200"
                 style={{
-                  transform: isActive ? 'scale(1.15)' : isHovered ? 'scale(1.05)' : 'scale(1)',
                   filter: isActive ? `drop-shadow(0 1px 2px rgba(0,0,0,0.2))` : 'none',
                 }}
                 fill={mode.id === 'manual' ? 'none' : 'currentColor'}
