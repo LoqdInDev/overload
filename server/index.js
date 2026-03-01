@@ -97,6 +97,7 @@ app.get('/api/activity', (req, res) => {
 const dataDir = process.env.DB_PATH ? path.dirname(process.env.DB_PATH) : process.cwd();
 app.use('/videos', express.static(path.join(dataDir, 'videos')));
 app.use('/uploads/brand-media', express.static(path.join(dataDir, 'uploads', 'brand-media')));
+app.use('/uploads/creatives', express.static(path.join(dataDir, 'uploads', 'creatives')));
 
 // Serve static frontend only when running locally (Vercel handles this in production)
 if (!process.env.RAILWAY_ENVIRONMENT) {

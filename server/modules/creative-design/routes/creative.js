@@ -1,13 +1,14 @@
 const express = require('express');
 const { v4: uuid } = require('uuid');
 const { generateWithClaude } = require('../../../services/claude');
+const { generateImages } = require('../../../services/gemini');
 const { logActivity } = require('../../../db/database');
 const { getQueries } = require('../db/queries');
 const { buildImagePromptOptimizer } = require('../prompts/imagePrompt');
 
 const router = express.Router();
 
-// Generate creative — returns optimized prompts (and images if provider available)
+// Generate creative — creates optimized prompts via Claude, then generates images via Gemini
 router.post('/generate', async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
@@ -18,6 +19,7 @@ router.post('/generate', async (req, res) => {
   }
 
   try {
+    // Step 1: Use Claude to optimize and create prompt variations
     const optimizerPrompt = buildImagePromptOptimizer(type, prompt);
     const { parsed } = await generateWithClaude(optimizerPrompt, { temperature: 0.8 });
 
@@ -25,22 +27,35 @@ router.post('/generate', async (req, res) => {
     const title = prompt.slice(0, 100);
     q.createProject(projectId, type, title, prompt, JSON.stringify(parsed));
 
-    // Store generated prompt variations as image entries (pending generation)
-    const images = (parsed.prompts || []).map((p) => {
+    const imagePrompts = (parsed.prompts || []).map(p => p.prompt);
+
+    // Step 2: Generate actual images via Gemini
+    let generatedImages;
+    try {
+      generatedImages = await generateImages(imagePrompts);
+    } catch (genErr) {
+      console.error('Image generation failed, returning prompts only:', genErr.message);
+      // Fall back to prompt-only mode if Gemini is unavailable
+      const images = (parsed.prompts || []).map((p) => {
+        const imgId = uuid();
+        q.createImage(imgId, projectId, null, p.alt, 'pending', 'prompt_ready', JSON.stringify(p));
+        return { id: imgId, prompt: p.prompt, alt: p.alt, style_notes: p.style_notes, status: 'prompt_ready', url: null };
+      });
+      logActivity('creative', 'generate', `Generated ${type} creative (prompts only)`, title, projectId, wsId);
+      return res.json({ projectId, images, prompts: parsed.prompts, warning: genErr.message });
+    }
+
+    // Step 3: Save results to database
+    const images = (parsed.prompts || []).map((p, i) => {
       const imgId = uuid();
-      q.createImage(imgId, projectId, null, p.alt, 'pending', 'prompt_ready', JSON.stringify(p));
-      return {
-        id: imgId,
-        prompt: p.prompt,
-        alt: p.alt,
-        style_notes: p.style_notes,
-        status: 'prompt_ready',
-        url: null,
-      };
+      const genResult = generatedImages[i];
+      const url = genResult?.url || null;
+      const status = url ? 'completed' : 'failed';
+      q.createImage(imgId, projectId, url, p.alt, 'gemini', status, JSON.stringify({ ...p, error: genResult?.error }));
+      return { id: imgId, prompt: p.prompt, alt: p.alt, style_notes: p.style_notes, status, url, error: genResult?.error };
     });
 
     logActivity('creative', 'generate', `Generated ${type} creative`, title, projectId, wsId);
-
     res.json({ projectId, images, prompts: parsed.prompts });
   } catch (err) {
     console.error('Creative generation error:', err);

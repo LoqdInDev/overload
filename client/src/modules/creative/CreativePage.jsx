@@ -343,15 +343,27 @@ export default function CreativePage() {
             {images.map((img, i) => (
               <div key={i} className="panel rounded-2xl overflow-hidden group">
                 <div className="relative">
-                  <img src={img.url} alt={img.alt || 'Generated creative'} className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-wrap items-end justify-center pb-4 gap-2">
-                    <a href={img.url} download className="chip text-[10px]" style={{ background: 'rgba(6,182,212,0.2)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' }}>
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                  {img.url ? (
+                    <>
+                      <img src={`${API_BASE}${img.url}`} alt={img.alt || 'Generated creative'} className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-wrap items-end justify-center pb-4 gap-2">
+                        <a href={`${API_BASE}${img.url}`} download className="chip text-[10px]" style={{ background: 'rgba(6,182,212,0.2)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' }}>
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                          </svg>
+                          Download
+                        </a>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-full aspect-square flex flex-col items-center justify-center p-4 text-center" style={{ background: 'rgba(6,182,212,0.05)' }}>
+                      <svg className="w-8 h-8 text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
                       </svg>
-                      Download
-                    </a>
-                  </div>
+                      <p className="text-xs text-gray-500">{img.alt || 'Prompt ready'}</p>
+                      {img.error && <p className="text-[10px] text-red-400 mt-1">{img.error}</p>}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
