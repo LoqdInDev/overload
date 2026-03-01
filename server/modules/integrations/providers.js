@@ -1,5 +1,5 @@
 const PROVIDERS = {
-  // ── OAuth2 Platforms ──────────────────────────────
+  // ── OAuth2 Platforms (require server-side app credentials) ──
 
   google: {
     id: 'google',
@@ -46,14 +46,12 @@ const PROVIDERS = {
     name: 'Twitter / X',
     description: 'Post tweets and track engagement',
     category: 'social',
-    authType: 'oauth2',
-    authUrl: 'https://twitter.com/i/oauth2/authorize',
-    tokenUrl: 'https://api.twitter.com/2/oauth2/token',
-    scopes: ['tweet.read', 'tweet.write', 'users.read', 'offline.access'],
-    envClientId: 'TWITTER_CLIENT_ID',
-    envClientSecret: 'TWITTER_CLIENT_SECRET',
-    usePKCE: true,
-    profileUrl: 'https://api.twitter.com/2/users/me',
+    authType: 'api_key',
+    credentials: [
+      { key: 'api_key', label: 'API Key', type: 'password', required: true },
+      { key: 'api_secret', label: 'API Secret', type: 'password', required: true },
+      { key: 'bearer_token', label: 'Bearer Token', type: 'password', required: true },
+    ],
   },
 
   linkedin: {
@@ -89,13 +87,11 @@ const PROVIDERS = {
     name: 'Shopify',
     description: 'E-commerce platform',
     category: 'ecommerce',
-    authType: 'oauth2',
-    authUrlTemplate: 'https://{shop}.myshopify.com/admin/oauth/authorize',
-    tokenUrlTemplate: 'https://{shop}.myshopify.com/admin/oauth/access_token',
-    scopes: ['read_products', 'read_orders', 'read_analytics'],
-    envClientId: 'SHOPIFY_CLIENT_ID',
-    envClientSecret: 'SHOPIFY_CLIENT_SECRET',
-    requiresShop: true,
+    authType: 'api_key',
+    credentials: [
+      { key: 'shop_domain', label: 'Shop Domain (e.g. mystore.myshopify.com)', type: 'text', required: true },
+      { key: 'access_token', label: 'Admin API Access Token', type: 'password', required: true },
+    ],
   },
 
   stripe: {
@@ -103,13 +99,12 @@ const PROVIDERS = {
     name: 'Stripe',
     description: 'Payment processing',
     category: 'payments',
-    authType: 'oauth2',
-    authUrl: 'https://connect.stripe.com/oauth/authorize',
-    tokenUrl: 'https://connect.stripe.com/oauth/token',
-    scopes: ['read_write'],
-    envClientId: 'STRIPE_CLIENT_ID',
-    envClientSecret: 'STRIPE_CLIENT_SECRET',
-    extraAuthParams: { response_type: 'code' },
+    authType: 'api_key',
+    credentials: [
+      { key: 'api_key', label: 'Secret Key (sk_live_... or sk_test_...)', type: 'password', required: true },
+    ],
+    testUrl: 'https://api.stripe.com/v1/balance',
+    testHeaders: (creds) => ({ 'Authorization': `Bearer ${creds.api_key}` }),
   },
 
   mailchimp: {
@@ -117,12 +112,10 @@ const PROVIDERS = {
     name: 'Mailchimp',
     description: 'Email marketing and automation',
     category: 'email',
-    authType: 'oauth2',
-    authUrl: 'https://login.mailchimp.com/oauth2/authorize',
-    tokenUrl: 'https://login.mailchimp.com/oauth2/token',
-    scopes: [],
-    envClientId: 'MAILCHIMP_CLIENT_ID',
-    envClientSecret: 'MAILCHIMP_CLIENT_SECRET',
+    authType: 'api_key',
+    credentials: [
+      { key: 'api_key', label: 'API Key (ends with -usX)', type: 'password', required: true },
+    ],
   },
 
   hubspot: {
@@ -130,12 +123,12 @@ const PROVIDERS = {
     name: 'HubSpot',
     description: 'CRM and marketing automation',
     category: 'crm',
-    authType: 'oauth2',
-    authUrl: 'https://app.hubspot.com/oauth/authorize',
-    tokenUrl: 'https://api.hubapi.com/oauth/v1/token',
-    scopes: ['crm.objects.contacts.read', 'crm.objects.deals.read'],
-    envClientId: 'HUBSPOT_CLIENT_ID',
-    envClientSecret: 'HUBSPOT_CLIENT_SECRET',
+    authType: 'api_key',
+    credentials: [
+      { key: 'access_token', label: 'Private App Access Token', type: 'password', required: true },
+    ],
+    testUrl: 'https://api.hubapi.com/crm/v3/objects/contacts?limit=1',
+    testHeaders: (creds) => ({ 'Authorization': `Bearer ${creds.access_token}` }),
   },
 
   slack: {
@@ -143,12 +136,11 @@ const PROVIDERS = {
     name: 'Slack',
     description: 'Team messaging and notifications',
     category: 'messaging',
-    authType: 'oauth2',
-    authUrl: 'https://slack.com/oauth/v2/authorize',
-    tokenUrl: 'https://slack.com/api/oauth.v2.access',
-    scopes: ['chat:write', 'channels:read'],
-    envClientId: 'SLACK_CLIENT_ID',
-    envClientSecret: 'SLACK_CLIENT_SECRET',
+    authType: 'api_key',
+    credentials: [
+      { key: 'bot_token', label: 'Bot Token (xoxb-...)', type: 'password', required: true },
+      { key: 'channel_id', label: 'Default Channel ID (optional)', type: 'text', required: false },
+    ],
   },
 
   amazon: {
@@ -156,12 +148,12 @@ const PROVIDERS = {
     name: 'Amazon',
     description: 'Seller Central / SP-API',
     category: 'ecommerce',
-    authType: 'oauth2',
-    authUrl: 'https://sellercentral.amazon.com/apps/authorize/consent',
-    tokenUrl: 'https://api.amazon.com/auth/o2/token',
-    scopes: [],
-    envClientId: 'AMAZON_CLIENT_ID',
-    envClientSecret: 'AMAZON_CLIENT_SECRET',
+    authType: 'api_key',
+    credentials: [
+      { key: 'seller_id', label: 'Seller ID', type: 'text', required: true },
+      { key: 'access_key', label: 'AWS Access Key', type: 'password', required: true },
+      { key: 'secret_key', label: 'AWS Secret Key', type: 'password', required: true },
+    ],
   },
 
   notion: {
@@ -169,13 +161,12 @@ const PROVIDERS = {
     name: 'Notion',
     description: 'Workspace and project management',
     category: 'productivity',
-    authType: 'oauth2',
-    authUrl: 'https://api.notion.com/v1/oauth/authorize',
-    tokenUrl: 'https://api.notion.com/v1/oauth/token',
-    scopes: [],
-    envClientId: 'NOTION_CLIENT_ID',
-    envClientSecret: 'NOTION_CLIENT_SECRET',
-    tokenAuthMethod: 'basic',
+    authType: 'api_key',
+    credentials: [
+      { key: 'api_key', label: 'Internal Integration Token (secret_...)', type: 'password', required: true },
+    ],
+    testUrl: 'https://api.notion.com/v1/users/me',
+    testHeaders: (creds) => ({ 'Authorization': `Bearer ${creds.api_key}`, 'Notion-Version': '2022-06-28' }),
   },
 
   airtable: {
@@ -183,13 +174,12 @@ const PROVIDERS = {
     name: 'Airtable',
     description: 'Flexible database and project management',
     category: 'productivity',
-    authType: 'oauth2',
-    authUrl: 'https://airtable.com/oauth2/v1/authorize',
-    tokenUrl: 'https://airtable.com/oauth2/v1/token',
-    scopes: ['data.records:read', 'data.records:write', 'schema.bases:read'],
-    envClientId: 'AIRTABLE_CLIENT_ID',
-    envClientSecret: 'AIRTABLE_CLIENT_SECRET',
-    usePKCE: true,
+    authType: 'api_key',
+    credentials: [
+      { key: 'api_key', label: 'Personal Access Token (pat...)', type: 'password', required: true },
+    ],
+    testUrl: 'https://api.airtable.com/v0/meta/whoami',
+    testHeaders: (creds) => ({ 'Authorization': `Bearer ${creds.api_key}` }),
   },
 
   pinterest: {
@@ -197,12 +187,10 @@ const PROVIDERS = {
     name: 'Pinterest',
     description: 'Create pins, manage boards, and run ads',
     category: 'social',
-    authType: 'oauth2',
-    authUrl: 'https://www.pinterest.com/oauth/',
-    tokenUrl: 'https://api.pinterest.com/v5/oauth/token',
-    scopes: ['ads:read', 'ads:write', 'boards:read', 'boards:write', 'pins:read', 'pins:write', 'user_accounts:read'],
-    envClientId: 'PINTEREST_CLIENT_ID',
-    envClientSecret: 'PINTEREST_CLIENT_SECRET',
+    authType: 'api_key',
+    credentials: [
+      { key: 'access_token', label: 'Access Token', type: 'password', required: true },
+    ],
   },
 
   snapchat: {
@@ -210,12 +198,11 @@ const PROVIDERS = {
     name: 'Snapchat Ads',
     description: 'Social advertising for younger audiences',
     category: 'ads',
-    authType: 'oauth2',
-    authUrl: 'https://accounts.snapchat.com/login/oauth2/authorize',
-    tokenUrl: 'https://accounts.snapchat.com/login/oauth2/access_token',
-    scopes: ['snapchat-marketing-api'],
-    envClientId: 'SNAPCHAT_CLIENT_ID',
-    envClientSecret: 'SNAPCHAT_CLIENT_SECRET',
+    authType: 'api_key',
+    credentials: [
+      { key: 'access_token', label: 'Access Token', type: 'password', required: true },
+      { key: 'ad_account_id', label: 'Ad Account ID', type: 'text', required: true },
+    ],
   },
 
   intercom: {
@@ -223,12 +210,12 @@ const PROVIDERS = {
     name: 'Intercom',
     description: 'Customer messaging and support',
     category: 'messaging',
-    authType: 'oauth2',
-    authUrl: 'https://app.intercom.com/oauth',
-    tokenUrl: 'https://api.intercom.io/auth/eagle/token',
-    scopes: [],
-    envClientId: 'INTERCOM_CLIENT_ID',
-    envClientSecret: 'INTERCOM_CLIENT_SECRET',
+    authType: 'api_key',
+    credentials: [
+      { key: 'access_token', label: 'Access Token', type: 'password', required: true },
+    ],
+    testUrl: 'https://api.intercom.io/me',
+    testHeaders: (creds) => ({ 'Authorization': `Bearer ${creds.access_token}` }),
   },
 
   bigcommerce: {
@@ -236,12 +223,11 @@ const PROVIDERS = {
     name: 'BigCommerce',
     description: 'E-commerce platform for growing brands',
     category: 'ecommerce',
-    authType: 'oauth2',
-    authUrl: 'https://login.bigcommerce.com/oauth2/authorize',
-    tokenUrl: 'https://login.bigcommerce.com/oauth2/token',
-    scopes: ['store_v2_products_read_only', 'store_v2_orders_read_only'],
-    envClientId: 'BIGCOMMERCE_CLIENT_ID',
-    envClientSecret: 'BIGCOMMERCE_CLIENT_SECRET',
+    authType: 'api_key',
+    credentials: [
+      { key: 'store_hash', label: 'Store Hash', type: 'text', required: true },
+      { key: 'access_token', label: 'API Access Token', type: 'password', required: true },
+    ],
   },
 
   // ── API Key Platforms ─────────────────────────────

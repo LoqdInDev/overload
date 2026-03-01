@@ -16,30 +16,29 @@ const BRAND_ICON_MAP = {
   'twilio': 'twilio', 'bigcommerce': 'bigcommerce',
 };
 
-const FALLBACK_CONNECTED = [
-  { id: 'shopify', name: 'Shopify', description: 'Ecommerce platform for online stores', status: 'connected', category: 'ecommerce', lastSync: '2 min ago' },
-  { id: 'google-ads', name: 'Google Ads', description: 'Search and display advertising', status: 'connected', category: 'ads', lastSync: '5 min ago' },
-  { id: 'meta-ads', name: 'Meta Ads', description: 'Facebook & Instagram advertising', status: 'connected', category: 'ads', lastSync: '5 min ago' },
-  { id: 'klaviyo', name: 'Klaviyo', description: 'Email & SMS marketing automation', status: 'connected', category: 'email', lastSync: '12 min ago' },
-  { id: 'tiktok', name: 'TikTok Ads', description: 'Short-form video advertising', status: 'connected', category: 'ads', lastSync: '8 min ago' },
-  { id: 'google-analytics', name: 'Google Analytics', description: 'Web analytics and reporting', status: 'connected', category: 'analytics', lastSync: '3 min ago' },
-  { id: 'stripe', name: 'Stripe', description: 'Payment processing and billing', status: 'connected', category: 'payments', lastSync: '1 min ago' },
-  { id: 'slack', name: 'Slack', description: 'Team messaging and notifications', status: 'connected', category: 'messaging', lastSync: '15 min ago' },
-];
-
 const FALLBACK_AVAILABLE = [
-  { id: 'hubspot', name: 'HubSpot', description: 'CRM and marketing automation platform', category: 'crm', status: 'disconnected', authType: 'api_key' },
-  { id: 'mailchimp', name: 'Mailchimp', description: 'Email marketing and automation', category: 'email', status: 'disconnected', authType: 'api_key' },
-  { id: 'zapier', name: 'Zapier', description: 'Workflow automation across 5,000+ apps', category: 'automation', status: 'disconnected', authType: 'api_key' },
-  { id: 'intercom', name: 'Intercom', description: 'Customer messaging and support', category: 'messaging', status: 'disconnected', authType: 'api_key' },
-  { id: 'segment', name: 'Segment', description: 'Customer data platform', category: 'data', status: 'disconnected', authType: 'api_key' },
-  { id: 'mixpanel', name: 'Mixpanel', description: 'Product analytics and tracking', category: 'analytics', status: 'disconnected', authType: 'api_key' },
-  { id: 'airtable', name: 'Airtable', description: 'Flexible database and project management', category: 'productivity', status: 'disconnected', authType: 'api_key' },
-  { id: 'notion', name: 'Notion', description: 'Workspace for notes, docs, and projects', category: 'productivity', status: 'disconnected', authType: 'api_key' },
-  { id: 'pinterest-ads', name: 'Pinterest Ads', description: 'Visual discovery and advertising', category: 'ads', status: 'disconnected', authType: 'api_key' },
-  { id: 'snapchat-ads', name: 'Snapchat Ads', description: 'Social advertising for younger audiences', category: 'ads', status: 'disconnected', authType: 'api_key' },
-  { id: 'twilio', name: 'Twilio', description: 'SMS and communication APIs', category: 'messaging', status: 'disconnected', authType: 'api_key' },
-  { id: 'bigcommerce', name: 'BigCommerce', description: 'Ecommerce platform for growing brands', category: 'ecommerce', status: 'disconnected', authType: 'api_key' },
+  { id: 'google', name: 'Google', description: 'Google Ads, Analytics & YouTube', category: 'ads', status: 'disconnected', authType: 'oauth2' },
+  { id: 'meta', name: 'Meta', description: 'Facebook, Instagram & Ads', category: 'social', status: 'disconnected', authType: 'oauth2' },
+  { id: 'twitter', name: 'Twitter / X', description: 'Post tweets and track engagement', category: 'social', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'api_key', label: 'API Key' }, { key: 'api_secret', label: 'API Secret' }, { key: 'bearer_token', label: 'Bearer Token' }] },
+  { id: 'linkedin', name: 'LinkedIn', description: 'Post updates and professional networking', category: 'social', status: 'disconnected', authType: 'oauth2' },
+  { id: 'tiktok', name: 'TikTok', description: 'TikTok content posting and ads', category: 'social', status: 'disconnected', authType: 'oauth2' },
+  { id: 'shopify', name: 'Shopify', description: 'E-commerce platform', category: 'ecommerce', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'shop_domain', label: 'Shop Domain' }, { key: 'access_token', label: 'Admin API Access Token' }] },
+  { id: 'stripe', name: 'Stripe', description: 'Payment processing', category: 'payments', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'api_key', label: 'Secret Key' }] },
+  { id: 'mailchimp', name: 'Mailchimp', description: 'Email marketing and automation', category: 'email', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'api_key', label: 'API Key' }] },
+  { id: 'hubspot', name: 'HubSpot', description: 'CRM and marketing automation', category: 'crm', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'access_token', label: 'Private App Access Token' }] },
+  { id: 'slack', name: 'Slack', description: 'Team messaging and notifications', category: 'messaging', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'bot_token', label: 'Bot Token' }] },
+  { id: 'amazon', name: 'Amazon', description: 'Seller Central / SP-API', category: 'ecommerce', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'seller_id', label: 'Seller ID' }, { key: 'access_key', label: 'AWS Access Key' }, { key: 'secret_key', label: 'AWS Secret Key' }] },
+  { id: 'notion', name: 'Notion', description: 'Workspace and project management', category: 'productivity', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'api_key', label: 'Integration Token' }] },
+  { id: 'airtable', name: 'Airtable', description: 'Flexible database and project management', category: 'productivity', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'api_key', label: 'Personal Access Token' }] },
+  { id: 'pinterest', name: 'Pinterest', description: 'Create pins, manage boards, and run ads', category: 'social', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'access_token', label: 'Access Token' }] },
+  { id: 'snapchat', name: 'Snapchat Ads', description: 'Social advertising for younger audiences', category: 'ads', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'access_token', label: 'Access Token' }, { key: 'ad_account_id', label: 'Ad Account ID' }] },
+  { id: 'intercom', name: 'Intercom', description: 'Customer messaging and support', category: 'messaging', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'access_token', label: 'Access Token' }] },
+  { id: 'bigcommerce', name: 'BigCommerce', description: 'E-commerce platform for growing brands', category: 'ecommerce', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'store_hash', label: 'Store Hash' }, { key: 'access_token', label: 'API Access Token' }] },
+  { id: 'klaviyo', name: 'Klaviyo', description: 'Email and SMS marketing', category: 'email', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'api_key', label: 'Private API Key' }] },
+  { id: 'segment', name: 'Segment', description: 'Customer data platform', category: 'data', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'write_key', label: 'Write Key' }] },
+  { id: 'mixpanel', name: 'Mixpanel', description: 'Product analytics and tracking', category: 'analytics', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'project_token', label: 'Project Token' }, { key: 'api_secret', label: 'API Secret' }] },
+  { id: 'twilio', name: 'Twilio', description: 'SMS and communication APIs', category: 'messaging', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'account_sid', label: 'Account SID' }, { key: 'auth_token', label: 'Auth Token' }] },
+  { id: 'zapier', name: 'Zapier', description: 'Workflow automation via webhooks', category: 'automation', status: 'disconnected', authType: 'api_key', credentials: [{ key: 'webhook_url', label: 'Webhook URL' }] },
 ];
 
 const AI_TEMPLATES = [
@@ -97,11 +96,11 @@ export default function IntegrationsPage() {
       if (data.success && data.data?.length > 0) {
         setProviders(data.data);
       } else {
-        setProviders([...FALLBACK_CONNECTED, ...FALLBACK_AVAILABLE]);
+        setProviders(FALLBACK_AVAILABLE);
       }
     } catch (err) {
       console.error('Failed to fetch providers, using fallback data:', err);
-      setProviders([...FALLBACK_CONNECTED, ...FALLBACK_AVAILABLE]);
+      setProviders(FALLBACK_AVAILABLE);
     } finally {
       setLoading(false);
     }
@@ -320,17 +319,18 @@ export default function IntegrationsPage() {
                 {p.authType === 'oauth2' ? (
                   <button
                     onClick={() => connectOAuth(p)}
-                    disabled={connectingId === p.id || (!p.configured && p.authType === 'oauth2')}
+                    disabled={connectingId === p.id || !p.configured}
                     className="text-xs font-bold px-4 py-2 rounded-xl border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/10 transition-colors disabled:opacity-50 w-full sm:w-auto"
+                    title={!p.configured ? 'Requires OAuth app credentials (CLIENT_ID/SECRET) configured on the server' : ''}
                   >
-                    {connectingId === p.id ? 'Connecting...' : !p.configured ? 'Not Configured' : 'Connect'}
+                    {connectingId === p.id ? 'Connecting...' : !p.configured ? 'OAuth Setup Required' : 'Connect'}
                   </button>
                 ) : (
                   <button
                     onClick={() => connectApiKey(p)}
                     className="text-xs font-bold px-4 py-2 rounded-xl border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/10 transition-colors w-full sm:w-auto"
                   >
-                    Enter Key
+                    Connect
                   </button>
                 )}
               </div>
