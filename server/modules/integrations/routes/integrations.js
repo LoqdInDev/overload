@@ -66,4 +66,42 @@ router.get('/connections/:id', (req, res) => {
   }
 });
 
+// PUT /connections/:id - Update a connection
+router.put('/connections/:id', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const existing = db.prepare('SELECT * FROM int_connections WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!existing) return res.status(404).json({ success: false, error: 'Connection not found' });
+
+    const { name, status, api_key_hash, config } = req.body;
+    db.prepare(
+      'UPDATE int_connections SET name = ?, status = ?, api_key_hash = ?, config = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?'
+    ).run(name || existing.name, status || existing.status, api_key_hash ?? existing.api_key_hash, config ? JSON.stringify(config) : existing.config, req.params.id, wsId);
+
+    const connection = db.prepare('SELECT * FROM int_connections WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    logActivity('integrations', 'update', `Updated connection: ${connection.name}`, 'Connection updated', null, wsId);
+    res.json({ success: true, data: connection });
+  } catch (error) {
+    console.error('Error updating connection:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// DELETE /connections/:id - Delete a connection
+router.delete('/connections/:id', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const existing = db.prepare('SELECT * FROM int_connections WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!existing) return res.status(404).json({ success: false, error: 'Connection not found' });
+
+    db.prepare('DELETE FROM int_sync_logs WHERE connection_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    db.prepare('DELETE FROM int_connections WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    logActivity('integrations', 'delete', `Deleted connection: ${existing.name}`, 'Connection deleted', null, wsId);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting connection:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router;

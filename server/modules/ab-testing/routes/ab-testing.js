@@ -66,4 +66,42 @@ router.get('/tests/:id', (req, res) => {
   }
 });
 
+// PUT /tests/:id - Update an A/B test
+router.put('/tests/:id', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const existing = db.prepare('SELECT * FROM abt_tests WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!existing) return res.status(404).json({ success: false, error: 'Test not found' });
+
+    const { name, type, status, variants, start_date, end_date } = req.body;
+    db.prepare(
+      'UPDATE abt_tests SET name = ?, type = ?, status = ?, variants = ?, start_date = ?, end_date = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?'
+    ).run(name || existing.name, type || existing.type, status || existing.status, variants ? JSON.stringify(variants) : existing.variants, start_date || existing.start_date, end_date || existing.end_date, req.params.id, wsId);
+
+    const test = db.prepare('SELECT * FROM abt_tests WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    logActivity('ab-testing', 'update', `Updated test: ${test.name}`, 'Test updated', null, wsId);
+    res.json({ success: true, data: test });
+  } catch (error) {
+    console.error('Error updating test:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// DELETE /tests/:id - Delete an A/B test
+router.delete('/tests/:id', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const existing = db.prepare('SELECT * FROM abt_tests WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!existing) return res.status(404).json({ success: false, error: 'Test not found' });
+
+    db.prepare('DELETE FROM abt_variants WHERE test_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    db.prepare('DELETE FROM abt_tests WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    logActivity('ab-testing', 'delete', `Deleted test: ${existing.name}`, 'Test deleted', null, wsId);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting test:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router;

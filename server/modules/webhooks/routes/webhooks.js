@@ -66,6 +66,44 @@ router.get('/webhooks/:id', (req, res) => {
   }
 });
 
+// PUT /webhooks/:id - Update a webhook
+router.put('/webhooks/:id', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const existing = db.prepare('SELECT * FROM wh_webhooks WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!existing) return res.status(404).json({ success: false, error: 'Webhook not found' });
+
+    const { name, url, events, secret, status } = req.body;
+    db.prepare(
+      'UPDATE wh_webhooks SET name = ?, url = ?, events = ?, secret = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?'
+    ).run(name || existing.name, url || existing.url, events ? JSON.stringify(events) : existing.events, secret ?? existing.secret, status || existing.status, req.params.id, wsId);
+
+    const webhook = db.prepare('SELECT * FROM wh_webhooks WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    logActivity('webhooks', 'update', `Updated webhook: ${webhook.name}`, 'Webhook updated', null, wsId);
+    res.json({ success: true, data: webhook });
+  } catch (error) {
+    console.error('Error updating webhook:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// DELETE /webhooks/:id - Delete a webhook
+router.delete('/webhooks/:id', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const existing = db.prepare('SELECT * FROM wh_webhooks WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!existing) return res.status(404).json({ success: false, error: 'Webhook not found' });
+
+    db.prepare('DELETE FROM wh_webhook_logs WHERE webhook_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    db.prepare('DELETE FROM wh_webhooks WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    logActivity('webhooks', 'delete', `Deleted webhook: ${existing.name}`, 'Webhook deleted', null, wsId);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting webhook:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // GET /logs - List webhook delivery logs
 router.get('/logs', (req, res) => {
   try {

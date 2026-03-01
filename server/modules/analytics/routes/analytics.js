@@ -45,16 +45,17 @@ router.get('/activity', (req, res) => {
 // Daily breakdown for charts
 router.get('/daily', (req, res) => {
   const wsId = req.workspace.id;
-  const days = Math.min(parseInt(req.query.days) || 30, 90);
+  const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
+  if (!Number.isInteger(days)) { return res.status(400).json({ error: 'Invalid days parameter' }); }
   const moduleId = req.query.module;
 
   let query = `
     SELECT date(created_at) as date, module_id, COUNT(*) as count
     FROM activity_log
-    WHERE created_at >= datetime('now', '-${days} days') AND workspace_id = ?
+    WHERE created_at >= datetime('now', '-' || ? || ' days') AND workspace_id = ?
   `;
 
-  const params = [wsId];
+  const params = [days, wsId];
   if (moduleId) {
     query += ' AND module_id = ?';
     params.push(moduleId);

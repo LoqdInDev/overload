@@ -64,6 +64,20 @@ function ensureDefaultWorkspaces() {
   const hasUsers = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").get();
   if (!hasUsers) return;
 
+  const createDefaultWorkspace = db.transaction((user) => {
+    const wsId = crypto.randomUUID();
+    const name = 'My Workspace';
+    const slug = 'my-workspace-' + user.id.slice(0, 8);
+
+    db.prepare(
+      'INSERT INTO workspaces (id, name, slug, owner_id) VALUES (?, ?, ?, ?)'
+    ).run(wsId, name, slug, user.id);
+
+    db.prepare(
+      'INSERT INTO workspace_members (id, workspace_id, user_id, role) VALUES (?, ?, ?, ?)'
+    ).run(crypto.randomUUID(), wsId, user.id, 'owner');
+  });
+
   const users = db.prepare('SELECT id, display_name, email FROM users').all();
   for (const user of users) {
     const hasMembership = db.prepare(
@@ -71,17 +85,7 @@ function ensureDefaultWorkspaces() {
     ).get(user.id);
 
     if (!hasMembership) {
-      const wsId = crypto.randomUUID();
-      const name = 'My Workspace';
-      const slug = 'my-workspace-' + user.id.slice(0, 8);
-
-      db.prepare(
-        'INSERT INTO workspaces (id, name, slug, owner_id) VALUES (?, ?, ?, ?)'
-      ).run(wsId, name, slug, user.id);
-
-      db.prepare(
-        'INSERT INTO workspace_members (id, workspace_id, user_id, role) VALUES (?, ?, ?, ?)'
-      ).run(crypto.randomUUID(), wsId, user.id, 'owner');
+      createDefaultWorkspace(user);
     }
   }
 }

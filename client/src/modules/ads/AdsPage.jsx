@@ -118,7 +118,7 @@ export default function AdsPage() {
                   </svg>
                 </div>
                 <div className="pt-1">
-                  <h3 className="text-lg font-bold text-gray-200 group-hover:text-white transition-colors mb-1.5">{p.name}</h3>
+                  <h2 className="text-lg font-bold text-gray-200 group-hover:text-white transition-colors mb-1.5">{p.name}</h2>
                   <p className="text-sm text-gray-500">
                     {p.id === 'google' && 'Search, Display, YouTube, Performance Max'}
                     {p.id === 'meta' && 'Facebook, Instagram, Messenger, Audience Network'}

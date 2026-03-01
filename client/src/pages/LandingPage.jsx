@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MODULE_REGISTRY } from '../config/modules';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const MODULE_COUNT = MODULE_REGISTRY.length;
 const BENTO_REMAINING = MODULE_COUNT - 8;
@@ -362,8 +363,10 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [email, setEmail] = useState('');
+  const [demoToast, setDemoToast] = useState(false);
   const progressRef = useRef(null);
   const [activeSteps, setActiveSteps] = useState(new Set());
+  usePageTitle('All-in-One AI Marketing Platform');
   useCardScroll(progressRef);
 
   useEffect(() => {
@@ -468,11 +471,34 @@ export default function LandingPage() {
                 <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
               </svg>
             </button>
-            <button onClick={go} className="lp-cta lp-cta-outline" style={{ padding: '18px 40px', fontSize: 15 }}>
+            <button
+              onClick={() => { setDemoToast(true); setTimeout(() => setDemoToast(false), 3500); }}
+              className="lp-cta lp-cta-outline"
+              style={{ padding: '18px 40px', fontSize: 15 }}
+            >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ opacity: 0.6 }}><path d="M8 5v14l11-7z" /></svg>
               Watch demo
             </button>
           </div>
+
+          {/* Demo coming-soon toast */}
+          {demoToast && (
+            <div
+              className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl text-sm font-medium mt-4"
+              style={{
+                background: 'var(--lp-ink)',
+                color: 'var(--lp-cream)',
+                animation: 'lp-fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+              }}
+              role="status"
+              aria-live="polite"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--lp-terra)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+              </svg>
+              Demo coming soon — sign up to get notified!
+            </div>
+          )}
 
           {/* Social proof */}
           <div className="lp-hero-proof">
@@ -635,7 +661,7 @@ export default function LandingPage() {
               {/* Bottom CTA */}
               <div className="lp-why-cta-row">
                 <a href="#modules" className="lp-why-cta-link">
-                  See all 38+ modules
+                  See all {MODULE_COUNT} modules
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
                   </svg>
@@ -889,7 +915,7 @@ export default function LandingPage() {
               </h2>
 
               <div style={{ width: 80, height: 80, borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 48px', boxShadow: '0 16px 48px rgba(196,93,62,0.25)', overflow: 'hidden' }}>
-                <img src="/logo.png" alt="Overload" style={{ width: 80, height: 80 }} />
+                <img src="/logo.png" alt="Overload" loading="lazy" style={{ width: 80, height: 80 }} />
               </div>
 
               <style>{`
@@ -909,7 +935,7 @@ export default function LandingPage() {
                         onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.transform = 'translateY(-3px)'; }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.transform = ''; }}
                       >
-                        <img src={`/brands/${int.slug}.svg`} alt={int.name} style={{ width: 28, height: 28 }} />
+                        <img src={`/brands/${int.slug}.svg`} alt={int.name} loading="lazy" style={{ width: 28, height: 28 }} />
                         <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}>{int.name}</span>
                       </div>
                     ))}
@@ -1072,7 +1098,7 @@ export default function LandingPage() {
       <footer className="lp-footer" style={{ padding: '80px 24px 40px' }}>
         <div className="max-w-5xl mx-auto" style={{ position: 'relative', zIndex: 1 }}>
           {/* Top section: Brand + Link columns */}
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-12" style={{ marginBottom: 56 }}>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-12" style={{ marginBottom: 56 }}>
             {/* Brand column — spans 2 */}
             <div className="md:col-span-2 lp-footer-brand" style={{ marginBottom: 0 }}>
               <div className="lp-footer-brand-logo">
@@ -1085,27 +1111,44 @@ export default function LandingPage() {
               {/* Social icons */}
               <div className="lp-footer-socials">
                 {[
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5 0-.28-.03-.56-.08-.83A7.72 7.72 0 0 0 23 3z" /></svg>,
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z" /><rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" /></svg>,
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" /></svg>,
-                ].map((icon, i) => (
-                  <div key={i} className="lp-footer-social">{icon}</div>
+                  { label: 'Twitter', icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5 0-.28-.03-.56-.08-.83A7.72 7.72 0 0 0 23 3z" /></svg> },
+                  { label: 'LinkedIn', icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z" /><rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" /></svg> },
+                  { label: 'GitHub', icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" /></svg> },
+                ].map((social, i) => (
+                  <div key={i} className="lp-footer-social" role="link" aria-label={social.label}>{social.icon}</div>
                 ))}
               </div>
             </div>
 
             {/* Link columns — each spans 1 */}
             {[
-              { title: 'Product', links: ['Autopilot', 'The Advisor', 'Analytics', 'Integrations', 'Pricing'] },
-              { title: 'Solutions', links: ['E-commerce', 'Agencies', 'SaaS', 'Local Business', 'Enterprise'] },
-              { title: 'Company', links: ['About', 'Blog', 'Careers', 'Contact', 'Partners'] },
-              { title: 'Legal', links: ['Privacy', 'Terms', 'Security', 'GDPR', 'Status'] },
+              { title: 'Product', links: [
+                { label: 'Autopilot', href: '#modules' },
+                { label: 'The Advisor', href: '#modules' },
+                { label: 'Analytics', href: '#modules' },
+                { label: 'All Modules', href: '#modules' },
+                { label: 'Pricing', href: '#pricing' },
+              ]},
+              { title: 'Account', links: [
+                { label: 'Sign In', href: '/login' },
+                { label: 'Dashboard', href: '/dashboard' },
+                { label: 'Contact', href: 'mailto:hello@overload.app' },
+              ]},
+              { title: 'Legal', links: [
+                { label: 'Privacy Policy', href: '/privacy' },
+                { label: 'Terms of Service', href: '/terms' },
+                { label: 'GDPR', href: '/privacy#data-rights' },
+              ]},
             ].map((col, i) => (
               <div key={i}>
                 <p className="lp-footer-col-title">{col.title}</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {col.links.map((l, j) => (
-                    <span key={j} className="lp-footer-link">{l}</span>
+                    l.href ? (
+                      <a key={j} href={l.href} className="lp-footer-link" style={{ cursor: 'pointer' }}>{l.label}</a>
+                    ) : (
+                      <span key={j} className="lp-footer-link">{l.label}</span>
+                    )
                   ))}
                 </div>
               </div>

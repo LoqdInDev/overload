@@ -24,6 +24,18 @@ router.get('/', (req, res) => {
 });
 
 // POST / — create a new workspace
+const createWorkspaceTxn = db.transaction((id, name, slug, userId) => {
+  db.prepare(
+    'INSERT INTO workspaces (id, name, slug, owner_id) VALUES (?, ?, ?, ?)'
+  ).run(id, name, slug, userId);
+
+  db.prepare(
+    'INSERT INTO workspace_members (id, workspace_id, user_id, role) VALUES (?, ?, ?, ?)'
+  ).run(crypto.randomUUID(), id, userId, 'owner');
+
+  return db.prepare('SELECT * FROM workspaces WHERE id = ?').get(id);
+});
+
 router.post('/', (req, res) => {
   try {
     const { name } = req.body;
@@ -34,15 +46,7 @@ router.post('/', (req, res) => {
     const id = crypto.randomUUID();
     const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + id.slice(0, 8);
 
-    db.prepare(
-      'INSERT INTO workspaces (id, name, slug, owner_id) VALUES (?, ?, ?, ?)'
-    ).run(id, name.trim(), slug, req.user.id);
-
-    db.prepare(
-      'INSERT INTO workspace_members (id, workspace_id, user_id, role) VALUES (?, ?, ?, ?)'
-    ).run(crypto.randomUUID(), id, req.user.id, 'owner');
-
-    const workspace = db.prepare('SELECT * FROM workspaces WHERE id = ?').get(id);
+    const workspace = createWorkspaceTxn(id, name.trim(), slug, req.user.id);
     res.status(201).json({ ...workspace, role: 'owner' });
   } catch (error) {
     res.status(500).json({ error: error.message });

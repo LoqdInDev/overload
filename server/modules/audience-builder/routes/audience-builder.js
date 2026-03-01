@@ -66,4 +66,42 @@ router.get('/audiences/:id', (req, res) => {
   }
 });
 
+// PUT /audiences/:id - Update an audience
+router.put('/audiences/:id', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const existing = db.prepare('SELECT * FROM ab_audiences WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!existing) return res.status(404).json({ success: false, error: 'Audience not found' });
+
+    const { name, platform, type, size, criteria, status } = req.body;
+    db.prepare(
+      'UPDATE ab_audiences SET name = ?, platform = ?, type = ?, size = ?, criteria = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?'
+    ).run(name || existing.name, platform || existing.platform, type || existing.type, size ?? existing.size, criteria ? JSON.stringify(criteria) : existing.criteria, status || existing.status, req.params.id, wsId);
+
+    const audience = db.prepare('SELECT * FROM ab_audiences WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    logActivity('audience-builder', 'update', `Updated audience: ${audience.name}`, 'Audience updated', null, wsId);
+    res.json({ success: true, data: audience });
+  } catch (error) {
+    console.error('Error updating audience:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// DELETE /audiences/:id - Delete an audience
+router.delete('/audiences/:id', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const existing = db.prepare('SELECT * FROM ab_audiences WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!existing) return res.status(404).json({ success: false, error: 'Audience not found' });
+
+    db.prepare('DELETE FROM ab_segments WHERE audience_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    db.prepare('DELETE FROM ab_audiences WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    logActivity('audience-builder', 'delete', `Deleted audience: ${existing.name}`, 'Audience deleted', null, wsId);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting audience:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router;

@@ -133,7 +133,7 @@ export default function AutomationRulesPage() {
             <svg className="w-12 h-12 mx-auto mb-3" fill="currentColor" viewBox="0 0 24 24" style={{ color: textSecondary, opacity: 0.3 }}>
               <path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
             </svg>
-            <h3 className="text-sm font-semibold mb-1" style={{ color: textPrimary }}>No automation rules yet</h3>
+            <h2 className="text-sm font-semibold mb-1" style={{ color: textPrimary }}>No automation rules yet</h2>
             <p className="text-xs" style={{ color: textSecondary }}>Create rules to automate repetitive tasks across your modules</p>
           </div>
         ) : (

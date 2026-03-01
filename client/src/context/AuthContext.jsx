@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { trackEvent } from '../lib/analytics';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -92,6 +93,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem(TOKEN_KEY, data.accessToken);
     localStorage.setItem(REFRESH_KEY, data.refreshToken);
     setUser(data.user);
+    trackEvent('signup_completed', { userId: data.user.id });
     return data.user;
   }, []);
 

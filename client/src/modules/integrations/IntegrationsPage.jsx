@@ -276,7 +276,7 @@ export default function IntegrationsPage() {
               <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                 <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-sm font-bold text-indigo-400 flex-shrink-0 overflow-hidden">
                   {BRAND_ICON_MAP[p.id] ? (
-                    <img src={`/brands/${BRAND_ICON_MAP[p.id]}.svg`} alt={p.name} className="w-6 h-6" />
+                    <img src={`/brands/${BRAND_ICON_MAP[p.id]}.svg`} alt={p.name} loading="lazy" className="w-6 h-6" />
                   ) : p.name.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -314,7 +314,7 @@ export default function IntegrationsPage() {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-sm font-bold text-indigo-400 flex-shrink-0 overflow-hidden">
                   {BRAND_ICON_MAP[p.id] ? (
-                    <img src={`/brands/${BRAND_ICON_MAP[p.id]}.svg`} alt={p.name} className="w-6 h-6" />
+                    <img src={`/brands/${BRAND_ICON_MAP[p.id]}.svg`} alt={p.name} loading="lazy" className="w-6 h-6" />
                   ) : p.name.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -391,7 +391,7 @@ export default function IntegrationsPage() {
                   }}
                 >
                   {BRAND_ICON_MAP[apiKeyModal.id] ? (
-                    <img src={`/brands/${BRAND_ICON_MAP[apiKeyModal.id]}.svg`} alt={apiKeyModal.name} className="w-7 h-7" />
+                    <img src={`/brands/${BRAND_ICON_MAP[apiKeyModal.id]}.svg`} alt={apiKeyModal.name} loading="lazy" className="w-7 h-7" />
                   ) : (
                     <span className="text-base font-bold" style={{ color: '#C45D3E' }}>{apiKeyModal.name.charAt(0)}</span>
                   )}
@@ -583,7 +583,7 @@ export default function IntegrationsPage() {
       {shopModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => { setShopModal(false); setConnectingId(null); }}>
           <div className="bg-[#0c0c14] border border-white/[0.06] rounded-2xl p-5 sm:p-8 w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-white mb-1">Connect Shopify</h3>
+            <h2 className="text-lg font-bold text-white mb-1">Connect Shopify</h2>
             <p className="text-sm text-gray-500 mb-5">Enter your Shopify store subdomain to continue.</p>
 
             <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Shop Name</label>

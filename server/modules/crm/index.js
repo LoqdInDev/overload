@@ -1,5 +1,7 @@
 const express = require('express');
 const { initDatabase } = require('./db/schema');
+const { addSoftDeleteColumns } = require('../../middleware/softDelete');
+const { db } = require('../../db/database');
 
 module.exports = {
   id: 'crm',
@@ -13,6 +15,9 @@ module.exports = {
 
   initDatabase() {
     initDatabase();
+    // Add soft delete columns to critical CRM tables
+    addSoftDeleteColumns(db, 'crm_contacts');
+    addSoftDeleteColumns(db, 'crm_deals');
   },
 
   getRouter() {

@@ -349,7 +349,7 @@ export default function CreativePage() {
                 <div className="relative">
                   {img.url ? (
                     <>
-                      <img src={`${API_BASE}${img.url}`} alt={img.alt || 'Generated creative'} className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105" />
+                      <img src={`${API_BASE}${img.url}`} alt={img.alt || 'Generated creative'} loading="lazy" className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-wrap items-end justify-center pb-4 gap-2">
                         <a href={`${API_BASE}${img.url}`} download className="chip text-[10px]" style={{ background: 'rgba(6,182,212,0.2)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' }}>
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>

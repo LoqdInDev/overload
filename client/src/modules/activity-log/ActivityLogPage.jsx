@@ -153,7 +153,7 @@ export default function ActivityLogPage() {
           </div>
         ) : entries.length === 0 ? (
           <div className="text-center py-16 rounded-2xl" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
-            <h3 className="text-sm font-semibold mb-1" style={{ color: textPrimary }}>No activity found</h3>
+            <h2 className="text-sm font-semibold mb-1" style={{ color: textPrimary }}>No activity found</h2>
             <p className="text-xs" style={{ color: textSecondary }}>Actions will appear here as automations run</p>
           </div>
         ) : (

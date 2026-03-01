@@ -14,11 +14,15 @@ import { useRecentModules } from './hooks/useRecentModules';
 import { NotificationProvider } from './context/NotificationContext';
 import { WorkspaceProvider, useWorkspace } from './context/WorkspaceContext';
 import NotificationBell from './components/shared/NotificationBell';
+import { initAnalytics, trackPageView } from './lib/analytics';
+import CookieBanner from './components/shared/CookieBanner';
 
 export { useTheme };
 
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
 const WorkspaceSettingsPage = lazy(() => import('./modules/workspace/WorkspaceSettingsPage'));
 const HomePage = lazy(() => import('./modules/home/HomePage'));
 const VideoMarketingPage = lazy(() => import('./modules/video-marketing/VideoMarketingPage'));
@@ -63,6 +67,8 @@ const AutomationRulesPage = lazy(() => import('./modules/automation-rules/Automa
 const ActivityLogPage = lazy(() => import('./modules/activity-log/ActivityLogPage'));
 const AutomationSettingsPage = lazy(() => import('./modules/automation-settings/AutomationSettingsPage'));
 const TutorialPage = lazy(() => import('./modules/tutorial/TutorialPage'));
+const BillingPage = lazy(() => import('./pages/BillingPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 function Loader() {
   return (
@@ -130,6 +136,8 @@ export default function App() {
   const navigate = useNavigate();
   const isLanding = location.pathname === '/';
   const isLogin = location.pathname === '/login';
+  const isPrivacy = location.pathname === '/privacy';
+  const isTerms = location.pathname === '/terms';
   const current = MODULE_REGISTRY.find(m =>
     m.path === '/dashboard' ? location.pathname === '/dashboard' : location.pathname.startsWith(m.path)
   );
@@ -168,9 +176,13 @@ export default function App() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
+  /* Analytics — init once and track page views */
+  useEffect(() => { initAnalytics(); }, []);
+  useEffect(() => { trackPageView(location.pathname); }, [location.pathname]);
+
   /* Landing page body overrides */
   useEffect(() => {
-    if (isLanding || isLogin) {
+    if (isLanding || isLogin || isPrivacy || isTerms) {
       document.documentElement.style.fontSize = '16px';
       document.body.style.overflow = 'auto';
       document.body.style.background = dark ? '#1A1816' : '#FBF7F0';
@@ -179,7 +191,7 @@ export default function App() {
       document.body.style.overflow = 'hidden';
       document.body.style.background = '';
     }
-  }, [isLanding, isLogin, dark]);
+  }, [isLanding, isLogin, isPrivacy, isTerms, dark]);
 
   /* Landing page — no sidebar, no header */
   if (isLanding) {
@@ -189,6 +201,7 @@ export default function App() {
           <Suspense fallback={<Loader />}>
             <LandingPage />
           </Suspense>
+          <CookieBanner />
         </ThemeContext.Provider>
       </AuthProvider>
     );
@@ -204,6 +217,30 @@ export default function App() {
           </Suspense>
         </ThemeContext.Provider>
       </AuthProvider>
+    );
+  }
+
+  /* Privacy policy — public, standalone page */
+  if (isPrivacy) {
+    return (
+      <ThemeContext.Provider value={{ dark, toggle }}>
+        <Suspense fallback={<Loader />}>
+          <PrivacyPage />
+          <CookieBanner />
+        </Suspense>
+      </ThemeContext.Provider>
+    );
+  }
+
+  /* Terms of service — public, standalone page */
+  if (isTerms) {
+    return (
+      <ThemeContext.Provider value={{ dark, toggle }}>
+        <Suspense fallback={<Loader />}>
+          <TermsPage />
+          <CookieBanner />
+        </Suspense>
+      </ThemeContext.Provider>
     );
   }
 
@@ -408,8 +445,9 @@ export default function App() {
                     <Route path="/knowledge-base/*" element={<M component={KnowledgeBasePage} name="Knowledge Base" />} />
                     <Route path="/the-advisor/*" element={<M component={TheAdvisorPage} name="The Advisor" />} />
                     <Route path="/client-manager/*" element={<M component={ClientManagerPage} name="Client Manager" />} />
+                    <Route path="/billing" element={<BillingPage />} />
                     <Route path="/workspace-settings" element={<M component={WorkspaceSettingsPage} name="Workspace Settings" />} />
-                    <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="*" element={<NotFoundPage />} />
                   </Routes>
                 </div>
               </Suspense>
@@ -418,6 +456,7 @@ export default function App() {
         </main>
       </div>
     </ProtectedRoute>
+    <CookieBanner />
     </NotificationProvider>
     </AutomationProvider>
     </BrandProvider>

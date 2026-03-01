@@ -38,20 +38,25 @@ router.post('/workflows', (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, description, trigger_type, trigger_config, steps } = req.body;
-    const result = db.prepare(
-      'INSERT INTO wf_workflows (name, description, trigger_type, trigger_config, workspace_id) VALUES (?, ?, ?, ?, ?)'
-    ).run(name, description, trigger_type, JSON.stringify(trigger_config || {}), wsId);
+    const createWorkflow = db.transaction(() => {
+      const result = db.prepare(
+        'INSERT INTO wf_workflows (name, description, trigger_type, trigger_config, workspace_id) VALUES (?, ?, ?, ?, ?)'
+      ).run(name, description, trigger_type, JSON.stringify(trigger_config || {}), wsId);
 
-    const workflowId = result.lastInsertRowid;
+      const workflowId = result.lastInsertRowid;
 
-    if (steps && Array.isArray(steps)) {
-      const insertStep = db.prepare(
-        'INSERT INTO wf_steps (workflow_id, step_order, module, action, config, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
-      );
-      steps.forEach((step, index) => {
-        insertStep.run(workflowId, index + 1, step.module, step.action, JSON.stringify(step.config || {}), wsId);
-      });
-    }
+      if (steps && Array.isArray(steps)) {
+        const insertStep = db.prepare(
+          'INSERT INTO wf_steps (workflow_id, step_order, module, action, config, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
+        );
+        steps.forEach((step, index) => {
+          insertStep.run(workflowId, index + 1, step.module, step.action, JSON.stringify(step.config || {}), wsId);
+        });
+      }
+
+      return workflowId;
+    });
+    const workflowId = createWorkflow();
 
     logActivity('workflow-builder', 'create', `Created workflow: ${name}`, 'Workflow', null, wsId);
     res.json({ id: workflowId, name, description });
@@ -88,13 +93,6 @@ router.post('/workflows/:id/run', async (req, res) => {
     }
 
     const now = new Date().toISOString();
-    const runResult = db.prepare(
-      'INSERT INTO wf_runs (workflow_id, status, started_at, workspace_id) VALUES (?, ?, ?, ?)'
-    ).run(req.params.id, 'running', now, wsId);
-
-    db.prepare('UPDATE wf_workflows SET run_count = run_count + 1, last_run = ? WHERE id = ? AND workspace_id = ?').run(now, req.params.id, wsId);
-
-    const runId = runResult.lastInsertRowid;
     const steps = db.prepare('SELECT * FROM wf_steps WHERE workflow_id = ? AND workspace_id = ? ORDER BY step_order').all(req.params.id, wsId);
 
     const logs = [`Workflow "${workflow.name}" started at ${now}`, `Executing ${steps.length} step(s)...`];
@@ -103,8 +101,20 @@ router.post('/workflows/:id/run', async (req, res) => {
     });
     logs.push('Workflow completed.');
 
-    db.prepare('UPDATE wf_runs SET status = ?, completed_at = ?, logs = ? WHERE id = ? AND workspace_id = ?')
-      .run('completed', new Date().toISOString(), JSON.stringify(logs), runId, wsId);
+    const executeRun = db.transaction(() => {
+      const runResult = db.prepare(
+        'INSERT INTO wf_runs (workflow_id, status, started_at, workspace_id) VALUES (?, ?, ?, ?)'
+      ).run(req.params.id, 'running', now, wsId);
+
+      const runId = runResult.lastInsertRowid;
+
+      db.prepare('UPDATE wf_workflows SET run_count = run_count + 1, last_run = ? WHERE id = ? AND workspace_id = ?').run(now, req.params.id, wsId);
+      db.prepare('UPDATE wf_runs SET status = ?, completed_at = ?, logs = ? WHERE id = ? AND workspace_id = ?')
+        .run('completed', new Date().toISOString(), JSON.stringify(logs), runId, wsId);
+
+      return runId;
+    });
+    const runId = executeRun();
 
     logActivity('workflow-builder', 'run', `Ran workflow: ${workflow.name}`, 'Workflow execution', null, wsId);
     res.json({ runId, status: 'completed', logs });

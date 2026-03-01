@@ -3,6 +3,7 @@ const router = express.Router();
 const { db, logActivity } = require('../../../db/database');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
+const { softDelete, restoreRecord, excludeDeleted } = require('../../../middleware/softDelete');
 
 // POST /generate - SSE: generate outreach emails, lead analysis, follow-ups
 router.post('/generate', async (req, res) => {
@@ -143,7 +144,7 @@ router.get('/contacts', (req, res) => {
   try {
     const { status, segment, search } = req.query;
     let query = 'SELECT * FROM crm_contacts';
-    const conditions = ['workspace_id = ?'];
+    const conditions = ['workspace_id = ?', 'deleted_at IS NULL'];
     const params = [wsId];
 
     if (status) {
@@ -240,18 +241,44 @@ router.put('/contacts/:id', (req, res) => {
   }
 });
 
-// DELETE /contacts/:id
+// DELETE /contacts/:id (soft delete)
 router.delete('/contacts/:id', (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { id } = req.params;
-    const existing = db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ?').get(id, wsId);
+    const existing = db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL').get(id, wsId);
     if (!existing) {
       return res.status(404).json({ error: 'Contact not found' });
     }
-    db.prepare('DELETE FROM crm_contacts WHERE id = ? AND workspace_id = ?').run(id, wsId);
-    logActivity('crm', 'delete', 'Deleted contact', existing.name, null, wsId);
+    const softDeleteContact = db.transaction(() => {
+      softDelete(db, 'crm_contacts', id);
+      // Also soft-delete associated deals
+      const deals = db.prepare('SELECT id FROM crm_deals WHERE contact_id = ? AND workspace_id = ? AND deleted_at IS NULL').all(id, wsId);
+      for (const deal of deals) {
+        softDelete(db, 'crm_deals', deal.id);
+      }
+    });
+    softDeleteContact();
+    logActivity('crm', 'delete', 'Deleted contact (soft)', existing.name, null, wsId);
     res.json({ success: true, deleted: existing });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /contacts/:id/restore - Restore a soft-deleted contact
+router.post('/contacts/:id/restore', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const { id } = req.params;
+    const existing = db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ? AND deleted_at IS NOT NULL').get(id, wsId);
+    if (!existing) {
+      return res.status(404).json({ error: 'Deleted contact not found' });
+    }
+    restoreRecord(db, 'crm_contacts', id);
+    logActivity('crm', 'restore', 'Restored contact', existing.name, null, wsId);
+    const restored = db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ?').get(id, wsId);
+    res.json(restored);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -263,7 +290,7 @@ router.get('/deals', (req, res) => {
   try {
     const { stage, pipeline, contact_id } = req.query;
     let query = 'SELECT d.*, c.name as contact_name, c.company as contact_company, c.email as contact_email FROM crm_deals d LEFT JOIN crm_contacts c ON d.contact_id = c.id';
-    const conditions = ['d.workspace_id = ?'];
+    const conditions = ['d.workspace_id = ?', 'd.deleted_at IS NULL'];
     const params = [wsId];
 
     if (stage) {
@@ -324,28 +351,32 @@ router.put('/deals/:id', (req, res) => {
     }
 
     const { name, value, stage, pipeline, probability, expected_close, notes } = req.body;
-    db.prepare(
-      'UPDATE crm_deals SET name = ?, value = ?, stage = ?, pipeline = ?, probability = ?, expected_close = ?, notes = ?, updated_at = datetime(\'now\') WHERE id = ? AND workspace_id = ?'
-    ).run(
-      name || existing.name,
-      value !== undefined ? value : existing.value,
-      stage || existing.stage,
-      pipeline || existing.pipeline,
-      probability !== undefined ? probability : existing.probability,
-      expected_close !== undefined ? expected_close : existing.expected_close,
-      notes !== undefined ? notes : existing.notes,
-      id, wsId
-    );
+    const updateDeal = db.transaction(() => {
+      db.prepare(
+        'UPDATE crm_deals SET name = ?, value = ?, stage = ?, pipeline = ?, probability = ?, expected_close = ?, notes = ?, updated_at = datetime(\'now\') WHERE id = ? AND workspace_id = ?'
+      ).run(
+        name || existing.name,
+        value !== undefined ? value : existing.value,
+        stage || existing.stage,
+        pipeline || existing.pipeline,
+        probability !== undefined ? probability : existing.probability,
+        expected_close !== undefined ? expected_close : existing.expected_close,
+        notes !== undefined ? notes : existing.notes,
+        id, wsId
+      );
+
+      // Log stage changes within the same transaction
+      if (stage && stage !== existing.stage) {
+        db.prepare(
+          'INSERT INTO crm_activities (contact_id, deal_id, type, title, description, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
+        ).run(existing.contact_id, id, 'stage_change', `Deal moved to ${stage}`, `${existing.stage} -> ${stage}`, wsId);
+      }
+    });
+    updateDeal();
 
     const updated = db.prepare('SELECT * FROM crm_deals WHERE id = ? AND workspace_id = ?').get(id, wsId);
-
-    // Log stage changes
     if (stage && stage !== existing.stage) {
       logActivity('crm', 'stage-change', `Deal moved to ${stage}`, `${existing.name}: ${existing.stage} -> ${stage}`, null, wsId);
-      // Add activity record
-      db.prepare(
-        'INSERT INTO crm_activities (contact_id, deal_id, type, title, description, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
-      ).run(existing.contact_id, id, 'stage_change', `Deal moved to ${stage}`, `${existing.stage} -> ${stage}`, wsId);
     }
 
     res.json(updated);
@@ -354,18 +385,36 @@ router.put('/deals/:id', (req, res) => {
   }
 });
 
-// DELETE /deals/:id
+// DELETE /deals/:id (soft delete)
 router.delete('/deals/:id', (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { id } = req.params;
-    const existing = db.prepare('SELECT * FROM crm_deals WHERE id = ? AND workspace_id = ?').get(id, wsId);
+    const existing = db.prepare('SELECT * FROM crm_deals WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL').get(id, wsId);
     if (!existing) {
       return res.status(404).json({ error: 'Deal not found' });
     }
-    db.prepare('DELETE FROM crm_deals WHERE id = ? AND workspace_id = ?').run(id, wsId);
-    logActivity('crm', 'delete', 'Deleted deal', existing.name, null, wsId);
+    softDelete(db, 'crm_deals', id);
+    logActivity('crm', 'delete', 'Deleted deal (soft)', existing.name, null, wsId);
     res.json({ success: true, deleted: existing });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /deals/:id/restore - Restore a soft-deleted deal
+router.post('/deals/:id/restore', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const { id } = req.params;
+    const existing = db.prepare('SELECT * FROM crm_deals WHERE id = ? AND workspace_id = ? AND deleted_at IS NOT NULL').get(id, wsId);
+    if (!existing) {
+      return res.status(404).json({ error: 'Deleted deal not found' });
+    }
+    restoreRecord(db, 'crm_deals', id);
+    logActivity('crm', 'restore', 'Restored deal', existing.name, null, wsId);
+    const restored = db.prepare('SELECT * FROM crm_deals WHERE id = ? AND workspace_id = ?').get(id, wsId);
+    res.json(restored);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -421,7 +470,7 @@ router.get('/pipeline-stats', (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { pipeline } = req.query;
-    let query = 'SELECT stage, COUNT(*) as count, COALESCE(SUM(value), 0) as total_value FROM crm_deals WHERE workspace_id = ?';
+    let query = 'SELECT stage, COUNT(*) as count, COALESCE(SUM(value), 0) as total_value FROM crm_deals WHERE workspace_id = ? AND deleted_at IS NULL';
     const params = [wsId];
     if (pipeline) {
       query += ' AND pipeline = ?';

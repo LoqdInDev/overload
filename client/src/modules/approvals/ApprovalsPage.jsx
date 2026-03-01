@@ -162,9 +162,9 @@ function ApprovalCard({ item, dark, selected, onToggleSelect, onApprove, onEditA
 
         {/* Title + Description */}
         <div className="mt-3 ml-8">
-          <h3 className={`text-sm font-bold leading-snug ${dark ? 'text-gray-200' : 'text-gray-800'}`}>
+          <h2 className={`text-sm font-bold leading-snug ${dark ? 'text-gray-200' : 'text-gray-800'}`}>
             {item.title}
-          </h3>
+          </h2>
           <p className={`text-[13px] mt-1 leading-relaxed ${dark ? 'text-gray-500' : 'text-gray-500'}`}>
             {item.description}
           </p>

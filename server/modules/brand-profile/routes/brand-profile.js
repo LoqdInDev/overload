@@ -24,9 +24,17 @@ const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: (req, file, cb) => {
-    const allowed = /\.(jpg|jpeg|png|gif|svg|webp|ico|pdf)$/i;
-    if (allowed.test(path.extname(file.originalname))) cb(null, true);
-    else cb(new Error('Only image files (JPG, PNG, GIF, SVG, WebP, ICO) and PDFs are allowed'));
+    // Validate file extension
+    const allowedExt = /\.(jpg|jpeg|png|gif|svg|webp|ico|pdf)$/i;
+    if (!allowedExt.test(path.extname(file.originalname))) {
+      return cb(new Error('Only image files (JPG, PNG, GIF, SVG, WebP, ICO) and PDFs are allowed'));
+    }
+    // Validate MIME type — only allow image/*, video/*, application/pdf, text/*
+    const allowedMime = /^(image\/.+|video\/.+|application\/pdf|text\/.+)$/;
+    if (!allowedMime.test(file.mimetype)) {
+      return cb(new Error(`File type "${file.mimetype}" is not allowed`));
+    }
+    cb(null, true);
   },
 });
 

@@ -137,4 +137,74 @@ router.get('/commissions', (req, res) => {
   }
 });
 
+// PUT /programs/:id - Update a program
+router.put('/programs/:id', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const existing = db.prepare('SELECT * FROM af_programs WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!existing) return res.status(404).json({ error: 'Program not found' });
+
+    const { name, description, commissionRate, commissionType, cookieDuration, terms, status } = req.body;
+    db.prepare(
+      'UPDATE af_programs SET name = ?, description = ?, commission_rate = ?, commission_type = ?, cookie_duration = ?, terms = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?'
+    ).run(name || existing.name, description ?? existing.description, commissionRate ?? existing.commission_rate, commissionType || existing.commission_type, cookieDuration ?? existing.cookie_duration, terms ?? existing.terms, status || existing.status, req.params.id, wsId);
+
+    const program = db.prepare('SELECT * FROM af_programs WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    logActivity('affiliates', 'update', `Updated program: ${program.name}`, null, null, wsId);
+    res.json(program);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /programs/:id - Delete a program
+router.delete('/programs/:id', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const existing = db.prepare('SELECT * FROM af_programs WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!existing) return res.status(404).json({ error: 'Program not found' });
+
+    db.prepare('DELETE FROM af_programs WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    logActivity('affiliates', 'delete', `Deleted program: ${existing.name}`, null, null, wsId);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /affiliates/:id - Update an affiliate
+router.put('/affiliates/:id', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const existing = db.prepare('SELECT * FROM af_affiliates WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!existing) return res.status(404).json({ error: 'Affiliate not found' });
+
+    const { name, email, website, status } = req.body;
+    db.prepare(
+      'UPDATE af_affiliates SET name = ?, email = ?, website = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?'
+    ).run(name || existing.name, email ?? existing.email, website ?? existing.website, status || existing.status, req.params.id, wsId);
+
+    const affiliate = db.prepare('SELECT * FROM af_affiliates WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    logActivity('affiliates', 'update', `Updated affiliate: ${affiliate.name}`, null, null, wsId);
+    res.json(affiliate);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /affiliates/:id - Delete an affiliate
+router.delete('/affiliates/:id', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const existing = db.prepare('SELECT * FROM af_affiliates WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!existing) return res.status(404).json({ error: 'Affiliate not found' });
+
+    db.prepare('DELETE FROM af_affiliates WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    logActivity('affiliates', 'delete', `Deleted affiliate: ${existing.name}`, null, null, wsId);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

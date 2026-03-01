@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export default function LoginPage() {
   const [mode, setMode] = useState('login');
@@ -9,10 +10,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const { login, signup } = useAuth();
   const { dark, toggle } = useTheme();
   const navigate = useNavigate();
+  usePageTitle(mode === 'login' ? 'Log In' : 'Sign Up');
 
   const bg = dark ? '#1A1816' : '#FBF7F0';
   const cardBg = dark ? '#1E1B18' : '#FFFFFF';
@@ -22,9 +25,36 @@ export default function LoginPage() {
   const inputBg = dark ? 'rgba(255,255,255,0.04)' : '#F8F6F3';
   const inputBorder = dark ? 'rgba(255,255,255,0.08)' : '#EDE5DA';
 
+  const validateForm = () => {
+    const errors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!emailRegex.test(email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+
+    if (!password) {
+      errors.password = 'Password is required';
+    } else if (mode === 'signup' && password.length < 8) {
+      errors.password = 'Password must be at least 8 characters';
+    }
+
+    if (mode === 'signup' && !displayName.trim()) {
+      errors.displayName = 'Name is required';
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!validateForm()) return;
+
     setLoading(true);
 
     try {
@@ -99,7 +129,7 @@ export default function LoginPage() {
             {['login', 'signup'].map((m) => (
               <button
                 key={m}
-                onClick={() => { setMode(m); setError(''); }}
+                onClick={() => { setMode(m); setError(''); setFieldErrors({}); }}
                 className="flex-1 py-2 text-[12px] font-semibold rounded-lg transition-all duration-200"
                 style={{
                   background: mode === m ? (dark ? 'rgba(255,255,255,0.08)' : '#FFFFFF') : 'transparent',
@@ -121,13 +151,14 @@ export default function LoginPage() {
                 <input
                   type="text"
                   value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
+                  onChange={(e) => { setDisplayName(e.target.value); setFieldErrors(prev => ({ ...prev, displayName: undefined })); }}
                   placeholder="Your name"
                   className="w-full px-3.5 py-2.5 text-[13px] rounded-xl outline-none transition-all duration-200"
-                  style={{ background: inputBg, border: `1px solid ${inputBorder}`, color: ink }}
+                  style={{ background: inputBg, border: `1px solid ${fieldErrors.displayName ? 'rgba(196,93,62,0.6)' : inputBorder}`, color: ink }}
                   onFocus={(e) => { e.target.style.borderColor = '#C45D3E'; e.target.style.boxShadow = '0 0 0 3px rgba(196,93,62,0.1)'; }}
-                  onBlur={(e) => { e.target.style.borderColor = inputBorder; e.target.style.boxShadow = 'none'; }}
+                  onBlur={(e) => { e.target.style.borderColor = fieldErrors.displayName ? 'rgba(196,93,62,0.6)' : inputBorder; e.target.style.boxShadow = 'none'; }}
                 />
+                {fieldErrors.displayName && <p className="text-[11px] mt-1" style={{ color: '#C45D3E' }}>{fieldErrors.displayName}</p>}
               </div>
             )}
 
@@ -138,14 +169,14 @@ export default function LoginPage() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setFieldErrors(prev => ({ ...prev, email: undefined })); }}
                 placeholder="you@company.com"
-                required
                 className="w-full px-3.5 py-2.5 text-[13px] rounded-xl outline-none transition-all duration-200"
-                style={{ background: inputBg, border: `1px solid ${inputBorder}`, color: ink }}
+                style={{ background: inputBg, border: `1px solid ${fieldErrors.email ? 'rgba(196,93,62,0.6)' : inputBorder}`, color: ink }}
                 onFocus={(e) => { e.target.style.borderColor = '#C45D3E'; e.target.style.boxShadow = '0 0 0 3px rgba(196,93,62,0.1)'; }}
-                onBlur={(e) => { e.target.style.borderColor = inputBorder; e.target.style.boxShadow = 'none'; }}
+                onBlur={(e) => { e.target.style.borderColor = fieldErrors.email ? 'rgba(196,93,62,0.6)' : inputBorder; e.target.style.boxShadow = 'none'; }}
               />
+              {fieldErrors.email && <p className="text-[11px] mt-1" style={{ color: '#C45D3E' }}>{fieldErrors.email}</p>}
             </div>
 
             <div className="space-y-1.5">
@@ -155,14 +186,14 @@ export default function LoginPage() {
               <input
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); setFieldErrors(prev => ({ ...prev, password: undefined })); }}
                 placeholder={mode === 'signup' ? 'Min. 8 characters' : 'Enter password'}
-                required
                 className="w-full px-3.5 py-2.5 text-[13px] rounded-xl outline-none transition-all duration-200"
-                style={{ background: inputBg, border: `1px solid ${inputBorder}`, color: ink }}
+                style={{ background: inputBg, border: `1px solid ${fieldErrors.password ? 'rgba(196,93,62,0.6)' : inputBorder}`, color: ink }}
                 onFocus={(e) => { e.target.style.borderColor = '#C45D3E'; e.target.style.boxShadow = '0 0 0 3px rgba(196,93,62,0.1)'; }}
-                onBlur={(e) => { e.target.style.borderColor = inputBorder; e.target.style.boxShadow = 'none'; }}
+                onBlur={(e) => { e.target.style.borderColor = fieldErrors.password ? 'rgba(196,93,62,0.6)' : inputBorder; e.target.style.boxShadow = 'none'; }}
               />
+              {fieldErrors.password && <p className="text-[11px] mt-1" style={{ color: '#C45D3E' }}>{fieldErrors.password}</p>}
             </div>
 
             {error && (

@@ -538,6 +538,7 @@ export default function ChatBot() {
               style={{ background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)' }}
               onMouseEnter={e => { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.1)' : 'rgba(44,40,37,0.08)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)'; }}
+              aria-label="Close chat"
             >
               <svg className="w-4 h-4" style={{ color: t3 }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -622,6 +623,7 @@ export default function ChatBot() {
                   background: input.trim() ? `linear-gradient(135deg, ${terra}, ${terra}dd)` : (dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)'),
                   opacity: input.trim() ? 1 : 0.4,
                 }}
+                aria-label="Send message"
               >
                 <svg className="w-3.5 h-3.5" style={{ color: input.trim() ? '#fff' : t3 }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
@@ -635,6 +637,7 @@ export default function ChatBot() {
       {/* ── Floating button ── */}
       <button
         onClick={() => setOpen(!open)}
+        aria-label={open ? 'Close assistant' : 'Open assistant'}
         className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-300"
         style={{
           background: open

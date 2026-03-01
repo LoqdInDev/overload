@@ -625,7 +625,7 @@ export default function BrandHubPage() {
                       </svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className={`text-base font-bold mb-1 transition-colors ${dark ? 'text-gray-200 group-hover:text-white' : 'text-gray-700 group-hover:text-gray-900'}`}>{tool.name}</h3>
+                      <h2 className={`text-base font-bold mb-1 transition-colors ${dark ? 'text-gray-200 group-hover:text-white' : 'text-gray-700 group-hover:text-gray-900'}`}>{tool.name}</h2>
                       <p className="text-xs text-gray-500 leading-relaxed">{tool.desc}</p>
                     </div>
                   </div>
@@ -963,7 +963,7 @@ export default function BrandHubPage() {
                       {/* Preview */}
                       <div className={`relative aspect-square flex items-center justify-center ${dark ? 'bg-white/[0.02]' : 'bg-[#FAF7F2]'}`}>
                         {isImage ? (
-                          <img src={item.url} alt={item.original_name} className="w-full h-full object-contain p-2" />
+                          <img src={item.url} alt={item.original_name} loading="lazy" className="w-full h-full object-contain p-2" />
                         ) : (
                           <div className="text-center p-4">
                             <svg className={`w-10 h-10 mx-auto ${dark ? 'text-gray-600' : 'text-[#94908A]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>

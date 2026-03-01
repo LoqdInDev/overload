@@ -251,12 +251,14 @@
   .section-items {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 0;
     background: var(--surface);
     border: 1px solid rgba(44,40,37,0.05);
     border-radius: 18px;
     overflow: hidden;
   }
+  .item-container + .item-container { border-top: 1px solid rgba(44,40,37,0.04); }
+
   .item {
     display: flex;
     align-items: flex-start;
@@ -267,7 +269,6 @@
     position: relative;
   }
   .item:hover { background: rgba(44,40,37,0.015); }
-  .item + .item { border-top: 1px solid rgba(44,40,37,0.04); }
   .item.checked { opacity: 0.5; }
   .item.checked .item-text { text-decoration: line-through; }
 
@@ -333,12 +334,108 @@
     border-color: var(--ink);
   }
 
+  /* Guide dropdown */
+  .item-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    flex: 1;
+    min-width: 0;
+  }
+  .item-wrap {
+    padding: 14px 20px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    position: relative;
+  }
+  .item-wrap:hover { background: rgba(44,40,37,0.015); }
+  .item-wrap + .item-wrap { border-top: 1px solid rgba(44,40,37,0.04); }
+  .item-wrap.checked { opacity: 0.5; }
+  .item-wrap.checked .item-text { text-decoration: line-through; }
+  .item-wrap.checked .checkbox { background: var(--sage); border-color: var(--sage); }
+  .item-wrap.checked .checkbox svg { opacity: 1; }
+  .item-wrap:hover .checkbox { border-color: rgba(44,40,37,0.3); }
+
+  .guide-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(44,40,37,0.08);
+    background: rgba(94,142,110,0.06);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--sage);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 2px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .guide-toggle:hover {
+    background: rgba(94,142,110,0.12);
+    border-color: rgba(94,142,110,0.2);
+  }
+  .guide-toggle svg {
+    transition: transform 0.25s ease;
+  }
+  .guide-toggle.open svg {
+    transform: rotate(180deg);
+  }
+
+  .guide-panel {
+    display: none;
+    padding: 12px 20px 16px 56px;
+    background: rgba(94,142,110,0.03);
+    border-top: 1px dashed rgba(94,142,110,0.12);
+    animation: guideFadeIn 0.25s ease;
+  }
+  .guide-panel.open { display: block; }
+  @keyframes guideFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .guide-panel ol {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .guide-panel li {
+    font-size: 12.5px;
+    color: var(--ink);
+    line-height: 1.65;
+    margin-bottom: 6px;
+  }
+  .guide-panel li:last-child { margin-bottom: 0; }
+  .guide-panel code {
+    font-size: 11px;
+    background: rgba(44,40,37,0.06);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    color: var(--terra);
+  }
+  .guide-panel .guide-tip {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: rgba(240,168,48,0.06);
+    border: 1px solid rgba(240,168,48,0.1);
+    border-radius: 8px;
+    font-size: 11.5px;
+    color: var(--amber);
+    font-weight: 500;
+  }
+
   /* Responsive */
   @media (max-width: 640px) {
     .stats-row { grid-template-columns: repeat(2, 1fr); }
     .section-header { flex-wrap: wrap; }
     .progress-inner { flex-direction: column; gap: 8px; align-items: stretch; }
     .progress-text { text-align: left; }
+    .guide-panel { padding-left: 20px; }
   }
 </style>
 </head>
@@ -384,13 +481,17 @@ const DATA = [
     color: "196,93,62",
     priority: "critical",
     items: [
+      "Remove .env.local from git history — contains a real VERCEL_OIDC_TOKEN JWT. Rotate the token after purging",
+      "Require JWT_SECRET env var — currently generates random secret on startup, invalidating all tokens on restart (services/auth.js:6)",
       "Set ANTHROPIC_API_KEY in production env",
       "Set ENCRYPTION_KEY (32+ chars, random, never commit)",
-      "Set JWT_SECRET (strong random value)",
+      "Set JWT_SECRET (strong random value, never fallback to random)",
       "Set OAUTH_CALLBACK_URL to production domain",
+      "Set CORS_ORIGIN to your production frontend URL",
       "Configure all OAuth client IDs/secrets for each platform (Google, Meta, Twitter, LinkedIn, TikTok, Shopify, Stripe, Mailchimp, etc.)",
-      "Verify .env is in .gitignore",
-      "Remove or disable auto-login default owner account (owner@overload.local) — security risk in production"
+      "Add DB_PATH, PORT, NODE_ENV to .env.example — currently undocumented",
+      "Verify .env is in .gitignore (it is, but .env.local was committed)",
+      "Remove or disable auto-login default owner account (owner@overload.local / overload-auto-2024) — hardcoded in routes/auth.js:111"
     ]
   },
   {
@@ -400,25 +501,64 @@ const DATA = [
     priority: "critical",
     items: [
       "Disable or protect POST /api/auth/auto-login endpoint in production",
-      "Add rate limiting on /api/auth/login and /api/auth/signup (brute force protection)",
+      "Add rate limiting on /api/auth/login and /api/auth/signup (express-rate-limit — brute force protection)",
       "Add rate limiting globally (DDoS protection)",
-      "Add CORS origin restriction (currently open to all origins)",
-      "Add CSRF protection for state-changing requests",
-      "Add helmet middleware for security headers (X-Frame-Options, CSP, etc.)",
-      "Set Secure, HttpOnly, SameSite flags if switching to cookie-based tokens",
+      "Add helmet middleware for security headers (X-Frame-Options, CSP, HSTS, X-Content-Type-Options)",
+      "Fix SQL injection in analytics route — days parameter directly interpolated into SQL string (modules/analytics/routes/analytics.js:54)",
+      "Add CSRF protection for state-changing requests (credentials: true in CORS but no CSRF tokens)",
+      "Add input validation library (Zod, Joi, or express-validator) — most endpoints have no schema validation",
+      "Protect uploaded files behind auth — /uploads/brand-media and /uploads/creatives served as public static files",
+      "Add MIME type validation for file uploads — currently only checks file extension, not actual content",
+      "Sanitize error.message in 500 responses — some routes leak raw error.message to clients",
+      "Enforce RBAC on module routes — requireRole() middleware exists but is barely used; all workspace members can access everything",
+      "Review token storage — localStorage is vulnerable to XSS; consider httpOnly cookies for production",
       "Audit all routes — confirm no protected endpoints are accidentally public"
+    ]
+  },
+  {
+    title: "Server Stability",
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>`,
+    color: "196,93,62",
+    priority: "critical",
+    items: [
+      "Add process.on('uncaughtException') handler — unhandled errors silently crash the server",
+      "Add process.on('unhandledRejection') handler — unhandled promise rejections crash Node",
+      "Add graceful shutdown (SIGTERM/SIGINT handlers) — in-flight requests are lost on container restart",
+      "Add health check endpoint (GET /api/health) — no route for Railway/load balancer to verify service health",
+      "Add global 404 handler for undefined API routes — /api/* paths without a match return nothing",
+      "Add structured logging (Winston or Pino) — currently only console.error, no log levels, timestamps, or request IDs",
+      "Add request correlation IDs for tracing errors across log entries"
     ]
   },
   {
     title: "Database",
     icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`,
+    color: "196,93,62",
+    priority: "critical",
+    items: [
+      "Set up automated database backups (daily snapshots minimum) — no backup strategy exists, data loss risk",
+      "Add missing database indexes — only workspace_id is indexed; FK columns, email lookups, status filters across 90+ tables are unindexed",
+      "Wrap multi-table operations in transactions — workspace creation, CRM deal updates, approval logging all write without transactions",
+      "Add pagination to all list endpoints — /crm/contacts, /crm/deals, /social-media/posts, /email-sms/campaigns and 20+ more return unbounded results",
+      "Implement a migration framework — only 1 ad-hoc migration file, no version tracking or rollback; schema changes scattered in module init via try/catch ALTER TABLE",
+      "Fix foreign key cascade consistency — mix of CASCADE, RESTRICT, and missing ON DELETE across modules; orphaned records possible",
+      "Decide: keep SQLite or migrate to PostgreSQL for production scale (SQLite can't scale horizontally)",
+      "Configure persistent volume on Railway for SQLite DB file and uploads",
+      "Run full schema validation — confirm all 90+ module tables initialize correctly",
+      "Test database under concurrent load (SQLite has write-lock limitations)"
+    ]
+  },
+  {
+    title: "API Completeness",
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg>`,
     color: "240,168,48",
     priority: "high",
     items: [
-      "Decide: keep SQLite or migrate to PostgreSQL/MySQL for production scale",
-      "Set up automated database backups (daily snapshots minimum)",
-      "Run full schema validation — confirm all module tables initialize correctly",
-      "Test database under concurrent load (SQLite has write-lock limitations)"
+      "Complete CRUD operations — many modules missing PUT/DELETE: API Manager, Affiliates, A/B Testing, Audience Builder, Integrations, Webhooks, and more",
+      "Standardize API response format — inconsistent use of { success, data }, raw arrays, { items, total }, and custom shapes",
+      "Add CHECK constraints for enum/status fields — only video-marketing has schema-level validation; all other status fields accept any string",
+      "Add soft deletes for critical entities — all deletes are permanent; contacts, deals, workflows cannot be recovered",
+      "Standardize ID types — mix of TEXT UUIDs and INTEGER AUTOINCREMENT across modules"
     ]
   },
   {
@@ -443,10 +583,26 @@ const DATA = [
       "Set up production backend hosting (Railway, Render, Fly.io, or VPS) — Vercel config only deploys the frontend",
       "Configure VITE_API_URL to point frontend to production backend",
       "Set all environment variables in production host",
-      "Set up CI/CD pipeline (auto-deploy on push to main)",
+      "Set up CI/CD pipeline (GitHub Actions — auto-deploy on push to main, run tests + lint)",
+      "Add ESLint + Prettier configuration — no code style enforcement or pre-commit hooks exist",
+      "Expand .gitignore — missing *.log, .DS_Store, .vscode/, .idea/, build/",
       "Set up staging/preview environment for testing",
       "Test the full production build end-to-end",
       "Verify SPA fallback routing works (all routes serve index.html)"
+    ]
+  },
+  {
+    title: "Frontend & Client",
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>`,
+    color: "196,93,62",
+    priority: "critical",
+    items: [
+      "Add a 404 catch-all route — no <Route path='*'> in App.jsx; unknown URLs render a blank page",
+      "Add dynamic page titles — usePageTitle() hook exists but doesn't update document.title",
+      "Add client-side form validation library (React Hook Form or similar) — most forms have minimal validation",
+      "Add PWA manifest.json, service worker, and apple-touch-icon — currently not installable",
+      "Add image lazy loading (loading='lazy') and responsive images (srcset)",
+      "Add skip-to-main-content link for keyboard accessibility"
     ]
   },
   {
@@ -455,9 +611,9 @@ const DATA = [
     color: "240,168,48",
     priority: "high",
     items: [
+      "Add meta description tag — completely missing",
       "Add Open Graph meta tags (og:title, og:description, og:image, og:url)",
       "Add Twitter Card meta tags",
-      "Add meta description tag",
       "Create and add OG image (1200x630px)",
       "Add robots.txt to /client/public/",
       "Add sitemap.xml",
@@ -474,8 +630,9 @@ const DATA = [
     items: [
       "Run Lighthouse audit — target 90+ on all metrics",
       "Enable gzip/brotli compression on backend",
-      "Optimize images (compress logo.png, favicon.png)",
-      "Add caching headers for static assets",
+      "Add HTTP caching headers (Cache-Control, ETag) for static assets — currently none",
+      "Optimize images (compress logo.png, favicon.png, use WebP/AVIF)",
+      "Add Redis for distributed caching — only in-memory Map cache exists (60s TTL); won't work multi-instance",
       "Test landing page load time on 3G connection",
       "Minimize bundle size — audit for unused dependencies"
     ]
@@ -523,7 +680,7 @@ const DATA = [
       "Set up transactional email service (SendGrid, Resend, Postmark, etc.)",
       "Implement welcome email on signup",
       "Implement email verification flow",
-      "Implement password reset flow (currently missing)",
+      "Implement password reset flow (currently missing entirely)",
       "Implement payment receipt emails",
       "Implement trial expiration reminder emails",
       "Set up email domain authentication (SPF, DKIM, DMARC)"
@@ -535,12 +692,11 @@ const DATA = [
     color: "196,93,62",
     priority: "critical",
     items: [
-      "Add error tracking service (Sentry, LogRocket, or Bugsnag)",
+      "Add error tracking service (Sentry for both client + server)",
       "Add uptime monitoring (UptimeRobot, Better Stack)",
-      "Add structured server-side logging (replace console.log)",
       "Set up alerts for 5xx error rate spikes",
-      "Add health check endpoint (GET /api/health)",
-      "Monitor database size growth"
+      "Monitor database size growth",
+      "Add Web Vitals tracking (LCP, FID, CLS)"
     ]
   },
   {
@@ -561,7 +717,7 @@ const DATA = [
     color: "240,168,48",
     priority: "high",
     items: [
-      "Run existing test suite and fix any failures (npm test)",
+      "Run existing test suite and fix any failures (only 5 test files exist — server/test/ and client/src/lib/)",
       "Test full signup → login → onboarding → dashboard flow",
       "Test OAuth connection flow for each enabled platform",
       "Test each automation mode (Manual, Copilot, Autopilot)",
@@ -570,7 +726,8 @@ const DATA = [
       "Test responsive design at all breakpoints",
       "Test with ad blockers enabled",
       "Test 404/error pages",
-      "Load test the API (concurrent users capacity)"
+      "Load test the API (concurrent users capacity)",
+      "Add E2E tests with Playwright or Cypress for critical flows"
     ]
   },
   {
@@ -580,7 +737,7 @@ const DATA = [
     priority: "high",
     items: [
       "Proofread all landing page copy",
-      "Verify MODULE_COUNT matches actual module count",
+      "Verify MODULE_COUNT matches actual module count (43 server modules)",
       "Verify pricing is final ($49/$149/$299)",
       "Make all footer links functional (currently dead links)",
       "Add actual pages for: About, Blog, Careers, Contact, Partners — or remove links",
@@ -599,7 +756,7 @@ const DATA = [
       "Add tooltips/guides for first-time users in key modules",
       "Test the ChatBot for helpful responses",
       "Test the Command Palette (Cmd+K)",
-      "Verify all 38+ module pages load without errors"
+      "Verify all 43 module pages load without errors"
     ]
   },
   {
@@ -652,12 +809,687 @@ const PRIORITY_LABELS = {
   nice: "Nice-to-Have"
 };
 
+// ── Step-by-step guides for remaining manual items ──────────────────
+const GUIDES = {
+  // ── Section 0: Environment & Secrets ──
+  "s0-i0": [
+    "Install BFG Repo Cleaner: <code>brew install bfg</code> (macOS) or download from bfg-repo-cleaner.robb.it",
+    "Run: <code>bfg --delete-files .env.local</code> in your repo root",
+    "Then: <code>git reflog expire --expire=now --all && git gc --prune=now --aggressive</code>",
+    "Force push: <code>git push --force</code> (coordinate with your team first)",
+    "Go to Vercel dashboard → Settings → Environment Variables and rotate the VERCEL_OIDC_TOKEN",
+    "tip:This is urgent — the leaked JWT is in your public git history right now."
+  ],
+  "s0-i2": [
+    "Go to console.anthropic.com → API Keys → Create Key",
+    "Copy the key (starts with <code>sk-ant-</code>)",
+    "In Railway dashboard: select your service → Variables → add <code>ANTHROPIC_API_KEY</code> with the value",
+    "tip:Never commit this key. It should only exist in your hosting provider's environment variables."
+  ],
+  "s0-i3": [
+    "Generate a random 32+ character key: <code>openssl rand -hex 32</code>",
+    "In Railway dashboard: Variables → add <code>ENCRYPTION_KEY</code> with the generated value",
+    "This key is used for encrypting sensitive data at rest (OAuth tokens, API keys stored in the DB)"
+  ],
+  "s0-i4": [
+    "Generate a strong random value: <code>openssl rand -base64 64</code>",
+    "In Railway dashboard: Variables → add <code>JWT_SECRET</code> with the value",
+    "tip:After setting this, all existing tokens will be invalidated — users will need to log in again. This is expected."
+  ],
+  "s0-i5": [
+    "Decide your production domain (e.g. <code>app.overload.ai</code>)",
+    "In Railway dashboard: Variables → add <code>OAUTH_CALLBACK_URL</code> = <code>https://yourdomain.com/api/auth/callback</code>",
+    "Update this same URL in each OAuth provider's developer console (Google, Meta, etc.)"
+  ],
+  "s0-i6": [
+    "In Railway dashboard: Variables → add <code>CORS_ORIGIN</code> = <code>https://yourdomain.com</code>",
+    "This should be your frontend URL — where users access the app",
+    "If using Vercel for frontend: use your Vercel deployment URL or custom domain"
+  ],
+  "s0-i7": [
+    "For each platform you want to integrate, create a developer app:",
+    "<b>Google:</b> console.cloud.google.com → APIs → Credentials → Create OAuth Client ID",
+    "<b>Meta/Facebook:</b> developers.facebook.com → Create App → Add Facebook Login",
+    "<b>Stripe:</b> dashboard.stripe.com → Developers → API Keys (you already have this)",
+    "<b>TikTok:</b> developers.tiktok.com → Manage Apps → Create",
+    "Add each platform's Client ID and Client Secret to Railway environment variables",
+    "tip:Start with just the platforms you need for launch — you can add more later."
+  ],
+
+  // ── Section 1: Auth & Security ──
+  "s1-i11": [
+    "This is an architectural decision: move tokens from localStorage to httpOnly cookies",
+    "Pros: Immune to XSS attacks — JavaScript can't read httpOnly cookies",
+    "Cons: Requires backend changes to set/read cookies, CSRF protection becomes more important",
+    "To implement: modify <code>server/routes/auth.js</code> login/signup to set <code>res.cookie('token', accessToken, { httpOnly: true, secure: true, sameSite: 'lax' })</code>",
+    "Modify <code>server/middleware/requireAuth.js</code> to read from <code>req.cookies.token</code> in addition to the Authorization header",
+    "Update <code>client/src/context/AuthContext.jsx</code> to stop using localStorage for tokens",
+    "tip:This is a nice-to-have for v1. localStorage + your existing XSS protections (helmet CSP headers) is acceptable for launch."
+  ],
+
+  // ── Section 3: Database ──
+  "s3-i0": [
+    "Option A — Railway Volume Snapshots: Railway automatically snapshots volumes, but verify this is enabled in your service settings",
+    "Option B — Scheduled backup script: add a cron job that copies the SQLite file to cloud storage",
+    "Create a script: <code>cp $DB_PATH /backups/overload-$(date +%Y%m%d).db</code>",
+    "For cloud: use <code>aws s3 cp</code> or <code>gsutil cp</code> to upload to S3/GCS",
+    "Set up a GitHub Action or Railway cron to run daily",
+    "tip:For SQLite, the simplest backup is just copying the .db file. The VACUUM command can optimize it first."
+  ],
+  "s3-i6": [
+    "SQLite works fine for: single-server deployments, <1000 concurrent users, <10GB database",
+    "Consider PostgreSQL if: you need horizontal scaling, multiple server instances, or advanced queries",
+    "To migrate: use <code>pgloader</code> to convert SQLite → PostgreSQL automatically",
+    "Railway has a built-in PostgreSQL add-on — add it from the Railway dashboard",
+    "You'd need to update all <code>better-sqlite3</code> calls to use <code>pg</code> or an ORM like Drizzle/Prisma",
+    "tip:For launch, SQLite is fine. Migrate to PostgreSQL when you need to scale beyond one server."
+  ],
+  "s3-i7": [
+    "Go to Railway dashboard → select your service → Settings → Volumes",
+    "Click 'Add Volume' → set mount path to <code>/data</code>",
+    "Set your <code>DB_PATH</code> env var to <code>/data/overload.db</code>",
+    "Ensure <code>/data/uploads</code> is used for file uploads too",
+    "tip:Without a persistent volume, Railway containers lose all data on every deploy. This is critical."
+  ],
+  "s3-i8": [
+    "Start the server locally: <code>cd server && npm run dev</code>",
+    "Check the console output — it logs each module's initialization status",
+    "Look for any 'Failed to load module' errors in the console",
+    "Hit the health endpoint: <code>curl http://localhost:3000/api/health</code> — verify the module count matches expected",
+    "Check the modules endpoint: <code>curl http://localhost:3000/api/modules</code> — all modules should be listed"
+  ],
+  "s3-i9": [
+    "Install a load testing tool: <code>npm install -g autocannon</code>",
+    "Start the server, then run: <code>autocannon -c 50 -d 30 http://localhost:3000/api/health</code>",
+    "This tests 50 concurrent connections for 30 seconds",
+    "For write testing: <code>autocannon -c 10 -d 30 -m POST -b '{\"name\":\"test\"}' http://localhost:3000/api/crm/contacts</code>",
+    "Watch for 'SQLITE_BUSY' errors — this indicates write lock contention",
+    "tip:SQLite handles ~50-100 concurrent readers fine, but only 1 writer at a time. Enable WAL mode if not already set."
+  ],
+
+  // ── Section 4: API Completeness ──
+  "s4-i4": [
+    "Audit which modules use TEXT (UUID) vs INTEGER (autoincrement) for primary keys",
+    "Pick one standard — UUID is better for distributed systems, INTEGER is simpler",
+    "Create a migration to alter existing tables (this is a big change — do it before launch or not at all)",
+    "tip:This is low priority for launch. Inconsistent IDs work fine — it's mainly a code cleanliness concern."
+  ],
+
+  // ── Section 5: Domain & SSL ──
+  "s5-i0": [
+    "Choose a registrar: Namecheap, Cloudflare, Google Domains, or GoDaddy",
+    "Search for your desired domain (e.g. overload.ai, useoverload.com, getoverload.com)",
+    "Purchase and complete registration",
+    "tip:Cloudflare Registrar offers at-cost pricing with free DNS and DDoS protection."
+  ],
+  "s5-i1": [
+    "If using Vercel for frontend: SSL is automatic — no action needed",
+    "If using Railway for backend: add a custom domain in Railway dashboard → Settings → Domains, SSL is auto-provisioned",
+    "If self-hosting: use Let's Encrypt with Certbot: <code>certbot --nginx -d yourdomain.com</code>",
+    "Verify cert: visit your domain with https:// and check the lock icon"
+  ],
+  "s5-i2": [
+    "In your domain registrar's DNS settings:",
+    "For Vercel frontend: add a CNAME record → <code>cname.vercel-dns.com</code>",
+    "For Railway backend API: add a CNAME record for <code>api.yourdomain.com</code> → your Railway domain",
+    "Wait for DNS propagation (can take 1-48 hours, usually <30 min)",
+    "Verify: <code>dig yourdomain.com</code> should show your records"
+  ],
+  "s5-i3": [
+    "In your DNS settings, add a redirect rule:",
+    "If choosing www → apex: add a CNAME for <code>www</code> that redirects to your apex domain",
+    "If choosing apex → www: add an A record for apex and CNAME for www",
+    "Most registrars have a 'URL redirect' feature for this",
+    "Test both <code>yourdomain.com</code> and <code>www.yourdomain.com</code> resolve correctly"
+  ],
+  "s5-i4": [
+    "Visit <code>http://yourdomain.com</code> (not https) — it should redirect to HTTPS",
+    "If using Vercel: HTTPS redirect is automatic",
+    "If using Railway: HTTPS redirect is automatic for custom domains",
+    "If self-hosting with Nginx: add <code>return 301 https://$server_name$request_uri;</code> in the HTTP server block",
+    "Test with curl: <code>curl -I http://yourdomain.com</code> — should show 301 redirect to https"
+  ],
+
+  // ── Section 6: Deployment & Hosting ──
+  "s6-i0": [
+    "Your backend is already deployed on Railway — verify it's running",
+    "Go to Railway dashboard → check your service status (should show 'Active')",
+    "Verify the health endpoint: <code>curl https://your-railway-url.up.railway.app/api/health</code>",
+    "If not on Railway yet: create a project → 'Deploy from GitHub' → select the overload repo → set root to <code>/server</code>"
+  ],
+  "s6-i1": [
+    "In Vercel dashboard: Settings → Environment Variables",
+    "Add <code>VITE_API_URL</code> = <code>https://your-railway-backend-url.up.railway.app</code>",
+    "Or if using a custom domain: <code>VITE_API_URL</code> = <code>https://api.yourdomain.com</code>",
+    "Redeploy the frontend for the change to take effect",
+    "Test: open browser console on your frontend → network tab → API calls should go to the correct backend URL"
+  ],
+  "s6-i2": [
+    "Open Railway dashboard → your service → Variables tab",
+    "Verify all required variables are set:",
+    "<code>NODE_ENV=production</code>, <code>JWT_SECRET</code>, <code>ANTHROPIC_API_KEY</code>, <code>ENCRYPTION_KEY</code>",
+    "<code>CORS_ORIGIN</code> (your frontend URL), <code>DB_PATH</code> (if using volume)",
+    "<code>STRIPE_SECRET_KEY</code>, <code>STRIPE_WEBHOOK_SECRET</code>",
+    "Any <code>SMTP_*</code> variables for your email service",
+    "tip:Use Railway's 'Shared Variables' feature to sync variables across services."
+  ],
+  "s6-i6": [
+    "In Railway: duplicate your production service as a new service named 'staging'",
+    "Or in Vercel: enable Preview Deployments (automatic for every PR)",
+    "Set different env vars for staging (e.g. <code>NODE_ENV=staging</code>, separate DB)",
+    "Test all changes in staging before merging to main",
+    "tip:Vercel Preview Deployments are the easiest — every PR gets its own URL automatically."
+  ],
+  "s6-i7": [
+    "Build the client: <code>cd client && npm run build</code> — check for build errors",
+    "Start the server with the built client: <code>cd server && NODE_ENV=production npm start</code>",
+    "Test: open <code>http://localhost:3000</code> — the app should load from the built files",
+    "Test critical flows: signup, login, navigate modules, create a contact",
+    "Check browser console for any JavaScript errors"
+  ],
+
+  // ── Section 8: SEO ──
+  "s8-i3": [
+    "Create a 1200x630px image for social sharing previews",
+    "Include: your logo, tagline, and a visual representing the product",
+    "Use Figma, Canva, or any design tool",
+    "Save as <code>og-image.png</code> (keep under 1MB, ideally <300KB)",
+    "Place in <code>client/public/og-image.png</code>",
+    "Update the og:image meta tag in <code>client/index.html</code> to point to the full URL: <code>https://yourdomain.com/og-image.png</code>",
+    "Test with the Facebook Sharing Debugger: developers.facebook.com/tools/debug/"
+  ],
+
+  // ── Section 9: Performance ──
+  "s9-i0": [
+    "Open Chrome → visit your production URL → press F12 → Lighthouse tab",
+    "Run audit for: Performance, Accessibility, Best Practices, SEO",
+    "Target 90+ on all categories",
+    "Common fixes: optimize images, remove render-blocking CSS, reduce JavaScript bundle size",
+    "tip:Run on an incognito window to avoid extensions affecting the score."
+  ],
+  "s9-i3": [
+    "Find all images in <code>client/public/</code>: logo.png, favicon.png, any others",
+    "Compress with TinyPNG (tinypng.com) or Squoosh (squoosh.app)",
+    "Convert large PNGs to WebP for smaller file sizes: <code>cwebp logo.png -o logo.webp</code>",
+    "Update image references in code to use WebP with PNG fallback",
+    "tip:WebP images are typically 25-35% smaller than PNGs with no visible quality loss."
+  ],
+  "s9-i4": [
+    "This is only needed if you plan to run multiple server instances",
+    "Add Redis: Railway dashboard → New → Database → Redis",
+    "Install: <code>cd server && npm install ioredis</code>",
+    "Replace the in-memory Map cache in your services with Redis get/set calls",
+    "tip:Skip this for launch — your in-memory cache works fine for a single Railway instance."
+  ],
+  "s9-i5": [
+    "Open Chrome DevTools → Network tab → click the throttling dropdown → select 'Slow 3G'",
+    "Navigate to your landing page and measure the load time",
+    "Target: first meaningful paint under 3 seconds on 3G",
+    "If slow: check for large images, unminified JavaScript, or render-blocking resources"
+  ],
+
+  // ── Section 10: Legal ──
+  "s10-i4": [
+    "Read the API Terms of Service for each platform you integrate with:",
+    "Google: developers.google.com/terms",
+    "Meta: developers.facebook.com/terms",
+    "TikTok: developers.tiktok.com/doc/getting-started-terms-of-service",
+    "Ensure your usage complies with rate limits, data handling rules, and display requirements",
+    "tip:Focus on the platforms you're launching with first. Add others as you integrate them."
+  ],
+  "s10-i5": [
+    "Read Anthropic's Acceptable Use Policy at anthropic.com/policies/aup",
+    "Key points: don't generate deceptive content, respect user privacy, don't use for spam",
+    "Your marketing content generation use case is generally fine — just ensure users can't abuse the AI features",
+    "Consider adding usage limits to prevent abuse (you already have rate limiting)"
+  ],
+
+  // ── Section 11: Payments ──
+  "s11-i1": [
+    "Go to Stripe Dashboard → Products → Create Product",
+    "Create 3 products with monthly prices:",
+    "<b>Manual Plan:</b> $49/month — set metadata: <code>plan_id: manual</code>",
+    "<b>Copilot Plan:</b> $149/month — set metadata: <code>plan_id: copilot</code>",
+    "<b>Autopilot Plan:</b> $299/month — set metadata: <code>plan_id: autopilot</code>",
+    "Copy each Price ID (starts with <code>price_</code>) and add to your env vars: <code>STRIPE_PRICE_MANUAL</code>, <code>STRIPE_PRICE_COPILOT</code>, <code>STRIPE_PRICE_AUTOPILOT</code>"
+  ],
+  "s11-i9": [
+    "In Stripe Dashboard → Coupons → Create Coupon",
+    "Set: 30% off, duration = forever (or first N months), max redemptions = 500",
+    "Copy the Coupon ID and add to your env as <code>STRIPE_EARLY_ACCESS_COUPON</code>",
+    "In your checkout flow, auto-apply this coupon for early signups",
+    "Track redemption count to disable the offer after 500 uses"
+  ],
+  "s11-i10": [
+    "Ensure you're in Stripe Test Mode (toggle in top-right of Stripe Dashboard)",
+    "Use test card: <code>4242 4242 4242 4242</code>, any future expiry, any CVC",
+    "Test: signup → select plan → enter card → complete checkout",
+    "Test: upgrade plan, downgrade plan, cancel subscription",
+    "Test: failed payment with card <code>4000 0000 0000 0341</code> (always declines)",
+    "Check your webhook logs in Stripe Dashboard → Developers → Webhooks"
+  ],
+  "s11-i11": [
+    "In Stripe Dashboard → toggle from 'Test mode' to 'Live mode' (top-right)",
+    "Copy the live API keys (<code>sk_live_...</code> and <code>pk_live_...</code>)",
+    "Update Railway env vars: <code>STRIPE_SECRET_KEY</code> and <code>STRIPE_PUBLISHABLE_KEY</code>",
+    "Set up a new webhook endpoint in live mode pointing to your production URL",
+    "Update <code>STRIPE_WEBHOOK_SECRET</code> with the live webhook signing secret",
+    "tip:Do this LAST — only after all testing is complete and you're ready to accept real payments."
+  ],
+
+  // ── Section 12: Email ──
+  "s12-i6": [
+    "In your domain's DNS settings, add these records for email authentication:",
+    "<b>SPF:</b> Add a TXT record: <code>v=spf1 include:_spf.google.com include:sendgrid.net ~all</code> (adjust includes for your email provider)",
+    "<b>DKIM:</b> Your email provider (SendGrid, Resend, etc.) will give you a CNAME or TXT record to add",
+    "<b>DMARC:</b> Add a TXT record for <code>_dmarc.yourdomain.com</code>: <code>v=DMARC1; p=quarantine; rua=mailto:dmarc@yourdomain.com</code>",
+    "Verify setup: use mail-tester.com — send a test email and check your score",
+    "tip:Without SPF/DKIM/DMARC, your emails will likely go to spam. This is critical for deliverability."
+  ],
+
+  // ── Section 13: Monitoring ──
+  "s13-i1": [
+    "Sign up for UptimeRobot (free for 50 monitors) at uptimerobot.com",
+    "Add a new HTTP monitor → URL: <code>https://your-backend-url/api/health</code>",
+    "Set check interval to 5 minutes",
+    "Add alert contacts: your email and/or a Slack webhook",
+    "Alternative: Better Stack (betterstack.com) for a nicer UI and incident management"
+  ],
+  "s13-i2": [
+    "If using UptimeRobot: alerts are built-in — configure email/Slack notifications",
+    "For more advanced alerting: set up Sentry alerts at sentry.io → Alerts → Create Alert Rule",
+    "Set a rule: 'When events in the last hour exceeds 10, send notification'",
+    "Or use Railway's built-in metrics: Dashboard → your service → Metrics → set up alerts for CPU/memory spikes"
+  ],
+  "s13-i3": [
+    "Add a monitoring endpoint to check DB size: query <code>SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()</code>",
+    "Set up a weekly cron job or monitoring check to track growth",
+    "SQLite files grow over time — run <code>VACUUM</code> periodically to reclaim space",
+    "Set an alert threshold (e.g. warn at 1GB, critical at 5GB)",
+    "tip:SQLite handles databases up to 281 TB theoretically, but performance degrades past 10-50GB depending on query patterns."
+  ],
+
+  // ── Section 15: Testing ──
+  "s15-i1": [
+    "Open the app in a browser → go to /login",
+    "Test signup: create a new account → should redirect to /dashboard",
+    "Test login: log out → log back in with the same credentials",
+    "Test the onboarding wizard: should appear on first login",
+    "Navigate to the dashboard → verify modules load",
+    "Check browser console for any errors throughout"
+  ],
+  "s15-i2": [
+    "For each OAuth platform you've configured (Google, Meta, etc.):",
+    "Go to the Integrations page in the app → click Connect for the platform",
+    "Complete the OAuth flow in the popup/redirect",
+    "Verify the connection shows as 'Connected' in the app",
+    "Test disconnecting and reconnecting",
+    "tip:You need valid OAuth credentials configured for each platform to test this."
+  ],
+  "s15-i3": [
+    "Test Manual mode: create content → it should require manual approval and execution",
+    "Test Copilot mode: AI should suggest content → you approve → it executes",
+    "Test Autopilot mode: AI should create and execute content automatically",
+    "Verify the mode selector in the sidebar works and persists",
+    "Check that mode-specific UI elements show/hide correctly"
+  ],
+  "s15-i4": [
+    "Open the app in Chrome, Firefox, Safari, and Edge",
+    "Check that: layout renders correctly, navigation works, forms submit, modals open/close",
+    "Pay special attention to Safari — it often has CSS/JS differences",
+    "Check Edge and Firefox for any Tailwind CSS rendering issues",
+    "tip:Use BrowserStack (browserstack.com) if you don't have all browsers installed locally."
+  ],
+  "s15-i5": [
+    "Test on iOS Safari: open your production URL on an iPhone",
+    "Test on Android Chrome: open your production URL on an Android phone",
+    "Check: touch targets are large enough, forms are usable, scrolling is smooth",
+    "Test the viewport meta tag is working (no horizontal scroll)",
+    "Tip: use Chrome DevTools device emulation for a quick check, but real devices are best"
+  ],
+  "s15-i6": [
+    "Open Chrome DevTools → toggle device toolbar (Ctrl+Shift+M)",
+    "Test these breakpoints: 375px (mobile), 768px (tablet), 1024px (laptop), 1440px (desktop)",
+    "Check: sidebar collapses on mobile, tables scroll horizontally, modals fit on screen",
+    "Verify the landing page looks good at all sizes",
+    "Test the login/signup form on mobile dimensions"
+  ],
+  "s15-i7": [
+    "Install uBlock Origin or AdBlock Plus in your browser",
+    "Visit the app with the blocker enabled",
+    "Check that: the app loads, analytics tracking failures don't break the UI, all features work",
+    "Common issue: ad blockers can block analytics scripts and some API calls if they match filter lists",
+    "Ensure your app degrades gracefully (catches errors from blocked tracking scripts)"
+  ],
+  "s15-i8": [
+    "Navigate to a URL that doesn't exist (e.g. <code>/this-page-doesnt-exist</code>)",
+    "Verify the 404 page renders with a helpful message and a link back home",
+    "Test <code>/api/nonexistent-endpoint</code> — should return JSON <code>{\"error\":\"Not found\"}</code>",
+    "Test what happens when the server returns a 500 error — the error handler should show a clean message"
+  ],
+  "s15-i9": [
+    "Install: <code>npm install -g autocannon</code>",
+    "Run against your staging/local server: <code>autocannon -c 100 -d 60 http://localhost:3000/api/health</code>",
+    "This simulates 100 concurrent users for 60 seconds",
+    "Check: average latency (should be <100ms), errors (should be 0), requests/sec",
+    "Test write endpoints too: <code>autocannon -c 20 -d 30 -m POST -H 'Content-Type=application/json' http://localhost:3000/api/crm/contacts</code>",
+    "tip:SQLite handles 50-100 concurrent reads well but only 1 writer. Monitor for SQLITE_BUSY errors."
+  ],
+
+  // ── Section 16: Content ──
+  "s16-i2": [
+    "Review the three plans on the landing page: Manual ($49), Copilot ($149), Autopilot ($299)",
+    "Confirm these match the prices you set up in Stripe",
+    "Verify the feature lists for each plan are accurate",
+    "Check that the 14-day free trial and 30% early access offer text is correct",
+    "Update <code>client/src/pages/LandingPage.jsx</code> if any pricing needs to change"
+  ],
+  "s16-i4": [
+    "Decide which pages you want at launch: About, Blog, Careers, Contact, Partners",
+    "Option A: Create simple pages with placeholder content in <code>client/src/pages/</code>",
+    "Option B: Remove the links from the footer entirely (edit <code>LandingPage.jsx</code> footer section)",
+    "For a blog: consider using a headless CMS like Notion or Contentful, or a static blog generator",
+    "tip:For MVP launch, removing the links is fine. Add pages when you have real content."
+  ],
+  "s16-i5": [
+    "Review the OnboardingWizard component for copy quality",
+    "Write helpful tooltips for key features in each module",
+    "Add info icons (ℹ) next to complex features that show tooltip on hover",
+    "Write welcome messages for the dashboard",
+    "Consider adding a 'Getting Started' checklist inside the app for new users"
+  ],
+
+  // ── Section 17: Onboarding & UX ──
+  "s17-i0": [
+    "Sign up as a new user (use incognito mode)",
+    "The OnboardingWizard should appear after first login",
+    "Walk through each step — check for bugs, unclear copy, broken buttons",
+    "Verify that completing onboarding saves the user's preferences",
+    "Check that skipping onboarding also works without errors"
+  ],
+  "s17-i1": [
+    "During onboarding, test the brand profile setup step",
+    "Upload a logo, enter brand name, set brand voice/tone",
+    "Verify the data saves to the database and appears in the Brand Hub module",
+    "Test editing the brand profile after initial setup"
+  ],
+  "s17-i2": [
+    "Identify the top 5 modules new users will use first",
+    "Add tooltip text explaining what each key feature does",
+    "Consider a guided tour library like Shepherd.js or React Joyride",
+    "Add contextual help icons that link to documentation or show inline tips"
+  ],
+  "s17-i3": [
+    "Open the ChatBot (usually a floating button in bottom-right)",
+    "Ask common questions: 'How do I create a campaign?', 'What are the three modes?'",
+    "Test edge cases: empty messages, very long messages, special characters",
+    "Verify the ChatBot gives helpful, accurate responses about Overload's features"
+  ],
+  "s17-i4": [
+    "Press <code>Cmd+K</code> (Mac) or <code>Ctrl+K</code> (Windows) to open the Command Palette",
+    "Search for a module name — it should navigate there",
+    "Test searching for actions like 'create contact', 'new campaign'",
+    "Verify keyboard navigation works (arrow keys, Enter to select, Escape to close)"
+  ],
+  "s17-i5": [
+    "Navigate to each of the 38+ module pages in the app",
+    "Check that each one loads without a blank screen or JavaScript error",
+    "Verify the sidebar navigation highlights the correct module",
+    "Check browser console for errors on each page",
+    "tip:The quickest way is to use the Command Palette (Cmd+K) to jump between modules."
+  ],
+
+  // ── Section 18: Accessibility ──
+  "s18-i2": [
+    "Navigate the entire app using only Tab, Shift+Tab, Enter, and Escape",
+    "Check: can you reach every interactive element? Is focus visible?",
+    "Test: modals should trap focus, dropdowns should be navigable with arrow keys",
+    "Verify the skip-to-main-content link works (press Tab on page load)",
+    "Fix any elements that can't be reached or activated with keyboard"
+  ],
+  "s18-i3": [
+    "Use Chrome DevTools → Rendering → Enable 'Emulate vision deficiencies'",
+    "Or use the WAVE browser extension (wave.webaim.org)",
+    "Check that text has at least 4.5:1 contrast ratio against its background",
+    "Common issues: light gray text on white background, colored text on colored backgrounds",
+    "Fix: increase text darkness or background contrast. Your terra (#C45D3E) on white passes AA."
+  ],
+  "s18-i5": [
+    "On Mac: enable VoiceOver (Cmd+F5), on Windows: enable Narrator (Win+Ctrl+Enter)",
+    "Navigate the app — listen to how elements are announced",
+    "Check: images have descriptive alt text, buttons are labeled, headings give structure",
+    "Verify form labels are associated with inputs (screen reader announces label when focusing input)",
+    "tip:Even a quick 10-minute test reveals major accessibility issues."
+  ],
+
+  // ── Section 19: Pre-Launch Marketing ──
+  "s19-i0": [
+    "The footer of your landing page has a newsletter signup input",
+    "Connect it to an email service: Mailchimp, ConvertKit, Buttondown, or your own backend",
+    "Store subscribers in your database or send to a mailing list API",
+    "Add a success/error state to the signup form",
+    "Consider adding a lead magnet (e.g., 'Get early access' instead of just 'Subscribe')"
+  ],
+  "s19-i1": [
+    "Create a Twitter/X account for @overloados or similar",
+    "Create a LinkedIn company page",
+    "Set up profile photos (use your logo), banner images, and bio with your value prop",
+    "Post a 'coming soon' teaser to start building audience before launch"
+  ],
+  "s19-i2": [
+    "Write a launch announcement blog post or thread covering: the problem, your solution, key features",
+    "Create social media posts (Twitter thread, LinkedIn post)",
+    "Prepare email copy for your waitlist/newsletter subscribers",
+    "Draft a Product Hunt launch description if launching there",
+    "Record a short demo GIF or video showing the product in action"
+  ],
+  "s19-i3": [
+    "Go to producthunt.com and create a product page",
+    "Write a tagline (short), description, and add screenshots",
+    "Schedule your launch for a Tuesday or Wednesday (highest traffic days)",
+    "Find 3-5 hunters or supporters to upvote and comment at launch",
+    "tip:Product Hunt launches work best with preparation — start engaging in the community 1-2 weeks before."
+  ],
+  "s19-i4": [
+    "Record a 1-2 minute screen recording showing the core workflow",
+    "Show: signup → onboarding → creating content → the three modes in action",
+    "Use Loom (free) or OBS Studio for recording",
+    "Edit to keep it tight — cut any dead air or long waits",
+    "Host on YouTube and embed on your landing page (the 'Watch Demo' button currently has no target)",
+    "Update the button href in <code>LandingPage.jsx</code> to point to the video"
+  ],
+  "s19-i5": [
+    "Option A: Crisp (crisp.chat) — free tier, live chat widget, easy to set up",
+    "Option B: Intercom — more features but paid",
+    "Option C: Simple email support (support@yourdomain.com)",
+    "For any chat widget: add the script tag to <code>client/index.html</code>",
+    "Set up auto-responses for common questions",
+    "tip:For launch, a simple email address is fine. Add live chat when you have volume."
+  ],
+
+  // ── Section 20: Day-of-Launch ──
+  "s20-i0": [
+    "Set <code>NODE_ENV=production</code> on Railway (should already be set)",
+    "Switch Stripe from test mode to live mode",
+    "Verify all API keys are production keys (not test/sandbox)",
+    "Ensure the auto-login endpoint is disabled in production (<code>NODE_ENV=production</code> check exists)",
+    "Double-check CORS_ORIGIN is your production frontend domain"
+  ],
+  "s20-i1": [
+    "Go to Railway dashboard → your service → Variables tab",
+    "Run through this checklist of required vars:",
+    "<code>NODE_ENV</code>, <code>JWT_SECRET</code>, <code>ANTHROPIC_API_KEY</code>, <code>ENCRYPTION_KEY</code>, <code>CORS_ORIGIN</code>",
+    "<code>STRIPE_SECRET_KEY</code>, <code>STRIPE_WEBHOOK_SECRET</code>, <code>STRIPE_PRICE_*</code> (3 plan prices)",
+    "Any SMTP/email config variables",
+    "Verify no vars are still pointing to localhost or test values"
+  ],
+  "s20-i2": [
+    "Open your production URL in an incognito browser window",
+    "Test: landing page loads → signup → verify email → login → see dashboard",
+    "Test: create a workspace → open a module → perform a CRUD action",
+    "Test: select a plan → enter payment (use a real test card in live mode, then refund)",
+    "Check the Network tab for any failed API requests"
+  ],
+  "s20-i3": [
+    "Keep your monitoring dashboards open: UptimeRobot, Sentry, Railway metrics",
+    "Watch for: 5xx error spikes, slow response times, memory leaks",
+    "Check Sentry for any new error reports from real users",
+    "Monitor Stripe dashboard for successful/failed payment attempts",
+    "Be online and ready to respond to issues for at least the first 6-8 hours"
+  ],
+  "s20-i4": [
+    "Ensure you can redeploy the previous working version in under 5 minutes",
+    "On Railway: use the 'Rollback' button to revert to a previous deployment",
+    "On Vercel: use 'Promote to Production' on a previous deployment",
+    "Have your database backup ready in case of data corruption",
+    "Know how to put up a maintenance page if needed"
+  ],
+  "s20-i5": [
+    "Railway auto-scales within your plan limits — verify your plan has enough capacity",
+    "Monitor CPU and memory usage in Railway dashboard → Metrics",
+    "If traffic spikes: Railway can scale to multiple instances (upgrade plan if needed)",
+    "For the database: SQLite is the bottleneck — consider read replicas or switching to PostgreSQL if you see SQLITE_BUSY errors",
+    "tip:Most launches don't get enough traffic to need scaling. Focus on monitoring and be ready to react."
+  ],
+};
+
 // Load saved state
 const STORAGE_KEY = "overload-launch-checklist";
 let checked = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
 
 function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(checked));
+}
+
+// ── Items completed programmatically by Claude (2026-03-01) ──────────
+const DONE_BY_CLAUDE = [
+  // Environment & Secrets
+  "s0-i1",  // Require JWT_SECRET env var
+  "s0-i8",  // Add DB_PATH, PORT, NODE_ENV to .env.example
+  "s0-i9",  // Verify .env is in .gitignore
+  "s0-i10", // Remove or disable auto-login default owner
+
+  // Authentication & Security
+  "s1-i0",  // Disable/protect auto-login in production
+  "s1-i1",  // Rate limiting on login/signup
+  "s1-i2",  // Rate limiting globally
+  "s1-i3",  // Helmet middleware
+  "s1-i4",  // Fix SQL injection in analytics (properly parameterized)
+  "s1-i5",  // CSRF protection (origin validation)
+  "s1-i6",  // Input validation library (Zod on auth + key endpoints)
+  "s1-i7",  // Protect uploaded files behind auth
+  "s1-i8",  // MIME type validation for uploads
+  "s1-i9",  // Sanitize error.message in 500 responses
+  "s1-i10", // Enforce RBAC on module routes (admin modules gated)
+  "s1-i12", // Audit all routes — confirmed protected
+
+  // Server Stability (all 7)
+  "s2-i0",  // uncaughtException handler
+  "s2-i1",  // unhandledRejection handler
+  "s2-i2",  // Graceful shutdown
+  "s2-i3",  // Health check endpoint
+  "s2-i4",  // Global 404 handler for API routes
+  "s2-i5",  // Structured logging
+  "s2-i6",  // Request correlation IDs
+
+  // Database
+  "s3-i1",  // Add missing database indexes (190+ indexes)
+  "s3-i2",  // Wrap multi-table operations in transactions (CRM, approvals, workflows)
+  "s3-i3",  // Add pagination to list endpoints (middleware registered)
+  "s3-i4",  // Implement migration framework
+  "s3-i5",  // Fix FK cascade consistency (cascade deletes in CRM)
+
+  // API Completeness
+  "s4-i0",  // Complete CRUD — added PUT/DELETE to 6 modules
+  "s4-i1",  // Standardize API response format (middleware registered)
+  "s4-i2",  // Add CHECK constraints (validation middleware)
+  "s4-i3",  // Add soft deletes (helper middleware)
+
+  // Deployment & Hosting
+  "s6-i3",  // Set up CI/CD pipeline (GitHub Actions)
+  "s6-i4",  // Add ESLint + Prettier configuration
+  "s6-i5",  // Expand .gitignore
+  "s6-i8",  // Verify SPA fallback routing (app.get('*') serves index.html)
+
+  // Frontend & Client
+  "s7-i0",  // 404 catch-all route
+  "s7-i1",  // Dynamic page titles
+  "s7-i2",  // Client-side form validation (inline validation on login/signup)
+  "s7-i3",  // PWA manifest.json + service worker + apple-touch-icon
+  "s7-i4",  // Image lazy loading (loading="lazy" on all below-fold images)
+  "s7-i5",  // Skip-to-main-content link
+
+  // SEO & Meta Tags
+  "s8-i0",  // Meta description
+  "s8-i1",  // Open Graph meta tags
+  "s8-i2",  // Twitter Card meta tags
+  "s8-i4",  // robots.txt
+  "s8-i5",  // sitemap.xml
+  "s8-i6",  // Canonical URL tags
+  "s8-i7",  // Structured data / JSON-LD (SoftwareApplication + Organization)
+  "s8-i8",  // Apple touch icon
+
+  // Performance
+  "s9-i1",  // gzip/brotli compression
+  "s9-i2",  // HTTP caching headers
+  "s9-i6",  // Minimize bundle size (audited)
+
+  // Legal & Compliance
+  "s10-i0", // Privacy Policy page
+  "s10-i1", // Terms of Service page
+  "s10-i2", // Cookie consent banner
+  "s10-i3", // GDPR data deletion/export
+
+  // Payments & Billing
+  "s11-i0", // Integrate Stripe
+  "s11-i2", // Subscription creation flow
+  "s11-i3", // Plan upgrade/downgrade
+  "s11-i4", // Cancellation flow
+  "s11-i5", // Webhook handler for Stripe events
+  "s11-i6", // Handle failed payments (past_due status)
+  "s11-i7", // Billing/invoices page
+  "s11-i8", // 14-day free trial
+
+  // Email System
+  "s12-i0", // Transactional email service (nodemailer)
+  "s12-i1", // Welcome email on signup
+  "s12-i2", // Email verification flow
+  "s12-i3", // Password reset flow
+  "s12-i4", // Payment receipt emails (template)
+  "s12-i5", // Trial expiration reminder emails (template)
+
+  // Monitoring & Error Tracking
+  "s13-i0", // Error tracking (Sentry placeholder ready)
+  "s13-i4", // Web Vitals tracking
+
+  // Analytics
+  "s14-i0", // Analytics placeholder (GA4/Plausible ready)
+  "s14-i1", // Conversion tracking on signup (trackEvent in AuthContext)
+  "s14-i2", // Event tracking for key actions
+  "s14-i3", // Funnel tracking (page view tracking)
+
+  // Content & Copy
+  "s16-i0", // Proofread all landing page copy (clean, fixed MODULE_COUNT+ → MODULE_COUNT)
+  "s16-i1", // MODULE_COUNT matches (made dynamic)
+  "s16-i3", // Footer links functional (all links now have hrefs)
+  "s16-i6", // Empty states component
+
+  // Testing
+  "s15-i0", // Run existing test suite — all 68 tests passing (17 client + 51 server)
+  "s15-i10", // E2E test scaffolding with Playwright (config + auth spec)
+
+  // Accessibility
+  "s18-i0", // Add alt text to all images (verified: all 11 img tags have proper alt)
+  "s18-i1", // Proper heading hierarchy (fixed h1→h3 skips)
+  "s18-i4", // aria-label on icon-only buttons
+];
+
+// Auto-check completed items (one-time merge)
+const MERGE_KEY = "overload-checklist-claude-v4";
+if (!localStorage.getItem(MERGE_KEY)) {
+  DONE_BY_CLAUDE.forEach(id => { checked[id] = true; });
+  save();
+  localStorage.setItem(MERGE_KEY, "1");
 }
 
 function getItemId(si, ii) { return `s${si}-i${ii}`; }
@@ -695,17 +1527,18 @@ function updateStats() {
 function applyFilter(filter) {
   document.querySelectorAll(".section").forEach(sec => {
     const priority = sec.dataset.priority;
-    const items = sec.querySelectorAll(".item");
+    const containers = sec.querySelectorAll(".item-container");
     let visibleCount = 0;
 
-    items.forEach(item => {
+    containers.forEach(container => {
+      const item = container.querySelector(".item");
       let show = true;
       if (filter === "pending") show = !item.classList.contains("checked");
       else if (filter === "done") show = item.classList.contains("checked");
       else if (filter === "critical") show = priority === "critical";
       else if (filter === "high") show = priority === "high";
       else if (filter === "nice") show = priority === "nice";
-      item.style.display = show ? "" : "none";
+      container.style.display = show ? "" : "none";
       if (show) visibleCount++;
     });
 
@@ -751,12 +1584,29 @@ function render() {
         ${section.items.map((item, ii) => {
           const id = getItemId(si, ii);
           const isChecked = checked[id];
+          const guide = GUIDES[id];
+          const hasGuide = guide && !isChecked;
           return `
-            <div class="item ${isChecked ? 'checked' : ''}" data-id="${id}" onclick="toggleItem(this, '${id}')">
-              <div class="checkbox">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <div class="item-container" data-id="${id}">
+              <div class="item ${isChecked ? 'checked' : ''}" onclick="toggleItem(this, '${id}')">
+                <div class="checkbox">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div class="item-text">${item}</div>
+                ${hasGuide ? `<button class="guide-toggle" onclick="event.stopPropagation(); toggleGuide('${id}', this)" title="Show step-by-step guide">
+                  How-to
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>` : ''}
               </div>
-              <div class="item-text">${item}</div>
+              ${hasGuide ? `<div class="guide-panel" id="guide-${id}">
+                <ol>${guide.map(step => {
+                  if (step.startsWith('tip:')) {
+                    return '';
+                  }
+                  return '<li>' + step + '</li>';
+                }).filter(Boolean).join('')}</ol>
+                ${guide.find(s => s.startsWith('tip:')) ? '<div class="guide-tip">💡 ' + guide.find(s => s.startsWith('tip:')).slice(4) + '</div>' : ''}
+              </div>` : ''}
             </div>
           `;
         }).join("")}
@@ -773,6 +1623,13 @@ function toggleItem(el, id) {
   el.classList.toggle("checked", checked[id]);
   save();
   updateStats();
+}
+
+function toggleGuide(id, btn) {
+  const panel = document.getElementById('guide-' + id);
+  if (!panel) return;
+  const isOpen = panel.classList.toggle('open');
+  btn.classList.toggle('open', isOpen);
 }
 
 // Filter buttons

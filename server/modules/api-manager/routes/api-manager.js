@@ -86,4 +86,41 @@ router.get('/logs', (req, res) => {
   }
 });
 
+// PUT /keys/:id - Update an API key
+router.put('/keys/:id', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const existing = db.prepare('SELECT * FROM api_keys WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!existing) return res.status(404).json({ success: false, error: 'API key not found' });
+
+    const { name, permissions, rate_limit, status } = req.body;
+    db.prepare(
+      'UPDATE api_keys SET name = ?, permissions = ?, rate_limit = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?'
+    ).run(name || existing.name, permissions ? JSON.stringify(permissions) : existing.permissions, rate_limit ?? existing.rate_limit, status || existing.status, req.params.id, wsId);
+
+    const key = db.prepare('SELECT id, name, permissions, rate_limit, usage_count, status, last_used, created_at FROM api_keys WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    logActivity('api-manager', 'update', `Updated API key: ${key.name}`, 'API key updated', null, wsId);
+    res.json({ success: true, data: key });
+  } catch (error) {
+    console.error('Error updating API key:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// DELETE /keys/:id - Revoke/delete an API key
+router.delete('/keys/:id', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const existing = db.prepare('SELECT * FROM api_keys WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!existing) return res.status(404).json({ success: false, error: 'API key not found' });
+
+    db.prepare('DELETE FROM api_keys WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    logActivity('api-manager', 'delete', `Deleted API key: ${existing.name}`, 'API key revoked', null, wsId);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting API key:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router;
