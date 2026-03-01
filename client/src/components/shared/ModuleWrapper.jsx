@@ -39,9 +39,11 @@ export default function ModuleWrapper({ moduleId, children }) {
 
   return (
     <div>
-      {/* Mode Toggle Bar */}
-      <div className="mb-4 px-1">
-        <ModeToggle moduleId={moduleId} />
+      {/* Mode Toggle Bar — full width on mobile, centered + wider on desktop */}
+      <div className="mb-4 px-1 flex justify-center">
+        <div className="w-full sm:w-3/4 lg:w-1/2">
+          <ModeToggle moduleId={moduleId} />
+        </div>
       </div>
 
       {/* Status Banner (copilot only — autopilot has its own compact dashboard) */}
