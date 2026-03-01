@@ -40,14 +40,13 @@ export default function AutopilotDashboard({ moduleId }) {
     return `${Math.floor(hrs / 24)}d ago`;
   }
 
-  const green = '#22c55e';
-  const cardBorder = dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)';
   const textPrimary = dark ? '#E8E4DE' : '#332F2B';
   const textSecondary = dark ? '#6B6660' : '#94908A';
+  const cardBorder = dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)';
 
   if (loading) {
     return (
-      <div className="h-10 rounded-xl mb-4 animate-pulse"
+      <div className="h-11 rounded-xl mb-4 animate-pulse"
         style={{ background: dark ? 'rgba(255,255,255,0.02)' : '#fff', border: `1px solid ${cardBorder}` }} />
     );
   }
@@ -55,32 +54,73 @@ export default function AutopilotDashboard({ moduleId }) {
   return (
     <div className="rounded-xl mb-5 overflow-hidden transition-all"
       style={{
-        background: dark ? 'rgba(34,197,94,0.04)' : 'rgba(34,197,94,0.03)',
-        border: `1px solid ${dark ? 'rgba(34,197,94,0.12)' : 'rgba(34,197,94,0.1)'}`,
+        background: dark
+          ? 'linear-gradient(135deg, rgba(34,197,94,0.06) 0%, rgba(16,185,129,0.04) 50%, rgba(34,197,94,0.06) 100%)'
+          : 'linear-gradient(135deg, rgba(34,197,94,0.05) 0%, rgba(16,185,129,0.03) 50%, rgba(34,197,94,0.05) 100%)',
+        border: `1px solid ${dark ? 'rgba(34,197,94,0.15)' : 'rgba(34,197,94,0.12)'}`,
+        boxShadow: dark
+          ? '0 1px 3px rgba(0,0,0,0.2), inset 0 1px 0 rgba(34,197,94,0.06)'
+          : '0 1px 3px rgba(34,197,94,0.08), inset 0 1px 0 rgba(255,255,255,0.5)',
       }}>
-      {/* Compact summary bar */}
+      {/* Summary bar */}
       <button
         onClick={() => setExpanded(e => !e)}
-        className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:brightness-105"
       >
-        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{
-          background: green,
-          boxShadow: `0 0 6px ${green}80`,
-          animation: 'auto-breathe 3s ease-in-out infinite',
-        }} />
-        <span className="text-[11px] font-semibold flex-1" style={{ color: green }}>
-          {stats.today} action{stats.today !== 1 ? 's' : ''} today
-          <span style={{ color: textSecondary }}> · </span>
-          {stats.successRate}% success
-          {rules.length > 0 && (
-            <>
-              <span style={{ color: textSecondary }}> · </span>
-              {rules.length} rule{rules.length !== 1 ? 's' : ''}
-            </>
-          )}
+        {/* Breathing indicator */}
+        <span className="relative flex-shrink-0" style={{ width: 18, height: 18 }}>
+          <span className="absolute inset-0 rounded-full" style={{
+            background: 'rgba(34,197,94,0.15)',
+            animation: 'auto-breathe 3s ease-in-out infinite',
+          }} />
+          <span className="absolute rounded-full" style={{
+            top: 5, left: 5, width: 8, height: 8,
+            background: '#22c55e',
+            boxShadow: '0 0 8px rgba(34,197,94,0.6)',
+          }} />
         </span>
+
+        {/* Stat chips */}
+        <div className="flex items-center gap-2 flex-1 flex-wrap">
+          {/* Actions today */}
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{
+            background: dark ? 'rgba(34,197,94,0.12)' : 'rgba(34,197,94,0.1)',
+            color: '#22c55e',
+          }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="13 17 18 12 13 7" /><polyline points="6 17 11 12 6 7" />
+            </svg>
+            {stats.today} action{stats.today !== 1 ? 's' : ''} today
+          </span>
+
+          {/* Success rate */}
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{
+            background: dark ? 'rgba(34,197,94,0.12)' : 'rgba(34,197,94,0.1)',
+            color: stats.successRate >= 80 ? '#22c55e' : stats.successRate >= 50 ? '#D4A017' : '#ef4444',
+          }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+            {stats.successRate}% success
+          </span>
+
+          {/* Active rules */}
+          {rules.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{
+              background: dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+              color: textSecondary,
+            }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+              {rules.length} rule{rules.length !== 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+
+        {/* Expand chevron */}
         <svg
-          className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
           fill="none" stroke={textSecondary} strokeWidth={2} viewBox="0 0 24 24"
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
@@ -89,18 +129,36 @@ export default function AutopilotDashboard({ moduleId }) {
 
       {/* Expandable detail panel */}
       {expanded && (
-        <div className="px-4 pb-4 space-y-3" style={{ borderTop: `1px solid ${dark ? 'rgba(34,197,94,0.08)' : 'rgba(34,197,94,0.06)'}` }}>
+        <div className="px-4 pb-4 space-y-3" style={{ borderTop: `1px solid ${dark ? 'rgba(34,197,94,0.1)' : 'rgba(34,197,94,0.08)'}` }}>
           {/* Stats row */}
           <div className="grid grid-cols-3 gap-2 pt-3">
             {[
-              { label: 'Today', value: stats.today, sub: 'actions' },
-              { label: 'Success', value: `${stats.successRate}%`, sub: `${stats.completed} ok, ${stats.failed} fail` },
-              { label: 'Rules', value: rules.length, sub: 'active' },
+              { label: 'Today', value: stats.today, sub: 'actions', icon: (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                </svg>
+              )},
+              { label: 'Success', value: `${stats.successRate}%`, sub: `${stats.completed} ok, ${stats.failed} fail`, icon: (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+              )},
+              { label: 'Rules', value: rules.length, sub: 'active', icon: (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="21" x2="9" y2="9" />
+                </svg>
+              )},
             ].map(s => (
-              <div key={s.label} className="rounded-lg px-3 py-2" style={{ background: dark ? 'rgba(34,197,94,0.06)' : 'rgba(34,197,94,0.04)' }}>
-                <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: green }}>{s.label}</div>
-                <div className="text-lg font-bold" style={{ color: textPrimary }}>{s.value}</div>
-                <div className="text-[9px]" style={{ color: textSecondary }}>{s.sub}</div>
+              <div key={s.label} className="rounded-lg px-3 py-2.5" style={{
+                background: dark ? 'rgba(34,197,94,0.06)' : 'rgba(34,197,94,0.04)',
+                border: `1px solid ${dark ? 'rgba(34,197,94,0.08)' : 'rgba(34,197,94,0.06)'}`,
+              }}>
+                <div className="flex items-center gap-1.5 mb-1">
+                  {s.icon}
+                  <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: '#22c55e' }}>{s.label}</span>
+                </div>
+                <div className="text-xl font-bold" style={{ color: textPrimary }}>{s.value}</div>
+                <div className="text-[10px]" style={{ color: textSecondary }}>{s.sub}</div>
               </div>
             ))}
           </div>
@@ -108,15 +166,19 @@ export default function AutopilotDashboard({ moduleId }) {
           {/* Recent actions */}
           {actions.length > 0 && (
             <div>
-              <div className="text-[9px] font-bold uppercase tracking-wider mb-1.5 px-1" style={{ color: textSecondary }}>Recent</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider mb-1.5 px-1" style={{ color: textSecondary }}>Recent Actions</div>
               <div className="space-y-1">
                 {actions.map(a => (
-                  <div key={a.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg" style={{ background: dark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}>
-                    <span className="w-1 h-1 rounded-full flex-shrink-0" style={{
+                  <div key={a.id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg" style={{
+                    background: dark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+                    border: `1px solid ${dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'}`,
+                  }}>
+                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{
                       background: a.status === 'completed' ? '#22c55e' : a.status === 'failed' ? '#ef4444' : '#D4A017',
+                      boxShadow: `0 0 4px ${a.status === 'completed' ? 'rgba(34,197,94,0.4)' : a.status === 'failed' ? 'rgba(239,68,68,0.4)' : 'rgba(212,160,23,0.4)'}`,
                     }} />
-                    <span className="text-[11px] flex-1 truncate" style={{ color: textPrimary }}>{a.description}</span>
-                    <span className="text-[9px] flex-shrink-0" style={{ color: textSecondary }}>{timeAgo(a.created_at)}</span>
+                    <span className="text-[11px] flex-1 truncate font-medium" style={{ color: textPrimary }}>{a.description}</span>
+                    <span className="text-[9px] flex-shrink-0 tabular-nums" style={{ color: textSecondary }}>{timeAgo(a.created_at)}</span>
                   </div>
                 ))}
               </div>
@@ -126,15 +188,17 @@ export default function AutopilotDashboard({ moduleId }) {
           {/* Active rules */}
           {rules.length > 0 && (
             <div>
-              <div className="text-[9px] font-bold uppercase tracking-wider mb-1.5 px-1" style={{ color: textSecondary }}>Rules</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider mb-1.5 px-1" style={{ color: textSecondary }}>Active Rules</div>
               <div className="flex flex-wrap gap-1.5">
                 {rules.map(r => (
-                  <span key={r.id} className="text-[10px] font-medium px-2 py-1 rounded-md" style={{
-                    background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+                  <span key={r.id} className="inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-1 rounded-full" style={{
+                    background: dark ? 'rgba(34,197,94,0.08)' : 'rgba(34,197,94,0.06)',
+                    border: `1px solid ${dark ? 'rgba(34,197,94,0.12)' : 'rgba(34,197,94,0.1)'}`,
                     color: textPrimary,
                   }}>
+                    <span className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: '#22c55e' }} />
                     {r.name}
-                    <span className="ml-1" style={{ color: textSecondary }}>({r.run_count})</span>
+                    <span style={{ color: textSecondary }}>({r.run_count})</span>
                   </span>
                 ))}
               </div>
