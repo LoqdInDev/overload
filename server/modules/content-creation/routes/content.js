@@ -90,8 +90,9 @@ router.delete('/projects/:id', (req, res) => {
 
 // GET /suggestions - Cross-module content suggestions
 router.get('/suggestions', (req, res) => {
-  const seoKeywords = getSeoKeywordsForContent();
-  const recentContent = getContentForSocial();
+  const wsId = req.workspace.id;
+  const seoKeywords = getSeoKeywordsForContent(wsId);
+  const recentContent = getContentForSocial(wsId);
 
   const suggestions = [];
 

@@ -146,3 +146,35 @@ async function processStream(reader, { onChunk, onResult, onError }) {
     }
   }
 }
+
+// Global fetch interceptor: auto-injects auth headers and API_BASE
+// for all raw fetch() calls to /api/* endpoints. This ensures modules
+// that use raw fetch (instead of fetchJSON/connectSSE) still work.
+export function setupAuthInterceptor() {
+  const _fetch = window.fetch;
+  window.fetch = function (input, init = {}) {
+    let url = typeof input === 'string' ? input : input?.url;
+    if (!url) return _fetch.call(this, input, init);
+
+    const isRelativeApi = url.startsWith('/api/');
+    const isFullApi = API_BASE && url.startsWith(`${API_BASE}/api/`);
+    if (!isRelativeApi && !isFullApi) return _fetch.call(this, input, init);
+
+    // Prepend API_BASE for relative /api/ paths
+    if (isRelativeApi) url = `${API_BASE}${url}`;
+
+    // Add auth headers for non-auth endpoints
+    if (!url.includes('/api/auth/')) {
+      const token = localStorage.getItem(TOKEN_KEY);
+      const wsId = localStorage.getItem(WORKSPACE_KEY);
+      const h = init.headers instanceof Headers
+        ? Object.fromEntries(init.headers.entries())
+        : { ...(init.headers || {}) };
+      if (token && !h.Authorization && !h.authorization) h.Authorization = `Bearer ${token}`;
+      if (wsId && !h['X-Workspace-Id']) h['X-Workspace-Id'] = wsId;
+      init = { ...init, headers: h };
+    }
+
+    return _fetch.call(this, url, init);
+  };
+}
