@@ -946,20 +946,20 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── CARD 6: Pricing ── DARK */}
+        {/* ── CARD 6: Pricing ── LIGHT with dark cards */}
         <section data-scroll-card="left" id="pricing">
-          <div className="lp-section-card lp-sc-dark lp-pricing-section">
+          <div className="lp-section-card lp-sc-cream lp-pricing-section lp-pricing-light">
             <div className="max-w-5xl mx-auto" style={{ position: 'relative', zIndex: 1 }}>
               {/* Centered heading group */}
               <div className="lp-pricing-heading-group">
                 <div className="lp-card-tab" style={{ marginLeft: 'auto', marginRight: 'auto' }}>Pricing</div>
                 <h2 className="lp-serif" style={{ fontSize: 'clamp(2rem, 4.5vw, 3.2rem)', lineHeight: 1.1, letterSpacing: '-0.025em', marginBottom: 20 }}>
-                  <span style={{ color: '#fff' }}>Simple, honest pricing</span>
+                  <span style={{ color: 'var(--lp-dark)' }}>Simple, honest pricing</span>
                 </h2>
-                <p className="lp-pricing-subtitle">
+                <p className="lp-pricing-subtitle" style={{ color: 'rgba(44,40,37,0.5)' }}>
                   Start with Manual for full control, or go straight to Autopilot. Upgrade or downgrade anytime.
                 </p>
-                <div className="lp-pricing-divider" />
+                <div className="lp-pricing-divider" style={{ background: 'linear-gradient(90deg, var(--lp-terra), rgba(44,40,37,0.1))', opacity: 0.5 }} />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start" style={{ marginTop: 52 }}>
@@ -1028,8 +1028,8 @@ export default function LandingPage() {
 
               {/* Guarantee footer */}
               <div className="lp-pricing-guarantee">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
-                <span>14-day free trial on all plans. No credit card required. Cancel anytime.</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(44,40,37,0.3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
+                <span style={{ color: 'rgba(44,40,37,0.4)' }}>14-day free trial on all plans. No credit card required. Cancel anytime.</span>
               </div>
             </div>
           </div>

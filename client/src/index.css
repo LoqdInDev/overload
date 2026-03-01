@@ -1816,6 +1816,28 @@
   pointer-events: none;
 }
 
+/* Light pricing section — cards stay dark */
+.lp-pricing-light::before {
+  background: radial-gradient(ellipse, rgba(196,93,62,0.08) 0%, transparent 60%);
+}
+.lp-pricing-light .lp-pricing-card {
+  background: var(--lp-dark);
+  border-color: rgba(255,255,255,0.06);
+  box-shadow: 0 8px 32px rgba(44,40,37,0.15), 0 2px 8px rgba(44,40,37,0.08);
+}
+.lp-pricing-light .lp-pricing-card:hover {
+  background: #312D29;
+  box-shadow: 0 24px 64px -16px rgba(44,40,37,0.3);
+}
+.lp-pricing-light .lp-pricing-featured {
+  background: linear-gradient(160deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)), var(--lp-dark) !important;
+  border-color: rgba(196,93,62,0.25) !important;
+  box-shadow: 0 40px 100px -20px rgba(196,93,62,0.2), 0 8px 32px rgba(44,40,37,0.15);
+}
+.lp-pricing-light .lp-pricing-featured:hover {
+  box-shadow: 0 48px 120px -20px rgba(196,93,62,0.25), 0 8px 32px rgba(44,40,37,0.2);
+}
+
 .lp-pricing-heading-group {
   text-align: center;
   margin-bottom: 16px;
