@@ -35,8 +35,8 @@ export default function AnalyticsPage() {
   const [expandedCat, setExpandedCat] = useState(null);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/analytics/overview`).then(r => r.json()).then(setOverview).catch(() => {});
-    fetch(`${API_BASE}/api/analytics/activity?limit=50`).then(r => r.json()).then(setActivity).catch(() => {});
+    fetch(`${API_BASE}/api/analytics/overview`).then(r => r.json()).then(d => setOverview(d && typeof d === 'object' && !Array.isArray(d) ? d : { total: 0, modules: [] })).catch(() => {});
+    fetch(`${API_BASE}/api/analytics/activity?limit=50`).then(r => r.json()).then(d => setActivity(Array.isArray(d) ? d : [])).catch(() => {});
   }, []);
 
   const moduleStats = MODULE_REGISTRY.filter(m => m.id !== 'analytics').map(mod => {

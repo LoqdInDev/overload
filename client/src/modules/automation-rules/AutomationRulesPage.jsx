@@ -47,7 +47,7 @@ export default function AutomationRulesPage() {
     try {
       const url = filterModule === 'all' ? '/api/automation/rules' : `/api/automation/rules?module=${filterModule}`;
       const data = await fetchJSON(url);
-      setRules(data || []);
+      setRules(Array.isArray(data) ? data : []);
     } catch {
       setRules(FALLBACK_RULES.filter(r => filterModule === 'all' || r.module_id === filterModule));
     }

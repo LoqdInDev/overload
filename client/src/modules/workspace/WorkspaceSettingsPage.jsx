@@ -47,7 +47,7 @@ export default function WorkspaceSettingsPage() {
     setLoading(true);
     try {
       const data = await fetchJSON(`/api/workspaces/${current.id}/members`);
-      setMembers(data);
+      setMembers(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error('Failed to fetch members:', e);
     } finally {

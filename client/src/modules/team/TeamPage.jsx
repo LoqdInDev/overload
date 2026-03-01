@@ -42,7 +42,7 @@ export default function TeamPage() {
 
   useEffect(() => {
     fetchJSON('/api/team/members')
-      .then(data => setMembers(data))
+      .then(data => setMembers(Array.isArray(data) ? data : []))
       .catch(err => console.error('Failed to fetch members:', err))
       .finally(() => setLoading(false));
   }, []);

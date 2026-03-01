@@ -160,8 +160,10 @@ export default function HomePage() {
       fetchJSON('/api/automation/approvals?limit=5'),
     ]);
     setSummary(results[0].status === 'fulfilled' ? results[0].value : EMPTY_SUMMARY);
-    setFeedItems(results[1].status === 'fulfilled' ? (results[1].value?.actions || results[1].value || []) : []);
-    setApprovals(results[2].status === 'fulfilled' ? (results[2].value?.approvals || results[2].value || []) : []);
+    const feedVal = results[1].status === 'fulfilled' ? results[1].value : null;
+    setFeedItems(Array.isArray(feedVal) ? feedVal : Array.isArray(feedVal?.actions) ? feedVal.actions : []);
+    const apprVal = results[2].status === 'fulfilled' ? results[2].value : null;
+    setApprovals(Array.isArray(apprVal) ? apprVal : Array.isArray(apprVal?.approvals) ? apprVal.approvals : []);
   }, []);
 
   useEffect(() => {

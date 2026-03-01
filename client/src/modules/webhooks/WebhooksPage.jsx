@@ -57,8 +57,8 @@ export default function WebhooksPage() {
         fetchJSON('/api/webhooks/webhooks'),
         fetchJSON('/api/webhooks/logs'),
       ]);
-      setWebhooks(whRes.data || []);
-      setLogs(logRes.data || []);
+      setWebhooks(Array.isArray(whRes?.data) ? whRes.data : Array.isArray(whRes) ? whRes : []);
+      setLogs(Array.isArray(logRes?.data) ? logRes.data : Array.isArray(logRes) ? logRes : []);
     } catch (e) {
       console.error('Failed to load webhooks data:', e);
     } finally {
