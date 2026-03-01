@@ -23,6 +23,8 @@ const LandingPage = lazy(() => import('./pages/LandingPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
 const WorkspaceSettingsPage = lazy(() => import('./modules/workspace/WorkspaceSettingsPage'));
 const HomePage = lazy(() => import('./modules/home/HomePage'));
 const VideoMarketingPage = lazy(() => import('./modules/video-marketing/VideoMarketingPage'));
@@ -138,6 +140,8 @@ export default function App() {
   const isLogin = location.pathname === '/login';
   const isPrivacy = location.pathname === '/privacy';
   const isTerms = location.pathname === '/terms';
+  const isForgotPassword = location.pathname === '/forgot-password';
+  const isResetPassword = location.pathname === '/reset-password';
   const current = MODULE_REGISTRY.find(m =>
     m.path === '/dashboard' ? location.pathname === '/dashboard' : location.pathname.startsWith(m.path)
   );
@@ -182,7 +186,7 @@ export default function App() {
 
   /* Landing page body overrides */
   useEffect(() => {
-    if (isLanding || isLogin || isPrivacy || isTerms) {
+    if (isLanding || isLogin || isPrivacy || isTerms || isForgotPassword || isResetPassword) {
       document.documentElement.style.fontSize = '16px';
       document.body.style.overflow = 'auto';
       document.body.style.background = dark ? '#1A1816' : '#FBF7F0';
@@ -191,7 +195,7 @@ export default function App() {
       document.body.style.overflow = 'hidden';
       document.body.style.background = '';
     }
-  }, [isLanding, isLogin, isPrivacy, isTerms, dark]);
+  }, [isLanding, isLogin, isPrivacy, isTerms, isForgotPassword, isResetPassword, dark]);
 
   /* Landing page — no sidebar, no header */
   if (isLanding) {
@@ -239,6 +243,28 @@ export default function App() {
         <Suspense fallback={<Loader />}>
           <TermsPage />
           <CookieBanner />
+        </Suspense>
+      </ThemeContext.Provider>
+    );
+  }
+
+  /* Forgot password — public, standalone page */
+  if (isForgotPassword) {
+    return (
+      <ThemeContext.Provider value={{ dark, toggle }}>
+        <Suspense fallback={<Loader />}>
+          <ForgotPasswordPage />
+        </Suspense>
+      </ThemeContext.Provider>
+    );
+  }
+
+  /* Reset password — public, standalone page */
+  if (isResetPassword) {
+    return (
+      <ThemeContext.Provider value={{ dark, toggle }}>
+        <Suspense fallback={<Loader />}>
+          <ResetPasswordPage />
         </Suspense>
       </ThemeContext.Provider>
     );

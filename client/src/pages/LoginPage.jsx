@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../hooks/usePageTitle';
@@ -180,9 +180,21 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-[11px] font-semibold tracking-[0.06em] uppercase" style={{ color: muted }}>
-                Password
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-[11px] font-semibold tracking-[0.06em] uppercase" style={{ color: muted }}>
+                  Password
+                </label>
+                {mode === 'login' && (
+                  <Link
+                    to="/forgot-password"
+                    className="text-[11px] font-medium transition-opacity hover:opacity-80"
+                    style={{ color: '#C45D3E' }}
+                    tabIndex={-1}
+                  >
+                    Forgot?
+                  </Link>
+                )}
+              </div>
               <input
                 type="password"
                 value={password}
