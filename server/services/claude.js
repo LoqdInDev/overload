@@ -1,7 +1,11 @@
-const Anthropic = require('@anthropic-ai/sdk');
+const OpenAI = require('openai');
 
-const client = new Anthropic();
+const client = new OpenAI({
+  baseURL: 'https://integrate.api.nvidia.com/v1',
+  apiKey: process.env.NVIDIA_API_KEY,
+});
 
+const MODEL = 'qwen/qwen3.5-397b-a17b';
 const MAX_RETRIES = 3;
 const BASE_DELAY = 1000;
 
@@ -11,6 +15,8 @@ function sleep(ms) {
 
 function stripMarkdownJSON(text) {
   let cleaned = text.trim();
+  // Remove <think>...</think> blocks (Qwen reasoning traces)
+  cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
   const fenceMatch = cleaned.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?\s*```$/);
   if (fenceMatch) {
     cleaned = fenceMatch[1].trim();
@@ -23,44 +29,48 @@ async function generateWithClaude(prompt, { onChunk, system, temperature = 0.9, 
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
+      const messages = [];
+      if (system) {
+        messages.push({ role: 'system', content: system });
+      }
+      messages.push({ role: 'user', content: prompt });
+
       const params = {
-        model: 'claude-sonnet-4-20250514',
+        model: MODEL,
         max_tokens: maxTokens,
         temperature,
-        messages: [{ role: 'user', content: prompt }],
+        messages,
       };
-      if (system) {
-        params.system = [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }];
-      }
 
       if (onChunk) {
         let fullText = '';
-        const stream = await client.messages.stream(params);
+        const stream = await client.chat.completions.create({ ...params, stream: true });
 
-        for await (const event of stream) {
-          if (event.type === 'content_block_delta' && event.delta?.text) {
-            fullText += event.delta.text;
-            onChunk(event.delta.text);
+        for await (const chunk of stream) {
+          const delta = chunk.choices?.[0]?.delta?.content;
+          if (delta) {
+            fullText += delta;
+            onChunk(delta);
           }
         }
 
         const cleaned = stripMarkdownJSON(fullText);
         return { parsed: JSON.parse(cleaned), raw: fullText };
       } else {
-        const response = await client.messages.create(params);
+        const response = await client.chat.completions.create(params);
 
-        const raw = response.content[0].text;
+        const raw = response.choices[0].message.content;
         const cleaned = stripMarkdownJSON(raw);
         return { parsed: JSON.parse(cleaned), raw };
       }
     } catch (error) {
       lastError = error;
       if (error instanceof SyntaxError) {
-        throw new Error(`Claude returned invalid JSON: ${error.message}`);
+        throw new Error(`AI returned invalid JSON: ${error.message}`);
       }
       if (attempt < MAX_RETRIES - 1) {
         const delay = BASE_DELAY * Math.pow(2, attempt);
-        console.error(`Claude API attempt ${attempt + 1} failed, retrying in ${delay}ms:`, error.message);
+        console.error(`AI API attempt ${attempt + 1} failed, retrying in ${delay}ms:`, error.message);
         await sleep(delay);
       }
     }
@@ -74,38 +84,47 @@ async function generateTextWithClaude(prompt, { onChunk, system, temperature = 0
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
+      const messages = [];
+      if (system) {
+        messages.push({ role: 'system', content: system });
+      }
+      messages.push({ role: 'user', content: prompt });
+
       const params = {
-        model: 'claude-sonnet-4-20250514',
+        model: MODEL,
         max_tokens: maxTokens,
         temperature,
-        messages: [{ role: 'user', content: prompt }],
+        messages,
       };
-      if (system) {
-        params.system = [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }];
-      }
 
       if (onChunk) {
         let fullText = '';
-        const stream = await client.messages.stream(params);
+        const stream = await client.chat.completions.create({ ...params, stream: true });
 
-        for await (const event of stream) {
-          if (event.type === 'content_block_delta' && event.delta?.text) {
-            fullText += event.delta.text;
-            onChunk(event.delta.text);
+        for await (const chunk of stream) {
+          const delta = chunk.choices?.[0]?.delta?.content;
+          if (delta) {
+            fullText += delta;
+            onChunk(delta);
           }
         }
 
-        return { text: fullText };
+        // Strip think blocks from final text
+        const cleaned = fullText.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+        return { text: cleaned };
       } else {
-        const response = await client.messages.create(params);
+        const response = await client.chat.completions.create(params);
 
-        return { text: response.content[0].text };
+        const raw = response.choices[0].message.content;
+        // Strip think blocks from final text
+        const cleaned = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+        return { text: cleaned };
       }
     } catch (error) {
       lastError = error;
       if (attempt < MAX_RETRIES - 1) {
         const delay = BASE_DELAY * Math.pow(2, attempt);
-        console.error(`Claude API attempt ${attempt + 1} failed, retrying in ${delay}ms:`, error.message);
+        console.error(`AI API attempt ${attempt + 1} failed, retrying in ${delay}ms:`, error.message);
         await sleep(delay);
       }
     }
