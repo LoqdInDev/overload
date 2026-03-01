@@ -292,16 +292,42 @@ router.post('/approvals/batch', (req, res) => {
   }
 
   const newStatus = action === 'approve' ? 'approved' : 'rejected';
-  const stmt = db.prepare(`
-    UPDATE ae_approval_queue SET status = ?, reviewed_at = datetime('now'), reviewed_by = ? WHERE id = ? AND status = 'pending' AND workspace_id = ?
-  `);
+  const logStatus = action === 'approve' ? 'completed' : 'cancelled';
+  const reviewer = req.user?.id || 'system';
 
-  let updated = 0;
-  for (const id of ids) {
-    const result = stmt.run(newStatus, req.user?.id || 'system', id, wsId);
-    updated += result.changes;
-  }
+  const batchTransaction = db.transaction(() => {
+    const updateStmt = db.prepare(`
+      UPDATE ae_approval_queue SET status = ?, reviewed_at = datetime('now'), reviewed_by = ? WHERE id = ? AND status = 'pending' AND workspace_id = ?
+    `);
+    const logStmt = db.prepare(`
+      INSERT INTO ae_action_log (module_id, action_type, mode, description, status, approval_id, created_at, completed_at, workspace_id)
+      VALUES (?, ?, 'copilot', ?, ?, ?, datetime('now'), datetime('now'), ?)
+    `);
 
+    let updated = 0;
+    for (const id of ids) {
+      const item = db.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND status = ? AND workspace_id = ?').get(id, 'pending', wsId);
+      if (!item) continue;
+
+      const result = updateStmt.run(newStatus, reviewer, id, wsId);
+      updated += result.changes;
+
+      if (result.changes > 0) {
+        const prefix = action === 'approve' ? 'Approved' : 'Rejected';
+        logStmt.run(item.module_id, item.action_type, `${prefix}: ${item.title}`, logStatus, id, wsId);
+        createNotification(
+          action === 'approve' ? 'action_completed' : 'action_failed',
+          `${prefix}: ${item.title}`,
+          item.description,
+          item.module_id,
+          wsId
+        );
+      }
+    }
+    return updated;
+  });
+
+  const updated = batchTransaction();
   res.json({ success: true, updated });
 });
 

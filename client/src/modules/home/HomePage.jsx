@@ -5,6 +5,7 @@ import { MODULE_REGISTRY, CATEGORIES } from '../../config/modules';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { useAutomation } from '../../context/AutomationContext';
+import { useToast } from '../../context/ToastContext';
 import { fetchJSON, postJSON } from '../../lib/api';
 import OnboardingWizard from '../../components/shared/OnboardingWizard';
 
@@ -115,6 +116,7 @@ export default function HomePage() {
   const { dark } = useTheme();
   const { user } = useAuth();
   const { modes, pendingCount, actionStats, getMode, refreshPending } = useAutomation();
+  const { toast } = useToast();
   const greeting = useMemo(getGreeting, []);
 
   // ─── Onboarding state ───
@@ -184,9 +186,11 @@ export default function HomePage() {
       await postJSON(`/api/automation/approvals/${id}/approve`, {});
       refreshPending();
       loadData();
-    } catch { /* silent */ }
+    } catch (err) {
+      toast.error('Approve failed', err.message || 'Could not approve this item');
+    }
     setFeedActing(false);
-  }, [refreshPending, loadData]);
+  }, [refreshPending, loadData, toast]);
 
   const handleReject = useCallback(async (id) => {
     setFeedActing(true);
@@ -194,7 +198,9 @@ export default function HomePage() {
       await postJSON(`/api/automation/approvals/${id}/reject`, {});
       refreshPending();
       loadData();
-    } catch { /* silent */ }
+    } catch (err) {
+      toast.error('Reject failed', err.message || 'Could not reject this item');
+    }
     setFeedActing(false);
   }, [refreshPending, loadData]);
 

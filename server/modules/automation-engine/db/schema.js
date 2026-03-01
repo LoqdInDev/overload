@@ -93,10 +93,12 @@ function initDatabase() {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS ae_settings (
-      key TEXT PRIMARY KEY,
-      workspace_id TEXT,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key TEXT NOT NULL,
+      workspace_id TEXT NOT NULL,
       value TEXT NOT NULL,
-      updated_at TEXT DEFAULT (datetime('now'))
+      updated_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(key, workspace_id)
     )
   `);
 

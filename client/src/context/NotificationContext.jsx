@@ -3,12 +3,12 @@ import { fetchJSON, postJSON } from '../lib/api';
 import { useToast } from './ToastContext';
 
 const FALLBACK_NOTIFICATIONS = [
-  { id: 1, type: 'suggestion_ready', title: 'New blog post draft ready', message: '7 Email Subject Line Formulas — AI generated with 89% confidence', module_id: 'content', read: false, created_at: new Date(Date.now() - 1800000).toISOString() },
-  { id: 2, type: 'action_completed', title: 'Instagram post published', message: 'Spring Collection carousel posted to @brand', module_id: 'social', read: false, created_at: new Date(Date.now() - 3600000).toISOString() },
-  { id: 3, type: 'rule_triggered', title: 'ROAS budget rule fired', message: 'Meta Ads budget increased 15% — ROAS exceeded 4.2x threshold', module_id: 'ads', read: false, created_at: new Date(Date.now() - 7200000).toISOString() },
-  { id: 4, type: 'action_completed', title: 'Weekly SEO audit complete', message: '3 new keyword opportunities found, 2 meta tags updated', module_id: 'seo', read: true, created_at: new Date(Date.now() - 14400000).toISOString() },
-  { id: 5, type: 'suggestion_ready', title: 'Email campaign ready for review', message: 'Welcome series — 3 emails drafted with A/B subject lines', module_id: 'email-sms', read: true, created_at: new Date(Date.now() - 28800000).toISOString() },
-  { id: 6, type: 'action_failed', title: 'Review response failed', message: 'Could not post response to Google review — API rate limit', module_id: 'reviews', read: true, created_at: new Date(Date.now() - 43200000).toISOString() },
+  { id: 'fallback-1', type: 'suggestion_ready', title: 'New blog post draft ready', message: '7 Email Subject Line Formulas — AI generated with 89% confidence', module_id: 'content', read: false, created_at: new Date(Date.now() - 1800000).toISOString() },
+  { id: 'fallback-2', type: 'action_completed', title: 'Instagram post published', message: 'Spring Collection carousel posted to @brand', module_id: 'social', read: false, created_at: new Date(Date.now() - 3600000).toISOString() },
+  { id: 'fallback-3', type: 'rule_triggered', title: 'ROAS budget rule fired', message: 'Meta Ads budget increased 15% — ROAS exceeded 4.2x threshold', module_id: 'ads', read: false, created_at: new Date(Date.now() - 7200000).toISOString() },
+  { id: 'fallback-4', type: 'action_completed', title: 'Weekly SEO audit complete', message: '3 new keyword opportunities found, 2 meta tags updated', module_id: 'seo', read: true, created_at: new Date(Date.now() - 14400000).toISOString() },
+  { id: 'fallback-5', type: 'suggestion_ready', title: 'Email campaign ready for review', message: 'Welcome series — 3 emails drafted with A/B subject lines', module_id: 'email-sms', read: true, created_at: new Date(Date.now() - 28800000).toISOString() },
+  { id: 'fallback-6', type: 'action_failed', title: 'Review response failed', message: 'Could not post response to Google review — API rate limit', module_id: 'reviews', read: true, created_at: new Date(Date.now() - 43200000).toISOString() },
 ];
 
 const NotificationContext = createContext(null);

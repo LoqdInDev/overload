@@ -132,7 +132,7 @@ export default function App() {
   const location = useLocation();
   const [navOpen, setNavOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(() => localStorage.getItem('overload_theme') === 'dark');
   const [pageKey, setPageKey] = useState(location.pathname);
   const [cmdPaletteOpen, setCmdPaletteOpen] = useState(false);
   const navigate = useNavigate();
@@ -145,7 +145,11 @@ export default function App() {
   const current = MODULE_REGISTRY.find(m =>
     m.path === '/dashboard' ? location.pathname === '/dashboard' : location.pathname.startsWith(m.path)
   );
-  const toggle = () => setDark(d => !d);
+  const toggle = () => setDark(d => {
+    const next = !d;
+    localStorage.setItem('overload_theme', next ? 'dark' : 'light');
+    return next;
+  });
 
   /* Collapsible sidebar sections */
   const activeCat = current ? current.category : null;
