@@ -111,7 +111,7 @@ router.get('/keywords', (req, res) => {
     const { audit_id } = req.query;
     let keywords;
     if (audit_id) {
-      keywords = db.prepare('SELECT * FROM seo_keywords WHERE audit_id = ? AND workspace_id = ? ORDER BY opportunity DESC').all(audit_id, wsId);
+      keywords = db.prepare('SELECT * FROM seo_keywords WHERE project_id = ? AND workspace_id = ? ORDER BY opportunity DESC').all(audit_id, wsId);
     } else {
       keywords = db.prepare('SELECT * FROM seo_keywords WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     }

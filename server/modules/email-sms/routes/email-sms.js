@@ -185,15 +185,12 @@ Format the output cleanly and professionally.`;
 
     // Save campaign to database
     const result = db.prepare(
-      'INSERT INTO es_campaigns (name, type, campaign_type, body, tone, audience, metadata, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO es_campaigns (name, type, content, metadata, workspace_id) VALUES (?, ?, ?, ?, ?)'
     ).run(
       topic || `${type} campaign`,
       type === 'sms' ? 'sms' : 'email',
-      campaignType || 'general',
       text,
-      tone || 'professional',
-      audience || null,
-      JSON.stringify({ goal, template, customPrompt }),
+      JSON.stringify({ campaign_type: campaignType || 'general', tone: tone || 'professional', audience: audience || null, goal, template, customPrompt }),
       wsId
     );
 
@@ -229,7 +226,10 @@ router.get('/campaigns', (req, res) => {
     }
     query += ' ORDER BY created_at DESC';
 
-    const campaigns = db.prepare(query).all(...params);
+    const campaigns = db.prepare(query).all(...params).map(c => {
+      const meta = c.metadata ? JSON.parse(c.metadata) : {};
+      return { ...c, campaign_type: meta.campaign_type || null, tone: meta.tone || null, audience: meta.audience || null, preview_text: meta.preview_text || null, variants: meta.variants || null };
+    });
     res.json(campaigns);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -240,8 +240,10 @@ router.get('/campaigns', (req, res) => {
 router.get('/campaigns/:id', (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const campaign = db.prepare('SELECT * FROM es_campaigns WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
-    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+    const row = db.prepare('SELECT * FROM es_campaigns WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!row) return res.status(404).json({ error: 'Campaign not found' });
+    const meta = row.metadata ? JSON.parse(row.metadata) : {};
+    const campaign = { ...row, campaign_type: meta.campaign_type || null, tone: meta.tone || null, audience: meta.audience || null, preview_text: meta.preview_text || null, variants: meta.variants || null };
     res.json(campaign);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -252,10 +254,18 @@ router.get('/campaigns/:id', (req, res) => {
 router.post('/campaigns', (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const { name, type, campaign_type, subject, preview_text, body, tone, audience, status, variants, metadata, scheduled_at } = req.body;
+    const { name, type, campaign_type, subject, preview_text, body, content, tone, audience, status, variants, metadata, scheduled_at } = req.body;
+    const mergedMeta = JSON.stringify({
+      ...(metadata || {}),
+      campaign_type: campaign_type || null,
+      preview_text: preview_text || null,
+      tone: tone || 'professional',
+      audience: audience || null,
+      variants: variants || null,
+    });
     const result = db.prepare(
-      'INSERT INTO es_campaigns (name, type, campaign_type, subject, preview_text, body, tone, audience, status, variants, metadata, scheduled_at, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(name, type, campaign_type || null, subject || null, preview_text || null, body || null, tone || 'professional', audience || null, status || 'draft', variants ? JSON.stringify(variants) : null, metadata ? JSON.stringify(metadata) : null, scheduled_at || null, wsId);
+      'INSERT INTO es_campaigns (name, type, subject, content, status, metadata, scheduled_at, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(name, type, subject || null, content ?? body ?? null, status || 'draft', mergedMeta, scheduled_at || null, wsId);
     const campaign = db.prepare('SELECT * FROM es_campaigns WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     logActivity('email-sms', 'create', `Created ${type} campaign`, name, String(result.lastInsertRowid), wsId);
     res.status(201).json(campaign);
@@ -271,19 +281,24 @@ router.put('/campaigns/:id', (req, res) => {
     const existing = db.prepare('SELECT * FROM es_campaigns WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Campaign not found' });
 
-    const { name, subject, preview_text, body, tone, audience, status, variants, metadata, scheduled_at } = req.body;
+    const { name, subject, preview_text, body, content, tone, audience, status, variants, metadata, scheduled_at } = req.body;
+    const existingMeta = existing.metadata ? JSON.parse(existing.metadata) : {};
+    const updatedMeta = JSON.stringify({
+      ...existingMeta,
+      ...(metadata || {}),
+      ...(preview_text !== undefined ? { preview_text } : {}),
+      ...(tone !== undefined ? { tone } : {}),
+      ...(audience !== undefined ? { audience } : {}),
+      ...(variants !== undefined ? { variants } : {}),
+    });
     db.prepare(
-      `UPDATE es_campaigns SET name = ?, subject = ?, preview_text = ?, body = ?, tone = ?, audience = ?, status = ?, variants = ?, metadata = ?, scheduled_at = ?, updated_at = datetime('now') WHERE id = ? AND workspace_id = ?`
+      `UPDATE es_campaigns SET name = ?, subject = ?, content = ?, status = ?, metadata = ?, scheduled_at = ?, updated_at = datetime('now') WHERE id = ? AND workspace_id = ?`
     ).run(
       name || existing.name,
       subject !== undefined ? subject : existing.subject,
-      preview_text !== undefined ? preview_text : existing.preview_text,
-      body !== undefined ? body : existing.body,
-      tone || existing.tone,
-      audience !== undefined ? audience : existing.audience,
+      content !== undefined ? content : (body !== undefined ? body : existing.content),
       status || existing.status,
-      variants ? JSON.stringify(variants) : existing.variants,
-      metadata ? JSON.stringify(metadata) : existing.metadata,
+      updatedMeta,
       scheduled_at !== undefined ? scheduled_at : existing.scheduled_at,
       req.params.id,
       wsId

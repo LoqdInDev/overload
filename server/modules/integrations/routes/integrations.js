@@ -21,12 +21,24 @@ router.post('/generate', async (req, res) => {
   }
 });
 
+// Map a DB row (schema column names) back to the client field names the frontend expects.
+function toClientShape(row) {
+  if (!row) return null;
+  return {
+    ...row,
+    platform: row.provider_id,
+    name: row.display_name,
+    api_key_hash: row.credentials_enc,
+    // keep provider_id / display_name / credentials_enc as well so nothing breaks
+  };
+}
+
 // GET /connections - List all connections
 router.get('/connections', (req, res) => {
   try {
     const wsId = req.workspace.id;
     const connections = db.prepare('SELECT * FROM int_connections WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
-    res.json({ success: true, data: connections });
+    res.json({ success: true, data: connections.map(toClientShape) });
   } catch (error) {
     console.error('Error fetching connections:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -34,16 +46,47 @@ router.get('/connections', (req, res) => {
 });
 
 // POST /connections - Create a new connection
+// NOTE: provider_id has a UNIQUE constraint in the schema without workspace_id,
+// which means only one connection per provider across all workspaces is allowed.
+// This is acceptable for the current single-tenant deployment. If multi-tenant
+// isolation is needed later, the constraint should be changed to UNIQUE(provider_id, workspace_id).
 router.post('/connections', (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const { platform, name, status, api_key_hash, config } = req.body;
+    // Accept both legacy client field names (platform/name/api_key_hash) and
+    // canonical schema names (provider_id/display_name/credentials_enc).
+    const {
+      platform,        // client sends this
+      name,            // client sends this
+      api_key_hash,    // client sends this
+      provider_id,     // or canonical name
+      display_name,    // or canonical name
+      credentials_enc, // or canonical name
+      auth_type,
+      status,
+      config,
+    } = req.body;
+
+    const resolvedProviderId   = provider_id   || platform;
+    const resolvedDisplayName  = display_name  || name;
+    const resolvedCredentials  = credentials_enc ?? api_key_hash;
+    const resolvedAuthType     = auth_type || 'api_key';
+
     const result = db.prepare(
-      'INSERT INTO int_connections (platform, name, status, api_key_hash, config, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(platform, name, status || 'disconnected', api_key_hash, config ? JSON.stringify(config) : null, wsId);
-    logActivity('integrations', 'create', `Created connection: ${name}`, 'Connection created', null, wsId);
+      'INSERT INTO int_connections (provider_id, display_name, auth_type, status, credentials_enc, config, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run(
+      resolvedProviderId,
+      resolvedDisplayName,
+      resolvedAuthType,
+      status || 'disconnected',
+      resolvedCredentials ?? null,
+      config ? JSON.stringify(config) : null,
+      wsId
+    );
+
+    logActivity('integrations', 'create', `Created connection: ${resolvedDisplayName}`, 'Connection created', null, wsId);
     const connection = db.prepare('SELECT * FROM int_connections WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
-    res.json({ success: true, data: connection });
+    res.json({ success: true, data: toClientShape(connection) });
   } catch (error) {
     console.error('Error creating connection:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -59,7 +102,7 @@ router.get('/connections/:id', (req, res) => {
       return res.status(404).json({ success: false, error: 'Connection not found' });
     }
     const sync_logs = db.prepare('SELECT * FROM int_sync_logs WHERE connection_id = ? AND workspace_id = ? ORDER BY created_at DESC LIMIT 50').all(req.params.id, wsId);
-    res.json({ success: true, data: { ...connection, sync_logs } });
+    res.json({ success: true, data: { ...toClientShape(connection), sync_logs } });
   } catch (error) {
     console.error('Error fetching connection:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -73,14 +116,40 @@ router.put('/connections/:id', (req, res) => {
     const existing = db.prepare('SELECT * FROM int_connections WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ success: false, error: 'Connection not found' });
 
-    const { name, status, api_key_hash, config } = req.body;
+    // Accept both legacy client field names and canonical schema names.
+    const {
+      name,
+      display_name,
+      api_key_hash,
+      credentials_enc,
+      auth_type,
+      status,
+      config,
+    } = req.body;
+
+    const resolvedDisplayName = display_name || name || existing.display_name;
+    const resolvedCredentials = credentials_enc !== undefined
+      ? credentials_enc
+      : api_key_hash !== undefined
+        ? api_key_hash
+        : existing.credentials_enc;
+    const resolvedAuthType = auth_type || existing.auth_type;
+
     db.prepare(
-      'UPDATE int_connections SET name = ?, status = ?, api_key_hash = ?, config = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?'
-    ).run(name || existing.name, status || existing.status, api_key_hash ?? existing.api_key_hash, config ? JSON.stringify(config) : existing.config, req.params.id, wsId);
+      'UPDATE int_connections SET display_name = ?, auth_type = ?, status = ?, credentials_enc = ?, config = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?'
+    ).run(
+      resolvedDisplayName,
+      resolvedAuthType,
+      status || existing.status,
+      resolvedCredentials,
+      config ? JSON.stringify(config) : existing.config,
+      req.params.id,
+      wsId
+    );
 
     const connection = db.prepare('SELECT * FROM int_connections WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
-    logActivity('integrations', 'update', `Updated connection: ${connection.name}`, 'Connection updated', null, wsId);
-    res.json({ success: true, data: connection });
+    logActivity('integrations', 'update', `Updated connection: ${connection.display_name}`, 'Connection updated', null, wsId);
+    res.json({ success: true, data: toClientShape(connection) });
   } catch (error) {
     console.error('Error updating connection:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -96,7 +165,7 @@ router.delete('/connections/:id', (req, res) => {
 
     db.prepare('DELETE FROM int_sync_logs WHERE connection_id = ? AND workspace_id = ?').run(req.params.id, wsId);
     db.prepare('DELETE FROM int_connections WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    logActivity('integrations', 'delete', `Deleted connection: ${existing.name}`, 'Connection deleted', null, wsId);
+    logActivity('integrations', 'delete', `Deleted connection: ${existing.display_name}`, 'Connection deleted', null, wsId);
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting connection:', error);

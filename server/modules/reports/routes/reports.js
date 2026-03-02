@@ -123,6 +123,63 @@ router.get('/reports/:id', (req, res) => {
   }
 });
 
+// PUT /reports/:id
+router.put('/reports/:id', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const existing = db.prepare('SELECT * FROM cr_reports WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!existing) {
+      return res.status(404).json({ error: 'Report not found' });
+    }
+
+    const { name, status, content, branding, client_name, date_range, modules, template } = req.body;
+
+    db.prepare(
+      `UPDATE cr_reports
+       SET name = ?, status = ?, content = ?, branding = ?,
+           client_name = ?, date_range = ?, modules = ?, template = ?,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = ? AND workspace_id = ?`
+    ).run(
+      name        ?? existing.name,
+      status      ?? existing.status,
+      content     !== undefined ? JSON.stringify(content)  : existing.content,
+      branding    !== undefined ? JSON.stringify(branding) : existing.branding,
+      client_name ?? existing.client_name,
+      date_range  ?? existing.date_range,
+      modules     !== undefined ? JSON.stringify(modules)  : existing.modules,
+      template    ?? existing.template,
+      req.params.id,
+      wsId
+    );
+
+    const report = db.prepare('SELECT * FROM cr_reports WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    logActivity('reports', 'update', 'Updated report', report.name, null, wsId);
+    res.json(report);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /reports/:id — also cascade-deletes associated schedules
+router.delete('/reports/:id', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const existing = db.prepare('SELECT * FROM cr_reports WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!existing) {
+      return res.status(404).json({ error: 'Report not found' });
+    }
+
+    db.prepare('DELETE FROM cr_schedules WHERE report_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    db.prepare('DELETE FROM cr_reports WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+
+    logActivity('reports', 'delete', 'Deleted report', existing.name, null, wsId);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET /templates
 router.get('/templates', (req, res) => {
   try {

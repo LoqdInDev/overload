@@ -113,7 +113,7 @@ router.get('/funnels/:id', (req, res) => {
     if (!funnel) {
       return res.status(404).json({ error: 'Funnel not found' });
     }
-    const pages = db.prepare('SELECT * FROM fn_pages WHERE funnel_id = ? AND workspace_id = ? ORDER BY sort_order ASC').all(id, wsId);
+    const pages = db.prepare('SELECT * FROM fn_pages WHERE funnel_id = ? AND workspace_id = ? ORDER BY position ASC').all(id, wsId);
     res.json({ ...funnel, pages });
   } catch (error) {
     res.status(500).json({ error: error.message });
