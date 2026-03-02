@@ -159,4 +159,25 @@ router.put('/pages/:id', (req, res) => {
   }
 });
 
+router.delete('/sites/:id', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    db.prepare('DELETE FROM wb_pages WHERE site_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    db.prepare('DELETE FROM wb_sites WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete('/pages/:id', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    db.prepare('DELETE FROM wb_pages WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchJSON, postJSON, connectSSE } from '../../lib/api';
+import { fetchJSON, postJSON, putJSON, deleteJSON, connectSSE } from '../../lib/api';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
@@ -51,6 +51,24 @@ export default function TeamPage() {
   const activeCount = members.filter(m => m.status === 'active').length;
   const inviteCount = invites.length;
   const rolesCount = new Set(members.map(m => m.role)).size;
+
+  const handleRemoveMember = async (id) => {
+    try {
+      await deleteJSON(`/api/team/members/${id}`);
+      setMembers(prev => prev.filter(m => m.id !== id));
+    } catch (err) {
+      console.error('Failed to remove member:', err);
+    }
+  };
+
+  const handleRoleChange = async (id, role) => {
+    try {
+      await putJSON(`/api/team/members/${id}`, { role });
+      setMembers(prev => prev.map(m => m.id === id ? { ...m, role } : m));
+    } catch (err) {
+      console.error('Failed to update role:', err);
+    }
+  };
 
   const handleSendInvite = async () => {
     if (!inviteEmail) return;
@@ -135,13 +153,20 @@ export default function TeamPage() {
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">{member.email}</p>
                 </div>
-                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${roleColor(member.role)}15`, color: roleColor(member.role), border: `1px solid ${roleColor(member.role)}25` }}>
-                  {member.role}
-                </span>
+                <select
+                  value={member.role}
+                  onChange={e => handleRoleChange(member.id, e.target.value)}
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-full appearance-none cursor-pointer focus:outline-none"
+                  style={{ background: `${roleColor(member.role)}15`, color: roleColor(member.role), border: `1px solid ${roleColor(member.role)}25` }}
+                >
+                  <option value="owner">owner</option>
+                  <option value="admin">admin</option>
+                  <option value="member">member</option>
+                  <option value="viewer">viewer</option>
+                </select>
                 <span className="text-xs text-gray-500 w-24 text-right hidden md:block">{member.status === 'active' ? 'Active' : member.created_at ? new Date(member.created_at).toLocaleDateString() : 'Inactive'}</span>
                 <div className="flex flex-wrap gap-1 flex-shrink-0">
-                  <button className="chip text-[10px]">Edit</button>
-                  <button className="chip text-[10px]" style={{ color: '#ef4444' }}>Remove</button>
+                  <button onClick={() => handleRemoveMember(member.id)} className="chip text-[10px]" style={{ color: '#ef4444' }}>&times;</button>
                 </div>
               </div>
             ))

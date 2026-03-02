@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchJSON, connectSSE } from '../../lib/api';
+import { fetchJSON, connectSSE, deleteJSON } from '../../lib/api';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
@@ -64,6 +64,17 @@ export default function ProductFeedsPage() {
   const totalActive = products.filter(p => (p.availability || '').toLowerCase() === 'in_stock' || (p.availability || '').toLowerCase() === 'in stock' || (p.availability || '').toLowerCase() === 'active').length;
   const totalChannels = new Set(products.map(p => p.channel).filter(Boolean)).size;
   const totalOutOfStock = products.filter(p => (p.availability || '').toLowerCase() === 'out_of_stock' || (p.availability || '').toLowerCase() === 'out of stock').length;
+
+  const deleteProduct = async (id) => {
+    await deleteJSON(`/api/product-feeds/products/${id}`);
+    setProducts(prev => prev.filter(p => p.id !== id));
+  };
+
+  const deleteFeed = async (id) => {
+    await deleteJSON(`/api/product-feeds/feeds/${id}`);
+    setFeeds(prev => prev.filter(f => f.id !== id));
+    setProducts(prev => prev.filter(p => p.feed_id !== id));
+  };
 
   const generate = async (tool) => {
     setGenerating(true); setOutput('');
@@ -138,15 +149,15 @@ export default function ProductFeedsPage() {
             </div>
           ) : (
             <div className="panel rounded-2xl overflow-hidden overflow-x-auto">
-              <div className="min-w-[600px]">
-                <div className="grid grid-cols-[1fr_80px_80px_auto_80px] px-4 sm:px-6 py-3 border-b border-indigo-500/[0.06] text-xs font-bold text-gray-500">
-                  <span>PRODUCT</span><span>SKU</span><span className="text-right">PRICE</span><span className="text-center">CHANNEL</span><span className="text-center">STATUS</span>
+              <div className="min-w-[640px]">
+                <div className="grid grid-cols-[1fr_80px_80px_auto_80px_32px] px-4 sm:px-6 py-3 border-b border-indigo-500/[0.06] text-xs font-bold text-gray-500">
+                  <span>PRODUCT</span><span>SKU</span><span className="text-right">PRICE</span><span className="text-center">CHANNEL</span><span className="text-center">STATUS</span><span />
                 </div>
                 {filtered.map((p, idx) => {
                   const status = mapAvailabilityToStatus(p.availability);
                   const ch = CHANNELS.find(x => x.id === (p.channel || '').toLowerCase());
                   return (
-                    <div key={p.id || idx} className="grid grid-cols-[1fr_80px_80px_auto_80px] items-center px-4 sm:px-6 py-4 border-b border-indigo-500/[0.03] hover:bg-white/[0.01] transition-colors">
+                    <div key={p.id || idx} className="grid grid-cols-[1fr_80px_80px_auto_80px_32px] items-center px-4 sm:px-6 py-4 border-b border-indigo-500/[0.03] hover:bg-white/[0.01] transition-colors">
                       <span className="text-sm font-semibold text-gray-200 truncate">{p.title}</span>
                       <span className="text-xs text-gray-500 font-mono">{p.sku}</span>
                       <span className="text-sm text-gray-300 font-mono text-right">${p.price}</span>
@@ -154,6 +165,7 @@ export default function ProductFeedsPage() {
                         {ch ? <div className="w-2 h-2 rounded-full" title={ch.name} style={{ background: ch.color }} /> : p.channel ? <span className="text-[9px] text-gray-500">{p.channel}</span> : null}
                       </div>
                       <div className="text-center">{statusBadge(status)}</div>
+                      <button onClick={() => deleteProduct(p.id)} className="text-gray-600 hover:text-red-400 transition-colors text-lg leading-none text-center" title="Delete product">×</button>
                     </div>
                   );
                 })}
@@ -164,16 +176,34 @@ export default function ProductFeedsPage() {
       )}
 
       {tab === 'channels' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 animate-fade-in stagger">
-          {CHANNELS.map(c => {
-            const count = products.filter(p => (p.channel || '').toLowerCase() === c.id).length;
-            return (
-              <div key={c.id} className="panel rounded-2xl p-4 sm:p-6">
-                <div className="flex items-center gap-3 sm:gap-5 mb-3"><div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: `${c.color}15`, border: `1px solid ${c.color}25` }}><span className="text-sm font-bold" style={{ color: c.color }}>{c.name[0]}</span></div><div><p className="text-base font-bold text-gray-200">{c.name}</p><p className="text-xs text-gray-500">{count} products synced</p></div></div>
-                <div className="h-1.5 rounded-full bg-white/[0.03] overflow-hidden"><div className="h-full rounded-full transition-all" style={{ width: `${products.length > 0 ? (count / products.length) * 100 : 0}%`, background: c.color }} /></div>
+        <div className="space-y-6 animate-fade-in">
+          {feeds.length > 0 && (
+            <div>
+              <p className="hud-label text-[11px] mb-3">FEEDS</p>
+              <div className="panel rounded-2xl divide-y divide-indigo-500/[0.04]">
+                {feeds.map(f => (
+                  <div key={f.id} className="flex items-center justify-between px-5 py-3 hover:bg-white/[0.01] transition-colors">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-200 truncate">{f.name}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{f.channel} &mdash; {f.format || 'csv'} &mdash; {f.product_count || 0} products</p>
+                    </div>
+                    <button onClick={() => deleteFeed(f.id)} className="ml-4 text-gray-600 hover:text-red-400 transition-colors text-lg leading-none flex-shrink-0" title="Delete feed">×</button>
+                  </div>
+                ))}
               </div>
-            );
-          })}
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 stagger">
+            {CHANNELS.map(c => {
+              const count = products.filter(p => (p.channel || '').toLowerCase() === c.id).length;
+              return (
+                <div key={c.id} className="panel rounded-2xl p-4 sm:p-6">
+                  <div className="flex items-center gap-3 sm:gap-5 mb-3"><div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: `${c.color}15`, border: `1px solid ${c.color}25` }}><span className="text-sm font-bold" style={{ color: c.color }}>{c.name[0]}</span></div><div><p className="text-base font-bold text-gray-200">{c.name}</p><p className="text-xs text-gray-500">{count} products synced</p></div></div>
+                  <div className="h-1.5 rounded-full bg-white/[0.03] overflow-hidden"><div className="h-full rounded-full transition-all" style={{ width: `${products.length > 0 ? (count / products.length) * 100 : 0}%`, background: c.color }} /></div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

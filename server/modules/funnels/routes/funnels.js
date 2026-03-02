@@ -89,6 +89,21 @@ router.post('/funnels', (req, res) => {
   }
 });
 
+// PUT /funnels/:id - update a funnel
+router.put('/funnels/:id', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const { name, type, description, status } = req.body;
+    db.prepare(
+      'UPDATE fn_funnels SET name = COALESCE(?, name), type = COALESCE(?, type), description = COALESCE(?, description), status = COALESCE(?, status), updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?'
+    ).run(name, type, description, status, req.params.id, wsId);
+    const funnel = db.prepare('SELECT * FROM fn_funnels WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    res.json(funnel || { error: 'not found' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET /funnels/:id - get a single funnel with its pages
 router.get('/funnels/:id', (req, res) => {
   try {

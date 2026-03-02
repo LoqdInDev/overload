@@ -40,6 +40,28 @@ function initDatabase() {
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS rv_templates (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
+      name TEXT NOT NULL,
+      star_rating INTEGER,
+      tone TEXT,
+      content TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS rv_generated (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT,
+      tool_type TEXT,
+      input_data TEXT,
+      output TEXT,
+      platform TEXT,
+      tone TEXT,
+      rating INTEGER,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
   `);
 }
 

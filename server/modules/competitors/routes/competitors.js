@@ -174,4 +174,53 @@ router.get('/stats', (req, res) => {
   }
 });
 
+// GET /alerts - list recent alerts
+router.get('/alerts', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const alerts = db.prepare('SELECT * FROM ci_alerts WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 20').all(wsId);
+    res.json(alerts);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /reports/:id - delete a report
+router.delete('/reports/:id', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    db.prepare('DELETE FROM ci_reports WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /:id - update a competitor
+router.put('/:id', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const { name, website, industry, description, strengths, weaknesses } = req.body;
+    db.prepare(
+      'UPDATE ci_competitors SET name = COALESCE(?, name), website = COALESCE(?, website), industry = COALESCE(?, industry), description = COALESCE(?, description), strengths = COALESCE(?, strengths), weaknesses = COALESCE(?, weaknesses) WHERE id = ? AND workspace_id = ?'
+    ).run(name, website, industry, description, strengths, weaknesses, req.params.id, wsId);
+    res.json(db.prepare('SELECT * FROM ci_competitors WHERE id = ?').get(req.params.id));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /:id - delete a competitor and cascade its reports and alerts
+router.delete('/:id', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    db.prepare('DELETE FROM ci_reports WHERE competitor_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    db.prepare('DELETE FROM ci_alerts WHERE competitor_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    db.prepare('DELETE FROM ci_competitors WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

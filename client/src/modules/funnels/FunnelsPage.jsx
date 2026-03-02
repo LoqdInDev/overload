@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
+import { fetchJSON, putJSON, deleteJSON } from '../../lib/api';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -39,6 +40,35 @@ export default function FunnelsPage() {
   const [urgency, setUrgency] = useState('Medium');
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');
+  const [mainTab, setMainTab] = useState('builder'); // builder | list
+
+  // Saved funnels
+  const [funnels, setFunnels] = useState([]);
+  const [funnelsLoading, setFunnelsLoading] = useState(false);
+
+  useEffect(() => {
+    if (mainTab === 'list') {
+      setFunnelsLoading(true);
+      fetchJSON('/api/funnels/funnels')
+        .then(data => setFunnels(Array.isArray(data) ? data : []))
+        .catch(console.error)
+        .finally(() => setFunnelsLoading(false));
+    }
+  }, [mainTab]);
+
+  const updateFunnelStatus = async (id, status) => {
+    try {
+      const updated = await putJSON(`/api/funnels/funnels/${id}`, { status });
+      setFunnels(prev => prev.map(f => f.id === id ? { ...f, status: updated.status || status } : f));
+    } catch (err) { console.error(err); }
+  };
+
+  const removeFunnel = async (id) => {
+    try {
+      await deleteJSON(`/api/funnels/funnels/${id}`);
+      setFunnels(prev => prev.filter(f => f.id !== id));
+    } catch (err) { console.error(err); }
+  };
 
   const generate = async () => {
     if (!activeType) return;
@@ -55,24 +85,81 @@ export default function FunnelsPage() {
     } catch (e) { console.error(e); } finally { setGenerating(false); }
   };
 
+  const FUNNEL_STATUSES = ['draft', 'active', 'paused', 'archived'];
+  const statusColor = (s) => s === 'active' ? '#22c55e' : s === 'paused' ? '#f59e0b' : s === 'archived' ? '#ef4444' : '#6b7280';
+
   if (!activeType) return (
     <div className="p-4 sm:p-6 lg:p-12">
       <div className="mb-6 sm:mb-8 animate-fade-in">
         <p className="hud-label text-[11px] mb-2" style={{ color: '#7c3aed' }}>FUNNEL BUILDER</p>
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Choose your funnel type</h1>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Funnel Builder</h1>
         <p className="text-base text-gray-500">AI generates high-converting copy for every stage of your funnel</p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 stagger">
-        {FUNNEL_TYPES.map(f => (
-          <button key={f.id} onClick={() => setActiveType(f.id)} className="panel-interactive rounded-2xl p-4 sm:p-7 text-left group">
-            <div className="w-12 h-12 rounded-lg mb-3 flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.12)' }}>
-              <svg className="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={f.icon} /></svg>
-            </div>
-            <p className="text-xs font-bold text-gray-300 group-hover:text-white transition-colors mb-2">{f.name}</p>
-            <div className="flex gap-1 flex-wrap">{f.stages.map((s, i) => (<span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.03] text-gray-600 border border-white/[0.04]">{s}</span>))}</div>
+
+      {/* Tab switcher */}
+      <div className="flex gap-1 mb-6">
+        {[{ id: 'builder', label: 'Build New Funnel' }, { id: 'list', label: 'Saved Funnels' }].map(t => (
+          <button key={t.id} onClick={() => setMainTab(t.id)}
+            className={`chip text-xs ${mainTab === t.id ? 'active' : ''}`}
+            style={mainTab === t.id ? { background: 'rgba(124,58,237,0.15)', borderColor: 'rgba(124,58,237,0.3)', color: '#a78bfa' } : {}}>
+            {t.label}
           </button>
         ))}
       </div>
+
+      {mainTab === 'builder' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 stagger">
+          {FUNNEL_TYPES.map(f => (
+            <button key={f.id} onClick={() => setActiveType(f.id)} className="panel-interactive rounded-2xl p-4 sm:p-7 text-left group">
+              <div className="w-12 h-12 rounded-lg mb-3 flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.12)' }}>
+                <svg className="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={f.icon} /></svg>
+              </div>
+              <p className="text-xs font-bold text-gray-300 group-hover:text-white transition-colors mb-2">{f.name}</p>
+              <div className="flex gap-1 flex-wrap">{f.stages.map((s, i) => (<span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.03] text-gray-600 border border-white/[0.04]">{s}</span>))}</div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {mainTab === 'list' && (
+        <div className="animate-fade-in">
+          {funnelsLoading ? (
+            <div className="space-y-3">{[1, 2, 3].map(i => <div key={i} className="panel rounded-2xl p-6 h-16 animate-pulse" />)}</div>
+          ) : funnels.length === 0 ? (
+            <div className="panel rounded-2xl p-12 text-center">
+              <p className="text-sm font-semibold text-gray-400 mb-1">No saved funnels yet</p>
+              <p className="text-xs text-gray-600">Switch to "Build New Funnel" to create one.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {funnels.map(f => (
+                <div key={f.id} className="panel rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 group hover:border-indigo-500/15 transition-all">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-base font-semibold text-gray-200">{f.name}</p>
+                    {f.description && <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{f.description}</p>}
+                    <p className="text-[10px] text-gray-600 mt-0.5">{f.type || 'funnel'} &middot; {f.created_at ? new Date(f.created_at).toLocaleDateString() : ''}</p>
+                  </div>
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                    <select
+                      value={f.status || 'draft'}
+                      onChange={e => updateFunnelStatus(f.id, e.target.value)}
+                      className="input-field rounded-lg px-2 py-1 text-[10px] font-bold"
+                      style={{ color: statusColor(f.status), background: `${statusColor(f.status)}10`, borderColor: `${statusColor(f.status)}30` }}
+                    >
+                      {FUNNEL_STATUSES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                    </select>
+                    <button onClick={() => removeFunnel(f.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/10 transition-all">
+                      <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 

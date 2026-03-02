@@ -4,6 +4,57 @@ const { db } = require('../../../db/database');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
 
+// GET /members/list - list all members (must be before /:id to avoid conflict)
+router.get('/members/list', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const members = db.prepare('SELECT m.*, p.name as program_name FROM rl_members m LEFT JOIN rl_programs p ON m.program_id = p.id WHERE m.workspace_id = ? ORDER BY m.joined_at DESC').all(wsId);
+    res.json(members);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /members/:id - update a member (tier, points)
+router.put('/members/:id', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const { tier, points } = req.body;
+    db.prepare(
+      'UPDATE rl_members SET tier = COALESCE(?, tier), points = COALESCE(?, points) WHERE id = ? AND workspace_id = ?'
+    ).run(tier, points, req.params.id, wsId);
+    res.json(db.prepare('SELECT * FROM rl_members WHERE id = ?').get(req.params.id));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /members/:id - remove a member
+router.delete('/members/:id', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    db.prepare('DELETE FROM rl_members WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /members - add a member to a program
+router.post('/members', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const { program_id, customer_name, email, referrals, points, tier } = req.body;
+    const result = db.prepare(
+      'INSERT INTO rl_members (program_id, customer_name, email, referrals, points, tier, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run(program_id, customer_name || null, email || null, referrals || 0, points || 0, tier || null, wsId);
+    const item = db.prepare('SELECT * FROM rl_members WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    res.status(201).json(item);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET / - list all referral/loyalty programs
 router.get('/', (req, res) => {
   try {
@@ -79,32 +130,6 @@ router.delete('/:id', (req, res) => {
     db.prepare('DELETE FROM rl_members WHERE program_id = ? AND workspace_id = ?').run(req.params.id, wsId);
     db.prepare('DELETE FROM rl_programs WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
     res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// POST /members - add a member to a program
-router.post('/members', (req, res) => {
-  try {
-    const wsId = req.workspace.id;
-    const { program_id, customer_name, email, referrals, points, tier } = req.body;
-    const result = db.prepare(
-      'INSERT INTO rl_members (program_id, customer_name, email, referrals, points, tier, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).run(program_id, customer_name || null, email || null, referrals || 0, points || 0, tier || null, wsId);
-    const item = db.prepare('SELECT * FROM rl_members WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
-    res.status(201).json(item);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// GET /members/list - list all members
-router.get('/members/list', (req, res) => {
-  try {
-    const wsId = req.workspace.id;
-    const members = db.prepare('SELECT m.*, p.name as program_name FROM rl_members m LEFT JOIN rl_programs p ON m.program_id = p.id WHERE m.workspace_id = ? ORDER BY m.joined_at DESC').all(wsId);
-    res.json(members);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

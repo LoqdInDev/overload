@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import { fetchJSON, postJSON, putJSON, deleteJSON } from '../../lib/api';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
@@ -9,7 +10,14 @@ const TOOLS = [
   { id: 'outreach', name: 'Outreach Generator', icon: 'M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75' },
   { id: 'brief', name: 'Campaign Brief', icon: 'M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15a2.25 2.25 0 012.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25' },
   { id: 'roi', name: 'ROI Calculator', icon: 'M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z' },
+  { id: 'campaigns', name: 'Campaigns', icon: 'M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 1.5l-.5 1.5m.75-9 3-3 2.148 2.148A12.061 12.061 0 0116.5 7.605' },
 ];
+
+const CAMPAIGN_STATUSES = ['planning', 'active', 'completed', 'paused'];
+const statusColor = (s) => {
+  const map = { active: '#22c55e', planning: '#f59e0b', completed: '#3b82f6', paused: '#6b7280' };
+  return map[s] || '#6b7280';
+};
 
 const PLATFORMS = ['Instagram', 'TikTok', 'YouTube', 'Twitter/X'];
 const NICHES = ['Fashion', 'Tech', 'Food', 'Fitness', 'Beauty', 'Travel', 'Gaming', 'Finance'];
@@ -35,6 +43,49 @@ export default function InfluencersPage() {
   const [reach, setReach] = useState('100000');
   const [engRate, setEngRate] = useState('3');
   const [convRate, setConvRate] = useState('2');
+
+  const [campaigns, setCampaigns] = useState([]);
+  const [campaignsLoading, setCampaignsLoading] = useState(false);
+  const [showAddCampaign, setShowAddCampaign] = useState(false);
+  const [newCampaign, setNewCampaign] = useState({ name: '', budget: '', status: 'planning' });
+
+  useEffect(() => {
+    if (activeTool === 'campaigns') {
+      setCampaignsLoading(true);
+      fetchJSON('/api/influencers/campaigns')
+        .then(data => setCampaigns(Array.isArray(data) ? data : []))
+        .catch(console.error)
+        .finally(() => setCampaignsLoading(false));
+    }
+  }, [activeTool]);
+
+  const addCampaign = async () => {
+    if (!newCampaign.name.trim()) return;
+    try {
+      const created = await postJSON('/api/influencers/campaigns', {
+        name: newCampaign.name,
+        budget: newCampaign.budget ? parseFloat(newCampaign.budget) : 0,
+        status: newCampaign.status || 'planning',
+      });
+      setCampaigns(prev => [created, ...prev]);
+      setNewCampaign({ name: '', budget: '', status: 'planning' });
+      setShowAddCampaign(false);
+    } catch (err) { console.error(err); }
+  };
+
+  const deleteCampaign = async (id) => {
+    try {
+      await deleteJSON(`/api/influencers/campaigns/${id}`);
+      setCampaigns(prev => prev.filter(c => c.id !== id));
+    } catch (err) { console.error(err); }
+  };
+
+  const updateCampaignStatus = async (id, status) => {
+    try {
+      const updated = await putJSON(`/api/influencers/campaigns/${id}`, { status });
+      setCampaigns(prev => prev.map(c => c.id === id ? { ...c, ...updated } : c));
+    } catch (err) { console.error(err); }
+  };
 
   const generate = async () => {
     setGenerating(true); setOutput('');
@@ -112,6 +163,65 @@ export default function InfluencersPage() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{[{ label: 'Est. Impressions', val: Number(reach).toLocaleString() }, { label: 'Est. Engagements', val: Math.round(Number(reach) * Number(engRate) / 100).toLocaleString() }, { label: 'Est. Conversions', val: Math.round(Number(reach) * Number(engRate) / 100 * Number(convRate) / 100).toLocaleString() }, { label: 'Cost / Conversion', val: `$${(Number(budget) / Math.max(1, Number(reach) * Number(engRate) / 100 * Number(convRate) / 100)).toFixed(2)}` }].map((s, i) => (<div key={i} className="panel rounded-lg p-3 sm:p-5 text-center"><p className="hud-label text-[11px] mb-1">{s.label}</p><p className="text-lg font-bold text-pink-400 font-mono">{s.val}</p></div>))}</div>
           <button onClick={generate} disabled={generating} className="btn-accent w-full py-3 rounded-lg" style={{ background: generating ? '#1e1e2e' : '#ec4899' }}>{generating ? <span className="flex items-center gap-2"><span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />CALCULATING...</span> : 'CALCULATE FULL ROI'}</button>
+        </div>
+      )}
+
+      {activeTool === 'campaigns' && (
+        <div className="space-y-4 sm:space-y-6">
+          <div className="flex justify-end">
+            <button onClick={() => setShowAddCampaign(!showAddCampaign)} className="chip text-[10px]" style={{ background: 'rgba(236,72,153,0.15)', borderColor: 'rgba(236,72,153,0.3)', color: '#f472b6' }}>+ Add Campaign</button>
+          </div>
+          {showAddCampaign && (
+            <div className="panel rounded-2xl p-4 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <input value={newCampaign.name} onChange={e => setNewCampaign({ ...newCampaign, name: e.target.value })} placeholder="Campaign name" className="input-field rounded px-3 py-2 text-xs" />
+                <input value={newCampaign.budget} onChange={e => setNewCampaign({ ...newCampaign, budget: e.target.value })} placeholder="Budget ($)" type="number" className="input-field rounded px-3 py-2 text-xs" />
+                <select value={newCampaign.status} onChange={e => setNewCampaign({ ...newCampaign, status: e.target.value })} className="input-field rounded px-3 py-2 text-xs">
+                  {CAMPAIGN_STATUSES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                </select>
+              </div>
+              <button onClick={addCampaign} className="chip text-[10px]" style={{ background: '#ec4899', color: '#fff', borderColor: '#ec4899' }}>Create Campaign</button>
+            </div>
+          )}
+          {campaignsLoading && (
+            <div className="panel rounded-2xl p-8 text-center text-sm text-gray-600">Loading campaigns...</div>
+          )}
+          {!campaignsLoading && campaigns.length === 0 && (
+            <div className="panel rounded-2xl p-8 text-center">
+              <p className="text-sm text-gray-500">No campaigns yet</p>
+              <p className="text-xs text-gray-600 mt-1">Create your first influencer campaign to get started</p>
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
+            {campaigns.map(c => (
+              <div key={c.id} className="group panel rounded-2xl p-4 sm:p-6 hover:border-pink-500/20 transition-all">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-base font-bold text-gray-200 truncate">{c.name}</p>
+                    {c.budget != null && (
+                      <p className="text-xs text-gray-500 mt-0.5">${Number(c.budget).toLocaleString()} budget</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                    <select
+                      value={c.status || 'planning'}
+                      onChange={e => updateCampaignStatus(c.id, e.target.value)}
+                      className="text-[9px] font-bold px-2 py-0.5 rounded-full appearance-none cursor-pointer focus:outline-none"
+                      style={{ background: `${statusColor(c.status)}15`, color: statusColor(c.status), border: `1px solid ${statusColor(c.status)}25` }}
+                    >
+                      {CAMPAIGN_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                    <button onClick={() => deleteCampaign(c.id)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 text-xs transition-all">&times;</button>
+                  </div>
+                </div>
+                {c.description && <p className="text-xs text-gray-500 line-clamp-2">{c.description}</p>}
+                <div className="flex gap-3 text-xs text-gray-600 mt-2">
+                  {c.start_date && <span>Start: {new Date(c.start_date).toLocaleDateString()}</span>}
+                  {c.end_date && <span>End: {new Date(c.end_date).toLocaleDateString()}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

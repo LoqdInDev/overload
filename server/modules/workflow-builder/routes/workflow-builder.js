@@ -66,6 +66,22 @@ router.post('/workflows', (req, res) => {
   }
 });
 
+// Update a workflow
+router.put('/workflows/:id', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const { name, description, trigger_type, status } = req.body;
+    db.prepare(
+      'UPDATE wf_workflows SET name = COALESCE(?, name), description = COALESCE(?, description), trigger_type = COALESCE(?, trigger_type), status = COALESCE(?, status) WHERE id = ? AND workspace_id = ?'
+    ).run(name, description, trigger_type, status, req.params.id, wsId);
+    const wf = db.prepare('SELECT * FROM wf_workflows WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    res.json(wf || { error: 'not found' });
+  } catch (error) {
+    console.error('Error updating workflow:', error);
+    res.status(500).json({ error: 'Failed to update workflow' });
+  }
+});
+
 // Get a specific workflow with its steps
 router.get('/workflows/:id', (req, res) => {
   try {

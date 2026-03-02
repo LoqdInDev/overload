@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
+import { fetchJSON } from '../../lib/api';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -16,12 +17,6 @@ const REPORT_TYPES = [
 const PERIODS = ['Last 7 Days', 'Last 30 Days', 'Last Quarter', 'Last Year', 'Custom'];
 const FORMATS = ['PDF', 'CSV', 'Google Sheets', 'Notion'];
 
-const MOCK_REPORTS = [
-  { id: 1, name: 'Q4 2025 Marketing Overview', type: 'overview', date: 'Jan 15, 2026', status: 'ready' },
-  { id: 2, name: 'Holiday Campaign Report', type: 'campaign', date: 'Jan 10, 2026', status: 'ready' },
-  { id: 3, name: 'January ROI Analysis', type: 'roi', date: 'Feb 1, 2026', status: 'generating' },
-  { id: 4, name: 'Instagram Audience Insights', type: 'audience', date: 'Feb 5, 2026', status: 'ready' },
-];
 
 export default function ReportsPage() {
   usePageTitle('Client Reports');
@@ -31,6 +26,11 @@ export default function ReportsPage() {
   const [customPrompt, setCustomPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');
+  const [reports, setReports] = useState([]);
+
+  useEffect(() => {
+    fetchJSON('/api/reports/reports').then(data => { if (Array.isArray(data)) setReports(data); }).catch(() => {});
+  }, []);
 
   const generate = async () => {
     if (!selectedType) return;
@@ -63,17 +63,21 @@ export default function ReportsPage() {
 
       <p className="hud-label text-[11px] mb-3" style={{ color: '#f43f5e' }}>RECENT REPORTS</p>
       <div className="panel rounded-2xl overflow-hidden">
-        <div className="divide-y divide-indigo-500/[0.04]">
-          {MOCK_REPORTS.map(r => (
-            <div key={r.id} className="flex items-center gap-6 px-6 py-4 hover:bg-white/[0.01] transition-colors">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(244,63,94,0.08)' }}>
-                <svg className="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={REPORT_TYPES.find(t => t.id === r.type)?.icon || REPORT_TYPES[0].icon} /></svg>
+        {reports.length === 0 ? (
+          <div className="px-6 py-8 text-center text-gray-500 text-sm">No reports yet. Generate your first report above.</div>
+        ) : (
+          <div className="divide-y divide-indigo-500/[0.04]">
+            {reports.map(r => (
+              <div key={r.id} className="flex items-center gap-6 px-6 py-4 hover:bg-white/[0.01] transition-colors">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(244,63,94,0.08)' }}>
+                  <svg className="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={REPORT_TYPES.find(t => t.id === r.template)?.icon || REPORT_TYPES[0].icon} /></svg>
+                </div>
+                <div className="flex-1 min-w-0"><p className="text-sm font-semibold text-gray-200 truncate">{r.name}</p><p className="text-xs text-gray-500">{r.client_name ? `${r.client_name} · ` : ''}{r.date_range || r.created_at?.slice(0, 10) || ''}</p></div>
+                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${r.status === 'ready' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20 animate-pulse'}`}>{r.status}</span>
               </div>
-              <div className="flex-1 min-w-0"><p className="text-sm font-semibold text-gray-200 truncate">{r.name}</p><p className="text-xs text-gray-500">{r.date}</p></div>
-              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${r.status === 'ready' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20 animate-pulse'}`}>{r.status}</span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
       </ModuleWrapper>
     </div>

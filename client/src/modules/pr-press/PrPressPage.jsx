@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
-import { fetchJSON, postJSON, deleteJSON, connectSSE } from '../../lib/api';
+import { fetchJSON, postJSON, putJSON, deleteJSON, connectSSE } from '../../lib/api';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const MODULE_COLOR = '#be185d';
@@ -71,6 +71,20 @@ export default function PrPressPage() {
     try {
       await deleteJSON(`/api/pr-press/contacts/${id}`);
       setContacts(prev => prev.filter(c => c.id !== id));
+    } catch (err) { console.error(err); }
+  };
+
+  const updateReleaseStatus = async (id, status) => {
+    try {
+      const updated = await putJSON(`/api/pr-press/${id}`, { status });
+      setReleases(prev => prev.map(r => r.id === id ? { ...r, status: updated.status || status } : r));
+    } catch (err) { console.error(err); }
+  };
+
+  const updateContactRelationship = async (id, relationship) => {
+    try {
+      const updated = await putJSON(`/api/pr-press/contacts/${id}`, { relationship });
+      setContacts(prev => prev.map(c => c.id === id ? { ...c, relationship: updated.relationship || relationship } : c));
     } catch (err) { console.error(err); }
   };
 
@@ -155,9 +169,14 @@ export default function PrPressPage() {
                     <p className="text-xs text-gray-500 mt-0.5">{r.distribution_list || 'No distribution'} &middot; {r.target_date || 'No date set'}</p>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${statusColor(r.status)}15`, color: statusColor(r.status), border: `1px solid ${statusColor(r.status)}25` }}>
-                      {r.status}
-                    </span>
+                    <select
+                      value={r.status || 'draft'}
+                      onChange={e => updateReleaseStatus(r.id, e.target.value)}
+                      className="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-transparent cursor-pointer"
+                      style={{ color: statusColor(r.status), background: `${statusColor(r.status)}10`, borderColor: `${statusColor(r.status)}30` }}
+                    >
+                      {RELEASE_STATUSES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                    </select>
                     <button onClick={() => removeRelease(r.id)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 text-xs transition-all">&times;</button>
                   </div>
                 </div>
@@ -204,9 +223,14 @@ export default function PrPressPage() {
                     <p className="text-xs text-gray-400 truncate">{c.outlet || '--'}</p>
                     <p className="text-xs text-gray-500 truncate">{c.beat || '--'}</p>
                     <p className="text-xs text-gray-600 truncate">{c.email || '--'}</p>
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full text-center" style={{ background: `${relationshipColor(c.relationship)}15`, color: relationshipColor(c.relationship), border: `1px solid ${relationshipColor(c.relationship)}25` }}>
-                      {c.relationship || 'new'}
-                    </span>
+                    <select
+                      value={c.relationship || 'new'}
+                      onChange={e => updateContactRelationship(c.id, e.target.value)}
+                      className="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-transparent cursor-pointer text-center"
+                      style={{ color: relationshipColor(c.relationship), background: `${relationshipColor(c.relationship)}10`, borderColor: `${relationshipColor(c.relationship)}30` }}
+                    >
+                      {RELATIONSHIP_OPTIONS.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
+                    </select>
                     <button onClick={() => removeContact(c.id)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 text-xs transition-all">&times;</button>
                   </div>
                   {/* Mobile card */}
@@ -214,9 +238,14 @@ export default function PrPressPage() {
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-sm font-semibold text-gray-300 truncate">{c.name}</p>
                       <div className="flex items-center gap-2">
-                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: `${relationshipColor(c.relationship)}15`, color: relationshipColor(c.relationship), border: `1px solid ${relationshipColor(c.relationship)}25` }}>
-                          {c.relationship || 'new'}
-                        </span>
+                        <select
+                          value={c.relationship || 'new'}
+                          onChange={e => updateContactRelationship(c.id, e.target.value)}
+                          className="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-transparent cursor-pointer flex-shrink-0"
+                          style={{ color: relationshipColor(c.relationship), background: `${relationshipColor(c.relationship)}10`, borderColor: `${relationshipColor(c.relationship)}30` }}
+                        >
+                          {RELATIONSHIP_OPTIONS.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
+                        </select>
                         <button onClick={() => removeContact(c.id)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 text-xs transition-all">&times;</button>
                       </div>
                     </div>

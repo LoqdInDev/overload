@@ -107,6 +107,21 @@ router.post('/contacts', (req, res) => {
   }
 });
 
+// PUT /contacts/:id - update a media contact
+router.put('/contacts/:id', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const { name, outlet, email, beat, relationship } = req.body;
+    db.prepare(
+      'UPDATE pp_contacts SET name = COALESCE(?, name), outlet = COALESCE(?, outlet), email = COALESCE(?, email), beat = COALESCE(?, beat), relationship = COALESCE(?, relationship) WHERE id = ? AND workspace_id = ?'
+    ).run(name, outlet, email, beat, relationship, req.params.id, wsId);
+    const contact = db.prepare('SELECT * FROM pp_contacts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    res.json(contact);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // DELETE /contacts/:id - delete a media contact
 router.delete('/contacts/:id', (req, res) => {
   try {

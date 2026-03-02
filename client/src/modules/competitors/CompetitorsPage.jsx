@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
-import { fetchJSON, connectSSE } from '../../lib/api';
+import { fetchJSON, connectSSE, deleteJSON } from '../../lib/api';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const TOOLS = [
@@ -30,13 +30,21 @@ export default function CompetitorsPage() {
   const [output, setOutput] = useState('');
   const [stats, setStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
+  const [competitors, setCompetitors] = useState([]);
 
   useEffect(() => {
     fetchJSON('/api/competitors/stats')
       .then(setStats)
       .catch(() => setStats(null))
       .finally(() => setLoadingStats(false));
+    fetchJSON('/api/competitors').then(setCompetitors).catch(() => {});
   }, []);
+
+  const deleteCompetitor = async (id) => {
+    await deleteJSON(`/api/competitors/${id}`);
+    setCompetitors(prev => prev.filter(c => c.id !== id));
+    fetchJSON('/api/competitors/stats').then(setStats).catch(() => {});
+  };
 
   const generate = () => {
     setGenerating(true); setOutput('');
@@ -69,6 +77,22 @@ export default function CompetitorsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 stagger">
         {TOOLS.map(t => (<button key={t.id} onClick={() => setActiveTool(t.id)} className="panel-interactive rounded-2xl p-4 sm:p-7 text-center group"><div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.12)' }}><svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={t.icon} /></svg></div><p className="text-sm font-bold text-gray-300 group-hover:text-white transition-colors">{t.name}</p></button>))}
       </div>
+      {competitors.length > 0 && (
+        <div className="mt-8">
+          <div className="flex items-center gap-3 mb-3"><p className="hud-label text-[11px]" style={{ color: '#ef4444' }}>TRACKED COMPETITORS</p><div className="flex-1 hud-line" /></div>
+          <div className="panel rounded-2xl divide-y divide-indigo-500/[0.04]">
+            {competitors.map(c => (
+              <div key={c.id} className="flex items-center justify-between px-5 py-3 hover:bg-white/[0.01] transition-colors">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-200 truncate">{c.name}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{c.website || c.industry || 'No details'}</p>
+                </div>
+                <button onClick={() => deleteCompetitor(c.id)} className="ml-4 text-gray-600 hover:text-red-400 transition-colors text-lg leading-none flex-shrink-0" title="Delete competitor">×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 

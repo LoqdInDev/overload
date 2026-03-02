@@ -175,6 +175,58 @@ router.post('/products', (req, res) => {
   }
 });
 
+// PUT /feeds/:id - Update a feed
+router.put('/feeds/:id', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const { name, channel, format, status } = req.body;
+    db.prepare(
+      'UPDATE pf_feeds SET name = COALESCE(?, name), channel = COALESCE(?, channel), format = COALESCE(?, format), status = COALESCE(?, status) WHERE id = ? AND workspace_id = ?'
+    ).run(name, channel, format, status, req.params.id, wsId);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /feeds/:id - Delete a feed and cascade its products and rules
+router.delete('/feeds/:id', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    db.prepare('DELETE FROM pf_rules WHERE feed_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    db.prepare('DELETE FROM pf_products WHERE feed_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    db.prepare('DELETE FROM pf_feeds WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /products/:id - Update a product
+router.put('/products/:id', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const { title, description, price, sale_price, availability } = req.body;
+    db.prepare(
+      'UPDATE pf_products SET title = COALESCE(?, title), description = COALESCE(?, description), price = COALESCE(?, price), sale_price = COALESCE(?, sale_price), availability = COALESCE(?, availability) WHERE id = ? AND workspace_id = ?'
+    ).run(title, description, price, sale_price, availability, req.params.id, wsId);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /products/:id - Delete a product
+router.delete('/products/:id', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    db.prepare('DELETE FROM pf_products WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // POST /optimize - Bulk optimize existing products
 router.post('/optimize', async (req, res) => {
   const sse = setupSSE(res);

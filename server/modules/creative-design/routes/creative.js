@@ -2,7 +2,7 @@ const express = require('express');
 const { v4: uuid } = require('uuid');
 const { generateWithClaude } = require('../../../services/claude');
 const { generateImages } = require('../../../services/gemini');
-const { logActivity } = require('../../../db/database');
+const { db, logActivity } = require('../../../db/database');
 const { getQueries } = require('../db/queries');
 const { buildImagePromptOptimizer } = require('../prompts/imagePrompt');
 
@@ -63,12 +63,33 @@ router.post('/generate', async (req, res) => {
   }
 });
 
-// List all projects
+// List all projects (with image URLs joined)
 router.get('/projects', (req, res) => {
   const wsId = req.workspace.id;
-  const q = getQueries(wsId);
-  const projects = q.getAllProjects();
+  const projects = db.prepare(
+    `SELECT p.*, GROUP_CONCAT(i.url) as image_urls FROM cd_projects p
+     LEFT JOIN cd_images i ON i.project_id = p.id AND i.workspace_id = p.workspace_id
+     WHERE p.workspace_id = ? GROUP BY p.id ORDER BY p.created_at DESC LIMIT 30`
+  ).all(wsId);
   res.json(projects);
+});
+
+// Create project (with optional image URLs)
+router.post('/projects', (req, res) => {
+  const { type, title, prompt, urls, metadata } = req.body;
+  const wsId = req.workspace.id;
+  const projectId = uuid();
+  db.prepare(
+    'INSERT INTO cd_projects (id, workspace_id, type, title, prompt, metadata) VALUES (?, ?, ?, ?, ?, ?)'
+  ).run(projectId, wsId, type || 'ad-creative', title || 'Untitled', prompt || '', JSON.stringify(metadata || {}));
+  if (Array.isArray(urls)) {
+    const insertImg = db.prepare(
+      'INSERT INTO cd_images (id, workspace_id, project_id, url, provider, status) VALUES (?, ?, ?, ?, ?, ?)'
+    );
+    urls.forEach(url => insertImg.run(uuid(), wsId, projectId, url, 'gemini', 'completed'));
+  }
+  logActivity('creative', 'create', `Saved ${type || 'creative'} project`, title || 'Untitled', projectId, wsId);
+  res.json({ id: projectId, success: true });
 });
 
 // Get project with images

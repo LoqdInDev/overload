@@ -158,6 +158,34 @@ router.post('/campaigns', (req, res) => {
   }
 });
 
+// PUT /campaigns/:id - Update a campaign
+router.put('/campaigns/:id', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const { name, description, budget, status } = req.body;
+    db.prepare(
+      'UPDATE inf_campaigns SET name = COALESCE(?, name), description = COALESCE(?, description), budget = COALESCE(?, budget), status = COALESCE(?, status) WHERE id = ? AND workspace_id = ?'
+    ).run(name, description, budget, status, req.params.id, wsId);
+    const campaign = db.prepare('SELECT * FROM inf_campaigns WHERE id = ?').get(req.params.id);
+    res.json(campaign);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /campaigns/:id - Delete a campaign
+router.delete('/campaigns/:id', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    db.prepare('DELETE FROM inf_outreach WHERE campaign_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    db.prepare('DELETE FROM inf_campaigns WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    logActivity('influencers', 'delete', 'Deleted campaign', req.params.id, null, wsId);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET /searches - List recent searches
 router.get('/searches', (req, res) => {
   try {

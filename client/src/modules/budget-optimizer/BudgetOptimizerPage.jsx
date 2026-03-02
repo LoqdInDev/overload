@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchJSON, connectSSE } from '../../lib/api';
+import { fetchJSON, connectSSE, deleteJSON } from '../../lib/api';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
@@ -57,6 +57,12 @@ export default function BudgetOptimizerPage() {
     return `$${val.toLocaleString()}`;
   };
 
+  const deleteBudget = async (id) => {
+    await deleteJSON(`/api/budget-optimizer/budgets/${id}`);
+    setBudgets(prev => prev.filter(b => b.id !== id));
+    if (budgets.length <= 1) setAllocations([]);
+  };
+
   const generate = async (template) => {
     setSelectedTemplate(template); setGenerating(true); setOutput('');
     const cancel = connectSSE('/api/budget-optimizer/generate', { type: 'content', prompt: template.prompt }, {
@@ -91,7 +97,26 @@ export default function BudgetOptimizerPage() {
         {['overview', 'allocations', 'ai-tools'].map(t => (<button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: 'rgba(5,150,105,0.15)', borderColor: 'rgba(5,150,105,0.3)', color: '#34d399' } : {}}>{t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1)}</button>))}
       </div>
       {tab === 'overview' && (
-        <div className="space-y-4 animate-fade-in">
+        <div className="space-y-6 animate-fade-in">
+          {budgets.length > 0 && (
+            <div>
+              <p className="hud-label text-[11px] mb-3">BUDGETS</p>
+              <div className="panel rounded-2xl divide-y divide-indigo-500/[0.04]">
+                {budgets.map(b => (
+                  <div key={b.id} className="flex items-center justify-between px-5 py-3 hover:bg-white/[0.01] transition-colors">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-200 truncate">{b.name}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{b.period || 'No period'} &mdash; {b.status}</p>
+                    </div>
+                    <div className="flex items-center gap-4 ml-4 flex-shrink-0">
+                      <span className="text-sm font-bold font-mono" style={{ color: '#34d399' }}>{b.total_budget != null ? `$${Number(b.total_budget).toLocaleString()}` : '—'}</span>
+                      <button onClick={() => deleteBudget(b.id)} className="text-gray-600 hover:text-red-400 transition-colors text-lg leading-none" title="Delete budget">×</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {allocations.length === 0 ? (
             <div className="panel rounded-2xl p-12 text-center">
               <p className="text-gray-500 text-base">No budget allocations yet</p>

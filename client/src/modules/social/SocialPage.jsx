@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
+import { fetchJSON, deleteJSON } from '../../lib/api';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -56,8 +57,12 @@ const charLimits = { instagram: 2200, twitter: 280, linkedin: 3000, tiktok: 2200
 export default function SocialPage() {
   usePageTitle('Social Media');
   const { dark } = useTheme();
-  const [tab, setTab] = useState('create'); // create | accounts | publish
+  const [tab, setTab] = useState('create'); // create | accounts | publish | history
   const [activeType, setActiveType] = useState(null);
+
+  // History tab state
+  const [posts, setPosts] = useState([]);
+  const [postsLoading, setPostsLoading] = useState(false);
   const [tone, setTone] = useState('Casual');
   const [includeHashtags, setIncludeHashtags] = useState(true);
   const [includeEmojis, setIncludeEmojis] = useState(true);
@@ -97,7 +102,25 @@ export default function SocialPage() {
     finally { setLoading(false); }
   }, []);
 
+  const fetchPosts = useCallback(async () => {
+    setPostsLoading(true);
+    try {
+      const data = await fetchJSON('/api/social/posts');
+      setPosts(Array.isArray(data) ? data : []);
+    } catch (e) { console.error('Fetch posts error:', e); }
+    finally { setPostsLoading(false); }
+  }, []);
+
+  const deletePost = async (id) => {
+    try {
+      await deleteJSON(`/api/social/posts/${id}`);
+      setPosts(prev => prev.filter(p => p.id !== id));
+    } catch (e) { console.error('Delete post error:', e); }
+  };
+
   useEffect(() => { fetchAccounts(); }, [fetchAccounts]);
+
+  useEffect(() => { if (tab === 'history') fetchPosts(); }, [tab, fetchPosts]);
 
   // Listen for OAuth popup callback
   useEffect(() => {
@@ -188,7 +211,17 @@ export default function SocialPage() {
           try {
             const data = JSON.parse(line.slice(6));
             if (data.type === 'chunk') { fullText += data.text; setStreamText(fullText); }
-            else if (data.type === 'result') { setResult(data.data?.content || fullText); }
+            else if (data.type === 'result') {
+              const finalText = data.data?.content || fullText;
+              setResult(finalText);
+              // Auto-save generated post to history
+              try {
+                await fetch(`${API_BASE}/api/social/posts`, {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ platform: activeType, post_type: 'feed', caption: finalText, status: 'draft' }),
+                });
+              } catch (saveErr) { console.warn('Auto-save failed:', saveErr); }
+            }
           } catch {}
         }
       }
@@ -263,6 +296,7 @@ export default function SocialPage() {
           { id: 'create', label: 'Create Content', count: null },
           { id: 'accounts', label: 'Connected Accounts', count: socialConnected.length },
           { id: 'publish', label: 'Publish', count: null },
+          { id: 'history', label: 'Drafts / History', count: posts.length || null },
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
@@ -420,6 +454,70 @@ export default function SocialPage() {
           ) : (
             <div className={`${panelCls} rounded-2xl p-5 sm:p-8 text-center`}>
               <p className={`text-base ${dark ? 'text-gray-400' : 'text-gray-500'}`}>Connect social accounts in the Accounts tab first.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══ HISTORY TAB ═══ */}
+      {tab === 'history' && (
+        <div className="space-y-4 animate-fade-in">
+          <div className="flex items-center gap-3 mb-2">
+            <p className="hud-label text-[11px]">SAVED POSTS</p>
+            <div className="flex-1 hud-line" />
+            <button onClick={fetchPosts} className={`text-xs font-semibold px-3 py-1 rounded-lg ${dark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}>Refresh</button>
+          </div>
+          {postsLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => <div key={i} className={`${panelCls} rounded-2xl p-5 h-16 animate-pulse`} />)}
+            </div>
+          ) : posts.length === 0 ? (
+            <div className={`${panelCls} rounded-2xl p-8 sm:p-12 text-center`}>
+              <svg className="w-10 h-10 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+              </svg>
+              <p className={`text-base font-semibold mb-1 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>No saved posts yet</p>
+              <p className={`text-sm ${dark ? 'text-gray-500' : 'text-gray-400'}`}>Generated posts are automatically saved here.</p>
+            </div>
+          ) : (
+            <div className={`${panelCls} rounded-2xl overflow-hidden`}>
+              <div className="divide-y divide-indigo-500/[0.04]">
+                {posts.map(post => {
+                  const platformInfo = SOCIAL_PLATFORMS.find(p => p.id === post.platform);
+                  const statusColors = { draft: '#6b7280', published: '#22c55e', scheduled: '#3b82f6' };
+                  const statusColor = statusColors[post.status] || '#6b7280';
+                  return (
+                    <div key={post.id} className={`group flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4 hover:bg-white/[0.01] transition-colors`}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          {platformInfo && (
+                            <svg className="w-3.5 h-3.5 flex-shrink-0" style={{ color: platformInfo.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d={platformInfo.icon} />
+                            </svg>
+                          )}
+                          <span className={`text-[10px] font-bold uppercase ${dark ? 'text-gray-500' : 'text-gray-400'}`}>{post.platform}</span>
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${statusColor}15`, color: statusColor, border: `1px solid ${statusColor}25` }}>
+                            {post.status}
+                          </span>
+                        </div>
+                        <p className={`text-sm line-clamp-2 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{post.caption || '(no caption)'}</p>
+                        <p className={`text-[10px] mt-1 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>
+                          {post.created_at ? new Date(post.created_at).toLocaleString() : ''}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => deletePost(post.id)}
+                        className="opacity-0 group-hover:opacity-100 flex-shrink-0 p-1.5 rounded-lg transition-all hover:bg-red-500/10"
+                        title="Delete post"
+                      >
+                        <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                        </svg>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>

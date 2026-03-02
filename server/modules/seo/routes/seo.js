@@ -121,4 +121,37 @@ router.get('/keywords', (req, res) => {
   }
 });
 
+// DELETE /audits/:id - delete an audit
+router.delete('/audits/:id', (req, res) => {
+  try {
+    db.prepare('DELETE FROM seo_audits WHERE id = ? AND workspace_id = ?').run(req.params.id, req.workspace.id);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /keywords/:id - delete a keyword
+router.delete('/keywords/:id', (req, res) => {
+  try {
+    db.prepare('DELETE FROM seo_keywords WHERE id = ? AND workspace_id = ?').run(req.params.id, req.workspace.id);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /audits/:id - update an audit
+router.put('/audits/:id', (req, res) => {
+  try {
+    const { score, issues, recommendations } = req.body;
+    db.prepare(
+      'UPDATE seo_audits SET score = COALESCE(?, score), issues = COALESCE(?, issues), recommendations = COALESCE(?, recommendations) WHERE id = ? AND workspace_id = ?'
+    ).run(score, issues ? JSON.stringify(issues) : null, recommendations ? JSON.stringify(recommendations) : null, req.params.id, req.workspace.id);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

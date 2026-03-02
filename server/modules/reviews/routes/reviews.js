@@ -150,12 +150,7 @@ Create a detailed Review Summary Report:
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
-    // Save generated content
-    try {
-      db.prepare(
-        'INSERT INTO rev_generated (tool_type, input_data, output, platform, tone, rating, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
-      ).run(toolType, JSON.stringify(req.body), text, platform || null, tone || null, starRating || null, wsId);
-    } catch (e) { /* table may not exist yet on first run */ }
+    // Note: rv_generated table does not exist in schema; activity is logged below via logActivity
 
     logActivity('reviews', 'generate', `Generated ${toolType}`, `${platform || 'general'} - ${tone || 'professional'} tone`, null, wsId);
     sse.sendResult({ content: text, toolType });
@@ -170,7 +165,7 @@ router.get('/reviews', (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { source, rating, status } = req.query;
-    let query = 'SELECT * FROM rev_reviews WHERE workspace_id = ?';
+    let query = 'SELECT * FROM rv_reviews WHERE workspace_id = ?';
     const params = [wsId];
 
     if (source) { query += ' AND source = ?'; params.push(source); }
@@ -192,10 +187,10 @@ router.post('/reviews', (req, res) => {
     const { source, rating, content, author, sentiment, status } = req.body;
 
     const result = db.prepare(
-      'INSERT INTO rev_reviews (source, rating, content, author, sentiment, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO rv_reviews (source, rating, content, author, sentiment, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(source || null, rating || null, content || null, author || null, sentiment || null, status || 'pending', wsId);
 
-    const review = db.prepare('SELECT * FROM rev_reviews WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    const review = db.prepare('SELECT * FROM rv_reviews WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     logActivity('reviews', 'create', 'Added review', `${rating}/5 from ${source || 'direct'}`, null, wsId);
     res.status(201).json(review);
   } catch (error) {
@@ -207,7 +202,7 @@ router.post('/reviews', (req, res) => {
 router.get('/templates', (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const templates = db.prepare('SELECT * FROM rev_templates WHERE workspace_id = ? ORDER BY star_rating ASC, created_at DESC').all(wsId);
+    const templates = db.prepare('SELECT * FROM rv_templates WHERE workspace_id = ? ORDER BY star_rating ASC, created_at DESC').all(wsId);
     res.json(templates);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -221,10 +216,10 @@ router.post('/templates', (req, res) => {
     const { name, star_rating, tone, content } = req.body;
 
     const result = db.prepare(
-      'INSERT INTO rev_templates (name, star_rating, tone, content, workspace_id) VALUES (?, ?, ?, ?, ?)'
+      'INSERT INTO rv_templates (name, star_rating, tone, content, workspace_id) VALUES (?, ?, ?, ?, ?)'
     ).run(name, star_rating || null, tone || null, content, wsId);
 
-    const template = db.prepare('SELECT * FROM rev_templates WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    const template = db.prepare('SELECT * FROM rv_templates WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     logActivity('reviews', 'create_template', 'Created response template', name, null, wsId);
     res.status(201).json(template);
   } catch (error) {
@@ -238,7 +233,7 @@ router.post('/respond/:id', async (req, res) => {
   const wsId = req.workspace.id;
 
   try {
-    const review = db.prepare('SELECT * FROM rev_reviews WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const review = db.prepare('SELECT * FROM rv_reviews WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!review) {
       sse.sendError(new Error('Review not found'));
       return;
@@ -262,7 +257,7 @@ Write a response that is sincere, addresses their specific points, and is 2-3 pa
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
-    db.prepare('UPDATE rev_reviews SET response = ?, status = ? WHERE id = ? AND workspace_id = ?').run(text, 'responded', review.id, wsId);
+    db.prepare('UPDATE rv_reviews SET response = ?, status = ? WHERE id = ? AND workspace_id = ?').run(text, 'responded', review.id, wsId);
     logActivity('reviews', 'respond', 'Responded to review', `Review #${review.id}`, null, wsId);
     sse.sendResult({ content: text, reviewId: review.id });
   } catch (error) {
@@ -275,12 +270,12 @@ Write a response that is sincere, addresses their specific points, and is 2-3 pa
 router.get('/stats', (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const total = db.prepare('SELECT COUNT(*) as count FROM rev_reviews WHERE workspace_id = ?').get(wsId).count;
-    const pending = db.prepare("SELECT COUNT(*) as count FROM rev_reviews WHERE status = 'pending' AND workspace_id = ?").get(wsId).count;
-    const avgRating = db.prepare('SELECT COALESCE(AVG(rating), 0) as avg FROM rev_reviews WHERE rating IS NOT NULL AND workspace_id = ?').get(wsId).avg;
-    const bySource = db.prepare('SELECT source, COUNT(*) as count FROM rev_reviews WHERE source IS NOT NULL AND workspace_id = ? GROUP BY source').all(wsId);
-    const byRating = db.prepare('SELECT rating, COUNT(*) as count FROM rev_reviews WHERE rating IS NOT NULL AND workspace_id = ? GROUP BY rating ORDER BY rating').all(wsId);
-    const bySentiment = db.prepare('SELECT sentiment, COUNT(*) as count FROM rev_reviews WHERE sentiment IS NOT NULL AND workspace_id = ? GROUP BY sentiment').all(wsId);
+    const total = db.prepare('SELECT COUNT(*) as count FROM rv_reviews WHERE workspace_id = ?').get(wsId).count;
+    const pending = db.prepare("SELECT COUNT(*) as count FROM rv_reviews WHERE status = 'pending' AND workspace_id = ?").get(wsId).count;
+    const avgRating = db.prepare('SELECT COALESCE(AVG(rating), 0) as avg FROM rv_reviews WHERE rating IS NOT NULL AND workspace_id = ?').get(wsId).avg;
+    const bySource = db.prepare('SELECT source, COUNT(*) as count FROM rv_reviews WHERE source IS NOT NULL AND workspace_id = ? GROUP BY source').all(wsId);
+    const byRating = db.prepare('SELECT rating, COUNT(*) as count FROM rv_reviews WHERE rating IS NOT NULL AND workspace_id = ? GROUP BY rating ORDER BY rating').all(wsId);
+    const bySentiment = db.prepare('SELECT sentiment, COUNT(*) as count FROM rv_reviews WHERE sentiment IS NOT NULL AND workspace_id = ? GROUP BY sentiment').all(wsId);
 
     res.json({ total, pending, avgRating: Math.round(avgRating * 10) / 10, bySource, byRating, bySentiment });
   } catch (error) {
@@ -292,7 +287,7 @@ router.get('/stats', (req, res) => {
 router.get('/history', (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const history = db.prepare('SELECT * FROM rev_generated WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 50').all(wsId);
+    const history = db.prepare('SELECT * FROM rv_generated WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 50').all(wsId);
     res.json(history);
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import { fetchJSON, deleteJSON } from '../../lib/api';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
@@ -57,6 +58,23 @@ export default function SeoPage() {
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');
   const [copied, setCopied] = useState(false);
+  const [audits, setAudits] = useState([]);
+  const [keywords, setKeywords] = useState([]);
+
+  useEffect(() => {
+    fetchJSON('/api/seo/audits').then(setAudits).catch(() => {});
+    fetchJSON('/api/seo/keywords').then(setKeywords).catch(() => {});
+  }, []);
+
+  const deleteAudit = async (id) => {
+    await deleteJSON(`/api/seo/audits/${id}`);
+    setAudits(prev => prev.filter(a => a.id !== id));
+  };
+
+  const deleteKeyword = async (id) => {
+    await deleteJSON(`/api/seo/keywords/${id}`);
+    setKeywords(prev => prev.filter(k => k.id !== id));
+  };
 
   const generate = async () => {
     if (!prompt.trim()) return;
@@ -112,6 +130,42 @@ export default function SeoPage() {
           )))}
         </div>
       </div>
+      {(audits.length > 0 || keywords.length > 0) && (
+        <div className="mt-10 space-y-6">
+          {audits.length > 0 && (
+            <div>
+              <div className="flex items-center gap-3 mb-3"><p className="hud-label text-[11px]">SAVED AUDITS</p><div className="flex-1 hud-line" /></div>
+              <div className="panel rounded-2xl divide-y divide-indigo-500/[0.04]">
+                {audits.map(a => (
+                  <div key={a.id} className="flex items-center justify-between px-5 py-3 hover:bg-white/[0.01] transition-colors">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-200 truncate">{a.url}</p>
+                      {a.score != null && <p className="text-xs text-gray-500 mt-0.5">Score: {a.score}</p>}
+                    </div>
+                    <button onClick={() => deleteAudit(a.id)} className="ml-4 text-gray-600 hover:text-red-400 transition-colors text-lg leading-none flex-shrink-0" title="Delete audit">×</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {keywords.length > 0 && (
+            <div>
+              <div className="flex items-center gap-3 mb-3"><p className="hud-label text-[11px]">SAVED KEYWORDS</p><div className="flex-1 hud-line" /></div>
+              <div className="panel rounded-2xl divide-y divide-indigo-500/[0.04]">
+                {keywords.map(k => (
+                  <div key={k.id} className="flex items-center justify-between px-5 py-3 hover:bg-white/[0.01] transition-colors">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-200 truncate">{k.keyword}</p>
+                      {k.intent && <p className="text-xs text-gray-500 mt-0.5">{k.intent}</p>}
+                    </div>
+                    <button onClick={() => deleteKeyword(k.id)} className="ml-4 text-gray-600 hover:text-red-400 transition-colors text-lg leading-none flex-shrink-0" title="Delete keyword">×</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       </ModuleWrapper>
     </div>
   );

@@ -83,6 +83,13 @@ export default function ReferralLoyaltyPage() {
     } catch (err) { console.error(err); }
   };
 
+  const removeMember = async (id) => {
+    try {
+      await deleteJSON(`/api/referral-loyalty/members/${id}`);
+      setMembers(prev => prev.filter(m => m.id !== id));
+    } catch (err) { console.error(err); }
+  };
+
   const generate = (template) => {
     setSelectedTemplate(template); setGenerating(true); setOutput('');
     connectSSE('/api/referral-loyalty/generate', { type: 'content', prompt: template.prompt }, {
@@ -268,6 +275,7 @@ export default function ReferralLoyaltyPage() {
                     <p className="text-sm font-mono font-bold" style={{ color: MODULE_COLOR }}>{m.referrals || 0}</p>
                     <p className="text-xs text-gray-600">referrals</p>
                   </div>
+                  <button onClick={() => removeMember(m.id)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 text-xs transition-all flex-shrink-0">&times;</button>
                 </div>
               ))}
             </div>

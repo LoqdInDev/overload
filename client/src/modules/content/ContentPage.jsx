@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
-import { connectSSE } from '../../lib/api';
+import { connectSSE, fetchJSON, deleteJSON } from '../../lib/api';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
 
 const CONTENT_TYPES = [
@@ -57,8 +57,18 @@ export default function ContentPage() {
   const [copied, setCopied] = useState(false);
   const [wordTarget, setWordTarget] = useState('800');
   const [error, setError] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [activeTab, setActiveTab] = useState('generate');
 
   const cancelRef = useRef(null);
+
+  const loadHistory = () => {
+    fetchJSON('/api/content/projects').then(data => { if (Array.isArray(data)) setHistory(data); }).catch(() => {});
+  };
+
+  useEffect(() => {
+    loadHistory();
+  }, []);
 
   const generate = () => {
     if (!prompt.trim() || !activeType) return;
@@ -71,7 +81,12 @@ export default function ContentPage() {
     let fullText = '';
     cancelRef.current = connectSSE('/api/content/generate', { type: activeType, prompt: fullPrompt }, {
       onChunk: (text) => { fullText += text; setStreamText(fullText); },
-      onResult: (data) => { setResult(data?.content || fullText); setGenerating(false); },
+      onResult: (data) => {
+        const finalContent = data?.content || fullText;
+        setResult(finalContent);
+        setGenerating(false);
+        loadHistory();
+      },
       onError: (err) => {
         console.error('Generation error:', err);
         setError(typeof err === 'string' ? err : 'Failed to generate content. Please try again.');
@@ -92,6 +107,10 @@ export default function ContentPage() {
 
   const selectTemplate = (tmpl) => setPrompt(tmpl.prompt);
 
+  const deleteHistoryItem = (id) => {
+    deleteJSON(`/api/content/projects/${id}`).then(() => loadHistory()).catch(() => {});
+  };
+
   if (!activeType) {
     return (
       <div className="p-4 sm:p-6 lg:p-12">
@@ -102,43 +121,85 @@ export default function ContentPage() {
           <p className="text-base text-gray-500">Select a content type to get started with AI-powered generation</p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 stagger">
-          {CONTENT_TYPES.map(type => (
-            <button key={type.id} onClick={() => setActiveType(type.id)}
-              className="panel-interactive rounded-2xl p-4 sm:p-7 text-center group">
-              <div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center transition-all duration-300 group-hover:scale-110"
-                style={{ background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.12)' }}>
-                <svg className="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d={type.icon} />
-                </svg>
-              </div>
-              <p className="text-xs font-bold text-gray-300 group-hover:text-white transition-colors">{type.name}</p>
-            </button>
-          ))}
+        {/* Tabs */}
+        <div className="flex gap-1 mb-6">
+          <button onClick={() => setActiveTab('generate')} className={`chip text-[10px] ${activeTab === 'generate' ? 'active' : ''}`} style={activeTab === 'generate' ? { background: 'rgba(249,115,22,0.15)', borderColor: 'rgba(249,115,22,0.3)', color: '#fb923c' } : {}}>Generate</button>
+          <button onClick={() => { setActiveTab('history'); loadHistory(); }} className={`chip text-[10px] ${activeTab === 'history' ? 'active' : ''}`} style={activeTab === 'history' ? { background: 'rgba(249,115,22,0.15)', borderColor: 'rgba(249,115,22,0.3)', color: '#fb923c' } : {}}>History {history.length > 0 ? `(${history.length})` : ''}</button>
         </div>
 
-        {/* Templates Preview */}
-        <div className="mt-10">
-          <div className="flex items-center gap-3 sm:gap-5 mb-4">
-            <p className="hud-label text-[11px]">POPULAR TEMPLATES</p>
-            <div className="flex-1 hud-line" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 stagger">
-            {Object.entries(TEMPLATES).flatMap(([type, tmpls]) =>
-              tmpls.slice(0, 1).map(t => {
-                const ct = CONTENT_TYPES.find(c => c.id === type);
-                return (
-                  <button key={`${type}-${t.name}`} onClick={() => { setActiveType(type); setPrompt(t.prompt); }}
-                    className="panel-interactive rounded-lg p-4 sm:p-6 text-left group">
-                    <p className="hud-label text-[11px] mb-1.5" style={{ color: '#f97316' }}>{ct?.name}</p>
-                    <p className="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">{t.name}</p>
-                    <p className="text-xs text-gray-600 mt-1 line-clamp-1">{t.prompt}</p>
-                  </button>
-                );
-              })
+        {activeTab === 'generate' && (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 stagger">
+              {CONTENT_TYPES.map(type => (
+                <button key={type.id} onClick={() => setActiveType(type.id)}
+                  className="panel-interactive rounded-2xl p-4 sm:p-7 text-center group">
+                  <div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center transition-all duration-300 group-hover:scale-110"
+                    style={{ background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.12)' }}>
+                    <svg className="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d={type.icon} />
+                    </svg>
+                  </div>
+                  <p className="text-xs font-bold text-gray-300 group-hover:text-white transition-colors">{type.name}</p>
+                </button>
+              ))}
+            </div>
+
+            {/* Templates Preview */}
+            <div className="mt-10">
+              <div className="flex items-center gap-3 sm:gap-5 mb-4">
+                <p className="hud-label text-[11px]">POPULAR TEMPLATES</p>
+                <div className="flex-1 hud-line" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 stagger">
+                {Object.entries(TEMPLATES).flatMap(([type, tmpls]) =>
+                  tmpls.slice(0, 1).map(t => {
+                    const ct = CONTENT_TYPES.find(c => c.id === type);
+                    return (
+                      <button key={`${type}-${t.name}`} onClick={() => { setActiveType(type); setPrompt(t.prompt); }}
+                        className="panel-interactive rounded-lg p-4 sm:p-6 text-left group">
+                        <p className="hud-label text-[11px] mb-1.5" style={{ color: '#f97316' }}>{ct?.name}</p>
+                        <p className="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">{t.name}</p>
+                        <p className="text-xs text-gray-600 mt-1 line-clamp-1">{t.prompt}</p>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'history' && (
+          <div className="panel rounded-2xl overflow-hidden">
+            {history.length === 0 ? (
+              <div className="px-6 py-8 text-center text-gray-500 text-sm">No saved content yet. Generate something to see it here.</div>
+            ) : (
+              <div className="divide-y divide-indigo-500/[0.04]">
+                {history.map(item => {
+                  const ct = CONTENT_TYPES.find(c => c.id === item.type);
+                  const displayTitle = item.title || (item.content || '').slice(0, 60) || 'Untitled';
+                  return (
+                    <div key={item.id} className="flex items-center gap-4 px-6 py-4 hover:bg-white/[0.01] transition-colors group">
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(249,115,22,0.08)' }}>
+                        <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d={ct?.icon || CONTENT_TYPES[0].icon} />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-200 truncate">{displayTitle}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="hud-label text-[10px]" style={{ color: '#f97316' }}>{ct?.name || item.type}</span>
+                          <span className="text-[10px] text-gray-600">{item.created_at ? item.created_at.slice(0, 10) : ''}</span>
+                        </div>
+                      </div>
+                      <button onClick={() => deleteHistoryItem(item.id)} className="opacity-0 group-hover:opacity-100 transition-opacity chip text-[10px] text-red-400 border-red-500/20 hover:bg-red-500/10">Delete</button>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
-        </div>
+        )}
         </ModuleWrapper>
       </div>
     );

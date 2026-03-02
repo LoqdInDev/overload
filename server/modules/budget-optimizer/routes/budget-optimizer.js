@@ -66,4 +66,47 @@ router.get('/budgets/:id', (req, res) => {
   }
 });
 
+// PUT /budgets/:id - Update a budget
+router.put('/budgets/:id', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const { name, total_budget, period, status } = req.body;
+    db.prepare(
+      'UPDATE bo_budgets SET name = COALESCE(?, name), total_budget = COALESCE(?, total_budget), period = COALESCE(?, period), status = COALESCE(?, status) WHERE id = ? AND workspace_id = ?'
+    ).run(name, total_budget, period, status, req.params.id, wsId);
+    res.json(db.prepare('SELECT * FROM bo_budgets WHERE id = ?').get(req.params.id));
+  } catch (error) {
+    console.error('Error updating budget:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// DELETE /budgets/:id - Delete a budget and its allocations
+router.delete('/budgets/:id', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    db.prepare('DELETE FROM bo_allocations WHERE budget_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    db.prepare('DELETE FROM bo_budgets WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting budget:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// PUT /allocations/:id - Update an allocation
+router.put('/allocations/:id', (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const { amount, roas, status } = req.body;
+    db.prepare(
+      'UPDATE bo_allocations SET amount = COALESCE(?, amount), roas = COALESCE(?, roas), status = COALESCE(?, status), updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?'
+    ).run(amount, roas, status, req.params.id, wsId);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating allocation:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router;
