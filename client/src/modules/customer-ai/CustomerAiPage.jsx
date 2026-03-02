@@ -100,6 +100,9 @@ export default function CustomerAiPage() {
   const [output, setOutput] = useState('');
   const [selectedTool, setSelectedTool] = useState(null);
   const [toolFilter, setToolFilter] = useState('all');
+  const [copied, setCopied] = useState(false);
+  const [showEmbed, setShowEmbed] = useState(false);
+  const [customPersona, setCustomPersona] = useState(null);
 
   /* --- bots state --- */
   const [persona, setPersona] = useState(BOT_PERSONAS[0]);
@@ -276,6 +279,50 @@ export default function CustomerAiPage() {
     cancelRef.current = cancel;
   };
 
+  /* --- AI tools: copy output --- */
+  const copyOutput = () => {
+    navigator.clipboard.writeText(output);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  /* --- AI tools: apply generated content as a custom bot persona --- */
+  const applyToBot = () => {
+    if (!output || !selectedTool) return;
+    const newPersona = {
+      id: 'custom',
+      name: selectedTool.name,
+      desc: 'Custom bot from AI Tools',
+      color: MODULE_COLOR,
+      systemPrompt: output,
+      greeting: `Hi! I'm your ${selectedTool.name} bot. How can I help you?`,
+      quickReplies: ['Tell me more', 'How does this work?', 'Give me an example'],
+    };
+    setCustomPersona(newPersona);
+    setPersona(newPersona);
+    setTab('bots');
+  };
+
+  /* all personas including custom */
+  const allPersonas = customPersona ? [...BOT_PERSONAS, customPersona] : BOT_PERSONAS;
+
+  /* --- embed code snippet --- */
+  const embedCode = `<!-- Overload Chat Widget -->
+<script>
+(function() {
+  var d = document, w = d.createElement('div'), s = d.createElement('script');
+  w.id = 'overload-chat-widget';
+  d.body.appendChild(w);
+  s.src = window.location.origin + '/widget/chat.js';
+  s.defer = true;
+  s.dataset.botName = '${botName}';
+  s.dataset.persona = '${persona.id}';
+  s.dataset.color = '${persona.color}';
+  s.dataset.apiUrl = window.location.origin + '/api/chatbot/generate';
+  d.body.appendChild(s);
+})();
+</script>`;
+
   /* ─── render ──────────────────────────────────────────────────────── */
 
   const TABS = ['bots', 'tickets', 'ai-tools'];
@@ -429,7 +476,7 @@ export default function CustomerAiPage() {
             <div className="panel rounded-2xl p-4 sm:p-6">
               <p className="hud-label text-[11px] mb-3">PERSONA</p>
               <div className="space-y-1.5">
-                {BOT_PERSONAS.map((p) => (
+                {allPersonas.map((p) => (
                   <button
                     key={p.id}
                     onClick={() => setPersona(p)}
@@ -655,22 +702,126 @@ export default function CustomerAiPage() {
           {/* Generation output */}
           {(generating || output) && (
             <div className="panel rounded-2xl p-4 sm:p-7">
-              <div className="flex items-center gap-2 mb-3">
-                <div
-                  className={`w-2 h-2 rounded-full ${generating ? 'animate-pulse' : ''}`}
-                  style={{ background: generating ? MODULE_COLOR : '#4ade80' }}
-                />
-                <span
-                  className="hud-label text-[11px]"
-                  style={{ color: generating ? '#38bdf8' : '#4ade80' }}
-                >
-                  {generating ? 'GENERATING...' : 'READY'}
-                </span>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-2 h-2 rounded-full ${generating ? 'animate-pulse' : ''}`}
+                    style={{ background: generating ? MODULE_COLOR : '#4ade80' }}
+                  />
+                  <span
+                    className="hud-label text-[11px]"
+                    style={{ color: generating ? '#38bdf8' : '#4ade80' }}
+                  >
+                    {generating ? 'GENERATING...' : 'READY'}
+                  </span>
+                </div>
+
+                {/* Action buttons */}
+                {!generating && output && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={copyOutput}
+                      className="flex items-center gap-1.5 text-[10px] font-semibold px-3 py-1.5 rounded-lg border transition-all"
+                      style={{
+                        borderColor: copied ? 'rgba(74,222,128,0.3)' : 'rgba(14,165,233,0.2)',
+                        color: copied ? '#4ade80' : '#38bdf8',
+                        background: copied ? 'rgba(74,222,128,0.08)' : 'rgba(14,165,233,0.08)',
+                      }}
+                    >
+                      {copied ? (
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                      ) : (
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+                        </svg>
+                      )}
+                      {copied ? 'Copied!' : 'Copy'}
+                    </button>
+
+                    {selectedTool?.source === 'chatbot' && (
+                      <button
+                        onClick={applyToBot}
+                        className="flex items-center gap-1.5 text-[10px] font-semibold px-3 py-1.5 rounded-lg border transition-all hover:brightness-110"
+                        style={{
+                          borderColor: 'rgba(168,85,247,0.2)',
+                          color: '#c084fc',
+                          background: 'rgba(168,85,247,0.08)',
+                        }}
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 011.037-.443 48.282 48.282 0 005.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+                        </svg>
+                        Apply to Bot
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => setShowEmbed(!showEmbed)}
+                      className="flex items-center gap-1.5 text-[10px] font-semibold px-3 py-1.5 rounded-lg border transition-all hover:brightness-110"
+                      style={{
+                        borderColor: showEmbed ? 'rgba(249,115,22,0.3)' : 'rgba(249,115,22,0.2)',
+                        color: '#fb923c',
+                        background: showEmbed ? 'rgba(249,115,22,0.12)' : 'rgba(249,115,22,0.08)',
+                      }}
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+                      </svg>
+                      Embed Code
+                    </button>
+                  </div>
+                )}
               </div>
+
               <pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">
                 {output}
                 {generating && <span className="inline-block w-1.5 h-4 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}
               </pre>
+            </div>
+          )}
+
+          {/* Embed Code Panel */}
+          {showEmbed && !generating && output && (
+            <div className="panel rounded-2xl p-4 sm:p-7 border border-orange-500/10">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+                  </svg>
+                  <span className="hud-label text-[11px]" style={{ color: '#fb923c' }}>EMBED CODE</span>
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(embedCode);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="text-[10px] font-semibold px-3 py-1.5 rounded-lg border transition-all"
+                  style={{
+                    borderColor: 'rgba(249,115,22,0.2)',
+                    color: '#fb923c',
+                    background: 'rgba(249,115,22,0.08)',
+                  }}
+                >
+                  {copied ? 'Copied!' : 'Copy Snippet'}
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mb-3">
+                Paste this snippet before the closing <code className="text-orange-400/70">&lt;/body&gt;</code> tag on your website to embed the chat widget.
+              </p>
+              <pre className="text-xs text-gray-400 whitespace-pre-wrap font-mono leading-relaxed p-4 rounded-lg bg-black/20 border border-indigo-500/[0.06] overflow-x-auto">
+                {embedCode}
+              </pre>
+              <div className="mt-3 flex items-start gap-2 text-xs text-gray-500">
+                <svg className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                </svg>
+                <span>
+                  The widget connects to your Overload API. Make sure your server is running and CORS is configured for your website domain.
+                </span>
+              </div>
             </div>
           )}
         </div>
