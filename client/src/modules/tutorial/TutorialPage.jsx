@@ -16,13 +16,13 @@ const CHAPTERS = [
     steps: [
       {
         title: 'The Command Center',
-        text: 'When you log in, you land on the Command Center — your mission control. It shows a live operations feed of all AI actions, pending approvals, module status across all 40 tools, and daily KPIs. Think of it as the nervous system of your entire marketing stack.',
+        text: 'When you log in, you land on the Command Center — your mission control. It shows a live operations feed of all AI actions, pending approvals, module status across all 37 tools, and daily KPIs. Think of it as the nervous system of your entire marketing stack.',
         path: '/dashboard',
         cta: 'Open Command Center',
       },
       {
         title: 'Navigating the Sidebar',
-        text: 'The left sidebar organizes all 40 modules into categories: Create, Advertise, Analyze, Manage, Connect, Automate, and Settings. Click any module to open it. The sidebar collapses on smaller screens — use the hamburger menu to toggle it. Your 3 most-used modules appear at the top for quick access. At the top of the sidebar, you\'ll see the Workspace Switcher — use it to switch between workspaces if you manage multiple brands or clients.',
+        text: 'The left sidebar organizes all 37 modules into categories: Create, Advertise, Analyze, Manage, Connect, Automate, and Settings. Click any module to open it. The sidebar collapses on smaller screens — use the hamburger menu to toggle it. Your 3 most-used modules appear at the top for quick access. At the top of the sidebar, you\'ll see the Workspace Switcher — use it to switch between workspaces if you manage multiple brands or clients.',
       },
       {
         title: 'Dark Mode & Theme',

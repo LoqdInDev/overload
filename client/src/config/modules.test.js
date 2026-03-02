@@ -43,6 +43,7 @@ describe('MODULE_REGISTRY', () => {
     expect(ids).not.toContain('checkout-optimizer');
     expect(ids).not.toContain('profit-dashboard');
     expect(ids).not.toContain('billing');
+    expect(ids).not.toContain('scheduler');
   });
 
   it('contains the merged modules', () => {
