@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
-import ModuleWrapper from '../../components/shared/ModuleWrapper';
-
-const API_BASE = import.meta.env.VITE_API_URL || '';
+import { fetchJSON, postJSON, deleteJSON, connectSSE } from '../../lib/api';
+import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const MODULE_COLOR = '#be185d';
 
@@ -13,45 +12,88 @@ const AI_TEMPLATES = [
   { name: 'Build Media List', prompt: 'Generate a targeted media list with journalist names, outlets, beats, and personalized pitch angles for each contact' },
 ];
 
-const MOCK_RELEASES = [
-  { id: 1, title: 'Q1 Product Launch Announcement', status: 'published', date: '2026-02-15', outlet: 'PR Newswire', views: 12400 },
-  { id: 2, title: 'Strategic Partnership with TechCorp', status: 'draft', date: '2026-02-18', outlet: '--', views: 0 },
-  { id: 3, title: 'Annual Revenue Milestone Press Release', status: 'scheduled', date: '2026-02-25', outlet: 'Business Wire', views: 0 },
-  { id: 4, title: 'New VP of Marketing Appointment', status: 'published', date: '2026-02-10', outlet: 'GlobeNewswire', views: 8730 },
-  { id: 5, title: 'Sustainability Initiative Launch', status: 'review', date: '2026-02-20', outlet: 'PR Newswire', views: 0 },
-];
-
-const MOCK_CONTACTS = [
-  { id: 1, name: 'Jessica Martinez', outlet: 'TechCrunch', beat: 'Startups & Funding', email: 'jmartinez@techcrunch.com', status: 'active' },
-  { id: 2, name: 'David Chen', outlet: 'Forbes', beat: 'Enterprise Tech', email: 'dchen@forbes.com', status: 'active' },
-  { id: 3, name: 'Rachel Kim', outlet: 'The Verge', beat: 'Consumer Tech', email: 'rkim@theverge.com', status: 'pitched' },
-  { id: 4, name: 'Marcus Johnson', outlet: 'Bloomberg', beat: 'Business & Finance', email: 'mjohnson@bloomberg.com', status: 'responded' },
-  { id: 5, name: 'Sarah O\'Brien', outlet: 'Wired', beat: 'Innovation', email: 'sobrien@wired.com', status: 'active' },
-  { id: 6, name: 'Tom Nakamura', outlet: 'Reuters', beat: 'Technology', email: 'tnakamura@reuters.com', status: 'pitched' },
-];
+const RELEASE_STATUSES = ['draft', 'review', 'scheduled', 'published'];
+const RELATIONSHIP_OPTIONS = ['new', 'warm', 'active', 'pitched', 'responded'];
 
 export default function PrPressPage() {
   usePageTitle('PR & Press');
-  const [tab, setTab] = useState('overview');
+  const [tab, setTab] = useState('releases');
+  const [releases, setReleases] = useState([]);
+  const [contacts, setContacts] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [showAddRelease, setShowAddRelease] = useState(false);
+  const [showAddContact, setShowAddContact] = useState(false);
+  const [newRelease, setNewRelease] = useState({ title: '', content: '', status: 'draft', target_date: '', distribution_list: '' });
+  const [newContact, setNewContact] = useState({ name: '', outlet: '', email: '', beat: '', relationship: 'new' });
 
-  const generate = async (template) => {
-    setSelectedTemplate(template); setGenerating(true); setOutput('');
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      fetchJSON('/api/pr-press/'),
+      fetchJSON('/api/pr-press/contacts/list'),
+    ]).then(([r, c]) => {
+      setReleases(r);
+      setContacts(c);
+    }).catch(console.error).finally(() => setLoading(false));
+  }, []);
+
+  const addRelease = async () => {
+    if (!newRelease.title.trim()) return;
     try {
-      const res = await fetch(`${API_BASE}/api/pr-press/generate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'content', prompt: template.prompt }) });
-      const reader = res.body.getReader(); const decoder = new TextDecoder();
-      while (true) { const { done, value } = await reader.read(); if (done) break; const lines = decoder.decode(value, { stream: true }).split('\n').filter(l => l.startsWith('data: ')); for (const line of lines) { try { const d = JSON.parse(line.slice(6)); if (d.type === 'chunk') setOutput(p => p + d.text); else if (d.type === 'result') setOutput(d.data.content); } catch {} } }
-    } catch (e) { console.error(e); } finally { setGenerating(false); }
+      const created = await postJSON('/api/pr-press/', newRelease);
+      setReleases(prev => [created, ...prev]);
+      setNewRelease({ title: '', content: '', status: 'draft', target_date: '', distribution_list: '' });
+      setShowAddRelease(false);
+    } catch (err) { console.error(err); }
+  };
+
+  const removeRelease = async (id) => {
+    try {
+      await deleteJSON(`/api/pr-press/${id}`);
+      setReleases(prev => prev.filter(r => r.id !== id));
+    } catch (err) { console.error(err); }
+  };
+
+  const addContact = async () => {
+    if (!newContact.name.trim()) return;
+    try {
+      const created = await postJSON('/api/pr-press/contacts', newContact);
+      setContacts(prev => [created, ...prev]);
+      setNewContact({ name: '', outlet: '', email: '', beat: '', relationship: 'new' });
+      setShowAddContact(false);
+    } catch (err) { console.error(err); }
+  };
+
+  const removeContact = async (id) => {
+    try {
+      await deleteJSON(`/api/pr-press/contacts/${id}`);
+      setContacts(prev => prev.filter(c => c.id !== id));
+    } catch (err) { console.error(err); }
+  };
+
+  const generate = (template) => {
+    setSelectedTemplate(template); setGenerating(true); setOutput('');
+    connectSSE('/api/pr-press/generate', { type: 'content', prompt: template.prompt }, {
+      onChunk: (text) => setOutput(p => p + text),
+      onResult: (data) => { setOutput(data.content); setGenerating(false); },
+      onError: (err) => { console.error(err); setGenerating(false); },
+    });
   };
 
   const statusColor = (s) => s === 'published' ? '#22c55e' : s === 'draft' ? '#6b7280' : s === 'scheduled' ? '#3b82f6' : '#f59e0b';
-  const contactStatusColor = (s) => s === 'active' ? '#22c55e' : s === 'pitched' ? '#f59e0b' : '#3b82f6';
+  const relationshipColor = (s) => s === 'active' ? '#22c55e' : s === 'pitched' ? '#f59e0b' : s === 'responded' ? '#3b82f6' : s === 'warm' ? '#f97316' : '#6b7280';
+
+  // Computed stats from real data
+  const publishedReleases = releases.filter(r => r.status === 'published').length;
+  const draftReleases = releases.filter(r => r.status === 'draft').length;
+  const activeContacts = contacts.filter(c => c.relationship === 'active' || c.relationship === 'warm').length;
+  const pitchedContacts = contacts.filter(c => c.relationship === 'pitched' || c.relationship === 'responded').length;
 
   return (
     <div className="p-4 sm:p-6 lg:p-10">
-      <ModuleWrapper moduleId="pr-press">
       <div className="mb-6 sm:mb-8 animate-fade-in">
         <p className="hud-label text-[11px] mb-2" style={{ color: MODULE_COLOR }}>PR & PRESS</p>
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Public Relations Hub</h1>
@@ -61,10 +103,10 @@ export default function PrPressPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
         {[
-          { label: 'ACTIVE RELEASES', value: '12', sub: '3 published this month' },
-          { label: 'MEDIA CONTACTS', value: '284', sub: '+18 new this week' },
-          { label: 'PITCHES SENT', value: '47', sub: '68% open rate' },
-          { label: 'COVERAGE SCORE', value: '8.4', sub: '+1.2 vs last month' },
+          { label: 'TOTAL RELEASES', value: releases.length.toString(), sub: `${publishedReleases} published` },
+          { label: 'DRAFT RELEASES', value: draftReleases.toString(), sub: 'awaiting review' },
+          { label: 'MEDIA CONTACTS', value: contacts.length.toString(), sub: `${activeContacts} active` },
+          { label: 'PITCHES SENT', value: pitchedContacts.toString(), sub: 'pitched or responded' },
         ].map((s, i) => (
           <div key={i} className="panel rounded-2xl p-4 sm:p-6">
             <p className="hud-label text-[11px] mb-1">{s.label}</p>
@@ -76,84 +118,47 @@ export default function PrPressPage() {
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-1 mb-6 sm:mb-8">
-        {['overview', 'releases', 'contacts', 'ai-tools'].map(t => (
+        {['releases', 'contacts', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
             {t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1).replace('-', ' ')}
           </button>
         ))}
       </div>
 
-      {/* Overview */}
-      {tab === 'overview' && (
-        <div className="animate-fade-in space-y-4 sm:space-y-6">
-          <div className="panel rounded-2xl p-4 sm:p-6">
-            <div className="flex items-center gap-3 sm:gap-5 mb-4 sm:mb-6">
-              <p className="hud-label text-[11px]" style={{ color: MODULE_COLOR }}>RECENT ACTIVITY</p>
-              <div className="flex-1 hud-line" />
-            </div>
-            <div className="space-y-4">
-              {[
-                { text: 'Press release "Q1 Product Launch" published on PR Newswire', time: '2 hours ago' },
-                { text: 'Rachel Kim (The Verge) opened your pitch email', time: '5 hours ago' },
-                { text: 'Marcus Johnson (Bloomberg) replied to outreach', time: '1 day ago' },
-                { text: 'New media contact added: Tom Nakamura, Reuters', time: '2 days ago' },
-              ].map((a, i) => (
-                <div key={i} className="flex items-start gap-4">
-                  <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: MODULE_COLOR }} />
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-300">{a.text}</p>
-                    <p className="text-xs text-gray-600 mt-0.5">{a.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            <div className="panel rounded-2xl p-4 sm:p-6">
-              <p className="hud-label text-[11px] mb-4" style={{ color: MODULE_COLOR }}>TOP PERFORMING RELEASES</p>
-              {MOCK_RELEASES.filter(r => r.status === 'published').map(r => (
-                <div key={r.id} className="flex items-center justify-between py-3 border-b border-indigo-500/[0.04] last:border-0">
-                  <p className="text-sm text-gray-300 truncate flex-1">{r.title}</p>
-                  <span className="text-xs font-mono font-bold" style={{ color: MODULE_COLOR }}>{r.views.toLocaleString()} views</span>
-                </div>
-              ))}
-            </div>
-            <div className="panel rounded-2xl p-4 sm:p-6">
-              <p className="hud-label text-[11px] mb-4" style={{ color: MODULE_COLOR }}>PITCH PIPELINE</p>
-              <div className="space-y-3">
-                {[{ stage: 'Sent', count: 47, pct: 100 }, { stage: 'Opened', count: 32, pct: 68 }, { stage: 'Replied', count: 14, pct: 30 }, { stage: 'Published', count: 8, pct: 17 }].map((p, i) => (
-                  <div key={i}>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-400">{p.stage}</span>
-                      <span className="text-gray-500 font-mono">{p.count}</span>
-                    </div>
-                    <div className="h-1.5 bg-white/[0.03] rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${p.pct}%`, background: MODULE_COLOR }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Releases */}
       {tab === 'releases' && (
-        <div className="animate-fade-in">
+        <div className="animate-fade-in space-y-4">
+          <div className="flex justify-end">
+            <button onClick={() => setShowAddRelease(!showAddRelease)} className="chip text-[10px]" style={{ background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR }}>+ Add Release</button>
+          </div>
+          {showAddRelease && (
+            <div className="panel rounded-2xl p-4 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input value={newRelease.title} onChange={e => setNewRelease({ ...newRelease, title: e.target.value })} placeholder="Release title" className="input-field rounded px-3 py-2 text-xs" />
+                <select value={newRelease.status} onChange={e => setNewRelease({ ...newRelease, status: e.target.value })} className="input-field rounded px-3 py-2 text-xs">
+                  {RELEASE_STATUSES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                </select>
+                <input value={newRelease.target_date} onChange={e => setNewRelease({ ...newRelease, target_date: e.target.value })} type="date" placeholder="Target date" className="input-field rounded px-3 py-2 text-xs" />
+                <input value={newRelease.distribution_list} onChange={e => setNewRelease({ ...newRelease, distribution_list: e.target.value })} placeholder="Distribution list (e.g. PR Newswire)" className="input-field rounded px-3 py-2 text-xs" />
+              </div>
+              <textarea value={newRelease.content} onChange={e => setNewRelease({ ...newRelease, content: e.target.value })} placeholder="Release content (optional)" rows={3} className="w-full input-field rounded px-3 py-2 text-xs resize-none" />
+              <button onClick={addRelease} className="btn-accent px-4 py-1.5 rounded text-[10px]" style={{ background: MODULE_COLOR }}>Create Release</button>
+            </div>
+          )}
           <div className="panel rounded-2xl overflow-hidden">
             <div className="divide-y divide-indigo-500/[0.04]">
-              {MOCK_RELEASES.map(r => (
-                <div key={r.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 px-4 sm:px-6 py-3 sm:py-4 hover:bg-white/[0.01] transition-colors">
+              {releases.length === 0 && <div className="p-6 text-center text-sm text-gray-600">{loading ? 'Loading...' : 'No press releases yet'}</div>}
+              {releases.map(r => (
+                <div key={r.id} className="group flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 px-4 sm:px-6 py-3 sm:py-4 hover:bg-white/[0.01] transition-colors">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-300 truncate">{r.title}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{r.outlet} &middot; {r.date}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{r.distribution_list || 'No distribution'} &middot; {r.target_date || 'No date set'}</p>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${statusColor(r.status)}15`, color: statusColor(r.status), border: `1px solid ${statusColor(r.status)}25` }}>
                       {r.status}
                     </span>
-                    {r.views > 0 && <span className="text-xs font-mono text-gray-500">{r.views.toLocaleString()} views</span>}
+                    <button onClick={() => removeRelease(r.id)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 text-xs transition-all">&times;</button>
                   </div>
                 </div>
               ))}
@@ -164,37 +169,59 @@ export default function PrPressPage() {
 
       {/* Contacts */}
       {tab === 'contacts' && (
-        <div className="animate-fade-in">
+        <div className="animate-fade-in space-y-4">
+          <div className="flex justify-end">
+            <button onClick={() => setShowAddContact(!showAddContact)} className="chip text-[10px]" style={{ background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR }}>+ Add Contact</button>
+          </div>
+          {showAddContact && (
+            <div className="panel rounded-2xl p-4 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <input value={newContact.name} onChange={e => setNewContact({ ...newContact, name: e.target.value })} placeholder="Contact name" className="input-field rounded px-3 py-2 text-xs" />
+                <input value={newContact.outlet} onChange={e => setNewContact({ ...newContact, outlet: e.target.value })} placeholder="Outlet (e.g. TechCrunch)" className="input-field rounded px-3 py-2 text-xs" />
+                <input value={newContact.email} onChange={e => setNewContact({ ...newContact, email: e.target.value })} placeholder="Email" className="input-field rounded px-3 py-2 text-xs" />
+                <input value={newContact.beat} onChange={e => setNewContact({ ...newContact, beat: e.target.value })} placeholder="Beat (e.g. Startups)" className="input-field rounded px-3 py-2 text-xs" />
+                <select value={newContact.relationship} onChange={e => setNewContact({ ...newContact, relationship: e.target.value })} className="input-field rounded px-3 py-2 text-xs">
+                  {RELATIONSHIP_OPTIONS.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
+                </select>
+              </div>
+              <button onClick={addContact} className="btn-accent px-4 py-1.5 rounded text-[10px]" style={{ background: MODULE_COLOR }}>Add Contact</button>
+            </div>
+          )}
           <div className="panel rounded-2xl overflow-hidden">
             {/* Desktop table header */}
-            <div className="hidden md:grid grid-cols-[1fr_120px_120px_1fr_80px] gap-3 px-4 sm:px-6 py-3 border-b border-indigo-500/[0.06]">
-              {['Name', 'Outlet', 'Beat', 'Email', 'Status'].map(h => (
+            <div className="hidden md:grid grid-cols-[1fr_120px_120px_1fr_100px_30px] gap-3 px-4 sm:px-6 py-3 border-b border-indigo-500/[0.06]">
+              {['Name', 'Outlet', 'Beat', 'Email', 'Relationship', ''].map(h => (
                 <p key={h} className="text-[9px] font-bold text-gray-600 uppercase tracking-wider">{h}</p>
               ))}
             </div>
             <div className="divide-y divide-indigo-500/[0.04]">
-              {MOCK_CONTACTS.map(c => (
-                <div key={c.id} className="hover:bg-white/[0.01] transition-colors">
+              {contacts.length === 0 && <div className="p-6 text-center text-sm text-gray-600">{loading ? 'Loading...' : 'No media contacts yet'}</div>}
+              {contacts.map(c => (
+                <div key={c.id} className="group hover:bg-white/[0.01] transition-colors">
                   {/* Desktop row */}
-                  <div className="hidden md:grid grid-cols-[1fr_120px_120px_1fr_80px] gap-3 items-center px-4 sm:px-6 py-4">
+                  <div className="hidden md:grid grid-cols-[1fr_120px_120px_1fr_100px_30px] gap-3 items-center px-4 sm:px-6 py-4">
                     <p className="text-sm font-semibold text-gray-300 truncate">{c.name}</p>
-                    <p className="text-xs text-gray-400 truncate">{c.outlet}</p>
-                    <p className="text-xs text-gray-500 truncate">{c.beat}</p>
-                    <p className="text-xs text-gray-600 truncate">{c.email}</p>
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full text-center" style={{ background: `${contactStatusColor(c.status)}15`, color: contactStatusColor(c.status), border: `1px solid ${contactStatusColor(c.status)}25` }}>
-                      {c.status}
+                    <p className="text-xs text-gray-400 truncate">{c.outlet || '--'}</p>
+                    <p className="text-xs text-gray-500 truncate">{c.beat || '--'}</p>
+                    <p className="text-xs text-gray-600 truncate">{c.email || '--'}</p>
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full text-center" style={{ background: `${relationshipColor(c.relationship)}15`, color: relationshipColor(c.relationship), border: `1px solid ${relationshipColor(c.relationship)}25` }}>
+                      {c.relationship || 'new'}
                     </span>
+                    <button onClick={() => removeContact(c.id)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 text-xs transition-all">&times;</button>
                   </div>
                   {/* Mobile card */}
                   <div className="md:hidden px-4 py-3 space-y-1">
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-sm font-semibold text-gray-300 truncate">{c.name}</p>
-                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: `${contactStatusColor(c.status)}15`, color: contactStatusColor(c.status), border: `1px solid ${contactStatusColor(c.status)}25` }}>
-                        {c.status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: `${relationshipColor(c.relationship)}15`, color: relationshipColor(c.relationship), border: `1px solid ${relationshipColor(c.relationship)}25` }}>
+                          {c.relationship || 'new'}
+                        </span>
+                        <button onClick={() => removeContact(c.id)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 text-xs transition-all">&times;</button>
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-400">{c.outlet} &middot; {c.beat}</p>
-                    <p className="text-xs text-gray-600 truncate">{c.email}</p>
+                    <p className="text-xs text-gray-400">{c.outlet || '--'} &middot; {c.beat || '--'}</p>
+                    <p className="text-xs text-gray-600 truncate">{c.email || '--'}</p>
                   </div>
                 </div>
               ))}
@@ -225,7 +252,7 @@ export default function PrPressPage() {
           )}
         </div>
       )}
-      </ModuleWrapper>
+      <AIInsightsPanel moduleId="pr-press" />
     </div>
   );
 }

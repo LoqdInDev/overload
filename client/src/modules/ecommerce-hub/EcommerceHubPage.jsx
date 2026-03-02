@@ -1,41 +1,189 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import { fetchJSON, postJSON, deleteJSON, connectSSE } from '../../lib/api';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const MODULE_COLOR = '#8b5cf6';
 
-const MOCK_STORES = [
-  { id: 1, name: 'Main Shopify Store', platform: 'Shopify', status: 'connected', products: 248, orders: 1420, revenue: '$124,500', sync: '2 min ago' },
-  { id: 2, name: 'WooCommerce Site', platform: 'WooCommerce', status: 'connected', products: 86, orders: 340, revenue: '$28,900', sync: '15 min ago' },
-  { id: 3, name: 'Amazon Seller', platform: 'Amazon', status: 'connected', products: 42, orders: 890, revenue: '$67,200', sync: '5 min ago' },
-  { id: 4, name: 'Etsy Storefront', platform: 'Etsy', status: 'disconnected', products: 34, orders: 0, revenue: '$0', sync: 'Not synced' },
+const AI_TEMPLATES = [
+  { name: 'Product Descriptions', prompt: 'Write compelling, SEO-optimized product descriptions for an e-commerce store. Include persuasive copy, key features, and benefit-driven language that drives conversions.' },
+  { name: 'Pricing Strategy', prompt: 'Analyze pricing strategies for an e-commerce business. Cover competitive pricing, psychological pricing tactics, bundle pricing, and margin optimization recommendations.' },
+  { name: 'Order Analysis', prompt: 'Analyze order patterns and customer purchasing behavior. Identify trends in order frequency, average order value, top-selling products, and seasonal patterns with actionable insights.' },
+  { name: 'Marketing Copy', prompt: 'Generate high-converting marketing copy for e-commerce campaigns. Include email subject lines, ad headlines, social media captions, and promotional banner text.' },
 ];
 
-const MOCK_ORDERS = [
-  { id: 'ORD-4821', customer: 'Emily Davis', total: 149.99, items: 3, status: 'fulfilled', store: 'Shopify', date: '2026-02-19' },
-  { id: 'ORD-4820', customer: 'Michael Brown', total: 89.50, items: 1, status: 'processing', store: 'Shopify', date: '2026-02-19' },
-  { id: 'ORD-4819', customer: 'Sarah Johnson', total: 234.00, items: 5, status: 'shipped', store: 'Amazon', date: '2026-02-18' },
-  { id: 'ORD-4818', customer: 'James Wilson', total: 45.99, items: 2, status: 'fulfilled', store: 'WooCommerce', date: '2026-02-18' },
-  { id: 'ORD-4817', customer: 'Olivia Martinez', total: 312.50, items: 4, status: 'processing', store: 'Shopify', date: '2026-02-18' },
-  { id: 'ORD-4816', customer: 'Daniel Lee', total: 67.00, items: 1, status: 'refunded', store: 'Amazon', date: '2026-02-17' },
-  { id: 'ORD-4815', customer: 'Sophia Clark', total: 198.75, items: 3, status: 'shipped', store: 'Shopify', date: '2026-02-17' },
-];
-
-const MOCK_PRODUCTS = [
-  { id: 1, name: 'Premium Wireless Headphones', sku: 'WH-PRO-001', price: 149.99, stock: 284, sold: 1240, store: 'Shopify' },
-  { id: 2, name: 'Organic Cotton T-Shirt', sku: 'OCT-BLK-M', price: 34.99, stock: 520, sold: 3420, store: 'Shopify' },
-  { id: 3, name: 'Smart Home Hub', sku: 'SH-HUB-V2', price: 89.99, stock: 42, sold: 890, store: 'Amazon' },
-  { id: 4, name: 'Leather Laptop Sleeve', sku: 'LLS-13-BR', price: 59.99, stock: 168, sold: 756, store: 'WooCommerce' },
-  { id: 5, name: 'Stainless Steel Water Bottle', sku: 'WB-SS-32', price: 24.99, stock: 890, sold: 4200, store: 'Amazon' },
-  { id: 6, name: 'Bamboo Phone Stand', sku: 'BPS-NAT-01', price: 19.99, stock: 15, sold: 1890, store: 'Shopify' },
-];
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
 
 export default function EcommerceHubPage() {
   usePageTitle('E-commerce Hub');
-  const [tab, setTab] = useState('overview');
+  const [tab, setTab] = useState('stores');
+  const [generating, setGenerating] = useState(false);
+  const [output, setOutput] = useState('');
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
 
-  const orderStatusColor = (s) => s === 'fulfilled' ? '#22c55e' : s === 'shipped' ? '#3b82f6' : s === 'processing' ? '#f59e0b' : '#ef4444';
-  const platformColor = (p) => p === 'Shopify' ? '#95bf47' : p === 'WooCommerce' ? '#9b5c8f' : p === 'Amazon' ? '#ff9900' : '#f2581e';
+  const [stores, setStores] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Create store form state
+  const [newStoreName, setNewStoreName] = useState('');
+  const [newStorePlatform, setNewStorePlatform] = useState('');
+  const [newStoreUrl, setNewStoreUrl] = useState('');
+  const [creatingStore, setCreatingStore] = useState(false);
+
+  // Create order form state
+  const [newOrderNumber, setNewOrderNumber] = useState('');
+  const [newOrderCustomer, setNewOrderCustomer] = useState('');
+  const [newOrderTotal, setNewOrderTotal] = useState('');
+  const [newOrderStatus, setNewOrderStatus] = useState('pending');
+  const [newOrderStoreId, setNewOrderStoreId] = useState('');
+  const [newOrderPlatform, setNewOrderPlatform] = useState('');
+  const [creatingOrder, setCreatingOrder] = useState(false);
+
+  // Create product form state
+  const [newProductName, setNewProductName] = useState('');
+  const [newProductSku, setNewProductSku] = useState('');
+  const [newProductPrice, setNewProductPrice] = useState('');
+  const [newProductStock, setNewProductStock] = useState('');
+  const [newProductStoreId, setNewProductStoreId] = useState('');
+  const [creatingProduct, setCreatingProduct] = useState(false);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [storesRes, ordersRes, productsRes] = await Promise.all([
+        fetchJSON('/api/ecommerce-hub/'),
+        fetchJSON('/api/ecommerce-hub/orders/list'),
+        fetchJSON('/api/ecommerce-hub/products/list'),
+      ]);
+      setStores(Array.isArray(storesRes) ? storesRes : []);
+      setOrders(Array.isArray(ordersRes) ? ordersRes : []);
+      setProducts(Array.isArray(productsRes) ? productsRes : []);
+    } catch (e) {
+      console.error('Failed to load ecommerce hub data:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const orderStatusColor = (s) => s === 'fulfilled' ? '#22c55e' : s === 'shipped' ? '#3b82f6' : s === 'processing' ? '#f59e0b' : s === 'pending' ? '#f59e0b' : '#ef4444';
+  const platformColor = (p) => {
+    const lp = (p || '').toLowerCase();
+    return lp === 'shopify' ? '#95bf47' : lp === 'woocommerce' ? '#9b5c8f' : lp === 'amazon' ? '#ff9900' : lp === 'etsy' ? '#f2581e' : MODULE_COLOR;
+  };
+
+  // Compute stats from real data
+  const connectedStores = stores.filter(s => s.status === 'connected').length;
+  const disconnectedStores = stores.filter(s => s.status !== 'connected').length;
+  const totalOrders = orders.length;
+  const totalRevenue = orders.reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
+  const formatRevenue = (val) => {
+    if (val >= 1000000) return `$${(val / 1000000).toFixed(1)}M`;
+    if (val >= 1000) return `$${(val / 1000).toFixed(1)}K`;
+    return `$${val.toFixed(2)}`;
+  };
+  const topProduct = products.length > 0
+    ? [...products].sort((a, b) => (b.stock || 0) - (a.stock || 0))[0]
+    : null;
+  const lowStockProducts = products.filter(p => p.stock < 50);
+
+  // Revenue per store
+  const revenueByStoreId = {};
+  orders.forEach(o => {
+    if (o.store_id) {
+      revenueByStoreId[o.store_id] = (revenueByStoreId[o.store_id] || 0) + (parseFloat(o.total) || 0);
+    }
+  });
+
+  const handleCreateStore = async (e) => {
+    e.preventDefault();
+    setCreatingStore(true);
+    try {
+      await postJSON('/api/ecommerce-hub/', {
+        store_name: newStoreName,
+        platform: newStorePlatform || null,
+        store_url: newStoreUrl || null,
+      });
+      setNewStoreName(''); setNewStorePlatform(''); setNewStoreUrl('');
+      await loadData();
+    } catch (err) { console.error('Failed to create store:', err); }
+    finally { setCreatingStore(false); }
+  };
+
+  const removeStore = async (id) => {
+    try {
+      await deleteJSON(`/api/ecommerce-hub/${id}`);
+      setStores(prev => prev.filter(s => s.id !== id));
+      setOrders(prev => prev.filter(o => o.store_id !== id));
+      setProducts(prev => prev.filter(p => p.store_id !== id));
+    } catch (err) { console.error(err); }
+  };
+
+  const handleCreateOrder = async (e) => {
+    e.preventDefault();
+    setCreatingOrder(true);
+    try {
+      await postJSON('/api/ecommerce-hub/orders', {
+        store_id: newOrderStoreId ? parseInt(newOrderStoreId) : null,
+        order_number: newOrderNumber || null,
+        customer: newOrderCustomer || null,
+        total: parseFloat(newOrderTotal) || 0,
+        status: newOrderStatus,
+        platform: newOrderPlatform || null,
+      });
+      setNewOrderNumber(''); setNewOrderCustomer(''); setNewOrderTotal('');
+      setNewOrderStatus('pending'); setNewOrderStoreId(''); setNewOrderPlatform('');
+      await loadData();
+    } catch (err) { console.error('Failed to create order:', err); }
+    finally { setCreatingOrder(false); }
+  };
+
+  const handleCreateProduct = async (e) => {
+    e.preventDefault();
+    setCreatingProduct(true);
+    try {
+      await postJSON('/api/ecommerce-hub/products', {
+        store_id: newProductStoreId ? parseInt(newProductStoreId) : null,
+        name: newProductName,
+        sku: newProductSku || null,
+        price: parseFloat(newProductPrice) || 0,
+        stock: parseInt(newProductStock) || 0,
+      });
+      setNewProductName(''); setNewProductSku(''); setNewProductPrice('');
+      setNewProductStock(''); setNewProductStoreId('');
+      await loadData();
+    } catch (err) { console.error('Failed to create product:', err); }
+    finally { setCreatingProduct(false); }
+  };
+
+  const generate = (template) => {
+    setSelectedTemplate(template); setGenerating(true); setOutput('');
+    connectSSE('/api/ecommerce-hub/generate', { type: 'content', prompt: template.prompt }, {
+      onChunk: (text) => setOutput(p => p + text),
+      onResult: (data) => { setOutput(data.content); setGenerating(false); },
+      onError: (err) => { console.error(err); setGenerating(false); },
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-12">
+        <div className="mb-6 sm:mb-8 animate-fade-in">
+          <p className="hud-label text-[11px] mb-2" style={{ color: MODULE_COLOR }}>ECOMMERCE HUB</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">E-Commerce Command Center</h1>
+          <p className="text-base text-gray-500">Manage all your stores, orders, and products in one place</p>
+        </div>
+        <div className="flex items-center justify-center py-20"><div className="w-6 h-6 border-2 border-violet-500/30 border-t-violet-400 rounded-full animate-spin" /></div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-12">
@@ -48,10 +196,10 @@ export default function EcommerceHubPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
         {[
-          { label: 'CONNECTED STORES', value: '3', sub: '1 disconnected' },
-          { label: 'TOTAL ORDERS', value: '2,650', sub: '+142 this week' },
-          { label: 'REVENUE', value: '$220.6K', sub: '+18.3% this month' },
-          { label: 'TOP PRODUCT', value: 'Water Bottle', sub: '4,200 units sold' },
+          { label: 'CONNECTED STORES', value: String(connectedStores), sub: disconnectedStores > 0 ? `${disconnectedStores} disconnected` : 'All connected' },
+          { label: 'TOTAL ORDERS', value: String(totalOrders), sub: `${orders.filter(o => o.status === 'pending' || o.status === 'processing').length} pending` },
+          { label: 'REVENUE', value: formatRevenue(totalRevenue), sub: `from ${totalOrders} orders` },
+          { label: 'PRODUCTS', value: String(products.length), sub: lowStockProducts.length > 0 ? `${lowStockProducts.length} low stock` : 'All stocked' },
         ].map((s, i) => (
           <div key={i} className="panel rounded-2xl p-4 sm:p-6">
             <p className="hud-label text-[11px] mb-1">{s.label}</p>
@@ -63,50 +211,202 @@ export default function EcommerceHubPage() {
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-1 mb-6 sm:mb-8">
-        {['overview', 'stores', 'orders', 'products'].map(t => (
+        {['stores', 'products', 'orders', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
-            {t.charAt(0).toUpperCase() + t.slice(1)}
+            {t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
         ))}
       </div>
 
-      {/* Overview */}
-      {tab === 'overview' && (
-        <div className="animate-fade-in space-y-4 sm:space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            <div className="panel rounded-2xl p-4 sm:p-6">
-              <p className="hud-label text-[11px] mb-4" style={{ color: MODULE_COLOR }}>REVENUE BY STORE</p>
-              <div className="space-y-4">
-                {MOCK_STORES.filter(s => s.status === 'connected').map(store => {
-                  const rev = parseFloat(store.revenue.replace(/[$,]/g, ''));
-                  const total = 220600;
-                  const pct = ((rev / total) * 100).toFixed(0);
-                  return (
-                    <div key={store.id}>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="font-semibold" style={{ color: platformColor(store.platform) }}>{store.platform}</span>
-                        <span className="text-gray-500 font-mono">{store.revenue} ({pct}%)</span>
+      {/* Stores */}
+      {tab === 'stores' && (
+        <div className="animate-fade-in space-y-4">
+          {/* Create Store Form */}
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>ADD STORE</p>
+            <form onSubmit={handleCreateStore} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <input type="text" placeholder="Store name" value={newStoreName} onChange={e => setNewStoreName(e.target.value)} required className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
+              <input type="text" placeholder="Platform (e.g. Shopify)" value={newStorePlatform} onChange={e => setNewStorePlatform(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
+              <input type="url" placeholder="Store URL (optional)" value={newStoreUrl} onChange={e => setNewStoreUrl(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
+              <div className="sm:col-span-3">
+                <button type="submit" disabled={creatingStore} className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors" style={{ background: creatingStore ? 'rgba(139,92,246,0.3)' : 'rgba(139,92,246,0.6)' }}>
+                  {creatingStore ? 'Adding...' : 'Add Store'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Stores List */}
+          {stores.length === 0 ? (
+            <div className="panel rounded-2xl p-8 text-center"><p className="text-gray-500 text-sm">No stores yet. Add one above to get started.</p></div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
+              {stores.map(store => {
+                const storeRevenue = revenueByStoreId[store.id] || 0;
+                const storeOrders = orders.filter(o => o.store_id === store.id).length;
+                const storeProducts = products.filter(p => p.store_id === store.id).length;
+                return (
+                  <div key={store.id} className="group panel rounded-2xl p-4 sm:p-6 hover:border-violet-500/20 transition-all">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ background: store.status === 'connected' ? '#22c55e' : '#ef4444' }} />
+                          <p className="text-base font-bold text-gray-200">{store.store_name}</p>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5 ml-5.5">
+                          {store.platform || 'No platform'} &middot; {store.last_sync ? `Last sync: ${formatDate(store.last_sync)}` : 'Not synced'}
+                        </p>
                       </div>
-                      <div className="h-2 bg-white/[0.03] rounded-full overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: platformColor(store.platform) }} />
+                      <div className="flex items-center gap-2">
+                        {store.platform && (
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${platformColor(store.platform)}15`, color: platformColor(store.platform), border: `1px solid ${platformColor(store.platform)}25` }}>
+                            {store.platform}
+                          </span>
+                        )}
+                        <button onClick={() => removeStore(store.id)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 text-xs transition-all">&times;</button>
                       </div>
                     </div>
-                  );
-                })}
+                    <div className="grid grid-cols-3 gap-3 sm:gap-5 text-center">
+                      <div>
+                        <p className="text-xl font-bold font-mono text-white">{storeProducts}</p>
+                        <p className="text-xs text-gray-500">Products</p>
+                      </div>
+                      <div>
+                        <p className="text-xl font-bold font-mono text-white">{storeOrders.toLocaleString()}</p>
+                        <p className="text-xs text-gray-500">Orders</p>
+                      </div>
+                      <div>
+                        <p className="text-xl font-bold font-mono" style={{ color: MODULE_COLOR }}>{formatRevenue(storeRevenue)}</p>
+                        <p className="text-xs text-gray-500">Revenue</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Products */}
+      {tab === 'products' && (
+        <div className="animate-fade-in space-y-4">
+          {/* Create Product Form */}
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>ADD PRODUCT</p>
+            <form onSubmit={handleCreateProduct} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              <input type="text" placeholder="Product name" value={newProductName} onChange={e => setNewProductName(e.target.value)} required className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
+              <input type="text" placeholder="SKU" value={newProductSku} onChange={e => setNewProductSku(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
+              <input type="number" step="0.01" placeholder="Price" value={newProductPrice} onChange={e => setNewProductPrice(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
+              <input type="number" placeholder="Stock qty" value={newProductStock} onChange={e => setNewProductStock(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
+              <select value={newProductStoreId} onChange={e => setNewProductStoreId(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 focus:outline-none focus:border-violet-500/30">
+                <option value="">No store</option>
+                {stores.map(s => <option key={s.id} value={s.id}>{s.store_name}</option>)}
+              </select>
+              <div className="sm:col-span-2 lg:col-span-5">
+                <button type="submit" disabled={creatingProduct} className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors" style={{ background: creatingProduct ? 'rgba(139,92,246,0.3)' : 'rgba(139,92,246,0.6)' }}>
+                  {creatingProduct ? 'Adding...' : 'Add Product'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Low Stock Alerts */}
+          {lowStockProducts.length > 0 && (
+            <div className="panel rounded-2xl p-4 sm:p-6">
+              <p className="hud-label text-[11px] mb-4" style={{ color: '#ef4444' }}>LOW STOCK ALERTS</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {lowStockProducts.map(p => (
+                  <div key={p.id} className="bg-red-500/[0.05] rounded-lg p-5 border border-red-500/10">
+                    <p className="text-sm font-semibold text-gray-300">{p.name}</p>
+                    <p className="text-xs text-gray-500">{p.sku || '—'}{p.store_name ? ` · ${p.store_name}` : ''}</p>
+                    <p className="text-base font-bold font-mono text-red-400 mt-1">{p.stock} left</p>
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="panel rounded-2xl p-4 sm:p-6">
-              <p className="hud-label text-[11px] mb-4" style={{ color: MODULE_COLOR }}>RECENT ORDERS</p>
-              <div className="space-y-3">
-                {MOCK_ORDERS.slice(0, 5).map(o => (
-                  <div key={o.id} className="flex items-center justify-between py-1.5 border-b border-indigo-500/[0.04] last:border-0">
-                    <div>
-                      <p className="text-sm text-gray-300">{o.id}</p>
-                      <p className="text-xs text-gray-600">{o.customer}</p>
+          )}
+
+          {/* Products List */}
+          {products.length === 0 ? (
+            <div className="panel rounded-2xl p-8 text-center"><p className="text-gray-500 text-sm">No products yet. Add one above to get started.</p></div>
+          ) : (
+            <div className="panel rounded-2xl overflow-hidden">
+              <div className="divide-y divide-indigo-500/[0.04]">
+                {products.map(p => (
+                  <div key={p.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 px-4 sm:px-6 py-4 hover:bg-white/[0.01] transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-300">{p.name}</p>
+                      <p className="text-xs text-gray-500">{p.sku || '—'}{p.store_name ? ` · ${p.store_name}` : ''}</p>
+                    </div>
+                    <div className="flex items-center gap-4 sm:gap-6">
+                      <span className="text-sm font-mono font-bold text-white">${(p.price || 0).toFixed(2)}</span>
+                      <div className="text-right">
+                        <p className="text-sm font-mono" style={{ color: p.stock < 50 ? '#ef4444' : '#22c55e' }}>{p.stock ?? 0}</p>
+                        <p className="text-[10px] text-gray-600">in stock</p>
+                      </div>
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: p.status === 'active' ? 'rgba(34,197,94,0.1)' : 'rgba(156,163,175,0.1)', color: p.status === 'active' ? '#22c55e' : '#9ca3af', border: `1px solid ${p.status === 'active' ? 'rgba(34,197,94,0.2)' : 'rgba(156,163,175,0.2)'}` }}>
+                        {p.status || 'active'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Orders */}
+      {tab === 'orders' && (
+        <div className="animate-fade-in space-y-4">
+          {/* Create Order Form */}
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>ADD ORDER</p>
+            <form onSubmit={handleCreateOrder} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <input type="text" placeholder="Order number" value={newOrderNumber} onChange={e => setNewOrderNumber(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
+              <input type="text" placeholder="Customer name" value={newOrderCustomer} onChange={e => setNewOrderCustomer(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
+              <input type="number" step="0.01" placeholder="Total ($)" value={newOrderTotal} onChange={e => setNewOrderTotal(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
+              <select value={newOrderStatus} onChange={e => setNewOrderStatus(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 focus:outline-none focus:border-violet-500/30">
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="shipped">Shipped</option>
+                <option value="fulfilled">Fulfilled</option>
+                <option value="refunded">Refunded</option>
+              </select>
+              <select value={newOrderStoreId} onChange={e => setNewOrderStoreId(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 focus:outline-none focus:border-violet-500/30">
+                <option value="">No store</option>
+                {stores.map(s => <option key={s.id} value={s.id}>{s.store_name}</option>)}
+              </select>
+              <input type="text" placeholder="Platform (optional)" value={newOrderPlatform} onChange={e => setNewOrderPlatform(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
+              <div className="sm:col-span-2 lg:col-span-3">
+                <button type="submit" disabled={creatingOrder} className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors" style={{ background: creatingOrder ? 'rgba(139,92,246,0.3)' : 'rgba(139,92,246,0.6)' }}>
+                  {creatingOrder ? 'Adding...' : 'Add Order'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Orders List */}
+          {orders.length === 0 ? (
+            <div className="panel rounded-2xl p-8 text-center"><p className="text-gray-500 text-sm">No orders yet. Add one above to get started.</p></div>
+          ) : (
+            <div className="panel rounded-2xl overflow-hidden">
+              <div className="divide-y divide-indigo-500/[0.04]">
+                {orders.map(o => (
+                  <div key={o.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 px-4 sm:px-6 py-4 hover:bg-white/[0.01] transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3">
+                        <p className="text-sm font-semibold text-gray-300">{o.order_number || `#${o.id}`}</p>
+                        {(o.platform || o.store_name) && (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/[0.03] text-gray-500 border border-white/[0.04]">{o.store_name || o.platform}</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">{o.customer || '—'} &middot; {formatDate(o.created_at)}</p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-mono font-bold text-gray-200">${o.total.toFixed(2)}</span>
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${orderStatusColor(o.status)}15`, color: orderStatusColor(o.status) }}>
+                      <span className="text-sm font-mono font-bold text-white">${(parseFloat(o.total) || 0).toFixed(2)}</span>
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${orderStatusColor(o.status)}15`, color: orderStatusColor(o.status), border: `1px solid ${orderStatusColor(o.status)}25` }}>
                         {o.status}
                       </span>
                     </div>
@@ -114,111 +414,30 @@ export default function EcommerceHubPage() {
                 ))}
               </div>
             </div>
-          </div>
-          <div className="panel rounded-2xl p-4 sm:p-6">
-            <p className="hud-label text-[11px] mb-4" style={{ color: MODULE_COLOR }}>LOW STOCK ALERTS</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {MOCK_PRODUCTS.filter(p => p.stock < 50).map(p => (
-                <div key={p.id} className="bg-red-500/[0.05] rounded-lg p-5 border border-red-500/10">
-                  <p className="text-sm font-semibold text-gray-300">{p.name}</p>
-                  <p className="text-xs text-gray-500">{p.sku}</p>
-                  <p className="text-base font-bold font-mono text-red-400 mt-1">{p.stock} left</p>
-                </div>
-              ))}
-            </div>
-          </div>
+          )}
         </div>
       )}
 
-      {/* Stores */}
-      {tab === 'stores' && (
-        <div className="animate-fade-in grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
-          {MOCK_STORES.map(store => (
-            <div key={store.id} className="panel rounded-2xl p-4 sm:p-6 hover:border-violet-500/20 transition-all cursor-pointer">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: store.status === 'connected' ? '#22c55e' : '#ef4444' }} />
-                    <p className="text-base font-bold text-gray-200">{store.name}</p>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-0.5 ml-5.5">{store.platform} &middot; Last sync: {store.sync}</p>
-                </div>
-                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${platformColor(store.platform)}15`, color: platformColor(store.platform), border: `1px solid ${platformColor(store.platform)}25` }}>
-                  {store.platform}
-                </span>
+      {/* AI Tools */}
+      {tab === 'ai-tools' && (
+        <div className="space-y-4 sm:space-y-6 animate-fade-in">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {AI_TEMPLATES.map(t => (
+              <button key={t.name} onClick={() => generate(t)} disabled={generating} className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === t.name ? 'border-violet-500/20' : ''}`}>
+                <p className="text-sm font-bold text-gray-300">{t.name}</p>
+                <p className="text-xs text-gray-600 mt-1 line-clamp-2">{t.prompt}</p>
+              </button>
+            ))}
+          </div>
+          {(generating || output) && (
+            <div className="panel rounded-2xl p-4 sm:p-7">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`w-2 h-2 rounded-full ${generating ? 'bg-violet-400 animate-pulse' : 'bg-violet-400'}`} />
+                <span className="hud-label text-[11px]" style={{ color: MODULE_COLOR }}>{generating ? 'GENERATING...' : 'READY'}</span>
               </div>
-              <div className="grid grid-cols-3 gap-3 sm:gap-5 text-center">
-                <div>
-                  <p className="text-xl font-bold font-mono text-white">{store.products}</p>
-                  <p className="text-xs text-gray-500">Products</p>
-                </div>
-                <div>
-                  <p className="text-xl font-bold font-mono text-white">{store.orders.toLocaleString()}</p>
-                  <p className="text-xs text-gray-500">Orders</p>
-                </div>
-                <div>
-                  <p className="text-xl font-bold font-mono" style={{ color: MODULE_COLOR }}>{store.revenue}</p>
-                  <p className="text-xs text-gray-500">Revenue</p>
-                </div>
-              </div>
+              <pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-violet-400 ml-0.5 animate-pulse" />}</pre>
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Orders */}
-      {tab === 'orders' && (
-        <div className="animate-fade-in">
-          <div className="panel rounded-2xl overflow-hidden">
-            <div className="divide-y divide-indigo-500/[0.04]">
-              {MOCK_ORDERS.map(o => (
-                <div key={o.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 px-4 sm:px-6 py-4 hover:bg-white/[0.01] transition-colors">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3">
-                      <p className="text-sm font-semibold text-gray-300">{o.id}</p>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/[0.03] text-gray-500 border border-white/[0.04]">{o.store}</span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-0.5">{o.customer} &middot; {o.items} item{o.items > 1 ? 's' : ''} &middot; {o.date}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-mono font-bold text-white">${o.total.toFixed(2)}</span>
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${orderStatusColor(o.status)}15`, color: orderStatusColor(o.status), border: `1px solid ${orderStatusColor(o.status)}25` }}>
-                      {o.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Products */}
-      {tab === 'products' && (
-        <div className="animate-fade-in">
-          <div className="panel rounded-2xl overflow-hidden">
-            <div className="divide-y divide-indigo-500/[0.04]">
-              {MOCK_PRODUCTS.map(p => (
-                <div key={p.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 px-4 sm:px-6 py-4 hover:bg-white/[0.01] transition-colors">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-300">{p.name}</p>
-                    <p className="text-xs text-gray-500">{p.sku} &middot; {p.store}</p>
-                  </div>
-                  <div className="flex items-center gap-4 sm:gap-6">
-                    <span className="text-sm font-mono font-bold text-white">${p.price.toFixed(2)}</span>
-                    <div className="text-right">
-                      <p className="text-sm font-mono" style={{ color: p.stock < 50 ? '#ef4444' : '#22c55e' }}>{p.stock}</p>
-                      <p className="text-[10px] text-gray-600">in stock</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-mono" style={{ color: MODULE_COLOR }}>{p.sold.toLocaleString()}</p>
-                      <p className="text-[10px] text-gray-600">sold</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          )}
         </div>
       )}
       <AIInsightsPanel moduleId="ecommerce-hub" />

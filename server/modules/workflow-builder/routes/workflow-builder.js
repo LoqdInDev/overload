@@ -83,6 +83,30 @@ router.get('/workflows/:id', (req, res) => {
   }
 });
 
+// Delete a workflow
+router.delete('/workflows/:id', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const workflow = db.prepare('SELECT * FROM wf_workflows WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!workflow) {
+      return res.status(404).json({ error: 'Workflow not found' });
+    }
+
+    const deleteWorkflow = db.transaction(() => {
+      db.prepare('DELETE FROM wf_runs WHERE workflow_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+      db.prepare('DELETE FROM wf_steps WHERE workflow_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+      db.prepare('DELETE FROM wf_workflows WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    });
+    deleteWorkflow();
+
+    logActivity('workflow-builder', 'delete', `Deleted workflow: ${workflow.name}`, 'Workflow', null, wsId);
+    res.json({ success: true, deleted: workflow });
+  } catch (error) {
+    console.error('Error deleting workflow:', error);
+    res.status(500).json({ error: 'Failed to delete workflow' });
+  }
+});
+
 // Run a workflow
 router.post('/workflows/:id/run', async (req, res) => {
   try {

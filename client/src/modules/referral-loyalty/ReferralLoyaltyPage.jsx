@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import { fetchJSON, postJSON, deleteJSON, connectSSE } from '../../lib/api';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
-
-const API_BASE = import.meta.env.VITE_API_URL || '';
 
 const MODULE_COLOR = '#e11d48';
 
@@ -13,40 +12,90 @@ const AI_TEMPLATES = [
   { name: 'Create Rewards Strategy', prompt: 'Develop a comprehensive rewards strategy including point values, redemption options, bonus events calendar, and gamification elements' },
 ];
 
-const MOCK_PROGRAMS = [
-  { id: 1, name: 'Points Rewards Program', type: 'Points', members: 4280, status: 'active', pointsIssued: '1.2M', redemptionRate: '34%' },
-  { id: 2, name: 'Refer-a-Friend', type: 'Referral', members: 1890, status: 'active', referrals: 342, conversion: '28%' },
-  { id: 3, name: 'VIP Club', type: 'Tiered', members: 820, status: 'active', tiers: 4, avgSpend: '$245' },
-  { id: 4, name: 'Birthday Rewards', type: 'Event', members: 3150, status: 'paused', redemptions: 189, revenue: '$14.2K' },
-];
-
-const MOCK_MEMBERS = [
-  { id: 1, name: 'Emily Rodriguez', email: 'emily@example.com', tier: 'Platinum', points: 14500, referrals: 12, joined: '2025-03-15' },
-  { id: 2, name: 'Alex Thompson', email: 'alex@example.com', tier: 'Gold', points: 8200, referrals: 7, joined: '2025-06-22' },
-  { id: 3, name: 'Jordan Lee', email: 'jordan@example.com', tier: 'Gold', points: 6800, referrals: 4, joined: '2025-08-10' },
-  { id: 4, name: 'Samantha Clark', email: 'sam@example.com', tier: 'Silver', points: 3400, referrals: 2, joined: '2025-11-05' },
-  { id: 5, name: 'Marcus White', email: 'marcus@example.com', tier: 'Silver', points: 2100, referrals: 1, joined: '2025-12-18' },
-  { id: 6, name: 'Olivia Brown', email: 'olivia@example.com', tier: 'Bronze', points: 850, referrals: 0, joined: '2026-01-22' },
-  { id: 7, name: 'Daniel Nguyen', email: 'daniel@example.com', tier: 'Platinum', points: 18200, referrals: 15, joined: '2025-01-08' },
-];
-
 const TIER_COLORS = { Platinum: '#a78bfa', Gold: '#f59e0b', Silver: '#9ca3af', Bronze: '#d97706' };
 
 export default function ReferralLoyaltyPage() {
   usePageTitle('Referral & Loyalty');
-  const [tab, setTab] = useState('overview');
+  const [tab, setTab] = useState('programs');
+  const [programs, setPrograms] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [showAddProgram, setShowAddProgram] = useState(false);
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [newProgram, setNewProgram] = useState({ name: '', type: '', reward_type: '', reward_value: '', rules: '' });
+  const [newMember, setNewMember] = useState({ program_id: '', customer_name: '', email: '', tier: '', points: '', referrals: '' });
 
-  const generate = async (template) => {
-    setSelectedTemplate(template); setGenerating(true); setOutput('');
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      fetchJSON('/api/referral-loyalty'),
+      fetchJSON('/api/referral-loyalty/members/list'),
+    ]).then(([p, m]) => {
+      setPrograms(p);
+      setMembers(m);
+    }).catch(console.error).finally(() => setLoading(false));
+  }, []);
+
+  const addProgram = async () => {
+    if (!newProgram.name.trim()) return;
     try {
-      const res = await fetch(`${API_BASE}/api/referral-loyalty/generate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'content', prompt: template.prompt }) });
-      const reader = res.body.getReader(); const decoder = new TextDecoder();
-      while (true) { const { done, value } = await reader.read(); if (done) break; const lines = decoder.decode(value, { stream: true }).split('\n').filter(l => l.startsWith('data: ')); for (const line of lines) { try { const d = JSON.parse(line.slice(6)); if (d.type === 'chunk') setOutput(p => p + d.text); else if (d.type === 'result') setOutput(d.data.content); } catch {} } }
-    } catch (e) { console.error(e); } finally { setGenerating(false); }
+      const created = await postJSON('/api/referral-loyalty', {
+        name: newProgram.name,
+        type: newProgram.type || null,
+        reward_type: newProgram.reward_type || null,
+        reward_value: newProgram.reward_value || null,
+        rules: newProgram.rules || null,
+        status: 'active',
+      });
+      setPrograms(prev => [created, ...prev]);
+      setNewProgram({ name: '', type: '', reward_type: '', reward_value: '', rules: '' });
+      setShowAddProgram(false);
+    } catch (err) { console.error(err); }
   };
+
+  const addMember = async () => {
+    if (!newMember.customer_name.trim() || !newMember.program_id) return;
+    try {
+      const created = await postJSON('/api/referral-loyalty/members', {
+        program_id: parseInt(newMember.program_id),
+        customer_name: newMember.customer_name,
+        email: newMember.email || null,
+        tier: newMember.tier || null,
+        points: parseInt(newMember.points) || 0,
+        referrals: parseInt(newMember.referrals) || 0,
+      });
+      // re-fetch members to get program_name join
+      const updated = await fetchJSON('/api/referral-loyalty/members/list');
+      setMembers(updated);
+      setNewMember({ program_id: '', customer_name: '', email: '', tier: '', points: '', referrals: '' });
+      setShowAddMember(false);
+    } catch (err) { console.error(err); }
+  };
+
+  const removeProgram = async (id) => {
+    try {
+      await deleteJSON(`/api/referral-loyalty/${id}`);
+      setPrograms(prev => prev.filter(p => p.id !== id));
+      setMembers(prev => prev.filter(m => m.program_id !== id));
+    } catch (err) { console.error(err); }
+  };
+
+  const generate = (template) => {
+    setSelectedTemplate(template); setGenerating(true); setOutput('');
+    connectSSE('/api/referral-loyalty/generate', { type: 'content', prompt: template.prompt }, {
+      onChunk: (text) => setOutput(p => p + text),
+      onResult: (data) => { setOutput(data.content); setGenerating(false); },
+      onError: (err) => { console.error(err); setGenerating(false); },
+    });
+  };
+
+  const activePrograms = programs.filter(p => p.status === 'active').length;
+  const totalMembers = members.length;
+  const totalReferrals = members.reduce((sum, m) => sum + (m.referrals || 0), 0);
+  const totalPoints = members.reduce((sum, m) => sum + (m.points || 0), 0);
 
   return (
     <div className="p-4 sm:p-6 lg:p-12">
@@ -59,162 +108,164 @@ export default function ReferralLoyaltyPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
         {[
-          { label: 'ACTIVE PROGRAMS', value: '3', sub: '1 paused' },
-          { label: 'TOTAL MEMBERS', value: '6,990', sub: '+340 this month' },
-          { label: 'REFERRALS THIS MONTH', value: '127', sub: '28% conversion rate' },
-          { label: 'POINTS ISSUED', value: '1.2M', sub: '34% redeemed' },
+          { label: 'ACTIVE PROGRAMS', value: loading ? '\u2014' : activePrograms.toString() },
+          { label: 'TOTAL MEMBERS', value: loading ? '\u2014' : totalMembers.toLocaleString() },
+          { label: 'TOTAL REFERRALS', value: loading ? '\u2014' : totalReferrals.toLocaleString() },
+          { label: 'TOTAL POINTS', value: loading ? '\u2014' : totalPoints >= 1000 ? `${(totalPoints / 1000).toFixed(1)}K` : totalPoints.toString() },
         ].map((s, i) => (
           <div key={i} className="panel rounded-2xl p-4 sm:p-6">
             <p className="hud-label text-[11px] mb-1">{s.label}</p>
             <p className="text-xl sm:text-2xl font-bold text-white font-mono">{s.value}</p>
-            <p className="text-xs text-gray-500 mt-1">{s.sub}</p>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-1 mb-6 sm:mb-8">
-        {['overview', 'programs', 'members', 'ai-tools'].map(t => (
+        {['programs', 'members', 'ai-tools'].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
             {t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1).replace('-', ' ')}
           </button>
         ))}
       </div>
 
-      {/* Overview */}
-      {tab === 'overview' && (
-        <div className="animate-fade-in space-y-4 sm:space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            <div className="panel rounded-2xl p-4 sm:p-6">
-              <p className="hud-label text-[11px] mb-4" style={{ color: MODULE_COLOR }}>TIER DISTRIBUTION</p>
-              <div className="space-y-4">
-                {[
-                  { tier: 'Platinum', count: 420, pct: 6, color: '#a78bfa' },
-                  { tier: 'Gold', count: 1380, pct: 20, color: '#f59e0b' },
-                  { tier: 'Silver', count: 2640, pct: 38, color: '#9ca3af' },
-                  { tier: 'Bronze', count: 2550, pct: 36, color: '#d97706' },
-                ].map((t, i) => (
-                  <div key={i}>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="font-semibold" style={{ color: t.color }}>{t.tier}</span>
-                      <span className="text-gray-500 font-mono">{t.count.toLocaleString()} ({t.pct}%)</span>
-                    </div>
-                    <div className="h-2 bg-white/[0.03] rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${t.pct}%`, background: t.color }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="panel rounded-2xl p-4 sm:p-6">
-              <p className="hud-label text-[11px] mb-4" style={{ color: MODULE_COLOR }}>REFERRAL PERFORMANCE</p>
-              <div className="space-y-3">
-                {[
-                  { metric: 'Invites Sent', value: '1,842' },
-                  { metric: 'Clicks', value: '634' },
-                  { metric: 'Sign-ups', value: '342' },
-                  { metric: 'First Purchase', value: '127' },
-                  { metric: 'Referral Revenue', value: '$18,420' },
-                ].map((m, i) => (
-                  <div key={i} className="flex justify-between text-sm py-1.5 border-b border-indigo-500/[0.04] last:border-0">
-                    <span className="text-gray-400">{m.metric}</span>
-                    <span className="font-mono font-bold text-gray-200">{m.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="panel rounded-2xl p-4 sm:p-6">
-            <p className="hud-label text-[11px] mb-4" style={{ color: MODULE_COLOR }}>TOP REWARDS REDEEMED</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-              {[
-                { reward: '$10 Store Credit', redeemed: 890, points: 1000 },
-                { reward: 'Free Shipping', redeemed: 1240, points: 500 },
-                { reward: '20% Off Coupon', redeemed: 456, points: 2000 },
-                { reward: 'Exclusive Product', redeemed: 78, points: 5000 },
-              ].map((r, i) => (
-                <div key={i} className="bg-white/[0.02] rounded-lg p-4 sm:p-5 border border-indigo-500/[0.06]">
-                  <p className="text-sm font-semibold text-gray-300">{r.reward}</p>
-                  <p className="text-xs text-gray-500 mt-1">{r.points} pts required</p>
-                  <p className="text-base font-bold font-mono mt-3" style={{ color: MODULE_COLOR }}>{r.redeemed}</p>
-                  <p className="text-xs text-gray-600">times redeemed</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Programs */}
       {tab === 'programs' && (
-        <div className="animate-fade-in grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
-          {MOCK_PROGRAMS.map(prog => (
-            <div key={prog.id} className="panel rounded-2xl p-4 sm:p-6 hover:border-rose-600/20 transition-all cursor-pointer">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <p className="text-base font-bold text-gray-200">{prog.name}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{prog.type} Program</p>
-                </div>
-                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: prog.status === 'active' ? 'rgba(34,197,94,0.15)' : 'rgba(107,114,128,0.15)', color: prog.status === 'active' ? '#22c55e' : '#6b7280', border: `1px solid ${prog.status === 'active' ? 'rgba(34,197,94,0.25)' : 'rgba(107,114,128,0.25)'}` }}>
-                  {prog.status}
-                </span>
+        <div className="animate-fade-in space-y-4">
+          <div className="flex justify-end mb-1">
+            <button onClick={() => setShowAddProgram(!showAddProgram)} className="chip text-[10px]" style={{ background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR }}>+ Add Program</button>
+          </div>
+          {showAddProgram && (
+            <div className="panel rounded-2xl p-4 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <input value={newProgram.name} onChange={e => setNewProgram({ ...newProgram, name: e.target.value })} placeholder="Program name" className="input-field rounded px-3 py-2 text-xs" />
+                <select value={newProgram.type} onChange={e => setNewProgram({ ...newProgram, type: e.target.value })} className="input-field rounded px-3 py-2 text-xs">
+                  <option value="">Type (optional)</option>
+                  <option value="Points">Points</option>
+                  <option value="Referral">Referral</option>
+                  <option value="Tiered">Tiered</option>
+                  <option value="Event">Event</option>
+                </select>
+                <input value={newProgram.reward_type} onChange={e => setNewProgram({ ...newProgram, reward_type: e.target.value })} placeholder="Reward type (e.g. discount, credit)" className="input-field rounded px-3 py-2 text-xs" />
               </div>
-              <p className="text-xl font-bold font-mono text-white">{prog.members.toLocaleString()}</p>
-              <p className="text-xs text-gray-500 mb-4">members enrolled</p>
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                {prog.type === 'Points' && (
-                  <>
-                    <div><span className="text-gray-500">Points Issued</span><p className="font-mono font-bold text-gray-300">{prog.pointsIssued}</p></div>
-                    <div><span className="text-gray-500">Redemption Rate</span><p className="font-mono font-bold" style={{ color: MODULE_COLOR }}>{prog.redemptionRate}</p></div>
-                  </>
-                )}
-                {prog.type === 'Referral' && (
-                  <>
-                    <div><span className="text-gray-500">Referrals</span><p className="font-mono font-bold text-gray-300">{prog.referrals}</p></div>
-                    <div><span className="text-gray-500">Conversion</span><p className="font-mono font-bold" style={{ color: MODULE_COLOR }}>{prog.conversion}</p></div>
-                  </>
-                )}
-                {prog.type === 'Tiered' && (
-                  <>
-                    <div><span className="text-gray-500">Tiers</span><p className="font-mono font-bold text-gray-300">{prog.tiers}</p></div>
-                    <div><span className="text-gray-500">Avg Spend</span><p className="font-mono font-bold" style={{ color: MODULE_COLOR }}>{prog.avgSpend}</p></div>
-                  </>
-                )}
-                {prog.type === 'Event' && (
-                  <>
-                    <div><span className="text-gray-500">Redemptions</span><p className="font-mono font-bold text-gray-300">{prog.redemptions}</p></div>
-                    <div><span className="text-gray-500">Revenue</span><p className="font-mono font-bold" style={{ color: MODULE_COLOR }}>{prog.revenue}</p></div>
-                  </>
-                )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input value={newProgram.reward_value} onChange={e => setNewProgram({ ...newProgram, reward_value: e.target.value })} placeholder="Reward value (e.g. 10%)" className="input-field rounded px-3 py-2 text-xs" />
+                <input value={newProgram.rules} onChange={e => setNewProgram({ ...newProgram, rules: e.target.value })} placeholder="Rules (optional)" className="input-field rounded px-3 py-2 text-xs" />
               </div>
+              <button onClick={addProgram} className="btn-accent px-4 py-1.5 rounded text-[10px]" style={{ background: MODULE_COLOR }}>Create Program</button>
             </div>
-          ))}
+          )}
+          {programs.length === 0 && !loading && (
+            <div className="panel rounded-2xl p-8 text-center">
+              <p className="text-sm text-gray-500">No programs yet</p>
+              <p className="text-xs text-gray-600 mt-1">Create your first loyalty or referral program to get started</p>
+            </div>
+          )}
+          {loading && programs.length === 0 && <div className="panel rounded-2xl p-8 text-center text-sm text-gray-600">Loading...</div>}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
+            {programs.map(prog => (
+              <div key={prog.id} className="group panel rounded-2xl p-4 sm:p-6 hover:border-rose-600/20 transition-all">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-base font-bold text-gray-200">{prog.name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{prog.type ? `${prog.type} Program` : 'Program'}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: prog.status === 'active' ? 'rgba(34,197,94,0.15)' : 'rgba(107,114,128,0.15)', color: prog.status === 'active' ? '#22c55e' : '#6b7280', border: `1px solid ${prog.status === 'active' ? 'rgba(34,197,94,0.25)' : 'rgba(107,114,128,0.25)'}` }}>
+                      {prog.status}
+                    </span>
+                    <button onClick={() => removeProgram(prog.id)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 text-xs transition-all">&times;</button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  {prog.reward_type && (
+                    <div>
+                      <span className="text-gray-500">Reward Type</span>
+                      <p className="font-mono font-bold text-gray-300">{prog.reward_type}</p>
+                    </div>
+                  )}
+                  {prog.reward_value && (
+                    <div>
+                      <span className="text-gray-500">Reward Value</span>
+                      <p className="font-mono font-bold" style={{ color: MODULE_COLOR }}>{prog.reward_value}</p>
+                    </div>
+                  )}
+                  {prog.rules && (
+                    <div className="col-span-2">
+                      <span className="text-gray-500">Rules</span>
+                      <p className="text-gray-400 mt-0.5">{prog.rules}</p>
+                    </div>
+                  )}
+                </div>
+                {!prog.reward_type && !prog.reward_value && !prog.rules && (
+                  <p className="text-xs text-gray-600 italic">No reward details configured</p>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {/* Members */}
       {tab === 'members' && (
-        <div className="animate-fade-in">
+        <div className="animate-fade-in space-y-4">
+          <div className="flex justify-end mb-1">
+            <button onClick={() => setShowAddMember(!showAddMember)} className="chip text-[10px]" style={{ background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR }}>+ Add Member</button>
+          </div>
+          {showAddMember && (
+            <div className="panel rounded-2xl p-4 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <input value={newMember.customer_name} onChange={e => setNewMember({ ...newMember, customer_name: e.target.value })} placeholder="Customer name" className="input-field rounded px-3 py-2 text-xs" />
+                <input value={newMember.email} onChange={e => setNewMember({ ...newMember, email: e.target.value })} placeholder="Email (optional)" className="input-field rounded px-3 py-2 text-xs" />
+                <select value={newMember.program_id} onChange={e => setNewMember({ ...newMember, program_id: e.target.value })} className="input-field rounded px-3 py-2 text-xs">
+                  <option value="">Select program</option>
+                  {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <select value={newMember.tier} onChange={e => setNewMember({ ...newMember, tier: e.target.value })} className="input-field rounded px-3 py-2 text-xs">
+                  <option value="">Tier (optional)</option>
+                  <option value="Platinum">Platinum</option>
+                  <option value="Gold">Gold</option>
+                  <option value="Silver">Silver</option>
+                  <option value="Bronze">Bronze</option>
+                </select>
+                <input value={newMember.points} onChange={e => setNewMember({ ...newMember, points: e.target.value })} placeholder="Points (0)" type="number" className="input-field rounded px-3 py-2 text-xs" />
+                <input value={newMember.referrals} onChange={e => setNewMember({ ...newMember, referrals: e.target.value })} placeholder="Referrals (0)" type="number" className="input-field rounded px-3 py-2 text-xs" />
+              </div>
+              <button onClick={addMember} className="btn-accent px-4 py-1.5 rounded text-[10px]" style={{ background: MODULE_COLOR }}>Add Member</button>
+            </div>
+          )}
+          {members.length === 0 && !loading && (
+            <div className="panel rounded-2xl p-8 text-center">
+              <p className="text-sm text-gray-500">No members yet</p>
+              <p className="text-xs text-gray-600 mt-1">Add members to your loyalty programs to start tracking</p>
+            </div>
+          )}
+          {loading && members.length === 0 && <div className="panel rounded-2xl p-8 text-center text-sm text-gray-600">Loading...</div>}
           <div className="panel rounded-2xl overflow-hidden overflow-x-auto">
             <div className="divide-y divide-indigo-500/[0.04]">
-              {MOCK_MEMBERS.map(m => (
-                <div key={m.id} className="flex items-center gap-3 sm:gap-6 px-3 sm:px-6 py-3 sm:py-4 hover:bg-white/[0.01] transition-colors">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold flex-shrink-0" style={{ background: `${TIER_COLORS[m.tier]}15`, color: TIER_COLORS[m.tier] }}>
-                    {m.name.split(' ').map(n => n[0]).join('')}
+              {members.map(m => (
+                <div key={m.id} className="group flex items-center gap-3 sm:gap-6 px-3 sm:px-6 py-3 sm:py-4 hover:bg-white/[0.01] transition-colors">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold flex-shrink-0" style={{ background: `${TIER_COLORS[m.tier] || '#6b7280'}15`, color: TIER_COLORS[m.tier] || '#6b7280' }}>
+                    {m.customer_name ? m.customer_name.split(' ').map(n => n[0]).join('') : '?'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-300 truncate">{m.name}</p>
-                    <p className="text-xs text-gray-500 truncate">{m.email}</p>
+                    <p className="text-sm font-semibold text-gray-300 truncate">{m.customer_name}</p>
+                    <p className="text-xs text-gray-500 truncate">{m.email || '\u2014'}</p>
+                    {m.program_name && <p className="text-[10px] text-gray-600">{m.program_name}</p>}
                   </div>
-                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: `${TIER_COLORS[m.tier]}15`, color: TIER_COLORS[m.tier], border: `1px solid ${TIER_COLORS[m.tier]}25` }}>
-                    {m.tier}
-                  </span>
+                  {m.tier && (
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: `${TIER_COLORS[m.tier] || '#6b7280'}15`, color: TIER_COLORS[m.tier] || '#6b7280', border: `1px solid ${TIER_COLORS[m.tier] || '#6b7280'}25` }}>
+                      {m.tier}
+                    </span>
+                  )}
                   <div className="text-right hidden md:block">
-                    <p className="text-sm font-mono font-bold text-gray-300">{m.points.toLocaleString()}</p>
+                    <p className="text-sm font-mono font-bold text-gray-300">{(m.points || 0).toLocaleString()}</p>
                     <p className="text-xs text-gray-600">points</p>
                   </div>
                   <div className="text-right hidden md:block">
-                    <p className="text-sm font-mono font-bold" style={{ color: MODULE_COLOR }}>{m.referrals}</p>
+                    <p className="text-sm font-mono font-bold" style={{ color: MODULE_COLOR }}>{m.referrals || 0}</p>
                     <p className="text-xs text-gray-600">referrals</p>
                   </div>
                 </div>
