@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import { connectSSE } from '../../lib/api';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
-
-const API_BASE = import.meta.env.VITE_API_URL || '';
 
 const CONTENT_TYPES = [
   { id: 'blog', name: 'Blog Post', icon: 'M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25' },
@@ -59,42 +58,30 @@ export default function ContentPage() {
   const [wordTarget, setWordTarget] = useState('800');
   const [error, setError] = useState(null);
 
-  const generate = async () => {
+  const cancelRef = useRef(null);
+
+  const generate = () => {
     if (!prompt.trim() || !activeType) return;
     setGenerating(true);
     setResult('');
     setStreamText('');
     setError(null);
     const fullPrompt = `[Tone: ${tone}] [Target length: ~${wordTarget} words]\n\n${prompt}`;
-    try {
-      const res = await fetch(`${API_BASE}/api/content/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: activeType, prompt: fullPrompt }),
-      });
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '', fullText = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          try {
-            const data = JSON.parse(line.slice(6));
-            if (data.type === 'chunk') { fullText += data.text; setStreamText(fullText); }
-            else if (data.type === 'result') { setResult(data.data?.content || fullText); }
-          } catch {}
-        }
-      }
-      if (!result && fullText) setResult(fullText);
-    } catch (e) {
-      console.error('Generation error:', e);
-      setError(e.message || 'Failed to generate content. Please try again.');
-    } finally { setGenerating(false); }
+
+    let fullText = '';
+    cancelRef.current = connectSSE('/api/content/generate', { type: activeType, prompt: fullPrompt }, {
+      onChunk: (text) => { fullText += text; setStreamText(fullText); },
+      onResult: (data) => { setResult(data?.content || fullText); setGenerating(false); },
+      onError: (err) => {
+        console.error('Generation error:', err);
+        setError(typeof err === 'string' ? err : 'Failed to generate content. Please try again.');
+        setGenerating(false);
+      },
+      onDone: () => {
+        if (!result && fullText) setResult(fullText);
+        setGenerating(false);
+      },
+    });
   };
 
   const copyToClipboard = () => {

@@ -26,6 +26,7 @@ router.post('/generate', async (req, res) => {
 
     const { text } = await generateTextWithClaude(fullPrompt, {
       onChunk: (chunk) => sse.sendChunk(chunk),
+      moduleId: 'content-creation',
       maxTokens: 4096,
       temperature: 0.85,
     });
