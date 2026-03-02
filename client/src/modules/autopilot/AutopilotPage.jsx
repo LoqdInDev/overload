@@ -1,16 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
-
-const API_BASE = import.meta.env.VITE_API_URL || '';
+import { fetchJSON, postJSON, putJSON, connectSSE } from '../../lib/api';
 
 const MODULE_COLOR = '#f59e0b';
 
 const MODULES_LIST = [
   { id: 'content', name: 'Content', desc: 'Blog posts, articles, product descriptions' },
   { id: 'social', name: 'Social', desc: 'Social media posts across all platforms' },
-  { id: 'email', name: 'Email', desc: 'Email campaigns, drips, newsletters' },
+  { id: 'email-sms', name: 'Email', desc: 'Email campaigns, drips, newsletters' },
   { id: 'ads', name: 'Ads', desc: 'Ad creation, bidding, audience targeting' },
   { id: 'seo', name: 'SEO', desc: 'Keyword optimization, meta tags, rankings' },
+  { id: 'video-marketing', name: 'Video', desc: 'Video scripts, hooks, storyboards' },
+  { id: 'creative', name: 'Creative', desc: 'AI-generated ad visuals, product photos' },
+  { id: 'reviews', name: 'Reviews', desc: 'Review monitoring and response drafts' },
+  { id: 'reports', name: 'Reports', desc: 'Automated performance reports' },
+  { id: 'pr-press', name: 'PR & Press', desc: 'Press releases, media outreach' },
+  { id: 'influencers', name: 'Influencers', desc: 'Influencer outreach and management' },
+  { id: 'customer-ai', name: 'Customer AI', desc: 'Customer intelligence and segmentation' },
 ];
 
 const RISK_LEVELS = [
@@ -19,87 +25,239 @@ const RISK_LEVELS = [
   { id: 'aggressive', name: 'Aggressive', desc: 'AI handles everything, you review after', icon: 'M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z' },
 ];
 
-const MOCK_ACTIONS = [
-  { id: 1, module: 'Content', action: 'Published blog post: "10 Email Marketing Tips for 2026"', status: 'completed', timestamp: '2:34 PM' },
-  { id: 2, module: 'Social', action: 'Scheduled Instagram carousel for tomorrow 3 PM', status: 'completed', timestamp: '2:15 PM' },
-  { id: 3, module: 'Ads', action: 'Increased Google Ads budget by 15% due to high ROAS', status: 'pending', timestamp: '2:10 PM' },
-  { id: 4, module: 'Email', action: 'Created re-engagement campaign for inactive subscribers', status: 'pending', timestamp: '1:45 PM' },
-  { id: 5, module: 'SEO', action: 'Updated meta descriptions for 12 product pages', status: 'completed', timestamp: '1:20 PM' },
-  { id: 6, module: 'Social', action: 'Published Twitter thread on industry trends', status: 'completed', timestamp: '12:00 PM' },
-  { id: 7, module: 'Content', action: 'Drafted landing page copy for Spring campaign', status: 'pending', timestamp: '11:30 AM' },
-  { id: 8, module: 'Ads', action: 'Paused underperforming TikTok ad set', status: 'completed', timestamp: '10:45 AM' },
-  { id: 9, module: 'Email', action: 'Sent weekly newsletter to 4.2K subscribers', status: 'completed', timestamp: '9:00 AM' },
-  { id: 10, module: 'SEO', action: 'Submitted new sitemap with 8 updated pages', status: 'rejected', timestamp: '8:30 AM' },
-];
-
-const MOCK_INSIGHTS = [
-  { title: 'Content Performance Up', desc: 'Blog traffic increased 23% since Autopilot began optimizing publish times and headlines.', type: 'positive' },
-  { title: 'Email Open Rates Climbing', desc: 'AI-optimized subject lines have boosted open rates from 18% to 26% in 2 weeks.', type: 'positive' },
-  { title: 'Ad Spend Efficiency', desc: 'Autopilot reduced CPA by 31% by reallocating budget from underperforming campaigns.', type: 'positive' },
-  { title: 'Social Engagement Alert', desc: 'LinkedIn engagement dropped 12% this week. Consider increasing post frequency.', type: 'warning' },
-];
-
 const AI_TEMPLATES = [
-  { name: 'Autopilot Strategy Review', prompt: 'Review the current autopilot configuration and suggest optimizations for better marketing performance across all automated modules' },
-  { name: 'Risk Assessment Report', prompt: 'Generate a comprehensive risk assessment for the current autopilot settings including potential issues and mitigation strategies' },
+  { name: 'Strategy Review', prompt: 'Review the current autopilot configuration and suggest optimizations for better marketing performance across all automated modules' },
+  { name: 'Risk Assessment', prompt: 'Generate a comprehensive risk assessment for the current autopilot settings including potential issues and mitigation strategies' },
   { name: 'Performance Forecast', prompt: 'Based on current autopilot performance data, forecast expected results for the next 30 days across all active modules' },
   { name: 'Optimization Playbook', prompt: 'Create a detailed optimization playbook for maximizing autopilot ROI including module-specific recommendations' },
 ];
 
 const moduleColor = (m) => {
-  const map = { Content: '#f97316', Social: '#3b82f6', Email: '#f59e0b', Ads: '#10b981', SEO: '#8b5cf6' };
+  const map = { content: '#f97316', social: '#3b82f6', 'email-sms': '#f59e0b', ads: '#10b981', seo: '#8b5cf6', 'video-marketing': '#ef4444', creative: '#06b6d4', reviews: '#ec4899', reports: '#6366f1', 'pr-press': '#14b8a6', influencers: '#f43f5e', 'customer-ai': '#a855f7' };
   return map[m] || '#6b7280';
 };
 
 const statusColor = (s) => {
-  const map = { completed: '#22c55e', pending: '#f59e0b', rejected: '#ef4444' };
+  const map = { completed: '#22c55e', pending: '#f59e0b', failed: '#ef4444', cancelled: '#6b7280' };
   return map[s] || '#6b7280';
 };
 
+const moduleName = (id) => MODULES_LIST.find(m => m.id === id)?.name || id;
+
 export default function AutopilotPage() {
   usePageTitle('Autopilot Mode');
-  const [mode, setMode] = useState('setup');
-  const [selectedModules, setSelectedModules] = useState([]);
+
+  const [mode, setMode] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Setup state
+  const [moduleModes, setModuleModes] = useState({});
   const [riskLevel, setRiskLevel] = useState('balanced');
   const [strategy, setStrategy] = useState('');
+  const [activating, setActivating] = useState(false);
+
+  // Dashboard state
+  const [overview, setOverview] = useState(null);
+  const [actions, setActions] = useState([]);
+  const [approvals, setApprovals] = useState({ items: [], total: 0 });
   const [dashTab, setDashTab] = useState('actions');
-  const [actions, setActions] = useState(MOCK_ACTIONS);
+
+  // AI generation
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const cancelRef = useRef(null);
 
-  // Settings state (for dashboard settings tab)
-  const [settingsModules, setSettingsModules] = useState({ content: true, social: true, email: true, ads: true, seo: true });
-  const [settingsRisk, setSettingsRisk] = useState('balanced');
+  // Settings
+  const [settings, setSettings] = useState(null);
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  // ── Load initial state ──────────────────────────────
+
+  const loadData = useCallback(async () => {
+    try {
+      const [modesData, settingsData, overviewData] = await Promise.all([
+        fetchJSON('/api/automation/modes'),
+        fetchJSON('/api/automation/settings'),
+        fetchJSON('/api/automation/actions/overview'),
+      ]);
+
+      setModuleModes(modesData);
+      setSettings(settingsData);
+      setOverview(overviewData);
+      setRiskLevel(settingsData.riskLevel || 'balanced');
+      setStrategy(settingsData.autopilotStrategy || '');
+
+      const hasActive = Object.values(modesData).some(m => m.mode === 'autopilot' || m.mode === 'copilot');
+      setMode(hasActive ? 'dashboard' : 'setup');
+    } catch (err) {
+      console.error('Failed to load autopilot data:', err);
+      setMode('setup');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  // ── Polling ─────────────────────────────────────────
+
+  useEffect(() => {
+    if (mode !== 'dashboard') return;
+
+    const poll = async () => {
+      try {
+        const [overviewData, actionsData, approvalsData] = await Promise.all([
+          fetchJSON('/api/automation/actions/overview'),
+          fetchJSON('/api/automation/actions?limit=20'),
+          fetchJSON('/api/automation/approvals?status=pending&limit=20'),
+        ]);
+        setOverview(overviewData);
+        setActions(actionsData);
+        setApprovals(approvalsData);
+      } catch (err) {
+        console.error('Autopilot poll error:', err);
+      }
+    };
+
+    poll();
+    const interval = setInterval(poll, 15000);
+    return () => clearInterval(interval);
+  }, [mode]);
+
+  // ── Setup actions ───────────────────────────────────
 
   const toggleModule = (id) => {
-    setSelectedModules(prev => prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]);
+    setModuleModes(prev => ({
+      ...prev,
+      [id]: {
+        ...prev[id],
+        mode: prev[id]?.mode === 'autopilot' ? 'manual' : 'autopilot',
+      },
+    }));
   };
 
-  const activateAutopilot = () => {
-    if (selectedModules.length === 0) return;
-    setMode('dashboard');
-  };
+  const activateAutopilot = async () => {
+    const selected = Object.entries(moduleModes).filter(([, v]) => v.mode === 'autopilot');
+    if (selected.length === 0) return;
 
-  const approveAction = (id) => {
-    setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'completed' } : a));
-  };
-
-  const rejectAction = (id) => {
-    setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'rejected' } : a));
-  };
-
-  const generate = async (template) => {
-    setSelectedTemplate(template); setGenerating(true); setOutput('');
+    setActivating(true);
     try {
-      const res = await fetch(`${API_BASE}/api/autopilot/generate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'content', prompt: template.prompt }) });
-      const reader = res.body.getReader(); const decoder = new TextDecoder();
-      while (true) { const { done, value } = await reader.read(); if (done) break; const lines = decoder.decode(value, { stream: true }).split('\n').filter(l => l.startsWith('data: ')); for (const line of lines) { try { const d = JSON.parse(line.slice(6)); if (d.type === 'chunk') setOutput(p => p + d.text); else if (d.type === 'result') setOutput(d.data.content); } catch {} } }
-    } catch (e) { console.error(e); } finally { setGenerating(false); }
+      const modeMap = { conservative: 'copilot', balanced: 'autopilot', aggressive: 'autopilot' };
+      const targetMode = modeMap[riskLevel] || 'autopilot';
+
+      await Promise.all(
+        selected.map(([moduleId]) =>
+          putJSON(`/api/automation/modes/${moduleId}`, { mode: targetMode, riskLevel })
+        )
+      );
+
+      if (strategy.trim()) {
+        await putJSON('/api/automation/settings', { autopilotStrategy: strategy, riskLevel });
+      }
+
+      setMode('dashboard');
+    } catch (err) {
+      console.error('Failed to activate autopilot:', err);
+      alert('Failed to activate autopilot: ' + err.message);
+    } finally {
+      setActivating(false);
+    }
   };
 
-  /* ---- SETUP MODE ---- */
+  // ── Dashboard actions ───────────────────────────────
+
+  const approveItem = async (id) => {
+    try {
+      await postJSON(`/api/automation/approvals/${id}/approve`);
+      setApprovals(prev => ({
+        ...prev,
+        items: prev.items.filter(i => i.id !== id),
+        total: prev.total - 1,
+      }));
+    } catch (err) {
+      alert('Failed to approve: ' + err.message);
+    }
+  };
+
+  const rejectItem = async (id) => {
+    try {
+      await postJSON(`/api/automation/approvals/${id}/reject`);
+      setApprovals(prev => ({
+        ...prev,
+        items: prev.items.filter(i => i.id !== id),
+        total: prev.total - 1,
+      }));
+    } catch (err) {
+      alert('Failed to reject: ' + err.message);
+    }
+  };
+
+  const pauseAutopilot = async () => {
+    try {
+      await putJSON('/api/automation/settings', { pauseAll: 'true' });
+      setMode('setup');
+      loadData();
+    } catch (err) {
+      alert('Failed to pause: ' + err.message);
+    }
+  };
+
+  const saveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      await putJSON('/api/automation/settings', settings);
+      for (const [moduleId, data] of Object.entries(moduleModes)) {
+        if (data._dirty) {
+          await putJSON(`/api/automation/modes/${moduleId}`, { mode: data.mode, riskLevel: data.riskLevel || riskLevel });
+        }
+      }
+    } catch (err) {
+      alert('Failed to save: ' + err.message);
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  // ── AI generation ───────────────────────────────────
+
+  const generate = (template) => {
+    setSelectedTemplate(template);
+    setGenerating(true);
+    setOutput('');
+
+    cancelRef.current = connectSSE('/api/autopilot/generate', { type: 'content', prompt: template.prompt }, {
+      onChunk: (text) => setOutput(prev => prev + text),
+      onResult: (data) => {
+        if (data?.content) setOutput(data.content);
+        setGenerating(false);
+      },
+      onError: (err) => {
+        console.error('Generation error:', err);
+        setGenerating(false);
+      },
+      onDone: () => setGenerating(false),
+    });
+  };
+
+  // ── Loading ─────────────────────────────────────────
+
+  if (loading || mode === null) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-12 flex items-center justify-center min-h-[50vh]">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-gray-500">Loading Autopilot...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── SETUP MODE ──────────────────────────────────────
+
   if (mode === 'setup') {
+    const selectedCount = Object.values(moduleModes).filter(m => m.mode === 'autopilot').length;
+
     return (
       <div className="p-4 sm:p-6 lg:p-12">
         {/* Hero */}
@@ -123,29 +281,33 @@ export default function AutopilotPage() {
               <p className="text-xs text-gray-500">Choose which marketing channels Autopilot controls</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {MODULES_LIST.map(mod => (
-              <button key={mod.id} onClick={() => toggleModule(mod.id)}
-                className={`rounded-xl p-5 text-left transition-all border ${
-                  selectedModules.includes(mod.id)
-                    ? 'bg-amber-500/10 border-amber-500/25'
-                    : 'bg-white/[0.02] border-indigo-500/[0.08] hover:border-indigo-500/15'
-                }`}>
-                <div className="flex items-center gap-2 mb-1">
-                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                    selectedModules.includes(mod.id) ? 'border-amber-500 bg-amber-500' : 'border-gray-600'
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {MODULES_LIST.map(mod => {
+              const isSelected = moduleModes[mod.id]?.mode === 'autopilot';
+              return (
+                <button key={mod.id} onClick={() => toggleModule(mod.id)}
+                  className={`rounded-xl p-4 text-left transition-all border ${
+                    isSelected
+                      ? 'bg-amber-500/10 border-amber-500/25'
+                      : 'bg-white/[0.02] border-indigo-500/[0.08] hover:border-indigo-500/15'
                   }`}>
-                    {selectedModules.includes(mod.id) && (
-                      <svg className="w-3 h-3 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                    )}
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                      isSelected ? 'border-amber-500 bg-amber-500' : 'border-gray-600'
+                    }`}>
+                      {isSelected && (
+                        <svg className="w-3 h-3 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="w-2 h-2 rounded-full" style={{ background: moduleColor(mod.id) }} />
+                    <p className={`text-sm font-bold ${isSelected ? 'text-amber-300' : 'text-gray-300'}`}>{mod.name}</p>
                   </div>
-                  <p className={`text-sm font-bold ${selectedModules.includes(mod.id) ? 'text-amber-300' : 'text-gray-300'}`}>{mod.name}</p>
-                </div>
-                <p className="text-[10px] text-gray-500 ml-7">{mod.desc}</p>
-              </button>
-            ))}
+                  <p className="text-[10px] text-gray-500 ml-7">{mod.desc}</p>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -194,32 +356,35 @@ export default function AutopilotPage() {
           </div>
           <div className="panel rounded-2xl p-4 sm:p-6">
             <textarea value={strategy} onChange={e => setStrategy(e.target.value)} rows={4}
-              placeholder="Describe your brand goals, target audience, key messaging, and priorities. e.g., 'We are a DTC skincare brand targeting millennials. Focus on educational content, build trust through transparency, and drive conversions through email sequences...'"
+              placeholder="Describe your brand goals, target audience, key messaging, and priorities..."
               className="w-full bg-white/[0.03] border border-indigo-500/[0.08] rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base text-gray-200 focus:outline-none focus:border-amber-500/30 resize-none" />
-            <button className="mt-2 chip text-[10px]" style={{ background: 'rgba(245,158,11,0.15)', borderColor: 'rgba(245,158,11,0.3)', color: '#fbbf24' }}>
-              <svg className="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-              </svg>
-              AI Suggest Strategy
-            </button>
           </div>
         </div>
 
         {/* Activate Button */}
         <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
-          <button onClick={activateAutopilot} disabled={selectedModules.length === 0}
+          <button onClick={activateAutopilot} disabled={selectedCount === 0 || activating}
             className="w-full py-5 rounded-xl text-base font-bold tracking-wide transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             style={{
-              background: selectedModules.length > 0 ? 'linear-gradient(135deg, #f59e0b, #d97706)' : '#1e1e2e',
-              color: selectedModules.length > 0 ? '#000' : '#6b7280',
-              boxShadow: selectedModules.length > 0 ? '0 0 20px rgba(245,158,11,0.3), 0 4px 20px -4px rgba(245,158,11,0.5)' : 'none',
+              background: selectedCount > 0 ? 'linear-gradient(135deg, #f59e0b, #d97706)' : '#1e1e2e',
+              color: selectedCount > 0 ? '#000' : '#6b7280',
+              boxShadow: selectedCount > 0 ? '0 0 20px rgba(245,158,11,0.3), 0 4px 20px -4px rgba(245,158,11,0.5)' : 'none',
             }}>
-            <svg className="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-            </svg>
-            ACTIVATE AUTOPILOT
+            {activating ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                ACTIVATING...
+              </span>
+            ) : (
+              <>
+                <svg className="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                </svg>
+                ACTIVATE AUTOPILOT ({selectedCount} modules)
+              </>
+            )}
           </button>
-          {selectedModules.length === 0 && (
+          {selectedCount === 0 && (
             <p className="text-xs text-gray-600 text-center mt-2">Select at least one module to activate</p>
           )}
         </div>
@@ -227,7 +392,10 @@ export default function AutopilotPage() {
     );
   }
 
-  /* ---- DASHBOARD MODE ---- */
+  /* ── DASHBOARD MODE ──────────────────────────────── */
+
+  const stats = overview || {};
+
   return (
     <div className="p-4 sm:p-6 lg:p-12">
       {/* Status Banner */}
@@ -239,10 +407,12 @@ export default function AutopilotPage() {
           </div>
           <div>
             <p className="text-base font-bold text-amber-300 tracking-wide">AUTOPILOT ACTIVE</p>
-            <p className="text-xs text-gray-500">AI is managing your marketing operations</p>
+            <p className="text-xs text-gray-500">
+              {stats.autopilotModules || 0} modules in autopilot, {stats.copilotModules || 0} in copilot
+            </p>
           </div>
         </div>
-        <button onClick={() => setMode('setup')} className="chip text-[10px] self-start sm:self-auto" style={{ background: 'rgba(245,158,11,0.15)', borderColor: 'rgba(245,158,11,0.3)', color: '#fbbf24' }}>
+        <button onClick={() => { setMode('setup'); loadData(); }} className="chip text-[10px] self-start sm:self-auto" style={{ background: 'rgba(245,158,11,0.15)', borderColor: 'rgba(245,158,11,0.3)', color: '#fbbf24' }}>
           Configure
         </button>
       </div>
@@ -250,10 +420,10 @@ export default function AutopilotPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
         {[
-          { label: 'ACTIONS TODAY', value: '24', sub: 'Across all modules' },
-          { label: 'PENDING APPROVAL', value: '3', sub: 'Needs your review' },
-          { label: 'SUCCESS RATE', value: '96%', sub: '+4% vs last week' },
-          { label: 'REVENUE IMPACT', value: '+$2.4K', sub: 'Estimated this week' },
+          { label: 'ACTIONS TODAY', value: stats.actionsToday ?? '—', sub: `${stats.actionsThisWeek ?? 0} this week` },
+          { label: 'PENDING APPROVAL', value: approvals.total ?? stats.pendingApprovals ?? '—', sub: 'Needs your review' },
+          { label: 'SUCCESS RATE', value: stats.successRate != null ? `${stats.successRate}%` : '—', sub: `${stats.totalActions ?? 0} total actions` },
+          { label: 'ACTIVE RULES', value: stats.activeRules ?? '—', sub: 'Automation rules running' },
         ].map((s, i) => (
           <div key={i} className="panel rounded-2xl p-4 sm:p-6">
             <p className="hud-label text-[11px] mb-1">{s.label}</p>
@@ -265,9 +435,14 @@ export default function AutopilotPage() {
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-1 mb-6">
-        {['actions', 'insights', 'settings'].map(t => (
-          <button key={t} onClick={() => setDashTab(t)} className={`chip text-xs ${dashTab === t ? 'active' : ''}`} style={dashTab === t ? { background: 'rgba(245,158,11,0.15)', borderColor: 'rgba(245,158,11,0.3)', color: '#fbbf24' } : {}}>
-            {t.charAt(0).toUpperCase() + t.slice(1)}
+        {[
+          { id: 'actions', label: 'Actions' },
+          { id: 'approvals', label: `Approvals${approvals.total ? ` (${approvals.total})` : ''}` },
+          { id: 'insights', label: 'AI Insights' },
+          { id: 'settings', label: 'Settings' },
+        ].map(t => (
+          <button key={t.id} onClick={() => setDashTab(t.id)} className={`chip text-xs ${dashTab === t.id ? 'active' : ''}`} style={dashTab === t.id ? { background: 'rgba(245,158,11,0.15)', borderColor: 'rgba(245,158,11,0.3)', color: '#fbbf24' } : {}}>
+            {t.label}
           </button>
         ))}
       </div>
@@ -275,62 +450,77 @@ export default function AutopilotPage() {
       {/* Actions Tab */}
       {dashTab === 'actions' && (
         <div className="space-y-3 animate-fade-in">
-          {actions.map(a => (
-            <div key={a.id} className="panel rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+          {actions.length === 0 ? (
+            <div className="panel rounded-2xl p-8 text-center">
+              <p className="text-sm text-gray-500">No actions yet. The rule engine will generate actions as rules trigger.</p>
+            </div>
+          ) : actions.map(a => (
+            <div key={a.id} className="panel rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
               <div className="flex items-center gap-3 sm:contents">
                 <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: statusColor(a.status) }} />
                 <div className="flex items-center gap-2 sm:hidden">
-                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${moduleColor(a.module)}15`, color: moduleColor(a.module), border: `1px solid ${moduleColor(a.module)}25` }}>
-                    {a.module}
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${moduleColor(a.module_id)}15`, color: moduleColor(a.module_id), border: `1px solid ${moduleColor(a.module_id)}25` }}>
+                    {moduleName(a.module_id)}
                   </span>
-                  <span className="text-xs text-gray-600">{a.timestamp}</span>
+                  <span className="text-xs text-gray-600">{a.created_at ? new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
                 </div>
               </div>
               <div className="flex-1 min-w-0">
                 <div className="hidden sm:flex items-center gap-2 mb-0.5">
-                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${moduleColor(a.module)}15`, color: moduleColor(a.module), border: `1px solid ${moduleColor(a.module)}25` }}>
-                    {a.module}
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${moduleColor(a.module_id)}15`, color: moduleColor(a.module_id), border: `1px solid ${moduleColor(a.module_id)}25` }}>
+                    {moduleName(a.module_id)}
                   </span>
-                  <span className="text-xs text-gray-600">{a.timestamp}</span>
+                  <span className="text-[10px] text-gray-600 font-mono">{a.action_type}</span>
+                  <span className="text-xs text-gray-600">{a.created_at ? new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
                 </div>
-                <p className="text-sm text-gray-300">{a.action}</p>
+                <p className="text-sm text-gray-300 truncate">{a.description}</p>
+                {a.duration_ms > 0 && <p className="text-[10px] text-gray-600 mt-0.5">{(a.duration_ms / 1000).toFixed(1)}s</p>}
               </div>
-              {a.status === 'pending' ? (
-                <div className="flex flex-wrap gap-1.5 flex-shrink-0">
-                  <button onClick={() => approveAction(a.id)} className="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all" style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.25)' }}>
-                    Approve
-                  </button>
-                  <button onClick={() => rejectAction(a.id)} className="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all" style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)' }}>
-                    Reject
-                  </button>
-                </div>
-              ) : (
-                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: `${statusColor(a.status)}15`, color: statusColor(a.status), border: `1px solid ${statusColor(a.status)}25` }}>
-                  {a.status}
-                </span>
-              )}
+              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: `${statusColor(a.status)}15`, color: statusColor(a.status), border: `1px solid ${statusColor(a.status)}25` }}>
+                {a.status}
+              </span>
             </div>
           ))}
         </div>
       )}
 
-      {/* Insights Tab */}
-      {dashTab === 'insights' && (
-        <div className="animate-fade-in space-y-4 sm:space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
-            {MOCK_INSIGHTS.map((insight, i) => (
-              <div key={i} className="panel rounded-2xl p-4 sm:p-6" style={{ borderColor: insight.type === 'warning' ? 'rgba(245,158,11,0.15)' : 'rgba(34,197,94,0.1)' }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 rounded-full" style={{ background: insight.type === 'warning' ? '#f59e0b' : '#22c55e' }} />
-                  <p className="text-sm font-bold text-gray-200">{insight.title}</p>
-                </div>
-                <p className="text-sm text-gray-400 leading-relaxed">{insight.desc}</p>
+      {/* Approvals Tab */}
+      {dashTab === 'approvals' && (
+        <div className="space-y-3 animate-fade-in">
+          {approvals.items.length === 0 ? (
+            <div className="panel rounded-2xl p-8 text-center">
+              <p className="text-sm text-gray-500">No pending approvals. Items will appear here when copilot rules trigger.</p>
+            </div>
+          ) : approvals.items.map(item => (
+            <div key={item.id} className="panel rounded-2xl p-4 sm:p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${moduleColor(item.moduleId)}15`, color: moduleColor(item.moduleId), border: `1px solid ${moduleColor(item.moduleId)}25` }}>
+                  {moduleName(item.moduleId)}
+                </span>
+                {item.confidence != null && (
+                  <span className="text-[9px] text-gray-500 font-mono">{item.confidence}% confidence</span>
+                )}
+                <span className="text-xs text-gray-600 ml-auto">{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ''}</span>
               </div>
-            ))}
-          </div>
+              <p className="text-sm font-semibold text-gray-200 mb-1">{item.title}</p>
+              <p className="text-xs text-gray-400 mb-3">{item.description}</p>
+              <div className="flex flex-wrap gap-1.5">
+                <button onClick={() => approveItem(item.id)} className="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all hover:brightness-110" style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.25)' }}>
+                  Approve
+                </button>
+                <button onClick={() => rejectItem(item.id)} className="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all hover:brightness-110" style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)' }}>
+                  Reject
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-          {/* AI Templates in Insights */}
-          <div className="mt-8">
+      {/* AI Insights Tab */}
+      {dashTab === 'insights' && (
+        <div className="animate-fade-in space-y-6">
+          <div>
             <div className="flex items-center gap-3 mb-4">
               <p className="hud-label text-[11px]" style={{ color: MODULE_COLOR }}>AI ANALYSIS TOOLS</p>
               <div className="flex-1 h-px bg-indigo-500/[0.06]" />
@@ -357,65 +547,86 @@ export default function AutopilotPage() {
       )}
 
       {/* Settings Tab */}
-      {dashTab === 'settings' && (
+      {dashTab === 'settings' && settings && (
         <div className="animate-fade-in space-y-4 sm:space-y-8">
-          {/* Module Toggles */}
+          {/* Module Modes */}
           <div className="panel rounded-2xl p-4 sm:p-7">
-            <p className="hud-label text-[11px] mb-5" style={{ color: MODULE_COLOR }}>ACTIVE MODULES</p>
-            <div className="space-y-3">
-              {MODULES_LIST.map(mod => (
-                <button key={mod.id} onClick={() => setSettingsModules(prev => ({ ...prev, [mod.id]: !prev[mod.id] }))}
-                  className={`w-full flex items-center justify-between px-4 py-3 sm:px-5 sm:py-4 rounded-xl border text-sm transition-all ${
-                    settingsModules[mod.id]
-                      ? 'border-amber-500/20 bg-amber-500/5 text-amber-300'
-                      : 'border-indigo-500/[0.08] bg-white/[0.01] text-gray-400'
-                  }`}>
-                  <div className="flex items-center gap-3">
-                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                      settingsModules[mod.id] ? 'border-amber-500 bg-amber-500' : 'border-gray-600'
-                    }`}>
-                      {settingsModules[mod.id] && (
-                        <svg className="w-3 h-3 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                        </svg>
-                      )}
+            <p className="hud-label text-[11px] mb-5" style={{ color: MODULE_COLOR }}>MODULE MODES</p>
+            <div className="space-y-2">
+              {MODULES_LIST.map(mod => {
+                const current = moduleModes[mod.id]?.mode || 'manual';
+                return (
+                  <div key={mod.id} className="flex items-center justify-between px-4 py-3 rounded-xl border border-indigo-500/[0.08] bg-white/[0.01]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full" style={{ background: moduleColor(mod.id) }} />
+                      <span className="text-sm font-semibold text-gray-300">{mod.name}</span>
                     </div>
-                    <span className="font-semibold">{mod.name}</span>
+                    <div className="flex gap-1">
+                      {['manual', 'copilot', 'autopilot'].map(m => (
+                        <button key={m} onClick={() => {
+                          setModuleModes(prev => ({
+                            ...prev,
+                            [mod.id]: { ...prev[mod.id], mode: m, _dirty: true },
+                          }));
+                        }}
+                          className={`px-2 py-1 rounded text-[10px] font-bold transition-all ${
+                            current === m
+                              ? m === 'autopilot' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                : m === 'copilot' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                                : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                              : 'text-gray-600 hover:text-gray-400'
+                          }`}>
+                          {m}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div className={`w-8 h-4 rounded-full transition-all flex items-center ${settingsModules[mod.id] ? 'justify-end' : 'justify-start'}`}
-                    style={{ background: settingsModules[mod.id] ? 'rgba(245,158,11,0.4)' : '#333' }}>
-                    <div className="w-3 h-3 rounded-full mx-0.5" style={{ background: settingsModules[mod.id] ? MODULE_COLOR : '#666' }} />
-                  </div>
-                </button>
-              ))}
+                );
+              })}
             </div>
           </div>
 
-          {/* Risk Level */}
+          {/* Safety Limits */}
           <div className="panel rounded-2xl p-4 sm:p-7">
-            <p className="hud-label text-[11px] mb-5" style={{ color: MODULE_COLOR }}>RISK LEVEL</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {RISK_LEVELS.map(level => (
-                <button key={level.id} onClick={() => setSettingsRisk(level.id)}
-                  className={`rounded-lg p-4 sm:p-5 text-center transition-all border ${
-                    settingsRisk === level.id ? 'bg-amber-500/10 border-amber-500/25' : 'bg-white/[0.02] border-indigo-500/[0.08]'
-                  }`}>
-                  <p className={`text-sm font-bold ${settingsRisk === level.id ? 'text-amber-300' : 'text-gray-400'}`}>{level.name}</p>
-                  <p className="text-[10px] text-gray-600 mt-0.5">{level.desc}</p>
-                </button>
-              ))}
+            <p className="hud-label text-[11px] mb-5" style={{ color: MODULE_COLOR }}>SAFETY LIMITS</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Max actions / day</label>
+                <input type="number" value={settings.maxActionsPerDay || 50}
+                  onChange={e => setSettings(prev => ({ ...prev, maxActionsPerDay: e.target.value }))}
+                  className="w-full bg-white/[0.03] border border-indigo-500/[0.08] rounded-lg px-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-amber-500/30" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Max actions / hour</label>
+                <input type="number" value={settings.maxActionsPerHour || 10}
+                  onChange={e => setSettings(prev => ({ ...prev, maxActionsPerHour: e.target.value }))}
+                  className="w-full bg-white/[0.03] border border-indigo-500/[0.08] rounded-lg px-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-amber-500/30" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Confidence threshold (%)</label>
+                <input type="number" value={settings.confidenceThreshold || 70}
+                  onChange={e => setSettings(prev => ({ ...prev, confidenceThreshold: e.target.value }))}
+                  className="w-full bg-white/[0.03] border border-indigo-500/[0.08] rounded-lg px-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-amber-500/30" />
+              </div>
             </div>
           </div>
 
-          {/* Pause Button */}
-          <button onClick={() => setMode('setup')}
-            className="w-full py-4 rounded-xl text-base font-bold tracking-wide transition-all"
-            style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
-            <svg className="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
-            </svg>
-            PAUSE AUTOPILOT
-          </button>
+          {/* Save + Pause */}
+          <div className="flex gap-3">
+            <button onClick={saveSettings} disabled={savingSettings}
+              className="flex-1 py-3 rounded-xl text-sm font-bold tracking-wide transition-all"
+              style={{ background: 'rgba(245,158,11,0.15)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.3)' }}>
+              {savingSettings ? 'Saving...' : 'Save Settings'}
+            </button>
+            <button onClick={pauseAutopilot}
+              className="py-3 px-6 rounded-xl text-sm font-bold tracking-wide transition-all"
+              style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
+              <svg className="w-4 h-4 inline mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
+              </svg>
+              Pause
+            </button>
+          </div>
         </div>
       )}
     </div>

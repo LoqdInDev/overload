@@ -172,11 +172,11 @@ app.all('/api/*', (req, res) => {
   res.status(404).json({ error: 'Not found', code: 'NOT_FOUND' });
 });
 
-// Serve generated videos and brand media — protected behind auth
+// Serve generated media — UUIDs in filenames act as access tokens
 const dataDir = process.env.DB_PATH ? path.dirname(process.env.DB_PATH) : process.cwd();
-app.use('/videos', requireAuth, express.static(path.join(dataDir, 'videos'), { maxAge: '1d' }));
-app.use('/uploads/brand-media', requireAuth, express.static(path.join(dataDir, 'uploads', 'brand-media'), { maxAge: '1d' }));
-app.use('/uploads/creatives', requireAuth, express.static(path.join(dataDir, 'uploads', 'creatives'), { maxAge: '1d' }));
+app.use('/videos', express.static(path.join(dataDir, 'videos'), { maxAge: '1d' }));
+app.use('/uploads/brand-media', express.static(path.join(dataDir, 'uploads', 'brand-media'), { maxAge: '1d' }));
+app.use('/uploads/creatives', express.static(path.join(dataDir, 'uploads', 'creatives'), { maxAge: '1d' }));
 
 // Serve static frontend only when running locally (Vercel handles this in production)
 if (!process.env.RAILWAY_ENVIRONMENT) {

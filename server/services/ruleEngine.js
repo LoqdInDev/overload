@@ -10,6 +10,7 @@
  * Event-based rules are triggered externally via POST /rules/trigger-event.
  */
 
+const crypto = require('crypto');
 const { db } = require('../db/database');
 const { generateTextWithClaude } = require('./claude');
 const { createNotification } = require('../modules/automation-engine/db/schema');
@@ -182,6 +183,63 @@ Generate appropriate content or output for this automation action.`;
   }
 }
 
+// ── Save to Module Database ("Last Mile") ───────────────────────
+
+function saveToModuleDatabase(rule, wsId, text, actionLogId) {
+  const actionConfig = JSON.parse(rule.action_config || '{}');
+  const meta = JSON.stringify({ source: 'autopilot', ruleId: rule.id, actionLogId });
+  const id = crypto.randomUUID();
+
+  try {
+    switch (rule.action_type) {
+      case 'generate_content':
+      case 'publish_blog': {
+        const type = actionConfig.type || 'blog';
+        const title = `Auto: ${rule.name}`.slice(0, 100);
+        db.prepare(
+          'INSERT INTO cc_projects (id, type, title, prompt, content, metadata, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        ).run(id, type, title, rule.name, text, meta, wsId);
+        break;
+      }
+      case 'schedule_post': {
+        const platform = (actionConfig.platforms && actionConfig.platforms[0]) || 'multi';
+        db.prepare(
+          "INSERT INTO sm_posts (platform, post_type, caption, hashtags, status, metadata, workspace_id) VALUES (?, 'feed', ?, null, 'draft', ?, ?)"
+        ).run(platform, text, meta, wsId);
+        break;
+      }
+      case 'send_campaign': {
+        const name = `Auto: ${rule.name}`.slice(0, 100);
+        const type = actionConfig.template || 'email';
+        db.prepare(
+          "INSERT INTO es_campaigns (name, type, body, status, metadata, workspace_id) VALUES (?, ?, ?, 'draft', ?, ?)"
+        ).run(name, type === 'sms' ? 'sms' : 'email', text, meta, wsId);
+        break;
+      }
+      case 'adjust_budget': {
+        const name = `Budget: ${rule.name}`.slice(0, 100);
+        const platform = actionConfig.platform || 'google';
+        db.prepare(
+          'INSERT INTO pa_campaigns (id, platform, name, objective, budget, audience, ad_content, metadata, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        ).run(id, platform, name, 'budget_adjustment', '0', null, text, meta, wsId);
+        break;
+      }
+      case 'respond_review': {
+        db.prepare(
+          "INSERT INTO rv_responses (id, workspace_id, review_id, content, status, metadata) VALUES (?, ?, 'auto', ?, 'draft', ?)"
+        ).run(id, wsId, text, meta);
+        break;
+      }
+      // generate_report: output stays in ae_action_log only
+      default:
+        return;
+    }
+    console.log(`  [rule-engine] Saved ${rule.action_type} draft to module DB (ws: ${wsId})`);
+  } catch (err) {
+    console.warn(`  [rule-engine] Failed to save to module DB: ${err.message}`);
+  }
+}
+
 async function executeAction(rule, wsId) {
   const startTime = Date.now();
   const prompt = buildPromptForRule(rule);
@@ -196,10 +254,13 @@ async function executeAction(rule, wsId) {
     const durationMs = Date.now() - startTime;
 
     // Log the completed action
-    db.prepare(`
+    const result = db.prepare(`
       INSERT INTO ae_action_log (module_id, action_type, mode, description, output_data, status, duration_ms, created_at, completed_at, workspace_id)
       VALUES (?, ?, 'autopilot', ?, ?, 'completed', ?, datetime('now'), datetime('now'), ?)
     `).run(rule.module_id, rule.action_type, `Auto: ${rule.name}`, text, durationMs, wsId);
+
+    // Save generated content as draft in the target module's database
+    saveToModuleDatabase(rule, wsId, text, result.lastInsertRowid);
 
     createNotification('action_completed', `Auto: ${rule.name}`, `Autopilot executed "${rule.name}" successfully`, rule.module_id, wsId);
 

@@ -129,4 +129,51 @@ router.get('/status', (req, res) => {
   });
 });
 
+// GET /overview — combined stats for Autopilot dashboard
+router.get('/overview', (req, res) => {
+  const wsId = req.workspace.id;
+  const today = new Date().toISOString().split('T')[0];
+
+  const totalActions = db.prepare(
+    'SELECT COUNT(*) as count FROM ae_action_log WHERE workspace_id = ?'
+  ).get(wsId)?.count || 0;
+
+  const actionsToday = db.prepare(
+    'SELECT COUNT(*) as count FROM ae_action_log WHERE date(created_at) = ? AND workspace_id = ?'
+  ).get(today, wsId)?.count || 0;
+
+  const actionsThisWeek = db.prepare(
+    "SELECT COUNT(*) as count FROM ae_action_log WHERE created_at >= datetime('now', '-7 days') AND workspace_id = ?"
+  ).get(wsId)?.count || 0;
+
+  const completedAll = db.prepare(
+    "SELECT COUNT(*) as count FROM ae_action_log WHERE status = 'completed' AND workspace_id = ?"
+  ).get(wsId)?.count || 0;
+
+  const successRate = totalActions > 0 ? Math.round((completedAll / totalActions) * 100) : 100;
+
+  const pendingApprovals = db.prepare(
+    "SELECT COUNT(*) as count FROM ae_approval_queue WHERE status = 'pending' AND workspace_id = ?"
+  ).get(wsId)?.count || 0;
+
+  const activeRules = db.prepare(
+    "SELECT COUNT(*) as count FROM ae_rules WHERE status = 'active' AND workspace_id = ?"
+  ).get(wsId)?.count || 0;
+
+  const modes = db.prepare('SELECT module_id, mode FROM ae_module_modes WHERE workspace_id = ?').all(wsId);
+  const autopilotModules = modes.filter(m => m.mode === 'autopilot').length;
+  const copilotModules = modes.filter(m => m.mode === 'copilot').length;
+
+  res.json({
+    totalActions,
+    actionsToday,
+    actionsThisWeek,
+    successRate,
+    pendingApprovals,
+    activeRules,
+    autopilotModules,
+    copilotModules,
+  });
+});
+
 module.exports = router;

@@ -15,6 +15,7 @@ const DEFAULTS = {
   notifyRuleTriggers: 'true',
   riskLevel: 'balanced',
   previousModes: '{}',
+  autopilotStrategy: '',
 };
 
 // GET /settings — all settings as flat object
