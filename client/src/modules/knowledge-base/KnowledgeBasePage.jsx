@@ -5,11 +5,11 @@ import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const MODULE_COLOR = '#3b82f6';
 
-const AI_TEMPLATES = [
-  { name: 'Help Article', icon: 'M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25', prompt: 'Write a comprehensive help article with clear title, introduction, step-by-step instructions with screenshot placeholders, tips, and related articles section' },
-  { name: 'FAQ Section', icon: 'M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z', prompt: 'Generate a FAQ section with 8-10 common questions and detailed answers, organized by topic, with searchable keywords for each entry' },
-  { name: 'Troubleshooting', icon: 'M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l5.653-4.655m3.586-3.586a2.548 2.548 0 013.586 3.586m-6.586 4.586l4.586-4.586', prompt: 'Create a troubleshooting guide with problem description, diagnostic steps, common solutions, escalation path, and preventive measures' },
-  { name: 'Onboarding Guide', icon: 'M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.58-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z', prompt: 'Design a comprehensive onboarding guide for new users including getting started steps, key features walkthrough, best practices, and success milestones' },
+const AI_FORMATS = [
+  { id: 'help-article', name: 'Help Article', icon: 'M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25', instruction: 'Write a comprehensive help article with a clear title, introduction, step-by-step instructions, tips, and a related articles section' },
+  { id: 'faq', name: 'FAQ', icon: 'M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z', instruction: 'Generate a FAQ section with 8-10 common questions and detailed answers, organized by topic' },
+  { id: 'troubleshooting', name: 'Troubleshooting', icon: 'M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l5.653-4.655m3.586-3.586a2.548 2.548 0 013.586 3.586m-6.586 4.586l4.586-4.586', instruction: 'Create a troubleshooting guide with problem description, diagnostic steps, common solutions, and escalation path' },
+  { id: 'onboarding', name: 'Onboarding', icon: 'M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.58-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z', instruction: 'Design an onboarding guide with getting started steps, key features walkthrough, best practices, and success milestones' },
 ];
 
 const STATUS_COLORS = { published: '#22c55e', draft: '#6b7280', archived: '#ef4444' };
@@ -33,6 +33,8 @@ export default function KnowledgeBasePage() {
   const [generating, setGenerating] = useState(false);
   const [aiOutput, setAiOutput] = useState('');
   const [cancelSSE, setCancelSSE] = useState(null);
+  const [aiTopic, setAiTopic] = useState('');
+  const [aiFormat, setAiFormat] = useState('help-article');
 
   // Form state
   const [form, setForm] = useState({ title: '', content: '', category: '', status: 'draft' });
@@ -126,12 +128,15 @@ export default function KnowledgeBasePage() {
     }
   };
 
-  // AI generation
-  const generateContent = (template) => {
+  // AI generation — combines user topic with format instructions
+  const generateContent = (topic, formatId) => {
+    if (!topic.trim()) return;
     if (generating && cancelSSE) { cancelSSE(); }
+    const format = AI_FORMATS.find(f => f.id === formatId) || AI_FORMATS[0];
+    const prompt = `Topic: "${topic.trim()}"\n\nFormat: ${format.instruction}.\n\nWrite the content specifically about the topic above. Make it clear, professional, and easy for customers to understand.`;
     setGenerating(true);
     setAiOutput('');
-    const cancel = connectSSE('/api/knowledge-base/generate', { type: 'content', prompt: template.prompt }, {
+    const cancel = connectSSE('/api/knowledge-base/generate', { type: 'content', prompt }, {
       onChunk: (text) => setAiOutput(p => p + text),
       onResult: (data) => setAiOutput(data.content || ''),
       onError: (err) => { console.error(err); setGenerating(false); },
@@ -286,24 +291,37 @@ export default function KnowledgeBasePage() {
             </div>
           )}
 
-          {/* Quick AI generate row (visible when editor is open) */}
+          {/* AI assist bar (visible when editor is open) */}
           {editing && (
             <div className="panel rounded-2xl p-3 sm:p-4">
-              <div className="flex items-center gap-3 overflow-x-auto">
-                <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider flex-shrink-0">AI Generate:</span>
-                {AI_TEMPLATES.map(t => (
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider flex-shrink-0">AI Write:</span>
+                <div className="flex items-center gap-2 flex-1">
+                  <select
+                    value={aiFormat}
+                    onChange={(e) => setAiFormat(e.target.value)}
+                    className="bg-white/[0.04] border border-white/[0.08] rounded-md px-2 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-blue-500/40"
+                  >
+                    {AI_FORMATS.map(f => (
+                      <option key={f.id} value={f.id}>{f.name}</option>
+                    ))}
+                  </select>
                   <button
-                    key={t.name}
-                    onClick={() => generateContent(t)}
-                    disabled={generating}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-white/[0.03] border border-white/[0.06] text-gray-400 hover:text-white hover:border-blue-500/30 hover:bg-blue-500/5 transition-all flex-shrink-0 disabled:opacity-40"
+                    onClick={() => generateContent(form.title, aiFormat)}
+                    disabled={generating || !form.title.trim()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-white transition-all hover:brightness-110 disabled:opacity-40 flex-shrink-0"
+                    style={{ background: MODULE_COLOR }}
+                    title={!form.title.trim() ? 'Enter a title first — AI uses it as the topic' : ''}
                   >
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d={t.icon} />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
                     </svg>
-                    {t.name}
+                    {generating ? 'Writing...' : 'Generate from Title'}
                   </button>
-                ))}
+                </div>
+                {!form.title.trim() && (
+                  <span className="text-[10px] text-gray-600 italic">Type a title first, then AI writes the content</span>
+                )}
               </div>
               {(generating || aiOutput) && (
                 <div className="mt-3 pt-3 border-t border-white/[0.04]">
@@ -311,7 +329,7 @@ export default function KnowledgeBasePage() {
                     <div className="flex items-center gap-2">
                       <div className={`w-1.5 h-1.5 rounded-full ${generating ? 'animate-pulse' : ''}`} style={{ background: generating ? MODULE_COLOR : '#4ade80' }} />
                       <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: generating ? MODULE_COLOR : '#4ade80' }}>
-                        {generating ? 'Generating...' : 'Ready — click "Use AI Content" above to insert'}
+                        {generating ? 'Writing about: ' + form.title : 'Done — click "Use AI Content" above to insert'}
                       </span>
                     </div>
                     {!generating && aiOutput && (
@@ -478,26 +496,54 @@ export default function KnowledgeBasePage() {
         <div className="animate-fade-in space-y-4">
           <div className="panel rounded-2xl p-4 sm:p-6">
             <p className="hud-label text-[11px] mb-1" style={{ color: MODULE_COLOR }}>AI ARTICLE WRITER</p>
-            <p className="text-xs text-gray-500 mb-4">Choose a template to generate content, then create an article from it</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {AI_TEMPLATES.map(t => (
-                <button
-                  key={t.name}
-                  onClick={() => generateContent(t)}
-                  disabled={generating}
-                  className="panel-interactive rounded-xl p-4 text-left flex items-start gap-3 disabled:opacity-40"
-                >
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${MODULE_COLOR}12`, border: `1px solid ${MODULE_COLOR}20` }}>
-                    <svg className="w-4.5 h-4.5" style={{ color: MODULE_COLOR }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d={t.icon} />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-300">{t.name}</p>
-                    <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{t.prompt}</p>
-                  </div>
-                </button>
-              ))}
+            <p className="text-xs text-gray-500 mb-4">Describe what you want to write about, pick a format, and let AI draft it for you</p>
+
+            {/* Topic input */}
+            <div className="space-y-3">
+              <div>
+                <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Topic</label>
+                <input
+                  type="text"
+                  placeholder="e.g. How to return a product, Shipping policy, Getting started with our API..."
+                  value={aiTopic}
+                  onChange={(e) => setAiTopic(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && aiTopic.trim() && generateContent(aiTopic, aiFormat)}
+                  className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/40"
+                />
+              </div>
+
+              {/* Format picker */}
+              <div>
+                <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Format</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {AI_FORMATS.map(f => (
+                    <button
+                      key={f.id}
+                      onClick={() => setAiFormat(f.id)}
+                      className={`rounded-lg p-3 text-left transition-all border ${aiFormat === f.id ? 'bg-blue-500/10 border-blue-500/30' : 'bg-white/[0.02] border-white/[0.06] hover:border-white/[0.12]'}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 flex-shrink-0" style={{ color: aiFormat === f.id ? MODULE_COLOR : '#6b7280' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d={f.icon} />
+                        </svg>
+                        <span className={`text-xs font-semibold ${aiFormat === f.id ? 'text-white' : 'text-gray-400'}`}>{f.name}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                onClick={() => generateContent(aiTopic, aiFormat)}
+                disabled={generating || !aiTopic.trim()}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white transition-all hover:brightness-110 disabled:opacity-40"
+                style={{ background: MODULE_COLOR }}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+                </svg>
+                {generating ? 'Writing...' : 'Generate Article'}
+              </button>
             </div>
           </div>
 
@@ -507,15 +553,14 @@ export default function KnowledgeBasePage() {
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${generating ? 'animate-pulse' : ''}`} style={{ background: generating ? MODULE_COLOR : '#4ade80' }} />
                   <span className="hud-label text-[11px]" style={{ color: generating ? MODULE_COLOR : '#4ade80' }}>
-                    {generating ? 'GENERATING...' : 'COMPLETE'}
+                    {generating ? 'WRITING...' : 'COMPLETE'}
                   </span>
                 </div>
                 {!generating && aiOutput && (
                   <button
                     onClick={() => {
-                      // Parse title from AI output and open editor pre-filled
                       const lines = aiOutput.trim().split('\n');
-                      let title = '';
+                      let title = aiTopic;
                       let content = aiOutput;
                       if (lines[0] && (lines[0].startsWith('#') || lines[0].startsWith('**'))) {
                         title = lines[0].replace(/^#+\s*/, '').replace(/\*\*/g, '').trim();
