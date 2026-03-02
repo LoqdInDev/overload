@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
-import { fetchJSON, postJSON, deleteJSON, connectSSE } from '../../lib/api';
+import { fetchJSON, postJSON, deleteJSON, putJSON, connectSSE } from '../../lib/api';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const MODULE_COLOR = '#e11d48';
@@ -80,6 +80,13 @@ export default function ReferralLoyaltyPage() {
       await deleteJSON(`/api/referral-loyalty/${id}`);
       setPrograms(prev => prev.filter(p => p.id !== id));
       setMembers(prev => prev.filter(m => m.program_id !== id));
+    } catch (err) { console.error(err); }
+  };
+
+  const updateMember = async (id, tier, points) => {
+    try {
+      await putJSON(`/api/referral-loyalty/members/${id}`, { tier, points });
+      setMembers(prev => prev.map(m => m.id === id ? { ...m, tier, points } : m));
     } catch (err) { console.error(err); }
   };
 
@@ -262,14 +269,27 @@ export default function ReferralLoyaltyPage() {
                     <p className="text-xs text-gray-500 truncate">{m.email || '\u2014'}</p>
                     {m.program_name && <p className="text-[10px] text-gray-600">{m.program_name}</p>}
                   </div>
-                  {m.tier && (
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: `${TIER_COLORS[m.tier] || '#6b7280'}15`, color: TIER_COLORS[m.tier] || '#6b7280', border: `1px solid ${TIER_COLORS[m.tier] || '#6b7280'}25` }}>
-                      {m.tier}
-                    </span>
-                  )}
-                  <div className="text-right hidden md:block">
-                    <p className="text-sm font-mono font-bold text-gray-300">{(m.points || 0).toLocaleString()}</p>
-                    <p className="text-xs text-gray-600">points</p>
+                  <select
+                    value={m.tier || ''}
+                    onChange={e => updateMember(m.id, e.target.value, m.points || 0)}
+                    className="input-field rounded px-2 py-1 text-[10px] font-bold flex-shrink-0"
+                    style={{ color: TIER_COLORS[m.tier] || '#6b7280', borderColor: `${TIER_COLORS[m.tier] || '#6b7280'}40`, background: `${TIER_COLORS[m.tier] || '#6b7280'}10`, minWidth: '80px' }}
+                  >
+                    <option value="">No Tier</option>
+                    <option value="Bronze">Bronze</option>
+                    <option value="Silver">Silver</option>
+                    <option value="Gold">Gold</option>
+                    <option value="Platinum">Platinum</option>
+                  </select>
+                  <div className="text-right hidden md:block flex-shrink-0">
+                    <input
+                      type="number"
+                      value={m.points || 0}
+                      onChange={e => updateMember(m.id, m.tier || '', parseInt(e.target.value) || 0)}
+                      className="input-field rounded px-2 py-1 text-sm font-mono font-bold text-gray-300 text-right w-20"
+                      min="0"
+                    />
+                    <p className="text-xs text-gray-600 mt-0.5">points</p>
                   </div>
                   <div className="text-right hidden md:block">
                     <p className="text-sm font-mono font-bold" style={{ color: MODULE_COLOR }}>{m.referrals || 0}</p>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
-import { fetchJSON, connectSSE, deleteJSON } from '../../lib/api';
+import { fetchJSON, connectSSE, deleteJSON, putJSON } from '../../lib/api';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const TOOLS = [
@@ -31,6 +31,8 @@ export default function CompetitorsPage() {
   const [stats, setStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [competitors, setCompetitors] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   useEffect(() => {
     fetchJSON('/api/competitors/stats')
@@ -39,6 +41,12 @@ export default function CompetitorsPage() {
       .finally(() => setLoadingStats(false));
     fetchJSON('/api/competitors').then(setCompetitors).catch(() => {});
   }, []);
+
+  const saveEdit = async (id) => {
+    await putJSON(`/api/competitors/${id}`, editForm);
+    setCompetitors(prev => prev.map(c => c.id === id ? { ...c, ...editForm } : c));
+    setEditingId(null);
+  };
 
   const deleteCompetitor = async (id) => {
     await deleteJSON(`/api/competitors/${id}`);
@@ -82,12 +90,54 @@ export default function CompetitorsPage() {
           <div className="flex items-center gap-3 mb-3"><p className="hud-label text-[11px]" style={{ color: '#ef4444' }}>TRACKED COMPETITORS</p><div className="flex-1 hud-line" /></div>
           <div className="panel rounded-2xl divide-y divide-indigo-500/[0.04]">
             {competitors.map(c => (
-              <div key={c.id} className="flex items-center justify-between px-5 py-3 hover:bg-white/[0.01] transition-colors">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-gray-200 truncate">{c.name}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{c.website || c.industry || 'No details'}</p>
-                </div>
-                <button onClick={() => deleteCompetitor(c.id)} className="ml-4 text-gray-600 hover:text-red-400 transition-colors text-lg leading-none flex-shrink-0" title="Delete competitor">×</button>
+              <div key={c.id} className="px-5 py-3 hover:bg-white/[0.01] transition-colors">
+                {editingId === c.id ? (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <input
+                        value={editForm.name || ''}
+                        onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                        placeholder="Name"
+                        className="input-field rounded px-3 py-1.5 text-xs"
+                      />
+                      <input
+                        value={editForm.website || ''}
+                        onChange={e => setEditForm(f => ({ ...f, website: e.target.value }))}
+                        placeholder="Website"
+                        className="input-field rounded px-3 py-1.5 text-xs"
+                      />
+                      <input
+                        value={editForm.industry || ''}
+                        onChange={e => setEditForm(f => ({ ...f, industry: e.target.value }))}
+                        placeholder="Industry"
+                        className="input-field rounded px-3 py-1.5 text-xs"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => saveEdit(c.id)} className="chip text-[10px] active" style={{ background: 'rgba(239,68,68,0.15)', borderColor: 'rgba(239,68,68,0.3)', color: '#f87171' }}>Save</button>
+                      <button onClick={() => setEditingId(null)} className="chip text-[10px]">Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-200 truncate">{c.name}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{c.website || c.industry || 'No details'}</p>
+                    </div>
+                    <div className="flex items-center gap-3 ml-4 flex-shrink-0">
+                      <button
+                        onClick={() => { setEditingId(c.id); setEditForm({ name: c.name, website: c.website || '', industry: c.industry || '' }); }}
+                        className="text-gray-600 hover:text-red-400 transition-colors"
+                        title="Edit competitor"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+                        </svg>
+                      </button>
+                      <button onClick={() => deleteCompetitor(c.id)} className="text-gray-600 hover:text-red-400 transition-colors text-lg leading-none" title="Delete competitor">×</button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

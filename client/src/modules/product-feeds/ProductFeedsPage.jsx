@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchJSON, connectSSE, deleteJSON } from '../../lib/api';
+import { fetchJSON, connectSSE, deleteJSON, putJSON } from '../../lib/api';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
@@ -28,6 +28,8 @@ export default function ProductFeedsPage() {
   const [products, setProducts] = useState([]);
   const [feeds, setFeeds] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editingProductId, setEditingProductId] = useState(null);
+  const [editProduct, setEditProduct] = useState({});
 
   useEffect(() => {
     let cancelled = false;
@@ -68,6 +70,13 @@ export default function ProductFeedsPage() {
   const deleteProduct = async (id) => {
     await deleteJSON(`/api/product-feeds/products/${id}`);
     setProducts(prev => prev.filter(p => p.id !== id));
+  };
+
+  const saveProductEdit = async (id) => {
+    await putJSON(`/api/product-feeds/products/${id}`, editProduct);
+    setProducts(prev => prev.map(p => p.id === id ? { ...p, ...editProduct } : p));
+    setEditingProductId(null);
+    setEditProduct({});
   };
 
   const deleteFeed = async (id) => {
@@ -150,22 +159,63 @@ export default function ProductFeedsPage() {
           ) : (
             <div className="panel rounded-2xl overflow-hidden overflow-x-auto">
               <div className="min-w-[640px]">
-                <div className="grid grid-cols-[1fr_80px_80px_auto_80px_32px] px-4 sm:px-6 py-3 border-b border-indigo-500/[0.06] text-xs font-bold text-gray-500">
-                  <span>PRODUCT</span><span>SKU</span><span className="text-right">PRICE</span><span className="text-center">CHANNEL</span><span className="text-center">STATUS</span><span />
+                <div className="grid grid-cols-[1fr_80px_80px_auto_80px_32px_32px] px-4 sm:px-6 py-3 border-b border-indigo-500/[0.06] text-xs font-bold text-gray-500">
+                  <span>PRODUCT</span><span>SKU</span><span className="text-right">PRICE</span><span className="text-center">CHANNEL</span><span className="text-center">STATUS</span><span /><span />
                 </div>
                 {filtered.map((p, idx) => {
                   const status = mapAvailabilityToStatus(p.availability);
                   const ch = CHANNELS.find(x => x.id === (p.channel || '').toLowerCase());
+                  const isEditing = editingProductId === p.id;
                   return (
-                    <div key={p.id || idx} className="grid grid-cols-[1fr_80px_80px_auto_80px_32px] items-center px-4 sm:px-6 py-4 border-b border-indigo-500/[0.03] hover:bg-white/[0.01] transition-colors">
-                      <span className="text-sm font-semibold text-gray-200 truncate">{p.title}</span>
-                      <span className="text-xs text-gray-500 font-mono">{p.sku}</span>
-                      <span className="text-sm text-gray-300 font-mono text-right">${p.price}</span>
-                      <div className="flex gap-1 justify-center">
-                        {ch ? <div className="w-2 h-2 rounded-full" title={ch.name} style={{ background: ch.color }} /> : p.channel ? <span className="text-[9px] text-gray-500">{p.channel}</span> : null}
-                      </div>
-                      <div className="text-center">{statusBadge(status)}</div>
-                      <button onClick={() => deleteProduct(p.id)} className="text-gray-600 hover:text-red-400 transition-colors text-lg leading-none text-center" title="Delete product">×</button>
+                    <div key={p.id || idx} className="border-b border-indigo-500/[0.03] hover:bg-white/[0.01] transition-colors">
+                      {isEditing ? (
+                        <div className="flex flex-wrap items-center gap-2 px-4 sm:px-6 py-3">
+                          <span className="text-sm font-semibold text-gray-200 flex-1 truncate">{p.title}</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            className="input-field rounded-lg px-3 py-1.5 text-sm w-28 font-mono"
+                            value={editProduct.price ?? p.price ?? ''}
+                            onChange={e => setEditProduct(prev => ({ ...prev, price: e.target.value }))}
+                            placeholder="Price"
+                          />
+                          <select
+                            className="input-field rounded-lg px-3 py-1.5 text-sm"
+                            value={editProduct.availability ?? p.availability ?? 'in_stock'}
+                            onChange={e => setEditProduct(prev => ({ ...prev, availability: e.target.value }))}
+                          >
+                            <option value="in_stock">In Stock</option>
+                            <option value="out_of_stock">Out of Stock</option>
+                            <option value="preorder">Preorder</option>
+                          </select>
+                          <button
+                            onClick={() => saveProductEdit(p.id)}
+                            className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors"
+                            style={{ background: 'rgba(100,116,139,0.15)', border: '1px solid rgba(100,116,139,0.3)', color: '#94a3b8' }}
+                          >Save</button>
+                          <button
+                            onClick={() => { setEditingProductId(null); setEditProduct({}); }}
+                            className="text-xs px-3 py-1.5 rounded-lg font-semibold text-gray-500 hover:text-gray-300 transition-colors"
+                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+                          >Cancel</button>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-[1fr_80px_80px_auto_80px_32px_32px] items-center px-4 sm:px-6 py-4">
+                          <span className="text-sm font-semibold text-gray-200 truncate">{p.title}</span>
+                          <span className="text-xs text-gray-500 font-mono">{p.sku}</span>
+                          <span className="text-sm text-gray-300 font-mono text-right">${p.price}</span>
+                          <div className="flex gap-1 justify-center">
+                            {ch ? <div className="w-2 h-2 rounded-full" title={ch.name} style={{ background: ch.color }} /> : p.channel ? <span className="text-[9px] text-gray-500">{p.channel}</span> : null}
+                          </div>
+                          <div className="text-center">{statusBadge(status)}</div>
+                          <button
+                            onClick={() => { setEditingProductId(p.id); setEditProduct({ price: p.price, availability: p.availability }); }}
+                            className="text-gray-500 hover:text-slate-300 transition-colors text-xs leading-none text-center px-1 py-0.5 rounded"
+                            title="Edit product"
+                          >✎</button>
+                          <button onClick={() => deleteProduct(p.id)} className="text-gray-600 hover:text-red-400 transition-colors text-lg leading-none text-center" title="Delete product">×</button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

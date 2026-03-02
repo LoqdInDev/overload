@@ -150,7 +150,11 @@ Create a detailed Review Summary Report:
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
-    // Note: rv_generated table does not exist in schema; activity is logged below via logActivity
+    try {
+      db.prepare(
+        'INSERT INTO rv_generated (workspace_id, tool_type, input_data, output, platform, tone) VALUES (?, ?, ?, ?, ?, ?)'
+      ).run(wsId, toolType, JSON.stringify({ rating: starRating, reviewText: review?.content || review, businessName }), text, platform || null, tone || null);
+    } catch (_) {}
 
     logActivity('reviews', 'generate', `Generated ${toolType}`, `${platform || 'general'} - ${tone || 'professional'} tone`, null, wsId);
     sse.sendResult({ content: text, toolType });

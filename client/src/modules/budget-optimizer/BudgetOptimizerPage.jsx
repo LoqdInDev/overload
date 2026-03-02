@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchJSON, connectSSE, deleteJSON } from '../../lib/api';
+import { fetchJSON, connectSSE, deleteJSON, putJSON } from '../../lib/api';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
@@ -19,6 +19,8 @@ export default function BudgetOptimizerPage() {
   const [budgets, setBudgets] = useState([]);
   const [allocations, setAllocations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editingBudgetId, setEditingBudgetId] = useState(null);
+  const [editBudget, setEditBudget] = useState({});
 
   useEffect(() => {
     let cancelled = false;
@@ -63,6 +65,13 @@ export default function BudgetOptimizerPage() {
     if (budgets.length <= 1) setAllocations([]);
   };
 
+  const saveBudgetEdit = async (id) => {
+    await putJSON(`/api/budget-optimizer/budgets/${id}`, editBudget);
+    setBudgets(prev => prev.map(b => b.id === id ? { ...b, ...editBudget } : b));
+    setEditingBudgetId(null);
+    setEditBudget({});
+  };
+
   const generate = async (template) => {
     setSelectedTemplate(template); setGenerating(true); setOutput('');
     const cancel = connectSSE('/api/budget-optimizer/generate', { type: 'content', prompt: template.prompt }, {
@@ -103,15 +112,50 @@ export default function BudgetOptimizerPage() {
               <p className="hud-label text-[11px] mb-3">BUDGETS</p>
               <div className="panel rounded-2xl divide-y divide-indigo-500/[0.04]">
                 {budgets.map(b => (
-                  <div key={b.id} className="flex items-center justify-between px-5 py-3 hover:bg-white/[0.01] transition-colors">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-200 truncate">{b.name}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">{b.period || 'No period'} &mdash; {b.status}</p>
-                    </div>
-                    <div className="flex items-center gap-4 ml-4 flex-shrink-0">
-                      <span className="text-sm font-bold font-mono" style={{ color: '#34d399' }}>{b.total_budget != null ? `$${Number(b.total_budget).toLocaleString()}` : '—'}</span>
-                      <button onClick={() => deleteBudget(b.id)} className="text-gray-600 hover:text-red-400 transition-colors text-lg leading-none" title="Delete budget">×</button>
-                    </div>
+                  <div key={b.id} className="px-5 py-3 hover:bg-white/[0.01] transition-colors">
+                    {editingBudgetId === b.id ? (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <input
+                          className="input-field rounded-lg px-3 py-1.5 text-sm flex-1 min-w-[120px]"
+                          value={editBudget.name ?? b.name}
+                          onChange={e => setEditBudget(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder="Budget name"
+                        />
+                        <input
+                          type="number"
+                          className="input-field rounded-lg px-3 py-1.5 text-sm w-32 font-mono"
+                          value={editBudget.total_budget ?? b.total_budget ?? ''}
+                          onChange={e => setEditBudget(prev => ({ ...prev, total_budget: Number(e.target.value) }))}
+                          placeholder="Amount"
+                        />
+                        <button
+                          onClick={() => saveBudgetEdit(b.id)}
+                          className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors"
+                          style={{ background: 'rgba(5,150,105,0.15)', border: '1px solid rgba(5,150,105,0.3)', color: '#34d399' }}
+                        >Save</button>
+                        <button
+                          onClick={() => { setEditingBudgetId(null); setEditBudget({}); }}
+                          className="text-xs px-3 py-1.5 rounded-lg font-semibold text-gray-500 hover:text-gray-300 transition-colors"
+                          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+                        >Cancel</button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-200 truncate">{b.name}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{b.period || 'No period'} &mdash; {b.status}</p>
+                        </div>
+                        <div className="flex items-center gap-3 ml-4 flex-shrink-0">
+                          <span className="text-sm font-bold font-mono" style={{ color: '#34d399' }}>{b.total_budget != null ? `$${Number(b.total_budget).toLocaleString()}` : '—'}</span>
+                          <button
+                            onClick={() => { setEditingBudgetId(b.id); setEditBudget({ name: b.name, total_budget: b.total_budget, period: b.period, status: b.status }); }}
+                            className="text-gray-500 hover:text-emerald-400 transition-colors text-xs leading-none px-1.5 py-0.5 rounded"
+                            title="Edit budget"
+                          >✎</button>
+                          <button onClick={() => deleteBudget(b.id)} className="text-gray-600 hover:text-red-400 transition-colors text-lg leading-none" title="Delete budget">×</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
