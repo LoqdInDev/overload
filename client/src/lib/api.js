@@ -85,7 +85,7 @@ export async function deleteJSON(url) {
   return fetchJSON(url, { method: 'DELETE' });
 }
 
-export function connectSSE(url, body, { onChunk, onResult, onError }) {
+export function connectSSE(url, body, { onChunk, onResult, onError, onDone }) {
   const controller = new AbortController();
   const fullUrl = url.startsWith('http') ? url : `${API_BASE}${url}`;
 
@@ -99,21 +99,33 @@ export function connectSSE(url, body, { onChunk, onResult, onError }) {
       if (res.status === 401) {
         const refreshed = await attemptTokenRefresh();
         if (refreshed) {
-          // Retry the SSE connection
           const retry = await fetch(fullUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
             body: JSON.stringify(body),
             signal: controller.signal,
           });
+          if (!retry.ok) {
+            const msg = await retry.text().catch(() => retry.statusText);
+            onError?.(msg || `Server error (${retry.status})`);
+            return;
+          }
           return processStream(retry.body.getReader(), { onChunk, onResult, onError });
         }
         window.location.href = '/login';
         return;
       }
 
+      if (!res.ok) {
+        let msg = `Server error (${res.status})`;
+        try { const err = await res.json(); msg = err.error || msg; } catch {}
+        onError?.(msg);
+        return;
+      }
+
       return processStream(res.body.getReader(), { onChunk, onResult, onError });
     })
+    .then(() => onDone?.())
     .catch((err) => {
       if (err.name !== 'AbortError') onError?.(err.message);
     });

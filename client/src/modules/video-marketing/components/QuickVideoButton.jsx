@@ -34,12 +34,24 @@ export default function QuickVideoButton({ hookText, campaignId, productImageUrl
   useEffect(() => {
     if (!jobId || status !== 'loading') return;
 
+    let pollCount = 0;
+    const MAX_POLLS = 60; // 3 minutes at 3s intervals
+    let pollErrors = 0;
+
     pollRef.current = setInterval(async () => {
+      pollCount++;
+      if (pollCount > MAX_POLLS) {
+        clearInterval(pollRef.current);
+        setError('Video generation timed out');
+        setStatus('error');
+        return;
+      }
       try {
         const data = await fetchJSON(`/api/video/status/${jobId}`);
+        pollErrors = 0;
         if (data.status === 'completed') {
           clearInterval(pollRef.current);
-          setVideoPath(data.result?.localPath);
+          setVideoPath(data.result?.localPath || data.result?.videoUrl);
           setStatus('done');
         } else if (data.status === 'failed') {
           clearInterval(pollRef.current);
@@ -47,7 +59,12 @@ export default function QuickVideoButton({ hookText, campaignId, productImageUrl
           setStatus('error');
         }
       } catch (e) {
-        // If polling fails, don't crash — just keep trying
+        pollErrors++;
+        if (pollErrors >= 3) {
+          clearInterval(pollRef.current);
+          setError(e.message || 'Polling failed');
+          setStatus('error');
+        }
       }
     }, 3000);
 

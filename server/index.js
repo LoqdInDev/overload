@@ -47,7 +47,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(helmet());
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,                  // 100 requests per window per IP
+  max: 1000,                 // 1000 requests per window per IP (app uses frequent polling)
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please try again later', code: 'RATE_LIMIT_EXCEEDED' },

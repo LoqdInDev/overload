@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
+import { connectSSE } from '../../../lib/api';
 import AngleCards from './AngleCards';
 import ScriptViewer from './ScriptViewer';
 import HookTable from './HookTable';
@@ -36,66 +37,27 @@ export default function Dashboard({ campaign, setCampaign, currentStep, setCurre
   const storyboards = storyboardGen?.output || [];
   const ugcBriefs = ugcGen?.output || [];
 
-  const callSSE = useCallback(async (url, body) => {
+  const cancelRef = useRef(null);
+
+  const callSSE = useCallback((url, body) => {
     setGenerating(true);
     setStreamText('');
 
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (val) => { if (!settled) { settled = true; setGenerating(false); setStreamText(''); resolve(val); } };
+
+      cancelRef.current = connectSSE(url, body, {
+        onChunk: (text) => setStreamText(prev => prev + text),
+        onResult: (data) => finish(data),
+        onError: (err) => {
+          console.error('Generation error:', err);
+          alert(`Generation failed: ${err}`);
+          finish(null);
+        },
+        onDone: () => finish(null),
       });
-
-      if (!response.ok) {
-        let msg = `Server error (${response.status})`;
-        try { const err = await response.json(); msg = err.error || msg; } catch {}
-        throw new Error(msg);
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let result = null;
-      let sseError = null;
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            let event;
-            try {
-              event = JSON.parse(line.slice(6));
-            } catch {
-              continue;
-            }
-            if (event.type === 'chunk') {
-              setStreamText(prev => prev + event.text);
-            } else if (event.type === 'result') {
-              result = event.data;
-            } else if (event.type === 'error') {
-              sseError = event.error;
-            }
-          }
-        }
-      }
-
-      if (sseError) throw new Error(sseError);
-      return result;
-    } catch (err) {
-      console.error('Generation error:', err);
-      alert(`Generation failed: ${err.message}`);
-      return null;
-    } finally {
-      setGenerating(false);
-      setStreamText('');
-    }
+    });
   }, []);
 
   const addGeneration = useCallback((stage, data, genId) => {
