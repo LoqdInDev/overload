@@ -106,9 +106,8 @@ async function callQwen(prompt, { onChunk, system, temperature, maxTokens } = {}
 function pickProvider(provider, moduleId) {
   if (provider === 'claude') return 'claude';
   if (provider === 'qwen') return 'qwen';
-  // Auto: use Claude for complex modules, Qwen for everything else
-  if (moduleId && CLAUDE_MODULES.has(moduleId)) return 'claude';
-  return 'qwen';
+  // Default all modules to Claude — faster streaming, better quality
+  return 'claude';
 }
 
 async function generateWithClaude(prompt, { onChunk, system, temperature = 0.9, maxTokens = 8192, provider = 'auto', moduleId } = {}) {
