@@ -88,13 +88,17 @@ export default function QuickVideoButton({ hookText, campaignId, productImageUrl
 
   if (status === 'error') {
     return (
-      <button
-        onClick={generate}
-        className="text-[10px] text-red-400 hover:text-red-300 transition-colors font-medium"
-        title={error}
-      >
-        Retry
-      </button>
+      <span className="inline-flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+        <span className="text-[9px] text-red-400 max-w-[120px] truncate" title={error}>
+          {error || 'Failed'}
+        </span>
+        <button
+          onClick={generate}
+          className="text-[10px] text-red-400 hover:text-red-300 transition-colors font-semibold underline"
+        >
+          Retry
+        </button>
+      </span>
     );
   }
 

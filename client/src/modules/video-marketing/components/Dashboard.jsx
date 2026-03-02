@@ -47,10 +47,17 @@ export default function Dashboard({ campaign, setCampaign, currentStep, setCurre
         body: JSON.stringify(body),
       });
 
+      if (!response.ok) {
+        let msg = `Server error (${response.status})`;
+        try { const err = await response.json(); msg = err.error || msg; } catch {}
+        throw new Error(msg);
+      }
+
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
       let result = null;
+      let sseError = null;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -62,25 +69,29 @@ export default function Dashboard({ campaign, setCampaign, currentStep, setCurre
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
+            let event;
             try {
-              const event = JSON.parse(line.slice(6));
-              if (event.type === 'chunk') {
-                setStreamText(prev => prev + event.text);
-              } else if (event.type === 'result') {
-                result = event.data;
-              } else if (event.type === 'error') {
-                throw new Error(event.error);
-              }
-            } catch (e) {
-              if (e.message !== 'Unexpected end of JSON input') {
-                console.error('SSE parse error:', e);
-              }
+              event = JSON.parse(line.slice(6));
+            } catch {
+              continue;
+            }
+            if (event.type === 'chunk') {
+              setStreamText(prev => prev + event.text);
+            } else if (event.type === 'result') {
+              result = event.data;
+            } else if (event.type === 'error') {
+              sseError = event.error;
             }
           }
         }
       }
 
+      if (sseError) throw new Error(sseError);
       return result;
+    } catch (err) {
+      console.error('Generation error:', err);
+      alert(`Generation failed: ${err.message}`);
+      return null;
     } finally {
       setGenerating(false);
       setStreamText('');

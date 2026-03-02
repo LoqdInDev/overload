@@ -12,6 +12,8 @@ const { buildStoryboardPrompt } = require('../prompts/storyboarder');
 const { buildUGCPrompt } = require('../prompts/ugcBrief');
 const { buildIteratePrompt } = require('../prompts/iterateWinner');
 
+const MODULE_ID = 'video-marketing';
+
 router.post('/angles', async (req, res) => {
   const { campaignId, productProfile } = req.body;
   const sse = setupSSE(res);
@@ -22,6 +24,7 @@ router.post('/angles', async (req, res) => {
     const prompt = buildAnglePrompt(productProfile);
     const { parsed, raw } = await generateWithClaude(prompt, {
       onChunk: (text) => sse.sendChunk(text),
+      moduleId: MODULE_ID,
     });
 
     const genId = uuidv4();
@@ -46,6 +49,7 @@ router.post('/scripts', async (req, res) => {
       const prompt = buildScriptPrompt(productProfile, angle, { duration, platform });
       const { parsed, raw } = await generateWithClaude(prompt, {
         onChunk: (text) => sse.sendChunk(text),
+        moduleId: MODULE_ID,
       });
       scripts.push(parsed);
     }
@@ -70,6 +74,8 @@ router.post('/hooks', async (req, res) => {
     const prompt = buildHookPrompt(productProfile);
     const { parsed, raw } = await generateWithClaude(prompt, {
       onChunk: (text) => sse.sendChunk(text),
+      moduleId: MODULE_ID,
+      maxTokens: 16384,
     });
 
     const genId = uuidv4();
@@ -94,6 +100,8 @@ router.post('/storyboard', async (req, res) => {
       const prompt = buildStoryboardPrompt(script);
       const { parsed, raw } = await generateWithClaude(prompt, {
         onChunk: (text) => sse.sendChunk(text),
+        moduleId: MODULE_ID,
+        maxTokens: 16384,
       });
       storyboards.push(parsed);
     }
@@ -118,6 +126,8 @@ router.post('/ugc', async (req, res) => {
     const prompt = buildUGCPrompt(productProfile, scripts);
     const { parsed, raw } = await generateWithClaude(prompt, {
       onChunk: (text) => sse.sendChunk(text),
+      moduleId: MODULE_ID,
+      maxTokens: 16384,
     });
 
     const genId = uuidv4();
@@ -140,6 +150,8 @@ router.post('/iterate', async (req, res) => {
     const prompt = buildIteratePrompt(winners, productProfile);
     const { parsed, raw } = await generateWithClaude(prompt, {
       onChunk: (text) => sse.sendChunk(text),
+      moduleId: MODULE_ID,
+      maxTokens: 16384,
     });
 
     const genId = uuidv4();
