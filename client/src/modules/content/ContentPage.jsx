@@ -107,8 +107,23 @@ export default function ContentPage() {
 
   const selectTemplate = (tmpl) => setPrompt(tmpl.prompt);
 
+  const [expandedId, setExpandedId] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
+
   const deleteHistoryItem = (id) => {
-    deleteJSON(`/api/content/projects/${id}`).then(() => loadHistory()).catch(() => {});
+    deleteJSON(`/api/content/projects/${id}`).then(() => { loadHistory(); if (expandedId === id) setExpandedId(null); }).catch(() => {});
+  };
+
+  const copyHistoryItem = (item) => {
+    navigator.clipboard.writeText(item.content || '');
+    setCopiedId(item.id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const useHistoryItem = (item) => {
+    setActiveType(item.type || 'blog');
+    setResult(item.content || '');
+    setStreamText('');
   };
 
   if (!activeType) {
@@ -177,22 +192,60 @@ export default function ContentPage() {
               <div className="divide-y divide-indigo-500/[0.04]">
                 {history.map(item => {
                   const ct = CONTENT_TYPES.find(c => c.id === item.type);
-                  const displayTitle = item.title || (item.content || '').slice(0, 60) || 'Untitled';
+                  const displayTitle = item.title || (item.content || '').slice(0, 80) || 'Untitled';
+                  const isExpanded = expandedId === item.id;
                   return (
-                    <div key={item.id} className="flex items-center gap-4 px-6 py-4 hover:bg-white/[0.01] transition-colors group">
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(249,115,22,0.08)' }}>
-                        <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d={ct?.icon || CONTENT_TYPES[0].icon} />
-                        </svg>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-200 truncate">{displayTitle}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="hud-label text-[10px]" style={{ color: '#f97316' }}>{ct?.name || item.type}</span>
-                          <span className="text-[10px] text-gray-600">{item.created_at ? item.created_at.slice(0, 10) : ''}</span>
+                    <div key={item.id} className="group">
+                      <div
+                        className="flex items-center gap-4 px-6 py-4 hover:bg-white/[0.02] transition-colors cursor-pointer"
+                        onClick={() => setExpandedId(isExpanded ? null : item.id)}
+                      >
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(249,115,22,0.08)' }}>
+                          <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d={ct?.icon || CONTENT_TYPES[0].icon} />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-200 truncate">{displayTitle}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="hud-label text-[10px]" style={{ color: '#f97316' }}>{ct?.name || item.type}</span>
+                            <span className="text-[10px] text-gray-600">{item.created_at ? item.created_at.slice(0, 10) : ''}</span>
+                            {item.content && <span className="text-[10px] text-gray-600">{item.content.split(/\s+/).filter(Boolean).length} words</span>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <svg className={`w-3.5 h-3.5 text-gray-600 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); deleteHistoryItem(item.id); }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity chip text-[10px] text-red-400 border-red-500/20 hover:bg-red-500/10"
+                          >Delete</button>
                         </div>
                       </div>
-                      <button onClick={() => deleteHistoryItem(item.id)} className="opacity-0 group-hover:opacity-100 transition-opacity chip text-[10px] text-red-400 border-red-500/20 hover:bg-red-500/10">Delete</button>
+                      {isExpanded && item.content && (
+                        <div className="px-6 pb-5 animate-fade-in">
+                          <div className="bg-black/40 rounded-xl p-4 sm:p-6 max-h-[50vh] overflow-y-auto text-sm text-gray-300 whitespace-pre-wrap leading-relaxed mb-3" style={{ borderLeft: '2px solid rgba(249,115,22,0.3)' }}>
+                            {item.content}
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => copyHistoryItem(item)}
+                              className="chip text-[10px]"
+                              style={copiedId === item.id ? { color: '#4ade80', borderColor: 'rgba(74,222,128,0.3)' } : { color: '#fb923c', borderColor: 'rgba(249,115,22,0.3)' }}
+                            >
+                              {copiedId === item.id ? 'Copied!' : 'Copy Content'}
+                            </button>
+                            <button
+                              onClick={() => useHistoryItem(item)}
+                              className="chip text-[10px]"
+                              style={{ color: '#a78bfa', borderColor: 'rgba(167,139,250,0.3)' }}
+                            >
+                              Use This
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
