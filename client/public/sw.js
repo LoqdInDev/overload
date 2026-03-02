@@ -1,6 +1,5 @@
-const CACHE_NAME = 'overload-v1';
+const CACHE_NAME = 'overload-v2';
 const PRECACHE_URLS = [
-  '/',
   '/favicon.png',
   '/manifest.json',
 ];
@@ -28,17 +27,34 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   if (request.url.includes('/api/')) return;
 
+  // HTML navigation requests: network-first (prevents stale HTML after deploys)
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
+    );
+    return;
+  }
+
+  // Static assets: cache-first (hashed filenames guarantee freshness)
   event.respondWith(
     caches.match(request).then((cached) => {
-      const fetchPromise = fetch(request).then((response) => {
+      if (cached) return cached;
+
+      return fetch(request).then((response) => {
         if (response && response.status === 200 && response.type === 'basic') {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
         }
         return response;
-      }).catch(() => cached);
-
-      return cached || fetchPromise;
+      });
     })
   );
 });

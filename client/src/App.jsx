@@ -73,7 +73,7 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 function Loader() {
   return (
-    <div className="flex items-center justify-center h-full gap-2.5">
+    <div className="flex items-center justify-center min-h-screen gap-2.5">
       <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#C45D3E', animationDelay: '0ms' }} />
       <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#5E8E6E', animationDelay: '150ms' }} />
       <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#C45D3E', animationDelay: '300ms' }} />
