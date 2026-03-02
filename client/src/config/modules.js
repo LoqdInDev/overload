@@ -302,15 +302,6 @@ export const MODULE_REGISTRY = [
     category: 'automate',
   },
   {
-    id: 'scheduler',
-    name: 'Scheduler',
-    description: 'Schedule posts, campaigns, emails, and SMS at AI-recommended optimal times',
-    path: '/scheduler',
-    icon: 'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z',
-    color: '#3b82f6',
-    category: 'automate',
-  },
-  {
     id: 'the-advisor',
     name: 'The Advisor',
     description: 'Your daily AI marketing briefing — yesterday\'s summary, today\'s priorities, and weekly performance snapshot',

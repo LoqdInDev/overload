@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
-import { fetchJSON, postJSON, connectSSE } from '../../lib/api';
+import { fetchJSON, postJSON, deleteJSON, connectSSE } from '../../lib/api';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const EVENT_TYPES = [
@@ -9,6 +9,13 @@ const EVENT_TYPES = [
   { id: 'social', name: 'Social', color: '#3b82f6' },
   { id: 'email', name: 'Email', color: '#f59e0b' },
   { id: 'deadline', name: 'Deadline', color: '#ef4444' },
+];
+
+const RECURRENCE_OPTIONS = [
+  { id: null, name: 'One-time' },
+  { id: 'daily', name: 'Daily' },
+  { id: 'weekly', name: 'Weekly' },
+  { id: 'monthly', name: 'Monthly' },
 ];
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -38,7 +45,7 @@ export default function CalendarPage() {
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newEvent, setNewEvent] = useState({ title: '', type: 'content' });
+  const [newEvent, setNewEvent] = useState({ title: '', type: 'content', recurrence: null });
 
   useEffect(() => {
     setLoading(true);
@@ -70,10 +77,18 @@ export default function CalendarPage() {
         module_id: newEvent.type,
         date,
         color: type?.color || '#3b82f6',
+        recurrence: newEvent.recurrence,
       });
       setEvents(e => [...e, created]);
-      setNewEvent({ title: '', type: 'content' });
+      setNewEvent({ title: '', type: 'content', recurrence: null });
       setShowAddForm(false);
+    } catch (err) { console.error(err); }
+  };
+
+  const removeEvent = async (id) => {
+    try {
+      await deleteJSON(`/api/calendar/events/${id}`);
+      setEvents(e => e.filter(ev => ev.id !== id));
     } catch (err) { console.error(err); }
   };
 
@@ -84,6 +99,15 @@ export default function CalendarPage() {
       onResult: (data) => { setOutput(data.content); setGenerating(false); },
       onError: (err) => { console.error(err); setGenerating(false); },
     });
+  };
+
+  const RecurrenceBadge = ({ recurrence }) => {
+    if (!recurrence) return null;
+    return (
+      <span className="inline-flex items-center gap-0.5 text-[8px] text-sky-400 opacity-70" title={`Repeats ${recurrence}`}>
+        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 2l4 4-4 4" /><path d="M3 11v-1a4 4 0 014-4h14" /><path d="M7 22l-4-4 4-4" /><path d="M21 13v1a4 4 0 01-4 4H3" /></svg>
+      </span>
+    );
   };
 
   return (
@@ -115,7 +139,13 @@ export default function CalendarPage() {
                       className={`min-h-[60px] sm:min-h-[80px] p-2 border-b border-r border-indigo-500/[0.03] text-left transition-all ${d.current ? 'hover:bg-white/[0.01]' : 'opacity-30'} ${isSelected ? 'bg-sky-500/5 border-sky-500/15' : ''}`}>
                       <span className={`text-xs font-semibold inline-flex items-center justify-center w-6 h-6 rounded-full ${isToday ? 'bg-sky-500 text-white' : d.current ? 'text-gray-400' : 'text-gray-700'}`}>{d.day}</span>
                       <div className="mt-0.5 space-y-0.5">
-                        {evts.slice(0, 2).map(e => { const type = EVENT_TYPES.find(t => t.id === e.module_id || t.id === e.type); return (<div key={e.id} className="flex items-center gap-1"><div className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: type?.color || e.color || '#3b82f6' }} /><span className="text-[9px] text-gray-400 truncate">{e.title}</span></div>); })}
+                        {evts.slice(0, 2).map(e => { const type = EVENT_TYPES.find(t => t.id === e.module_id || t.id === e.type); return (
+                          <div key={e.id} className="flex items-center gap-1">
+                            <div className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: type?.color || e.color || '#3b82f6' }} />
+                            <span className="text-[9px] text-gray-400 truncate">{e.title}</span>
+                            <RecurrenceBadge recurrence={e.recurrence} />
+                          </div>
+                        ); })}
                         {evts.length > 2 && <span className="text-[9px] text-gray-600">+{evts.length - 2} more</span>}
                       </div>
                     </button>
@@ -130,14 +160,43 @@ export default function CalendarPage() {
           {selectedDay && (
             <div className="panel rounded-2xl p-4 sm:p-6 animate-fade-in">
               <div className="flex items-center justify-between mb-3"><p className="hud-label text-[11px]" style={{ color: '#0ea5e9' }}>{MONTHS[month]} {selectedDay}</p><button onClick={() => setShowAddForm(!showAddForm)} className="chip text-[10px]">+ Add</button></div>
-              {showAddForm && (<div className="space-y-3 mb-3 p-3 rounded-lg bg-black/30"><input value={newEvent.title} onChange={e => setNewEvent({ ...newEvent, title: e.target.value })} placeholder="Event title" className="w-full input-field rounded px-3 py-2 text-xs" /><div className="flex gap-1 flex-wrap">{EVENT_TYPES.map(t => (<button key={t.id} onClick={() => setNewEvent({ ...newEvent, type: t.id })} className="text-[9px] px-2 py-0.5 rounded-full border" style={newEvent.type === t.id ? { background: `${t.color}20`, borderColor: `${t.color}40`, color: t.color } : { borderColor: 'rgba(99,102,241,0.1)', color: '#6b7280' }}>{t.name}</button>))}</div><button onClick={addEvent} className="btn-accent w-full py-1.5 rounded text-[10px]" style={{ background: '#0ea5e9' }}>Add Event</button></div>)}
-              <div className="space-y-1.5">{dayEvents(selectedDay).length === 0 ? <p className="text-xs text-gray-600">No events</p> : dayEvents(selectedDay).map(e => { const type = EVENT_TYPES.find(t => t.id === e.module_id || t.id === e.type); return (<div key={e.id} className="flex items-center gap-2 py-1.5"><div className="w-1.5 h-1.5 rounded-full" style={{ background: type?.color || e.color || '#3b82f6' }} /><span className="text-sm text-gray-300">{e.title}</span></div>); })}</div>
+              {showAddForm && (
+                <div className="space-y-3 mb-3 p-3 rounded-lg bg-black/30">
+                  <input value={newEvent.title} onChange={e => setNewEvent({ ...newEvent, title: e.target.value })} placeholder="Event title" className="w-full input-field rounded px-3 py-2 text-xs" />
+                  <div className="flex gap-1 flex-wrap">{EVENT_TYPES.map(t => (<button key={t.id} onClick={() => setNewEvent({ ...newEvent, type: t.id })} className="text-[9px] px-2 py-0.5 rounded-full border" style={newEvent.type === t.id ? { background: `${t.color}20`, borderColor: `${t.color}40`, color: t.color } : { borderColor: 'rgba(99,102,241,0.1)', color: '#6b7280' }}>{t.name}</button>))}</div>
+                  <div>
+                    <p className="text-[9px] text-gray-500 mb-1.5">Recurrence</p>
+                    <div className="flex gap-1 flex-wrap">{RECURRENCE_OPTIONS.map(r => (<button key={r.id || 'once'} onClick={() => setNewEvent({ ...newEvent, recurrence: r.id })} className="text-[9px] px-2 py-0.5 rounded-full border" style={newEvent.recurrence === r.id ? { background: 'rgba(14,165,233,0.15)', borderColor: 'rgba(14,165,233,0.3)', color: '#38bdf8' } : { borderColor: 'rgba(99,102,241,0.1)', color: '#6b7280' }}>{r.name}</button>))}</div>
+                  </div>
+                  <button onClick={addEvent} className="btn-accent w-full py-1.5 rounded text-[10px]" style={{ background: '#0ea5e9' }}>Add Event</button>
+                </div>
+              )}
+              <div className="space-y-1.5">
+                {dayEvents(selectedDay).length === 0 ? <p className="text-xs text-gray-600">No events</p> : dayEvents(selectedDay).map(e => {
+                  const type = EVENT_TYPES.find(t => t.id === e.module_id || t.id === e.type);
+                  return (
+                    <div key={e.id} className="group flex items-center gap-2 py-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: type?.color || e.color || '#3b82f6' }} />
+                      <span className="text-sm text-gray-300 truncate flex-1">{e.title}</span>
+                      <RecurrenceBadge recurrence={e.recurrence} />
+                      <button onClick={() => removeEvent(e.id)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 transition-all text-xs" title="Delete event">&times;</button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
           <div className="panel rounded-2xl p-4 sm:p-6">
             <p className="hud-label text-[11px] mb-3">UPCOMING</p>
-            <div className="space-y-3">{events.filter(e => { const d = new Date(e.date); return isCurrentMonth ? d.getDate() >= today : true; }).sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 6).map(e => { const type = EVENT_TYPES.find(t => t.id === e.module_id || t.id === e.type); return (<div key={e.id} className="flex items-center gap-2"><span className="text-xs text-gray-600 font-mono w-6">{new Date(e.date).getDate()}</span><div className="w-1.5 h-1.5 rounded-full" style={{ background: type?.color || e.color || '#3b82f6' }} /><span className="text-xs text-gray-400 truncate">{e.title}</span></div>); })}</div>
+            <div className="space-y-3">{events.filter(e => { const d = new Date(e.date); return isCurrentMonth ? d.getDate() >= today : true; }).sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 6).map(e => { const type = EVENT_TYPES.find(t => t.id === e.module_id || t.id === e.type); return (
+              <div key={e.id} className="flex items-center gap-2">
+                <span className="text-xs text-gray-600 font-mono w-6">{new Date(e.date).getDate()}</span>
+                <div className="w-1.5 h-1.5 rounded-full" style={{ background: type?.color || e.color || '#3b82f6' }} />
+                <span className="text-xs text-gray-400 truncate flex-1">{e.title}</span>
+                <RecurrenceBadge recurrence={e.recurrence} />
+              </div>
+            ); })}</div>
           </div>
         </div>
       </div>

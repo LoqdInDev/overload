@@ -38,7 +38,6 @@ const MODULE_CATEGORY_MAP = {
   'api-manager': 'connect',
   'webhooks': 'connect',
   'workflow-builder': 'planning',
-  'scheduler': 'planning',
   'ecommerce-hub': 'ecommerce',
   'knowledge-base': 'connect',
   'brand-hub': 'planning',

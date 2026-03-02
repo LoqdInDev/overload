@@ -208,7 +208,7 @@ const TOPICS = [
     steps: [
       'Press **Ctrl+K** (or Cmd+K on Mac) to open it',
       'Type any module name to jump there instantly',
-      'Search across all 41 modules',
+      'Search across all 40 modules',
       'Works from any page in the dashboard',
     ],
     links: [],
@@ -361,7 +361,7 @@ export default function ChatBot() {
         role: 'bot',
         text: "I'm not sure about that, but I can help you with:",
         steps: [
-          'Navigating to any of the **41 modules**',
+          'Navigating to any of the **40 modules**',
           'Explaining **Autopilot**, **Copilot**, and **Manual** modes',
           'Setting up **integrations** and **brand profile**',
           'Finding the right tool for your marketing task',

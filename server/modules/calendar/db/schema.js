@@ -11,6 +11,7 @@ function initDatabase() {
       date TEXT NOT NULL,
       end_date TEXT,
       color TEXT,
+      recurrence TEXT DEFAULT NULL,
       status TEXT DEFAULT 'planned',
       created_at TEXT DEFAULT (datetime('now'))
     );
@@ -26,6 +27,14 @@ function initDatabase() {
       created_at TEXT DEFAULT (datetime('now'))
     );
   `);
+
+  // Migration: add recurrence column if missing
+  try {
+    const cols = db.prepare("PRAGMA table_info(mc_events)").all();
+    if (!cols.find(c => c.name === 'recurrence')) {
+      db.exec("ALTER TABLE mc_events ADD COLUMN recurrence TEXT DEFAULT NULL");
+    }
+  } catch (e) { /* table may not exist yet */ }
 }
 
 module.exports = { initDatabase };

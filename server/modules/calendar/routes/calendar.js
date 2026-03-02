@@ -88,15 +88,15 @@ router.get('/events', (req, res) => {
 router.post('/events', (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const { title, description, module_id, date, end_date, color, status } = req.body;
+    const { title, description, module_id, date, end_date, color, status, recurrence } = req.body;
 
     if (!title || !date) {
       return res.status(400).json({ error: 'Title and date are required' });
     }
 
     const result = db.prepare(
-      'INSERT INTO mc_events (title, description, module_id, date, end_date, color, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(title, description || null, module_id || null, date, end_date || null, color || null, status || 'planned', wsId);
+      'INSERT INTO mc_events (title, description, module_id, date, end_date, color, recurrence, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(title, description || null, module_id || null, date, end_date || null, color || null, recurrence || null, status || 'planned', wsId);
 
     const event = db.prepare('SELECT * FROM mc_events WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     logActivity('calendar', 'create', 'Created calendar event', title, null, wsId);
@@ -110,7 +110,7 @@ router.post('/events', (req, res) => {
 router.put('/events/:id', (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const { title, description, module_id, date, end_date, color, status } = req.body;
+    const { title, description, module_id, date, end_date, color, status, recurrence } = req.body;
 
     const existing = db.prepare('SELECT * FROM mc_events WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) {
@@ -118,7 +118,7 @@ router.put('/events/:id', (req, res) => {
     }
 
     db.prepare(
-      'UPDATE mc_events SET title = ?, description = ?, module_id = ?, date = ?, end_date = ?, color = ?, status = ? WHERE id = ? AND workspace_id = ?'
+      'UPDATE mc_events SET title = ?, description = ?, module_id = ?, date = ?, end_date = ?, color = ?, recurrence = ?, status = ? WHERE id = ? AND workspace_id = ?'
     ).run(
       title || existing.title,
       description !== undefined ? description : existing.description,
@@ -126,6 +126,7 @@ router.put('/events/:id', (req, res) => {
       date || existing.date,
       end_date !== undefined ? end_date : existing.end_date,
       color !== undefined ? color : existing.color,
+      recurrence !== undefined ? recurrence : existing.recurrence,
       status || existing.status,
       req.params.id, wsId
     );

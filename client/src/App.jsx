@@ -52,7 +52,6 @@ const IntegrationsPage = lazy(() => import('./modules/integrations/IntegrationsP
 const ApiManagerPage = lazy(() => import('./modules/api-manager/ApiManagerPage'));
 const WebhooksPage = lazy(() => import('./modules/webhooks/WebhooksPage'));
 const WorkflowBuilderPage = lazy(() => import('./modules/workflow-builder/WorkflowBuilderPage'));
-const SchedulerPage = lazy(() => import('./modules/scheduler/SchedulerPage'));
 const AutopilotPage = lazy(() => import('./modules/autopilot/AutopilotPage'));
 const CustomerAiPage = lazy(() => import('./modules/customer-ai/CustomerAiPage'));
 const BrandHubPage = lazy(() => import('./modules/brand-hub/BrandHubPage'));
@@ -460,7 +459,6 @@ export default function App() {
                     <Route path="/api-manager/*" element={<M component={ApiManagerPage} name="API Manager" />} />
                     <Route path="/webhooks/*" element={<M component={WebhooksPage} name="Webhooks" />} />
                     <Route path="/workflow-builder/*" element={<M component={WorkflowBuilderPage} name="Workflow Builder" />} />
-                    <Route path="/scheduler/*" element={<M component={SchedulerPage} name="Scheduler" />} />
                     <Route path="/autopilot/*" element={<M component={AutopilotPage} name="Autopilot" />} />
                     <Route path="/brand-profile/*" element={<Navigate to="/brand-hub" replace />} />
                     <Route path="/customer-ai/*" element={<M component={CustomerAiPage} name="Customer AI" />} />
