@@ -3,6 +3,46 @@ const router = express.Router();
 const { db, logActivity } = require('../../../db/database');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
+const cheerio = require('cheerio');
+
+// Scrape real content from a competitor's website
+async function scrapeWebsite(url) {
+  try {
+    const normalised = url.startsWith('http') ? url : `https://${url}`;
+    const res = await fetch(normalised, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; OverloadBot/1.0)' },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    const $ = cheerio.load(html);
+
+    const title = $('title').first().text().trim();
+    const metaDesc = $('meta[name="description"]').attr('content') || $('meta[property="og:description"]').attr('content') || '';
+    const headings = [];
+    $('h1, h2, h3').each((_, el) => { const t = $(el).text().trim(); if (t && t.length < 200) headings.push(t); });
+    const prices = [];
+    $('*').each((_, el) => {
+      const t = $(el).clone().children().remove().end().text().trim();
+      if (/(\$|€|£)\d/.test(t) && t.length < 100) prices.push(t);
+    });
+    const ctaTexts = [];
+    $('a[href], button').each((_, el) => { const t = $(el).text().trim(); if (t && t.length < 60) ctaTexts.push(t); });
+    const navLinks = [];
+    $('nav a, header a').each((_, el) => { const t = $(el).text().trim(); if (t && t.length < 40) navLinks.push(t); });
+
+    return [
+      title && `Page Title: ${title}`,
+      metaDesc && `Meta Description: ${metaDesc}`,
+      headings.slice(0, 12).length && `\nHeadings:\n${headings.slice(0, 12).map(h => `- ${h}`).join('\n')}`,
+      prices.slice(0, 8).length && `\nPricing Found:\n${prices.slice(0, 8).map(p => `- ${p}`).join('\n')}`,
+      ctaTexts.slice(0, 10).length && `\nCTA Buttons/Links:\n${[...new Set(ctaTexts.slice(0, 10))].map(c => `- ${c}`).join('\n')}`,
+      navLinks.slice(0, 8).length && `\nNavigation:\n${[...new Set(navLinks.slice(0, 8))].map(n => `- ${n}`).join('\n')}`,
+    ].filter(Boolean).join('\n');
+  } catch (_) {
+    return null;
+  }
+}
 
 // GET / - List all competitors
 router.get('/', (req, res) => {
@@ -66,11 +106,18 @@ router.post('/analyze', async (req, res) => {
   try {
     const { competitorId, competitorName, website, industry, analysisType } = req.body;
 
+    // Scrape real website data if URL provided
+    let scrapedData = null;
+    if (website) {
+      scrapedData = await scrapeWebsite(website);
+    }
+
     const prompt = `You are an elite competitive intelligence analyst. Perform a thorough ${analysisType || 'comprehensive'} analysis of a competitor.
 
 Competitor: ${competitorName || 'Unknown'}
 Website: ${website || 'Not provided'}
 Industry: ${industry || 'general'}
+${scrapedData ? `\n--- LIVE DATA SCRAPED FROM THEIR WEBSITE ---\n${scrapedData}\n--- END LIVE DATA ---\n` : ''}
 
 Based on the analysis type, provide:
 
@@ -206,6 +253,33 @@ router.put('/:id', (req, res) => {
     ).run(name, website, industry, description, strengths, weaknesses, req.params.id, wsId);
     res.json(db.prepare('SELECT * FROM ci_competitors WHERE id = ?').get(req.params.id));
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /ads - Fetch live ads from Meta Ad Library
+router.get('/ads', async (req, res) => {
+  const token = process.env.META_AD_LIBRARY_TOKEN;
+  if (!token) return res.status(503).json({ error: 'META_AD_LIBRARY_TOKEN not configured' });
+
+  const { name, country } = req.query;
+  if (!name) return res.status(400).json({ error: 'name query param required' });
+
+  try {
+    const params = new URLSearchParams({
+      search_terms: name,
+      ad_reached_countries: JSON.stringify([country || 'US']),
+      ad_active_status: 'ALL',
+      fields: 'id,ad_creative_bodies,ad_creative_link_titles,ad_creative_link_descriptions,ad_snapshot_url,page_name,impressions,ad_delivery_start_time,ad_delivery_stop_time,funding_entity,publisher_platforms',
+      limit: '25',
+      access_token: token,
+    });
+    const apiRes = await fetch(`https://graph.facebook.com/v21.0/ads_archive?${params}`);
+    const data = await apiRes.json();
+    if (data.error) return res.status(400).json({ error: data.error.message });
+    res.json(data);
+  } catch (error) {
+    console.error('Meta Ad Library error:', error);
     res.status(500).json({ error: error.message });
   }
 });

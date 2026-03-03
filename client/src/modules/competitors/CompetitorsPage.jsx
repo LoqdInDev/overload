@@ -3,6 +3,8 @@ import { usePageTitle } from '../../hooks/usePageTitle';
 import { fetchJSON, connectSSE, deleteJSON, putJSON } from '../../lib/api';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
+const AD_PLATFORMS_ICONS = { facebook: '📘', instagram: '📸', audience_network: '📡', messenger: '💬' };
+
 const TOOLS = [
   { id: 'ad-spy', name: 'Ad Spy', icon: 'M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
   { id: 'content', name: 'Content Analysis', icon: 'M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z' },
@@ -33,6 +35,9 @@ export default function CompetitorsPage() {
   const [competitors, setCompetitors] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [liveAds, setLiveAds] = useState(null);
+  const [loadingAds, setLoadingAds] = useState(false);
+  const [adsError, setAdsError] = useState(null);
 
   useEffect(() => {
     fetchJSON('/api/competitors/stats')
@@ -52,6 +57,15 @@ export default function CompetitorsPage() {
     await deleteJSON(`/api/competitors/${id}`);
     setCompetitors(prev => prev.filter(c => c.id !== id));
     fetchJSON('/api/competitors/stats').then(setStats).catch(() => {});
+  };
+
+  const fetchLiveAds = () => {
+    if (!competitorName.trim()) return;
+    setLoadingAds(true); setLiveAds(null); setAdsError(null);
+    fetchJSON(`/api/competitors/ads?name=${encodeURIComponent(competitorName)}`)
+      .then(data => setLiveAds(data.data || []))
+      .catch(err => setAdsError(err?.error || 'Failed to fetch ads'))
+      .finally(() => setLoadingAds(false));
   };
 
   const generate = () => {
@@ -163,6 +177,75 @@ export default function CompetitorsPage() {
           <div className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-3">ANALYSIS DEPTH</p><div className="space-y-1.5">{DEPTHS.map(d => (<button key={d} onClick={() => setDepth(d)} className={`w-full chip text-xs justify-center ${depth === d ? 'active' : ''}`} style={depth === d ? { background: 'rgba(239,68,68,0.15)', borderColor: 'rgba(239,68,68,0.3)', color: '#f87171' } : {}}>{d}</button>))}</div></div>
         </div>
       </div>
+      {/* Live Ads Panel — Ad Spy tool only */}
+      {activeTool === 'ad-spy' && (
+        <div className="mt-6 animate-fade-in">
+          <div className="flex items-center gap-3 mb-3">
+            <p className="hud-label text-[11px]" style={{ color: '#ef4444' }}>LIVE ADS</p>
+            <div className="flex-1 hud-line" />
+            <button
+              onClick={fetchLiveAds}
+              disabled={loadingAds || !competitorName.trim()}
+              className="chip text-[10px]"
+              style={{ color: '#f87171', borderColor: 'rgba(239,68,68,0.3)' }}
+            >
+              {loadingAds ? 'Fetching...' : '⚡ Fetch Live Meta Ads'}
+            </button>
+            {competitorName.trim() && (
+              <a
+                href={`https://adstransparency.google.com/?region=anywhere&query=${encodeURIComponent(competitorName)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="chip text-[10px]"
+                style={{ color: '#60a5fa', borderColor: 'rgba(96,165,250,0.3)' }}
+              >
+                🔍 Google Ads Transparency
+              </a>
+            )}
+          </div>
+
+          {adsError && (
+            <div className="panel rounded-xl p-4 text-xs text-red-400" style={{ borderColor: 'rgba(239,68,68,0.2)' }}>
+              {adsError}
+            </div>
+          )}
+
+          {liveAds && liveAds.length === 0 && (
+            <div className="panel rounded-xl p-4 text-sm text-gray-500 text-center">No active Meta ads found for "{competitorName}"</div>
+          )}
+
+          {liveAds && liveAds.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {liveAds.slice(0, 10).map(ad => {
+                const body = (ad.ad_creative_bodies || [])[0] || '';
+                const headline = (ad.ad_creative_link_titles || [])[0] || '';
+                const desc = (ad.ad_creative_link_descriptions || [])[0] || '';
+                const platforms = ad.publisher_platforms || [];
+                const startDate = ad.ad_delivery_start_time ? ad.ad_delivery_start_time.slice(0, 10) : null;
+                const stopDate = ad.ad_delivery_stop_time ? ad.ad_delivery_stop_time.slice(0, 10) : null;
+                return (
+                  <div key={ad.id} className="panel rounded-xl p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold text-gray-300 truncate">{ad.page_name || ad.funding_entity || 'Unknown page'}</p>
+                      <div className="flex gap-1 text-sm">{platforms.map(p => <span key={p} title={p}>{AD_PLATFORMS_ICONS[p] || '📢'}</span>)}</div>
+                    </div>
+                    {headline && <p className="text-sm font-semibold text-white">{headline}</p>}
+                    {body && <p className="text-xs text-gray-400 line-clamp-3">{body}</p>}
+                    {desc && <p className="text-xs text-gray-500 italic">{desc}</p>}
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[10px] text-gray-600">
+                        {startDate && `Started ${startDate}`}{stopDate && ` · Ended ${stopDate}`}{!stopDate && startDate && ' · Still running'}
+                      </span>
+                      <a href={ad.ad_snapshot_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-red-400 hover:text-red-300">View Ad →</a>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {output && <div className="mt-6 animate-fade-up"><div className="flex items-center gap-2 mb-3"><div className={`w-2 h-2 rounded-full ${generating ? 'bg-red-400 animate-pulse' : 'bg-emerald-400'}`} /><span className="hud-label text-[11px]" style={{ color: generating ? '#f87171' : '#4ade80' }}>{generating ? 'ANALYZING...' : 'ANALYSIS COMPLETE'}</span></div><div className="panel rounded-2xl p-4 sm:p-7"><pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-red-400 ml-0.5 animate-pulse" />}</pre></div></div>}
       <AIInsightsPanel moduleId="competitors" />
     </div>
