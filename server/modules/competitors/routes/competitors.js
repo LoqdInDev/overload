@@ -4,6 +4,14 @@ const { db, logActivity } = require('../../../db/database');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
 const cheerio = require('cheerio');
+const path = require('path');
+
+// Re-read .env on every call so the token is picked up without a server restart
+const ENV_PATH = path.join(__dirname, '../../../../.env');
+function getMetaToken() {
+  require('dotenv').config({ path: ENV_PATH, override: true });
+  return process.env.META_AD_LIBRARY_TOKEN;
+}
 
 // Scrape real content from a competitor's website
 async function scrapeWebsite(url) {
@@ -267,7 +275,7 @@ router.put('/:id', (req, res) => {
 
 // GET /ads - Fetch live ads from Meta Ad Library
 router.get('/ads', async (req, res) => {
-  const token = process.env.META_AD_LIBRARY_TOKEN;
+  const token = getMetaToken();
   if (!token) return res.status(503).json({ error: 'META_AD_LIBRARY_TOKEN not configured' });
 
   const { name, country } = req.query;
