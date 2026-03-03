@@ -128,6 +128,14 @@ ${analysisType === 'ad-spy' ? `AD INTELLIGENCE:
 - Target audience segmentation
 - Winning ad formulas to learn from
 - Gaps you can exploit` :
+analysisType === 'google-ads' ? `GOOGLE ADS INTELLIGENCE:
+- Keywords they're likely bidding on (branded, generic, competitor terms)
+- Estimated ad copy angles, hooks, and value propositions
+- Landing page strategy inferred from their website content
+- Ad extensions they likely use (sitelinks, callouts, structured snippets, review extensions)
+- Campaign types in use (Search, Display, Shopping, YouTube, Performance Max)
+- Budget tier estimates based on their market position and website scale
+- Specific keyword gaps and bid strategy opportunities to outrank them on Google` :
 analysisType === 'content' ? `CONTENT ANALYSIS:
 - Content strategy overview (topics, frequency, formats)
 - Top-performing content themes
@@ -276,7 +284,7 @@ router.get('/ads', async (req, res) => {
     });
     const apiRes = await fetch(`https://graph.facebook.com/v21.0/ads_archive?${params}`);
     const data = await apiRes.json();
-    if (data.error) return res.status(400).json({ error: data.error.message });
+    if (data.error) return res.status(400).json({ error: data.error.message || data.error.type || JSON.stringify(data.error) });
     res.json(data);
   } catch (error) {
     console.error('Meta Ad Library error:', error);
