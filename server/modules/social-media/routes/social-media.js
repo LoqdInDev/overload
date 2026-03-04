@@ -403,7 +403,7 @@ router.post('/accounts/:providerId/sync', async (req, res) => {
 router.post('/publish', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const { providerId, text, caption, mediaUrl, imageUrl, postId, pageId, pageToken, boardId, title, link } = req.body;
+    const { providerId, platformId, text, caption, mediaUrl, imageUrl, postId, pageId, pageToken, boardId, title, link } = req.body;
 
     if (!pm.isConnected(providerId)) {
       return res.status(400).json({ success: false, error: `${providerId} is not connected. Go to Integrations to connect.` });
@@ -411,38 +411,52 @@ router.post('/publish', async (req, res) => {
 
     const content = {};
     const postText = text || caption || '';
+    let result;
 
-    switch (providerId) {
-      case 'twitter':
-        content.text = postText;
-        break;
-      case 'linkedin':
-        content.text = postText;
-        if (mediaUrl || imageUrl) content.mediaUrn = mediaUrl;
-        if (title) content.title = title;
-        break;
-      case 'meta':
-        content.message = postText;
-        if (pageId) content.pageId = pageId;
-        if (pageToken) content.pageToken = pageToken;
-        if (mediaUrl || imageUrl) content.mediaUrl = mediaUrl || imageUrl;
-        if (link) content.link = link;
-        break;
-      case 'pinterest':
-        content.boardId = boardId;
-        content.title = title || postText.slice(0, 100);
-        content.description = postText;
-        content.imageUrl = imageUrl || mediaUrl;
-        if (link) content.link = link;
-        break;
-      case 'tiktok':
-        content.title = title || postText.slice(0, 150);
-        break;
-      default:
-        return res.status(400).json({ success: false, error: `Publishing not supported for ${providerId}` });
+    // Instagram needs its own routing (separate from Facebook despite sharing 'meta' OAuth)
+    if (platformId === 'instagram') {
+      const igPlatforms = require('../../../services/platforms');
+      const token = await pm.getToken('meta');
+      const igAccounts = await igPlatforms.instagram.getProfile(token);
+      if (!igAccounts || !igAccounts.length) {
+        return res.status(400).json({ success: false, error: 'No Instagram Business account found. Make sure your Instagram account is linked to a Facebook Page.' });
+      }
+      const igUserId = igAccounts[0].id;
+      if (!imageUrl && !mediaUrl) {
+        return res.status(400).json({ success: false, error: 'Instagram requires a media URL to publish. Paste an image URL in the media field.' });
+      }
+      result = await igPlatforms.instagram.publishPhoto(token, igUserId, { imageUrl: imageUrl || mediaUrl, caption: postText });
+    } else {
+      switch (providerId) {
+        case 'twitter':
+          content.text = postText;
+          break;
+        case 'linkedin':
+          content.text = postText;
+          content.title = title || '';
+          break;
+        case 'meta':
+          content.message = postText;
+          if (pageId) content.pageId = pageId;
+          if (pageToken) content.pageToken = pageToken;
+          if (mediaUrl || imageUrl) content.mediaUrl = mediaUrl || imageUrl;
+          if (link) content.link = link;
+          break;
+        case 'pinterest':
+          content.boardId = boardId;
+          content.title = title || postText.slice(0, 100);
+          content.description = postText;
+          content.imageUrl = imageUrl || mediaUrl;
+          if (link) content.link = link;
+          break;
+        case 'tiktok':
+          content.title = title || postText.slice(0, 150);
+          break;
+        default:
+          return res.status(400).json({ success: false, error: `Publishing not supported for ${providerId}` });
+      }
+      result = await pm.socialPost(providerId, content);
     }
-
-    const result = await pm.socialPost(providerId, content);
 
     // Update post status in DB if postId provided
     if (postId) {
@@ -538,6 +552,113 @@ Make each variation distinctly different. Keep platform best practices. Only ret
       ]}); }
     })
     .catch(err => res.status(500).json({ error: err.message }));
+});
+
+// POST /cross-platform - SSE: generate adapted posts for all platforms at once
+router.post('/cross-platform', async (req, res) => {
+  const sse = setupSSE(res);
+  const wsId = req.workspace.id;
+  try {
+    const { brief, platforms: targetPlatforms, tone } = req.body;
+    if (!brief) { sse.sendError({ message: 'brief required' }); return; }
+    const brandBlock = buildBrandSystemPrompt(getBrandContext(wsId));
+    const targets = (targetPlatforms || ['instagram', 'twitter', 'linkedin', 'tiktok', 'facebook']).join(', ');
+
+    const prompt = `You are a cross-platform social media expert. Adapt this brief into platform-native posts.
+
+Brief: ${brief}
+Tone: ${tone || 'engaging and authentic'}
+${brandBlock || ''}
+
+Generate one post for EACH of these platforms: ${targets}
+
+Platform specs:
+- Instagram: visual-first, line breaks, 5-15 hashtags, emojis, 2200 max chars
+- Twitter/X: 280 chars HARD LIMIT, punchy hook, 1-2 hashtags max
+- LinkedIn: professional storytelling, 3-5 hashtags, 3000 max chars
+- TikTok: casual/trendy script-style, reference hooks, 3-5 hashtags
+- Facebook: community-focused, ask questions to spark comments
+
+Format your response exactly as:
+PLATFORM: [platform name]
+POST:
+[full post text]
+BEST TIME: [day & time recommendation]
+---
+
+Separate each platform with "---". Make each feel completely native.`;
+
+    const { text } = await generateTextWithClaude(prompt, {
+      onChunk: (c) => sse.sendChunk(c), maxTokens: 4096, temperature: 0.85,
+    });
+    const result = db.prepare('INSERT INTO sm_posts (platform, post_type, caption, metadata, workspace_id) VALUES (?, ?, ?, ?, ?)')
+      .run('multi', 'cross-platform', text, JSON.stringify({ brief, platforms: targetPlatforms }), wsId);
+    logActivity('social', 'cross-platform', 'Generated cross-platform posts', brief.slice(0, 80), String(result.lastInsertRowid), wsId);
+    sse.sendResult({ id: result.lastInsertRowid, content: text });
+  } catch (error) {
+    console.error('Cross-platform error:', error);
+    sse.sendError(error);
+  }
+});
+
+// POST /repurpose - SSE: repurpose any content into social posts
+router.post('/repurpose', async (req, res) => {
+  const sse = setupSSE(res);
+  const wsId = req.workspace.id;
+  try {
+    const { content, contentType = 'blog post', targetPlatforms } = req.body;
+    if (!content) { sse.sendError({ message: 'content required' }); return; }
+    const brandBlock = buildBrandSystemPrompt(getBrandContext(wsId));
+    const targets = (targetPlatforms || ['instagram', 'twitter', 'linkedin']).join(', ');
+
+    const prompt = `You are a social media repurposing expert. Transform this ${contentType} into engaging, platform-native social posts.
+
+${contentType.toUpperCase()}:
+${content.slice(0, 5000)}
+${brandBlock || ''}
+
+Extract the most valuable insights, stories, stats, and hooks. Create posts for: ${targets}
+
+For each platform:
+PLATFORM: [name]
+POST:
+[full post — written natively for that platform's culture and format]
+KEY INSIGHT: [what you extracted from the source content]
+---
+
+Don't copy-paste excerpts. Rewrite everything to feel native and engaging on each platform.`;
+
+    const { text } = await generateTextWithClaude(prompt, {
+      onChunk: (c) => sse.sendChunk(c), maxTokens: 4096, temperature: 0.8,
+    });
+    sse.sendResult({ content: text });
+  } catch (error) {
+    console.error('Repurpose error:', error);
+    sse.sendError(error);
+  }
+});
+
+// POST /best-times - AI-recommended posting times per platform
+router.post('/best-times', async (req, res) => {
+  const { platform, industry, audience } = req.body;
+  try {
+    const { text } = await generateTextWithClaude(
+      `You are a social media timing expert. Provide optimal posting times.\nPlatform: ${platform || 'instagram'}\nIndustry: ${industry || 'general'}\nAudience: ${audience || 'general'}\n\nReturn ONLY valid JSON (no markdown):\n{"best_times":[{"day":"Tuesday","time":"9:00 AM EST","reason":"high engagement window","score":95},{"day":"Wednesday","time":"12:00 PM EST","reason":"lunch scroll peak","score":88},{"day":"Thursday","time":"6:00 PM EST","reason":"evening commute","score":85}],"avoid":["Saturday early morning","Sunday evening"],"tip":"One key platform-specific timing insight"}`,
+      { temperature: 0.3 }
+    );
+    const clean = text.replace(/```json\n?|\n?```/g, '').trim();
+    res.json(JSON.parse(clean));
+  } catch {
+    res.json({
+      best_times: [
+        { day: 'Tuesday', time: '9:00 AM', reason: 'Peak morning engagement', score: 92 },
+        { day: 'Wednesday', time: '12:00 PM', reason: 'Lunch scroll peak', score: 87 },
+        { day: 'Thursday', time: '6:00 PM', reason: 'Evening commute', score: 85 },
+      ],
+      avoid: ['Saturday early morning', 'Sunday evening'],
+      tip: `${platform || 'This platform'} sees highest engagement mid-week during commute hours.`,
+    });
+  }
 });
 
 // POST /hashtag-intelligence — get smart hashtag recommendations
