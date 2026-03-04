@@ -1,4 +1,4 @@
-const CACHE_NAME = 'overload-v2';
+const CACHE_NAME = 'overload-v3';
 const PRECACHE_URLS = [
   '/favicon.png',
   '/manifest.json',
