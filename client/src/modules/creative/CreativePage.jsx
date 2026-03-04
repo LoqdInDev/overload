@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
 import { fetchJSON, postJSON, deleteJSON, connectSSE } from '../../lib/api';
@@ -89,8 +89,121 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+// Full-screen lightbox
+function ImageLightbox({ images, index, onClose }) {
+  const [current, setCurrent] = useState(index);
+  const [promptCopied, setPromptCopied] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowRight') setCurrent(i => Math.min(i + 1, images.length - 1));
+      if (e.key === 'ArrowLeft') setCurrent(i => Math.max(i - 1, 0));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose, images.length]);
+
+  const img = images[current];
+  const imgSrc = img?.dataUrl || img?.url;
+
+  const copyPrompt = () => {
+    navigator.clipboard.writeText(img.prompt || img.alt || '');
+    setPromptCopied(true);
+    setTimeout(() => setPromptCopied(false), 2000);
+  };
+
+  if (!img) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in"
+      style={{ background: 'rgba(0,0,0,0.92)' }}
+      onClick={onClose}>
+      <div className="relative flex flex-col items-center max-w-5xl w-full max-h-screen p-4 sm:p-8"
+        onClick={e => e.stopPropagation()}>
+
+        {/* Close */}
+        <button onClick={onClose}
+          className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 w-9 h-9 rounded-full flex items-center justify-center transition-all"
+          style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
+          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        {/* Counter */}
+        {images.length > 1 && (
+          <p className="hud-label text-[10px] mb-3" style={{ color: '#22d3ee' }}>
+            {current + 1} / {images.length}
+          </p>
+        )}
+
+        {/* Image */}
+        <div className="relative w-full flex items-center justify-center">
+          {images.length > 1 && current > 0 && (
+            <button onClick={() => setCurrent(i => i - 1)}
+              className="absolute left-0 z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all"
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
+          <img src={imgSrc} alt={img.alt || 'Generated creative'}
+            className="max-h-[70vh] max-w-full rounded-xl object-contain"
+            style={{ boxShadow: '0 0 80px rgba(6,182,212,0.15)' }} />
+          {images.length > 1 && current < images.length - 1 && (
+            <button onClick={() => setCurrent(i => i + 1)}
+              className="absolute right-0 z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all"
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Actions + prompt */}
+        <div className="mt-4 w-full max-w-xl flex flex-col gap-2">
+          <div className="flex gap-2 justify-center">
+            <a href={imgSrc} download={`creative-${img.id || current}.png`}
+              className="chip text-[10px]" style={{ background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' }}>
+              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              Download
+            </a>
+            <button onClick={copyPrompt} className="chip text-[10px]"
+              style={promptCopied ? { color: '#4ade80', borderColor: 'rgba(74,222,128,0.3)' } : {}}>
+              {promptCopied ? 'Prompt Copied!' : 'Copy Prompt'}
+            </button>
+          </div>
+          {img.prompt && (
+            <p className="text-[11px] text-gray-500 text-center leading-relaxed px-4 line-clamp-3">{img.prompt}</p>
+          )}
+        </div>
+
+        {/* Thumbnail strip */}
+        {images.length > 1 && (
+          <div className="flex gap-2 mt-4">
+            {images.map((im, i) => {
+              const src = im.dataUrl || im.url;
+              return src ? (
+                <button key={i} onClick={() => setCurrent(i)}
+                  className={`w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${i === current ? 'border-cyan-400' : 'border-transparent opacity-50 hover:opacity-80'}`}>
+                  <img src={src} alt="" className="w-full h-full object-cover" />
+                </button>
+              ) : null;
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Individual image card with proper error fallback
-function ImageCard({ img, apiBase, onCopy }) {
+function ImageCard({ img, apiBase, onOpen }) {
   const [failed, setFailed] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
   const imgSrc = img.dataUrl || (img.url ? `${apiBase}${img.url}` : null);
@@ -113,7 +226,8 @@ function ImageCard({ img, apiBase, onCopy }) {
               alt={img.alt || 'Generated creative'}
               loading="lazy"
               onError={() => setFailed(true)}
-              className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105"
+              onClick={onOpen}
+              className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105 cursor-zoom-in"
             />
             {/* Hover overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-end pb-4 gap-2 px-4">
@@ -181,6 +295,7 @@ export default function CreativePage() {
   const [generating, setGenerating] = useState(false);
   const [images, setImages] = useState([]);
   const [error, setError] = useState(null);
+  const [lightbox, setLightbox] = useState(null); // { index: number }
   const [activeTab, setActiveTab] = useState('generate');
   const [showInput, setShowInput] = useState(true);
   const [history, setHistory] = useState([]);
@@ -632,9 +747,17 @@ export default function CreativePage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                     {images.map((img, i) => (
-                      <ImageCard key={i} img={img} apiBase={API_BASE} />
+                      <ImageCard key={i} img={img} apiBase={API_BASE} onOpen={() => setLightbox({ index: i })} />
                     ))}
                   </div>
+
+                  {lightbox && (
+                    <ImageLightbox
+                      images={images.filter(im => im.dataUrl || im.url)}
+                      index={lightbox.index}
+                      onClose={() => setLightbox(null)}
+                    />
+                  )}
                 </div>
               )}
             </div>
