@@ -33,7 +33,7 @@ function dimensionToAspectRatio(dimension) {
 
 /**
  * Generate a single image using Gemini's image generation API.
- * Returns { url, mimeType } where url is a relative path for static serving.
+ * Returns { url, dataUrl, mimeType } — dataUrl is a base64 data URL for immediate display.
  */
 async function generateImage(prompt, aspectRatio = '1:1') {
   if (!GEMINI_API_KEY) {
@@ -83,7 +83,11 @@ async function generateImage(prompt, aspectRatio = '1:1') {
 
   console.log(`[gemini] Saved image: ${filename} (${mimeType}, ${aspectRatio})`);
 
-  return { url: `/uploads/creatives/${filename}`, mimeType };
+  return {
+    url: `/uploads/creatives/${filename}`,
+    dataUrl: `data:${mimeType};base64,${base64}`,
+    mimeType,
+  };
 }
 
 /**

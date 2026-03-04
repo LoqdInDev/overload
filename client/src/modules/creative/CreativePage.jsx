@@ -93,7 +93,8 @@ function formatDate(dateStr) {
 function ImageCard({ img, apiBase, onCopy }) {
   const [failed, setFailed] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
-  const hasImage = img.url && !failed;
+  const imgSrc = img.dataUrl || (img.url ? `${apiBase}${img.url}` : null);
+  const hasImage = !!imgSrc && !failed;
   const isPromptReady = img.status === 'prompt_ready' || !img.url || failed;
 
   const copyPrompt = () => {
@@ -108,7 +109,7 @@ function ImageCard({ img, apiBase, onCopy }) {
         {hasImage ? (
           <>
             <img
-              src={`${apiBase}${img.url}`}
+              src={imgSrc}
               alt={img.alt || 'Generated creative'}
               loading="lazy"
               onError={() => setFailed(true)}
@@ -116,7 +117,7 @@ function ImageCard({ img, apiBase, onCopy }) {
             />
             {/* Hover overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-end pb-4 gap-2 px-4">
-              <a href={`${apiBase}${img.url}`} download
+              <a href={imgSrc} download={`creative-${img.id || 'image'}.png`}
                 className="chip text-[10px] w-full justify-center" style={{ background: 'rgba(6,182,212,0.25)', borderColor: 'rgba(6,182,212,0.4)', color: '#22d3ee' }}>
                 <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />

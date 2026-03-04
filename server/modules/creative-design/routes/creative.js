@@ -81,7 +81,7 @@ router.post('/generate', async (req, res) => {
       const url = genResult?.url || null;
       const status = url ? 'completed' : 'failed';
       q.createImage(imgId, projectId, url, p.alt, 'gemini', status, JSON.stringify({ ...p, error: genResult?.error }));
-      return { id: imgId, prompt: p.prompt, alt: p.alt, style_notes: p.style_notes, status, url, error: genResult?.error };
+      return { id: imgId, prompt: p.prompt, alt: p.alt, style_notes: p.style_notes, status, url, dataUrl: genResult?.dataUrl || null, error: genResult?.error };
     });
 
     logActivity('creative', 'generate', `Generated ${type} creative`, title, projectId, wsId);
