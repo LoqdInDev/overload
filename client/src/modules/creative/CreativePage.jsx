@@ -139,8 +139,17 @@ function ImageCard({ img, apiBase, onCopy }) {
               </svg>
             </div>
             <div>
-              <p className="hud-label text-[9px] mb-1.5" style={{ color: '#22d3ee' }}>AI PROMPT READY</p>
-              <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-5">{img.prompt || img.alt}</p>
+              {img.error ? (
+                <>
+                  <p className="hud-label text-[9px] mb-1.5" style={{ color: '#f87171' }}>GEMINI ERROR</p>
+                  <p className="text-[10px] text-red-400/80 leading-relaxed line-clamp-4">{img.error}</p>
+                </>
+              ) : (
+                <>
+                  <p className="hud-label text-[9px] mb-1.5" style={{ color: '#22d3ee' }}>AI PROMPT READY</p>
+                  <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-5">{img.prompt || img.alt}</p>
+                </>
+              )}
             </div>
             <button onClick={copyPrompt}
               className="chip text-[10px] mt-1" style={{ color: promptCopied ? '#4ade80' : '#22d3ee', borderColor: promptCopied ? 'rgba(74,222,128,0.3)' : 'rgba(6,182,212,0.25)' }}>

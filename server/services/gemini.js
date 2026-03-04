@@ -22,7 +22,7 @@ function dimensionToAspectRatio(dimension) {
     '1200x628':  '16:9',
     '1200x630':  '16:9',
     '1920x600':  '16:9',
-    '1500x500':  '3:1',
+    '1500x500':  '4:1',
     '1080x1920': '9:16',
     '728x90':    '16:9',
     '300x250':   '4:3',
@@ -44,11 +44,7 @@ async function generateImage(prompt, aspectRatio = '1:1') {
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: {
       responseModalities: ['TEXT', 'IMAGE'],
-      imageConfig: {
-        numberOfImages: 1,
-        aspectRatio,
-        imageSize: '1K',
-      },
+      imageConfig: { aspectRatio },
     },
   };
 
