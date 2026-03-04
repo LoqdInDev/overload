@@ -503,7 +503,7 @@ function MarketplaceTab({ dark, rules, onInstalled }) {
                       className="w-full py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 hover:scale-[1.01]"
                       style={{ background: catColor, color: '#ffffff' }}
                     >
-                      {isActing ? 'Installing...' : '+ Install Recipe'}
+                      + Install Recipe
                     </button>
                   )}
                 </div>
