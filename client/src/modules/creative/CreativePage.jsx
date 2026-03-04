@@ -348,6 +348,8 @@ export default function CreativePage() {
   const [showInput, setShowInput] = useState(true);
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyView, setHistoryView] = useState('grid');
+  const [historyLightbox, setHistoryLightbox] = useState(null); // { images, index }
 
   // Creative Brief state
   const [briefProduct, setBriefProduct] = useState('');
@@ -627,6 +629,31 @@ export default function CreativePage() {
       {/* ── HISTORY TAB ── */}
       {activeTab === 'history' && (
         <div className="animate-fade-in">
+          {/* Controls */}
+          {!historyLoading && history.length > 0 && (
+            <div className="flex items-center justify-between mb-4">
+              <p className="hud-label text-[11px]" style={{ color: '#4ade80' }}>
+                {history.length} PROJECT{history.length !== 1 ? 'S' : ''}
+              </p>
+              <div className="flex items-center gap-1">
+                {[
+                  { id: 'grid', icon: 'M2 2h5v5H2V2zm0 7h5v5H2V9zm7-7h5v5H9V2zm0 7h5v5H9V9z' },
+                  { id: 'list', icon: 'M3 5h14M3 9h14M3 13h14M3 17h14' },
+                ].map(v => (
+                  <button key={v.id} onClick={() => setHistoryView(v.id)}
+                    className="p-1.5 rounded-md transition-all"
+                    style={historyView === v.id
+                      ? { background: 'rgba(6,182,212,0.12)', border: '1px solid rgba(6,182,212,0.25)', color: '#22d3ee' }
+                      : { border: '1px solid rgba(255,255,255,0.06)', color: '#4b5563' }}>
+                    <svg className="w-3.5 h-3.5" fill={v.id === 'grid' ? 'currentColor' : 'none'} stroke={v.id === 'list' ? 'currentColor' : 'none'} strokeWidth={v.id === 'list' ? 2 : undefined} viewBox="0 0 16 20">
+                      <path strokeLinecap={v.id === 'list' ? 'round' : undefined} d={v.icon} />
+                    </svg>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {historyLoading ? (
             <div className="panel rounded-2xl p-10 text-center">
               <div className="flex items-center justify-center gap-3">
@@ -636,30 +663,124 @@ export default function CreativePage() {
             </div>
           ) : history.length === 0 ? (
             <div className="panel rounded-2xl p-10 text-center">
+              <svg className="w-10 h-10 text-gray-700 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+              </svg>
               <p className="text-gray-500 text-sm">No projects yet. Generate some creatives to see them here.</p>
             </div>
+
+          ) : historyView === 'grid' ? (
+            /* ── GRID VIEW ── */
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {history.map(project => {
+                const imageUrls = project.image_urls ? project.image_urls.split(',').filter(Boolean) : [];
+                const typeLabel = CREATIVE_TYPES.find(t => t.id === project.type)?.name || project.type;
+                const lbImages = imageUrls.map((url, i) => ({ url: `${API_BASE}${url}`, alt: project.title || 'Creative', id: `h-${project.id}-${i}` }));
+                const displayUrls = imageUrls.slice(0, 4);
+                const extraCount = imageUrls.length - 4;
+
+                return (
+                  <div key={project.id} className="panel rounded-2xl overflow-hidden group/card">
+                    {/* Image mosaic */}
+                    {imageUrls.length > 0 ? (
+                      <div className={`grid gap-0.5 ${imageUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                        {displayUrls.map((url, i) => (
+                          <div key={i} className="relative overflow-hidden group/img cursor-zoom-in"
+                            style={{ aspectRatio: imageUrls.length === 1 ? '4/3' : '1' }}
+                            onClick={() => setHistoryLightbox({ images: lbImages, index: i })}>
+                            <img src={`${API_BASE}${url}`} alt="" loading="lazy"
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105"
+                              onError={e => { e.currentTarget.parentElement.style.display = 'none'; }} />
+                            <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/40 transition-colors flex items-center justify-center">
+                              <svg className="w-5 h-5 text-white opacity-0 group-hover/img:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
+                              </svg>
+                            </div>
+                            {i === 3 && extraCount > 0 && (
+                              <div className="absolute inset-0 bg-black/65 flex items-center justify-center">
+                                <span className="text-white font-bold text-xl">+{extraCount}</span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="aspect-video flex items-center justify-center" style={{ background: 'rgba(6,182,212,0.03)' }}>
+                        <svg className="w-8 h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+                        </svg>
+                      </div>
+                    )}
+
+                    {/* Card footer */}
+                    <div className="p-3 border-t border-white/[0.04]">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="hud-label text-[9px]" style={{ color: '#06b6d4' }}>{typeLabel}</span>
+                            <span className="text-[10px] text-gray-600">{formatDate(project.created_at)}</span>
+                          </div>
+                          <p className="text-sm text-gray-300 truncate font-medium">{project.title || 'Untitled'}</p>
+                          {imageUrls.length > 0 && (
+                            <p className="text-[10px] text-gray-600 mt-0.5">{imageUrls.length} image{imageUrls.length !== 1 ? 's' : ''}</p>
+                          )}
+                        </div>
+                        <button onClick={() => deleteProject(project.id)}
+                          className="flex-shrink-0 p-1.5 rounded-lg text-gray-700 hover:text-red-400 transition-colors opacity-0 group-hover/card:opacity-100"
+                          title="Delete project">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
           ) : (
+            /* ── LIST VIEW ── */
             <div className="space-y-2">
               {history.map(project => {
                 const imageUrls = project.image_urls ? project.image_urls.split(',').filter(Boolean) : [];
                 const typeLabel = CREATIVE_TYPES.find(t => t.id === project.type)?.name || project.type;
+                const lbImages = imageUrls.map((url, i) => ({ url: `${API_BASE}${url}`, alt: project.title || 'Creative', id: `h-${project.id}-${i}` }));
+
                 return (
                   <div key={project.id} className="panel rounded-xl p-3 sm:p-4 flex items-center gap-3 sm:gap-4 group">
-                    <div className="flex gap-1 flex-shrink-0">
+                    {/* Clickable thumbnails */}
+                    <div className="flex gap-1.5 flex-shrink-0">
                       {imageUrls.slice(0, 3).map((url, i) => (
-                        <img key={i} src={`${API_BASE}${url}`} alt="" loading="lazy"
-                          className="w-12 h-12 rounded-lg object-cover border border-indigo-500/10"
-                          onError={(e) => { e.target.style.display = 'none'; }} />
+                        <div key={i} className="relative w-14 h-14 rounded-lg overflow-hidden cursor-zoom-in group/thumb"
+                          onClick={() => setHistoryLightbox({ images: lbImages, index: i })}>
+                          <img src={`${API_BASE}${url}`} alt="" loading="lazy"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover/thumb:scale-110"
+                            onError={e => { e.currentTarget.parentElement.style.display = 'none'; }} />
+                          <div className="absolute inset-0 bg-black/0 group-hover/thumb:bg-black/50 transition-colors flex items-center justify-center">
+                            <svg className="w-3.5 h-3.5 text-white opacity-0 group-hover/thumb:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
+                            </svg>
+                          </div>
+                        </div>
                       ))}
                       {imageUrls.length === 0 && (
-                        <div className="w-12 h-12 rounded-lg flex items-center justify-center"
+                        <div className="w-14 h-14 rounded-lg flex items-center justify-center"
                           style={{ background: 'rgba(6,182,212,0.05)', border: '1px solid rgba(6,182,212,0.1)' }}>
-                          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
                           </svg>
                         </div>
                       )}
+                      {imageUrls.length > 3 && (
+                        <div className="w-14 h-14 rounded-lg flex items-center justify-center cursor-pointer"
+                          style={{ background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.15)' }}
+                          onClick={() => setHistoryLightbox({ images: lbImages, index: 3 })}>
+                          <span className="text-xs font-bold text-cyan-400">+{imageUrls.length - 3}</span>
+                        </div>
+                      )}
                     </div>
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className="hud-label text-[9px]" style={{ color: '#06b6d4' }}>{typeLabel}</span>
@@ -668,6 +789,7 @@ export default function CreativePage() {
                       </div>
                       <p className="text-sm text-gray-300 truncate">{project.title || 'Untitled'}</p>
                     </div>
+
                     <button onClick={() => deleteProject(project.id)}
                       className="flex-shrink-0 p-2 rounded-lg text-gray-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
@@ -678,6 +800,16 @@ export default function CreativePage() {
                 );
               })}
             </div>
+          )}
+
+          {/* History lightbox */}
+          {historyLightbox && (
+            <ImageLightbox
+              images={historyLightbox.images}
+              index={Math.min(historyLightbox.index, historyLightbox.images.length - 1)}
+              onClose={() => setHistoryLightbox(null)}
+              type={activeType}
+            />
           )}
         </div>
       )}
