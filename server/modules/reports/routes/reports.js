@@ -3,6 +3,7 @@ const router = express.Router();
 const { db, logActivity } = require('../../../db/database');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
+const { buildCrossModuleContext, getAllModuleSummary } = require('../../../services/crossModuleData');
 
 // SSE - AI report narrative generation
 router.post('/generate', async (req, res) => {
@@ -12,39 +13,43 @@ router.post('/generate', async (req, res) => {
   try {
     const { client_name, modules, dateRange, template, metrics, goals, branding, prompt: rawPrompt } = req.body;
 
-    // If a raw prompt is provided and no structured fields, use it directly
+    // Pull real live data from all connected modules
+    const context = buildCrossModuleContext(wsId);
+
+    // If a raw prompt is provided and no structured fields, append real data and use it directly
     if (rawPrompt && !client_name && !modules) {
-      const { text } = await generateTextWithClaude(rawPrompt, {
+      const { text } = await generateTextWithClaude(rawPrompt + context, {
         onChunk: (chunk) => sse.sendChunk(chunk),
+        maxTokens: 8192,
       });
       logActivity('reports', 'generate', 'Generated report content', 'AI generation', null, wsId);
       sse.sendResult({ content: text });
       return;
     }
 
-    const prompt = `You are an expert marketing analyst. Generate a comprehensive client report.
+    const prompt = `You are an expert marketing analyst writing a professional client-facing report.
 
 Client: ${client_name || 'Client'}
 Modules covered: ${modules ? modules.join(', ') : 'All modules'}
 Date range: ${dateRange || 'Last 30 days'}
 Template style: ${template || 'executive-summary'}
-Key metrics to highlight: ${metrics ? JSON.stringify(metrics) : 'Overall performance'}
-Client goals: ${goals || 'Growth and engagement'}
-
-Generate a professional marketing report in Markdown format with the following sections:
-1. Executive Summary
-2. Key Performance Indicators (use realistic placeholder data)
-3. Module-by-module breakdown (for each module listed)
+${metrics ? `Key metrics provided by user: ${JSON.stringify(metrics)}` : ''}
+${goals ? `Client goals: ${goals}` : ''}
+${context}
+Generate a professional marketing performance report in Markdown format with the following sections:
+1. Executive Summary (3-4 sentences, reference actual data above where present)
+2. Key Performance Indicators (use the REAL data from the context above — do NOT invent numbers)
+3. Module-by-module breakdown (only for modules that have actual data in the context)
 4. Wins & Highlights
 5. Areas for Improvement
-6. Recommendations & Next Steps
-7. Appendix (data tables)
+6. Recommendations & Next Steps (3-5 specific, actionable items based on the data)
+7. Appendix (data tables summarizing the key numbers)
 
-Make it detailed, data-driven, and actionable. Use professional language appropriate for a client-facing document.
-Format tables in markdown. Use bullet points for recommendations.`;
+Critical: If real data is available in the context above, use those exact numbers. If a module has no data, note it as "No data available yet" rather than inventing figures.
+Use professional language. Format tables in markdown. Use bullet points for recommendations.`;
 
     const { text } = await generateTextWithClaude(prompt, {
-      onChunk: (text) => sse.sendChunk(text),
+      onChunk: (chunk) => sse.sendChunk(chunk),
       maxTokens: 8192,
     });
 
@@ -53,6 +58,17 @@ Format tables in markdown. Use bullet points for recommendations.`;
   } catch (error) {
     console.error('Report generation error:', error);
     sse.sendError(error);
+  }
+});
+
+// GET /data-summary — returns the current cross-module data snapshot for display
+router.get('/data-summary', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const summary = getAllModuleSummary(wsId);
+    res.json({ summary, hasData: summary.trim().length > 0 });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -218,42 +234,46 @@ router.post('/schedules', (req, res) => {
   }
 });
 
-// POST /generate-executive-summary — SSE: generate executive summary
+// POST /generate-executive-summary — SSE: generate executive summary with live data
 router.post('/generate-executive-summary', (req, res) => {
   const { report_name, period, metrics, business_name } = req.body;
   if (!metrics?.length) { res.status(400).json({ error: 'metrics required' }); return; }
 
+  const wsId = req.workspace.id;
   const sse = setupSSE(res);
+
+  const context = buildCrossModuleContext(wsId);
+
   const prompt = `You are a marketing analytics expert writing a professional executive summary for ${business_name || 'a client'}.
 
 Report: ${report_name || 'Marketing Performance Report'}
 Period: ${period || 'Last 30 days'}
-Key Metrics: ${JSON.stringify(metrics)}
-
+User-provided Key Metrics: ${JSON.stringify(metrics)}
+${context}
 Write a polished executive summary with these sections:
 
 ## Performance Highlights
-(3-4 bullet points on best wins this period — be specific with the numbers)
+(3-4 bullet points on best wins this period — use the actual data above where available, be specific with numbers)
 
 ## Areas Requiring Attention
 (2-3 bullet points on what needs improvement — be direct but diplomatic)
 
 ## Strategic Recommendations
-(3 numbered, specific recommendations for next period)
+(3 numbered, specific recommendations for next period based on the data)
 
 ## Month-Over-Month Comparison
-(brief assessment of trend direction)
+(brief assessment of trend direction based on available data)
 
 ## Focus for Next Period
 (top 1-2 priorities for the upcoming period)
 
-Write for a business executive who doesn't know marketing deeply. Use plain language. Be specific about numbers.`;
+Write for a business executive who doesn't know marketing deeply. Use plain language. Reference actual numbers from the data where available.`;
 
   generateTextWithClaude(prompt, {
     onChunk: (chunk) => sse.sendChunk(chunk),
   })
-    .then(() => sse.sendResult({ done: true }))
-    .catch(() => sse.sendError(new Error('Generation failed')));
+    .then(({ text }) => sse.sendResult({ content: text, done: true }))
+    .catch((err) => sse.sendError(err));
 });
 
 module.exports = router;

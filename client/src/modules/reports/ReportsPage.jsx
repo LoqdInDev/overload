@@ -3,8 +3,6 @@ import { usePageTitle } from '../../hooks/usePageTitle';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
 import { fetchJSON, postJSON, connectSSE } from '../../lib/api';
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
-
 const REPORT_TYPES = [
   { id: 'overview', name: 'Business Overview', desc: 'Full marketing performance summary across all channels', icon: 'M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5' },
   { id: 'campaign', name: 'Campaign Report', desc: 'Performance metrics for a specific campaign', icon: 'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75z' },
@@ -37,16 +35,42 @@ export default function ReportsPage() {
     fetchJSON('/api/reports/reports').then(data => { if (Array.isArray(data)) setReports(data); }).catch(() => {});
   }, []);
 
-  const generate = async () => {
+  const generate = () => {
     if (!selectedType) return;
     setGenerating(true); setOutput('');
     const type = REPORT_TYPES.find(r => r.id === selectedType);
     const prompt = customPrompt || `Generate a comprehensive ${type?.name} for the period: ${period}. Include key metrics, trends, insights, and actionable recommendations. Format the report with clear sections, bullet points, and data summaries.`;
-    try {
-      const res = await fetch(`${API_BASE}/api/reports/generate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: selectedType, prompt }) });
-      const reader = res.body.getReader(); const decoder = new TextDecoder();
-      while (true) { const { done, value } = await reader.read(); if (done) break; const lines = decoder.decode(value, { stream: true }).split('\n').filter(l => l.startsWith('data: ')); for (const line of lines) { try { const d = JSON.parse(line.slice(6)); if (d.type === 'chunk') setOutput(p => p + d.text); else if (d.type === 'result') setOutput(d.data.content); } catch {} } }
-    } catch (e) { console.error(e); } finally { setGenerating(false); }
+    connectSSE('/api/reports/generate', { type: selectedType, prompt }, {
+      onChunk: (text) => setOutput(prev => prev + text),
+      onResult: async (data) => {
+        const content = data?.content;
+        if (content) setOutput(content);
+        try {
+          await postJSON('/api/reports/reports', {
+            name: `${type?.name} - ${period}`,
+            template: selectedType,
+            date_range: period,
+            content: { text: content },
+            status: 'draft',
+          });
+          fetchJSON('/api/reports/reports').then(d => { if (Array.isArray(d)) setReports(d); }).catch(() => {});
+        } catch {}
+        setGenerating(false);
+      },
+      onError: () => setGenerating(false),
+      onDone: () => setGenerating(false),
+    });
+  };
+
+  const downloadReport = () => {
+    const type = REPORT_TYPES.find(r => r.id === selectedType);
+    const blob = new Blob([output], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(type?.name || 'report').replace(/\s+/g, '-').toLowerCase()}-${period.replace(/\s+/g, '-').toLowerCase()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   if (!selectedType) return (
@@ -167,7 +191,10 @@ export default function ReportsPage() {
 
       {output && (
         <div className="mt-6 animate-fade-up">
-          <div className="flex items-center gap-2 mb-3"><div className={`w-2 h-2 rounded-full ${generating ? 'bg-rose-400 animate-pulse' : 'bg-emerald-400'}`} /><span className="hud-label text-[11px]" style={{ color: generating ? '#fb7185' : '#4ade80' }}>{generating ? 'GENERATING REPORT...' : 'REPORT READY'}</span></div>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2"><div className={`w-2 h-2 rounded-full ${generating ? 'bg-rose-400 animate-pulse' : 'bg-emerald-400'}`} /><span className="hud-label text-[11px]" style={{ color: generating ? '#fb7185' : '#4ade80' }}>{generating ? 'GENERATING REPORT...' : 'REPORT READY'}</span></div>
+            {!generating && <button onClick={downloadReport} className="chip text-[10px] flex items-center gap-1.5 px-3 py-1.5"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>Download .md</button>}
+          </div>
           <div className="panel rounded-2xl p-4 sm:p-7"><pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-rose-400 ml-0.5 animate-pulse" />}</pre></div>
         </div>
       )}

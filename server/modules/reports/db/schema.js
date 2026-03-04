@@ -13,7 +13,8 @@ function initDatabase() {
       template TEXT,
       branding TEXT DEFAULT '{}',
       status TEXT DEFAULT 'draft' CHECK(status IN ('draft', 'published')),
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS cr_templates (
@@ -36,6 +37,8 @@ function initDatabase() {
       FOREIGN KEY (report_id) REFERENCES cr_reports(id) ON DELETE CASCADE
     );
   `);
+
+  try { db.exec("ALTER TABLE cr_reports ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))"); } catch {}
 }
 
 module.exports = { initDatabase };
