@@ -227,7 +227,7 @@ export default function CreativePage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
       if (data.images) setImages(data.images);
-      if (data.warning) console.warn('Creative warning:', data.warning);
+      if (data.warning) setError(`Gemini: ${data.warning}`);
     } catch (e) {
       console.error('Generation error:', e);
       setError(e.message === 'Failed to fetch'
