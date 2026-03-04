@@ -318,9 +318,10 @@ function getInstalledRecipeIds(rules) {
 function MarketplaceTab({ dark, rules, onInstalled }) {
   const [category, setCategory] = useState('All');
   const [search, setSearch] = useState('');
-  const [actingId, setActingId] = useState(null);
+  // acting: { id, type: 'install' | 'uninstall' } | null
+  const [acting, setActing] = useState(null);
   const [justInstalled, setJustInstalled] = useState(null);
-  // Local override map: recipeId → true/false for optimistic UI
+  // Local override map: recipeId → true/false, set only after API success
   const [localOverrides, setLocalOverrides] = useState({});
 
   const textPrimary = dark ? '#E8E4DE' : '#332F2B';
@@ -345,33 +346,28 @@ function MarketplaceTab({ dark, rules, onInstalled }) {
   }
 
   async function install(recipe) {
-    setActingId(recipe.id);
-    setLocalOverrides(prev => ({ ...prev, [recipe.id]: true }));
+    setActing({ id: recipe.id, type: 'install' });
     try {
       await postJSON(`/api/automation/marketplace/install/${recipe.id}`, {});
+      setLocalOverrides(prev => ({ ...prev, [recipe.id]: true }));
       setJustInstalled(recipe.id);
       setTimeout(() => setJustInstalled(null), 3000);
       onInstalled?.();
-    } catch {
-      // Revert optimistic update on error
-      setLocalOverrides(prev => ({ ...prev, [recipe.id]: false }));
-    }
-    setActingId(null);
+    } catch { /* silent */ }
+    setActing(null);
   }
 
   async function uninstall(recipe) {
-    setActingId(recipe.id);
-    setLocalOverrides(prev => ({ ...prev, [recipe.id]: false }));
+    setActing({ id: recipe.id, type: 'uninstall' });
     try {
       await deleteJSON(`/api/automation/marketplace/uninstall/${recipe.id}`);
+      setLocalOverrides(prev => ({ ...prev, [recipe.id]: false }));
       onInstalled?.();
-    } catch {
-      setLocalOverrides(prev => ({ ...prev, [recipe.id]: true }));
-    }
-    setActingId(null);
+    } catch { /* silent */ }
+    setActing(null);
   }
 
-  const installedCount = RECIPES.filter(r => isInstalled(r.id)).length;
+  const installedCount = RECIPES.filter(r => isInstalled(r.id) || localOverrides[r.id]).length;
 
   return (
     <div>
@@ -432,7 +428,8 @@ function MarketplaceTab({ dark, rules, onInstalled }) {
           {filtered.map(recipe => {
             const catColor = CATEGORY_COLORS[recipe.category] || '#5E8E6E';
             const diff = DIFFICULTY_STYLES[recipe.difficulty] || DIFFICULTY_STYLES.starter;
-            const isActing = actingId === recipe.id;
+            const isInstalling = acting?.id === recipe.id && acting?.type === 'install';
+            const isUninstalling = acting?.id === recipe.id && acting?.type === 'uninstall';
             const installed = isInstalled(recipe.id);
             const wasJustInstalled = justInstalled === recipe.id;
 
@@ -484,26 +481,27 @@ function MarketplaceTab({ dark, rules, onInstalled }) {
                     <div className="w-full py-2 rounded-xl text-xs font-semibold text-center" style={{ background: 'rgba(34,197,94,0.12)', color: '#22c55e' }}>
                       ✓ Installed! View in My Rules
                     </div>
+                  ) : isInstalling ? (
+                    <button disabled className="w-full py-2 rounded-xl text-xs font-semibold" style={{ background: catColor, color: '#ffffff', opacity: 0.6 }}>
+                      Installing...
+                    </button>
+                  ) : isUninstalling ? (
+                    <button disabled className="w-full py-2 rounded-xl text-xs font-semibold" style={{ background: 'transparent', border: `1px solid ${dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`, color: textSecondary, opacity: 0.5 }}>
+                      Removing...
+                    </button>
                   ) : installed ? (
                     <button
                       onClick={() => uninstall(recipe)}
-                      disabled={isActing}
                       className="w-full py-2 rounded-xl text-xs font-semibold transition-all"
-                      style={{
-                        background: 'transparent',
-                        border: `1px solid ${dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
-                        color: textSecondary,
-                        opacity: isActing ? 0.5 : 1,
-                      }}
+                      style={{ background: 'transparent', border: `1px solid ${dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`, color: textSecondary }}
                     >
-                      {isActing ? 'Removing...' : '✓ Installed — Remove'}
+                      ✓ Installed — Remove
                     </button>
                   ) : (
                     <button
                       onClick={() => install(recipe)}
-                      disabled={isActing}
                       className="w-full py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 hover:scale-[1.01]"
-                      style={{ background: catColor, color: '#ffffff', opacity: isActing ? 0.6 : 1 }}
+                      style={{ background: catColor, color: '#ffffff' }}
                     >
                       {isActing ? 'Installing...' : '+ Install Recipe'}
                     </button>
