@@ -175,9 +175,10 @@ app.all('/api/*', (req, res) => {
 
 // Serve generated media — UUIDs in filenames act as access tokens
 const dataDir = process.env.DB_PATH ? path.dirname(process.env.DB_PATH) : process.cwd();
-app.use('/videos', express.static(path.join(dataDir, 'videos'), { maxAge: '1d' }));
-app.use('/uploads/brand-media', express.static(path.join(dataDir, 'uploads', 'brand-media'), { maxAge: '1d' }));
-app.use('/uploads/creatives', express.static(path.join(dataDir, 'uploads', 'creatives'), { maxAge: '1d' }));
+const setCors = (req, res, next) => { res.setHeader('Access-Control-Allow-Origin', '*'); next(); };
+app.use('/videos', setCors, express.static(path.join(dataDir, 'videos'), { maxAge: '1d' }));
+app.use('/uploads/brand-media', setCors, express.static(path.join(dataDir, 'uploads', 'brand-media'), { maxAge: '1d' }));
+app.use('/uploads/creatives', setCors, express.static(path.join(dataDir, 'uploads', 'creatives'), { maxAge: '1d' }));
 
 // Serve static frontend only when running locally (Vercel handles this in production)
 if (!process.env.RAILWAY_ENVIRONMENT) {
