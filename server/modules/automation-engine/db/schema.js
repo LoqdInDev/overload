@@ -2,7 +2,10 @@ const { db } = require('../../../db/database');
 
 const AUTOMATABLE_MODULES = [
   'content', 'video-marketing', 'creative', 'email-sms', 'social',
-  'ads', 'seo', 'pr-press', 'influencers', 'reviews', 'customer-ai', 'reports'
+  'ads', 'seo', 'pr-press', 'influencers', 'reviews', 'customer-ai', 'reports',
+  'crm', 'affiliates', 'ab-testing', 'budget-optimizer', 'referral-loyalty',
+  'competitors', 'knowledge-base', 'goal-tracker', 'chatbot', 'ecommerce-hub',
+  'audience-builder', 'funnel-builder', 'brand-hub', 'customer-intelligence',
 ];
 
 function initDatabase() {

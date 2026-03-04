@@ -6,7 +6,8 @@ import ModuleWrapper from '../../components/shared/ModuleWrapper';
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
 const TOOLS = [
-  { id: 'find', name: 'Find Influencers', icon: 'M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z' },
+  { id: 'find', name: 'AI Profile Builder', icon: 'M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z' },
+  { id: 'vetting', name: 'Vetting Checklist', icon: 'M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
   { id: 'outreach', name: 'Outreach Generator', icon: 'M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75' },
   { id: 'brief', name: 'Campaign Brief', icon: 'M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15a2.25 2.25 0 012.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25' },
   { id: 'roi', name: 'ROI Calculator', icon: 'M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z' },
@@ -55,6 +56,12 @@ export default function InfluencersPage() {
   const [briefNiche, setBriefNiche] = useState('');
   const [briefOutput, setBriefOutput] = useState('');
   const [briefLoading, setBriefLoading] = useState(false);
+
+  const [vettingHandle, setVettingHandle] = useState('');
+  const [vettingPlatform, setVettingPlatform] = useState('Instagram');
+  const [vettingNiche, setVettingNiche] = useState('');
+  const [vettingOutput, setVettingOutput] = useState('');
+  const [vettingLoading, setVettingLoading] = useState(false);
 
   useEffect(() => {
     if (activeTool === 'campaigns') {
@@ -140,6 +147,75 @@ export default function InfluencersPage() {
           <div className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-3">NICHE</p><div className="flex flex-wrap gap-1.5">{NICHES.map(n => (<button key={n} onClick={() => setNiche(n)} className={`chip text-[10px] ${niche === n ? 'active' : ''}`} style={niche === n ? { background: 'rgba(236,72,153,0.15)', borderColor: 'rgba(236,72,153,0.3)', color: '#f472b6' } : {}}>{n}</button>))}</div></div>
           <div className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-3">FOLLOWER RANGE</p><div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">{FOLLOWER_RANGES.map(f => (<button key={f.id} onClick={() => setFollowerRange(f.id)} className={`chip text-[10px] justify-center flex-col items-center py-2 ${followerRange === f.id ? 'active' : ''}`} style={followerRange === f.id ? { background: 'rgba(236,72,153,0.15)', borderColor: 'rgba(236,72,153,0.3)', color: '#f472b6' } : {}}><span className="font-bold">{f.name}</span><span className="text-[10px] opacity-60">{f.label}</span></button>))}</div></div>
           <button onClick={generate} disabled={generating} className="btn-accent w-full py-3 rounded-lg" style={{ background: generating ? '#1e1e2e' : '#ec4899' }}>{generating ? <span className="flex items-center gap-2"><span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />SEARCHING...</span> : 'FIND INFLUENCERS'}</button>
+          <div className="text-[10px] text-amber-400/70 mt-2 flex items-center gap-1">
+            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+            AI-generated archetypes for planning — not real discoverable profiles
+          </div>
+        </div>
+      )}
+
+      {activeTool === 'vetting' && (
+        <div className="space-y-4 sm:space-y-6">
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-4">INFLUENCER VETTING CHECKLIST</p>
+            <div className="space-y-3 mb-4">
+              <div>
+                <p className="hud-label text-[10px] mb-1.5">HANDLE</p>
+                <input
+                  value={vettingHandle}
+                  onChange={e => setVettingHandle(e.target.value)}
+                  placeholder="@username"
+                  className="w-full input-field rounded-xl px-4 py-3 text-sm"
+                />
+              </div>
+              <div>
+                <p className="hud-label text-[10px] mb-1.5">PLATFORM</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {['Instagram', 'TikTok', 'YouTube', 'Twitter'].map(p => (
+                    <button key={p} onClick={() => setVettingPlatform(p)} className={`chip text-[10px] ${vettingPlatform === p ? 'active' : ''}`} style={vettingPlatform === p ? { background: 'rgba(236,72,153,0.15)', borderColor: 'rgba(236,72,153,0.3)', color: '#f472b6' } : {}}>{p}</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="hud-label text-[10px] mb-1.5">NICHE (OPTIONAL)</p>
+                <input
+                  value={vettingNiche}
+                  onChange={e => setVettingNiche(e.target.value)}
+                  placeholder="e.g. fitness, beauty, tech"
+                  className="w-full input-field rounded-xl px-4 py-3 text-sm"
+                />
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                if (!vettingHandle.trim()) return;
+                setVettingOutput('');
+                setVettingLoading(true);
+                connectSSE('/api/influencers/vetting-checklist', { handle: vettingHandle.replace(/^@/, ''), platform: vettingPlatform, niche: vettingNiche }, {
+                  onChunk: (text) => setVettingOutput(prev => prev + text),
+                  onResult: () => setVettingLoading(false),
+                  onError: () => setVettingLoading(false),
+                  onDone: () => setVettingLoading(false),
+                });
+              }}
+              disabled={!vettingHandle.trim() || vettingLoading}
+              className="btn-accent w-full py-3 rounded-lg"
+              style={{ background: vettingLoading ? '#1e1e2e' : '#ec4899' }}
+            >
+              {vettingLoading ? <span className="flex items-center justify-center gap-2"><span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />GENERATING REPORT...</span> : 'GENERATE VETTING REPORT'}
+            </button>
+          </div>
+          {vettingOutput && (
+            <div className="animate-fade-up">
+              <div className="flex items-center gap-2 mb-3">
+                <div className={`w-2 h-2 rounded-full ${vettingLoading ? 'bg-pink-400 animate-pulse' : 'bg-emerald-400'}`} />
+                <span className="hud-label text-[11px]" style={{ color: vettingLoading ? '#f472b6' : '#4ade80' }}>{vettingLoading ? 'GENERATING...' : 'COMPLETE'}</span>
+              </div>
+              <div className="panel rounded-2xl p-4 sm:p-7">
+                <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{vettingOutput}{vettingLoading && <span className="inline-block w-1.5 h-4 bg-pink-400 ml-0.5 animate-pulse" />}</pre>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -6,20 +6,27 @@ const { setupSSE } = require('../../../services/sse');
 
 const router = express.Router();
 
-// Overview stats — counts per module
+// Overview stats — counts per module, optional date range
 router.get('/overview', (req, res) => {
   const wsId = req.workspace.id;
+  const { start_date, end_date, days } = req.query;
+
+  let dateCond = '';
+  const params = [wsId];
+  if (start_date) { dateCond += ' AND created_at >= ?'; params.push(start_date); }
+  else if (days) { dateCond += ` AND created_at >= datetime('now', '-${parseInt(days)} days')`; }
+  if (end_date) { dateCond += ' AND created_at <= ?'; params.push(end_date); }
+
   const stats = db.prepare(`
     SELECT module_id, COUNT(*) as count
     FROM activity_log
-    WHERE workspace_id = ?
+    WHERE workspace_id = ?${dateCond}
     GROUP BY module_id
     ORDER BY count DESC
-  `).all(wsId);
+  `).all(...params);
 
   const total = stats.reduce((sum, s) => sum + s.count, 0);
-
-  res.json({ total, modules: stats });
+  res.json({ total, modules: stats, period: days ? `Last ${days} days` : start_date ? `${start_date} to ${end_date || 'now'}` : 'All time' });
 });
 
 // Activity feed with pagination
@@ -69,36 +76,39 @@ router.get('/daily', (req, res) => {
   res.json(daily);
 });
 
-// Module-specific stats
+// Module-specific stats with optional date range
 router.get('/module/:moduleId', (req, res) => {
   const wsId = req.workspace.id;
   const { moduleId } = req.params;
+  const { start_date, end_date, days } = req.query;
+
+  let dateCond = '';
+  const baseParams = [moduleId, wsId];
+  const dateParams = [];
+  if (start_date) { dateCond += ' AND created_at >= ?'; dateParams.push(start_date); }
+  else if (days) { dateCond += ` AND created_at >= datetime('now', '-${parseInt(days)} days')`; }
+  if (end_date) { dateCond += ' AND created_at <= ?'; dateParams.push(end_date); }
 
   const total = db.prepare(
-    'SELECT COUNT(*) as count FROM activity_log WHERE module_id = ? AND workspace_id = ?'
-  ).get(moduleId, wsId);
+    `SELECT COUNT(*) as count FROM activity_log WHERE module_id = ? AND workspace_id = ?${dateCond}`
+  ).get(...baseParams, ...dateParams);
 
   const actions = db.prepare(`
     SELECT action, COUNT(*) as count
     FROM activity_log
-    WHERE module_id = ? AND workspace_id = ?
+    WHERE module_id = ? AND workspace_id = ?${dateCond}
     GROUP BY action
     ORDER BY count DESC
-  `).all(moduleId, wsId);
+  `).all(...baseParams, ...dateParams);
 
   const recent = db.prepare(`
     SELECT * FROM activity_log
-    WHERE module_id = ? AND workspace_id = ?
+    WHERE module_id = ? AND workspace_id = ?${dateCond}
     ORDER BY created_at DESC
     LIMIT 10
-  `).all(moduleId, wsId);
+  `).all(...baseParams, ...dateParams);
 
-  res.json({
-    module_id: moduleId,
-    total: total.count,
-    actions,
-    recent,
-  });
+  res.json({ module_id: moduleId, total: total.count, actions, recent });
 });
 
 // ══════════════════════════════════════════════════════
@@ -165,11 +175,12 @@ router.get('/platforms/connected', (req, res) => {
 });
 
 // POST /detect-anomaly — detect metric anomalies
-router.post('/detect-anomaly', (req, res) => {
+router.post('/detect-anomaly', async (req, res) => {
   const { metric_name, current_value, historical_average, standard_deviation } = req.body;
   if (!metric_name) return res.status(400).json({ error: 'metric_name required' });
 
-  generateTextWithClaude(`You are a data analyst. Analyze this metric for anomalies:
+  try {
+    const { text } = await generateTextWithClaude(`You are a data analyst. Analyze this metric for anomalies:
 
 Metric: ${metric_name}
 Current Value: ${current_value}
@@ -186,12 +197,17 @@ Return JSON:
   "recommended_action": "<specific action to take>"
 }
 
-Only return JSON.`)
-    .then(({ text }) => {
-      try { res.json(JSON.parse(text.trim())); }
-      catch { res.json({ is_anomaly: false, severity: 'none', z_score: 0.5, explanation: 'Value within normal range.', likely_causes: [], recommended_action: 'Continue monitoring' }); }
-    })
-    .catch(err => res.status(500).json({ error: err.message }));
+Only return JSON.`);
+    const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
+    try { res.json(JSON.parse(cleaned)); }
+    catch {
+      const m = cleaned.match(/\{[\s\S]*\}/);
+      if (m) { try { res.json(JSON.parse(m[0])); } catch { res.status(500).json({ error: 'Failed to parse anomaly result' }); } }
+      else res.status(500).json({ error: 'Failed to parse anomaly result' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // POST /generate-insights — SSE: generate AI insights on analytics data
@@ -227,8 +243,8 @@ Be specific, data-driven, and actionable.`;
   generateTextWithClaude(prompt, {
     onChunk: (chunk) => sse.sendChunk(chunk),
   })
-    .then(() => sse.sendResult({ done: true }))
-    .catch(() => sse.sendError(new Error('Generation failed')));
+    .then(({ text }) => sse.sendResult({ content: text, done: true }))
+    .catch((err) => sse.sendError(err));
 });
 
 module.exports = router;

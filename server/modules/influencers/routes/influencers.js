@@ -20,6 +20,8 @@ Follower Range: ${followerMin || '10000'} - ${followerMax || '500000'}
 Minimum Engagement Rate: ${engagementRate || '2'}%
 Budget: ${budget ? '$' + budget : 'Flexible'}
 
+IMPORTANT DISCLAIMER: These are AI-generated example profiles for inspiration and research planning only — not real, discoverable influencers. Clearly note at the top of your response: "⚠️ AI-Generated Profiles: These are example archetypes for planning purposes, not real searchable social media profiles."
+
 Provide a list of 8-12 influencer profiles with:
 1. Suggested influencer name/handle (realistic examples for the niche)
 2. Estimated follower count
@@ -50,6 +52,53 @@ Also provide:
   } catch (error) {
     console.error('Influencer search error:', error);
     sse.sendError(error);
+  }
+});
+
+// POST /vetting-checklist — SSE: generate influencer vetting checklist
+router.post('/vetting-checklist', async (req, res) => {
+  const { handle, platform, niche } = req.body;
+  if (!handle) return res.status(400).json({ error: 'handle required' });
+
+  const sse = setupSSE(res);
+
+  try {
+    const { text } = await generateTextWithClaude(`You are an influencer marketing expert. Generate a comprehensive vetting checklist for this influencer:
+
+Handle: @${handle}
+Platform: ${platform || 'Instagram'}
+Niche: ${niche || 'general'}
+
+Provide a detailed vetting report with these sections:
+
+## Authenticity Signals to Check
+(5-7 specific things to look for that indicate real vs. fake followers/engagement)
+
+## Content Consistency Score
+(What to evaluate: posting frequency, visual style, voice consistency, topic focus)
+
+## Brand Safety Checklist
+(Red flags: controversial posts, competitor mentions, brand conflicts, audience demographics)
+
+## Engagement Quality Indicators
+(How to spot genuine engagement vs. bot activity: comment patterns, like ratios, story views)
+
+## Before You Reach Out — Verification Steps
+(5 concrete steps: e.g., check follower growth chart on Social Blade, verify email via LinkedIn, etc.)
+
+## Estimated Fake Follower % Signal
+(Formula/heuristic for rough estimate based on public metrics)
+
+## Green Flags ✓ / Red Flags ✗
+(Quick-scan checklist table)
+
+Note: This is an AI-generated guide for manual vetting — you must verify all metrics directly on the platform.`, {
+      onChunk: (chunk) => sse.sendChunk(chunk),
+    });
+
+    sse.sendResult({ content: text });
+  } catch (err) {
+    sse.sendError(err);
   }
 });
 

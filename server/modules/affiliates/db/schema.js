@@ -78,6 +78,15 @@ function initDatabase() {
   for (const sql of affiliateMigrations) {
     try { db.exec(sql); } catch {}
   }
+
+  const payoutMigrations = [
+    "ALTER TABLE af_payouts ADD COLUMN program_id INTEGER DEFAULT NULL",
+    "ALTER TABLE af_payouts ADD COLUMN notes TEXT DEFAULT NULL",
+    "ALTER TABLE af_payouts ADD COLUMN paid_at TEXT DEFAULT NULL",
+  ];
+  for (const sql of payoutMigrations) {
+    try { db.exec(sql); } catch {}
+  }
 }
 
 module.exports = { initDatabase };

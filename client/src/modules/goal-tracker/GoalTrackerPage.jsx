@@ -5,6 +5,15 @@ import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const MODULE_COLOR = '#f59e0b';
 
+const GOAL_TEMPLATES = [
+  { name: 'Grow email list to 10K', metric: 'email_subscribers', target_value: 10000, notes: 'Track via Email/SMS module subscriber count' },
+  { name: 'Publish 20 blogs this month', metric: 'blog_posts_published', target_value: 20, notes: 'Track via Content Creation module' },
+  { name: 'Hit $10K MRR', metric: 'monthly_recurring_revenue', target_value: 10000, notes: 'Track via Ecommerce / CRM deal closes' },
+  { name: 'Get 50 reviews', metric: 'total_reviews', target_value: 50, notes: 'Track via Reviews module' },
+  { name: 'Generate 100 leads', metric: 'crm_leads', target_value: 100, notes: 'Track via CRM module contacts' },
+  { name: 'Reach 1K social followers', metric: 'social_followers', target_value: 1000, notes: 'Track via Social Media module' },
+];
+
 const AI_TEMPLATES = [
   { name: 'Generate Goal Strategy', prompt: 'Create a comprehensive goal achievement strategy with SMART objectives, key results, action items, and weekly check-in framework' },
   { name: 'Analyze Progress', prompt: 'Analyze current goal progress data and provide insights on what is working, potential blockers, and recommended adjustments to stay on track' },
@@ -186,6 +195,21 @@ export default function GoalTrackerPage() {
         <div className="animate-fade-in space-y-4">
           {showAddGoal && (
             <div className="panel rounded-2xl p-4 space-y-3">
+              <div className="mb-4">
+                <p className="hud-label text-[10px] mb-2">QUICK TEMPLATES</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {GOAL_TEMPLATES.map(t => (
+                    <button
+                      key={t.metric}
+                      type="button"
+                      className="chip text-[10px]"
+                      onClick={() => {
+                        setNewGoal(prev => ({ ...prev, name: t.name, metric: t.metric, target_value: t.target_value, notes: t.notes }));
+                      }}
+                    >{t.name}</button>
+                  ))}
+                </div>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <input value={newGoal.name} onChange={e => setNewGoal({ ...newGoal, name: e.target.value })} placeholder="Goal name" className="input-field rounded px-3 py-2 text-xs" />
                 <input value={newGoal.metric} onChange={e => setNewGoal({ ...newGoal, metric: e.target.value })} placeholder="Metric (e.g. $, users, %)" className="input-field rounded px-3 py-2 text-xs" />

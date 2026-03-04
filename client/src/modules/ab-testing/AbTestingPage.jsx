@@ -13,6 +13,13 @@ const AI_TEMPLATES = [
 const TEST_TYPES = ['copy', 'creative', 'audience'];
 const TEST_STATUSES = ['draft', 'running', 'paused', 'completed'];
 
+// Calculate minimum sample size for 95% confidence, 80% power
+function calcMinSampleSize(baselineRate = 0.05, minEffect = 0.2) {
+  // Simplified approximation: n ≈ 16 * p(1-p) / (delta)^2
+  const delta = baselineRate * minEffect;
+  return Math.ceil(16 * baselineRate * (1 - baselineRate) / (delta * delta));
+}
+
 export default function AbTestingPage() {
   usePageTitle('A/B Testing');
   const [tab, setTab] = useState('tests');
@@ -126,21 +133,42 @@ export default function AbTestingPage() {
           ) : (
             <div className="space-y-3">
               {tests.map(t => (
-                <div key={t.id} className="group panel rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-base font-semibold text-gray-200">{t.name}</p>
-                    <div className="flex flex-wrap items-center gap-2 mt-1 text-[10px] text-gray-500">
-                      {t.start_date && <span>Start: {t.start_date}</span>}
-                      {t.end_date && <span>End: {t.end_date}</span>}
-                      {t.created_at && !t.start_date && <span>Created: {new Date(t.created_at).toLocaleDateString()}</span>}
+                <div key={t.id} className="group panel rounded-2xl p-4 sm:p-6 flex flex-col gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-base font-semibold text-gray-200">{t.name}</p>
+                      <div className="flex flex-wrap items-center gap-2 mt-1 text-[10px] text-gray-500">
+                        {t.start_date && <span>Start: {t.start_date}</span>}
+                        {t.end_date && <span>End: {t.end_date}</span>}
+                        {t.created_at && !t.start_date && <span>Created: {new Date(t.created_at).toLocaleDateString()}</span>}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+                      {t.type && <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${typeColors[t.type] || 'text-gray-400 bg-gray-500/10 border-gray-500/20'}`}>{t.type}</span>}
+                      {t.winner_variant && <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border text-emerald-400 bg-emerald-500/10 border-emerald-500/20">Winner: {t.winner_variant}</span>}
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${statusColors[t.status] || statusColors.draft}`}>{t.status}</span>
+                      <button onClick={() => removeTest(t.id)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 text-xs transition-all">&times;</button>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-                    {t.type && <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${typeColors[t.type] || 'text-gray-400 bg-gray-500/10 border-gray-500/20'}`}>{t.type}</span>}
-                    {t.winner_variant && <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border text-emerald-400 bg-emerald-500/10 border-emerald-500/20">Winner: {t.winner_variant}</span>}
-                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${statusColors[t.status] || statusColors.draft}`}>{t.status}</span>
-                    <button onClick={() => removeTest(t.id)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 text-xs transition-all">&times;</button>
-                  </div>
+                  {/* Sample Size Warning */}
+                  {(t.impressions_a !== undefined || t.variant_a_count !== undefined) && (() => {
+                    const impressionsA = t.impressions_a || t.variant_a_count || 0;
+                    const impressionsB = t.impressions_b || t.variant_b_count || 0;
+                    const minRequired = calcMinSampleSize();
+                    const isEnough = impressionsA >= minRequired && impressionsB >= minRequired;
+                    return !isEnough ? (
+                      <div className="px-4 py-3 rounded-xl text-xs flex items-start gap-2"
+                        style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                        <svg className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" /></svg>
+                        <span className="text-amber-300">
+                          Need ~<strong>{minRequired}</strong> impressions per variant for 95% confidence.
+                          Currently: Variant A: {impressionsA}, Variant B: {impressionsB}.
+                          {impressionsA < minRequired ? ` Need ${minRequired - impressionsA} more on A.` : ''}
+                          {impressionsB < minRequired ? ` Need ${minRequired - impressionsB} more on B.` : ''}
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
               ))}
             </div>
@@ -169,6 +197,25 @@ export default function AbTestingPage() {
                     {t.end_date && <span>Ended: <span className="text-gray-300">{t.end_date}</span></span>}
                     {!t.winner_variant && <span className="text-gray-600 italic">No winner declared</span>}
                   </div>
+                  {/* Sample Size Warning */}
+                  {(t.impressions_a !== undefined || t.variant_a_count !== undefined) && (() => {
+                    const impressionsA = t.impressions_a || t.variant_a_count || 0;
+                    const impressionsB = t.impressions_b || t.variant_b_count || 0;
+                    const minRequired = calcMinSampleSize();
+                    const isEnough = impressionsA >= minRequired && impressionsB >= minRequired;
+                    return !isEnough ? (
+                      <div className="mt-3 px-4 py-3 rounded-xl text-xs flex items-start gap-2"
+                        style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                        <svg className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" /></svg>
+                        <span className="text-amber-300">
+                          Need ~<strong>{minRequired}</strong> impressions per variant for 95% confidence.
+                          Currently: Variant A: {impressionsA}, Variant B: {impressionsB}.
+                          {impressionsA < minRequired ? ` Need ${minRequired - impressionsA} more on A.` : ''}
+                          {impressionsB < minRequired ? ` Need ${minRequired - impressionsB} more on B.` : ''}
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
               ))}
             </div>

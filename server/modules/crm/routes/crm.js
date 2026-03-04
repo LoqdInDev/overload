@@ -554,4 +554,52 @@ Only return JSON.`)
     .catch(err => res.status(500).json({ error: err.message }));
 });
 
+// POST /contacts/:id/next-action — AI recommends next best action for this contact
+router.post('/contacts/:id/next-action', async (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const contact = db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!contact) return res.status(404).json({ error: 'Contact not found' });
+
+    const deals = db.prepare('SELECT * FROM crm_deals WHERE contact_id = ? AND workspace_id = ? AND deleted_at IS NULL').all(req.params.id, wsId);
+    const activities = db.prepare('SELECT * FROM crm_activities WHERE contact_id = ? AND workspace_id = ? ORDER BY created_at DESC LIMIT 10').all(req.params.id, wsId);
+
+    const { text } = await generateTextWithClaude(`You are an expert B2B sales coach. Recommend the single most impactful next action for this contact.
+
+Contact: ${contact.name}
+Company: ${contact.company || 'unknown'}
+Title: ${contact.title || 'unknown'}
+Status: ${contact.status || 'lead'}
+Lead Score: ${contact.score || 0}
+Tags: ${contact.tags || 'none'}
+
+Active Deals: ${deals.length > 0 ? deals.map(d => `${d.name} (${d.stage}, $${d.value || 0})`).join(', ') : 'none'}
+
+Recent Activities (last 10):
+${activities.length > 0 ? activities.map(a => `- ${a.type}: ${a.description || a.title || ''} (${a.created_at?.slice(0, 10) || 'unknown date'})`).join('\n') : 'No recent activities'}
+
+Return JSON:
+{
+  "action": "<specific action title, under 10 words>",
+  "type": "<email|call|meeting|linkedin|demo|proposal|follow-up>",
+  "reason": "<1-2 sentences on why this is the best next step>",
+  "message_template": "<if email/linkedin, provide a 2-3 sentence opening template>",
+  "urgency": "<high|medium|low>",
+  "expected_outcome": "<what success looks like>"
+}
+
+Only return JSON.`);
+
+    const cleaned = text.replace(/\`\`\`json\n?|\n?\`\`\`/g, '').trim();
+    try { res.json(JSON.parse(cleaned)); }
+    catch {
+      const m = cleaned.match(/\{[\s\S]*\}/);
+      if (m) { try { res.json(JSON.parse(m[0])); } catch { res.status(500).json({ error: 'Failed to parse recommendation' }); } }
+      else res.status(500).json({ error: 'Failed to parse recommendation' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

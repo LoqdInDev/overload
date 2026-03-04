@@ -23,6 +23,41 @@ router.get('/', (req, res) => {
   }
 });
 
+// GET /search?q= — FTS5 full-text search across articles
+router.get('/search', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const { q } = req.query;
+    if (!q || q.trim().length < 2) return res.json([]);
+
+    // FTS5 search with snippet highlighting
+    const results = db.prepare(`
+      SELECT a.*, snippet(kb_fts, 1, '<mark>', '</mark>', '...', 32) as excerpt
+      FROM kb_fts
+      JOIN kb_articles a ON a.id = kb_fts.rowid
+      WHERE kb_fts MATCH ? AND a.workspace_id = ? AND (a.status = 'published' OR a.status IS NULL OR a.status = 'draft')
+      ORDER BY rank
+      LIMIT 20
+    `).all(`${q.trim()}*`, wsId);
+
+    res.json(results);
+  } catch (err) {
+    // Fallback to LIKE search if FTS fails
+    try {
+      const wsId = req.workspace.id;
+      const { q } = req.query;
+      const results = db.prepare(`
+        SELECT * FROM kb_articles
+        WHERE workspace_id = ? AND (title LIKE ? OR content LIKE ?)
+        LIMIT 20
+      `).all(wsId, `%${q}%`, `%${q}%`);
+      res.json(results);
+    } catch (e2) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+});
+
 // GET /:id - get a single article
 router.get('/:id', (req, res) => {
   try {

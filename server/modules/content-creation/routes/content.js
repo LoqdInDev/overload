@@ -2,7 +2,7 @@ const express = require('express');
 const { v4: uuid } = require('uuid');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
-const { logActivity } = require('../../../db/database');
+const { db, logActivity } = require('../../../db/database');
 const { getQueries } = require('../db/queries');
 const { buildContentPrompt } = require('../prompts/contentGenerator');
 const { getSeoKeywordsForContent, getContentForSocial } = require('../../../services/crossModuleData');
@@ -22,7 +22,18 @@ router.post('/generate', async (req, res) => {
   const sse = setupSSE(res);
 
   try {
-    const fullPrompt = buildContentPrompt(type, prompt);
+    // Pull top SEO keywords for context
+    let seoContext = '';
+    try {
+      const seoKeywords = db.prepare(
+        'SELECT keyword, volume, difficulty, intent FROM seo_keywords WHERE workspace_id = ? ORDER BY volume DESC LIMIT 8'
+      ).all(wsId);
+      if (seoKeywords.length > 0) {
+        seoContext = `\n\nSEO Context (top keywords for this workspace — incorporate naturally where relevant):\n${seoKeywords.map(k => `- "${k.keyword}" (volume: ${k.volume || 'unknown'}, intent: ${k.intent || 'unknown'})`).join('\n')}`;
+      }
+    } catch {}
+
+    const fullPrompt = buildContentPrompt(type, prompt) + seoContext;
 
     const { text } = await generateTextWithClaude(fullPrompt, {
       onChunk: (chunk) => sse.sendChunk(chunk),

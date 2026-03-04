@@ -328,7 +328,7 @@ Only return JSON.`)
       try { res.json(JSON.parse(cleaned)); }
       catch {
         const m = cleaned.match(/\{[\s\S]*\}/);
-        if (m) res.json(JSON.parse(m[0]));
+        if (m) { try { res.json(JSON.parse(m[0])); } catch { res.status(500).json({ error: 'Failed to parse sentiment analysis' }); } }
         else res.status(500).json({ error: 'Failed to parse sentiment analysis' });
       }
     })
@@ -365,11 +365,75 @@ Only return JSON.`)
       try { res.json(JSON.parse(cleaned)); }
       catch {
         const m = cleaned.match(/\{[\s\S]*\}/);
-        if (m) res.json(JSON.parse(m[0]));
+        if (m) { try { res.json(JSON.parse(m[0])); } catch { res.status(500).json({ error: 'Failed to parse review response' }); } }
         else res.status(500).json({ error: 'Failed to parse review response' });
       }
     })
     .catch(err => res.status(500).json({ error: err.message }));
+});
+
+// POST /request-campaign — SSE: generate a bulk review request campaign
+router.post('/request-campaign', async (req, res) => {
+  const { business_name, business_type, platform, customer_list, tone } = req.body;
+  if (!business_name) return res.status(400).json({ error: 'business_name required' });
+
+  const sse = setupSSE(res);
+
+  try {
+    const customerCount = Array.isArray(customer_list) ? customer_list.length : (parseInt(customer_list) || 10);
+    const { text } = await generateTextWithClaude(`You are an expert at generating review campaigns. Create a complete review request campaign for ${business_name}.
+
+Business Type: ${business_type || 'general'}
+Target Platform: ${platform || 'Google'}
+Number of Customers: ${customerCount}
+Tone: ${tone || 'warm and personal'}
+
+Generate a complete multi-touch review request campaign:
+
+## 📧 Email Sequence
+
+### Email 1 — Initial Request (send immediately after purchase/interaction)
+**Subject line options (3 variants):**
+[3 subject lines]
+**Email body:**
+[Full email, 100-150 words, personal, not pushy]
+
+### Email 2 — Gentle Reminder (send 4 days after Email 1 if no review)
+**Subject line:**
+[1 subject line]
+**Email body:**
+[60-80 words, brief, understanding]
+
+### Email 3 — Final Ask (send 3 days after Email 2)
+**Subject line:**
+[1 subject line]
+**Email body:**
+[50-60 words, final ask, acknowledge their time]
+
+## 📱 SMS Versions
+**SMS 1 (initial):** [Under 160 chars — include placeholder for review link]
+**SMS 2 (reminder):** [Under 160 chars]
+
+## 💬 In-Person / Post-Purchase Script
+[3-4 sentence verbal script for staff to use]
+
+## 📊 Campaign Settings Recommended
+- Best send time: [recommendation]
+- Optimal send day: [recommendation]
+- Expected response rate: [realistic %]
+- Segments to exclude: [who not to ask]
+
+Use [BUSINESS NAME], [CUSTOMER NAME], [REVIEW LINK] as placeholders.
+Make all copy feel genuine and human, never robotic.`, {
+      onChunk: (chunk) => sse.sendChunk(chunk),
+      maxTokens: 4096,
+    });
+
+    logActivity('reviews', 'campaign', 'Generated review campaign', `${business_name} - ${platform || 'Google'}`, null, req.workspace.id);
+    sse.sendResult({ content: text });
+  } catch (err) {
+    sse.sendError(err);
+  }
 });
 
 module.exports = router;

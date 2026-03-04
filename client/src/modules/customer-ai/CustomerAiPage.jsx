@@ -113,6 +113,11 @@ export default function CustomerAiPage() {
   const chatEndRef = useRef(null);
   const cancelRef = useRef(null);
 
+  /* --- db bots + embed state --- */
+  const [dbBots, setDbBots] = useState([]);
+  const [dbBotsLoading, setDbBotsLoading] = useState(false);
+  const [embedData, setEmbedData] = useState({}); // keyed by botId
+
   /* --- tickets state --- */
   const [tickets, setTickets] = useState([]);
   const [ticketsLoading, setTicketsLoading] = useState(false);
@@ -159,6 +164,17 @@ export default function CustomerAiPage() {
       })
       .finally(() => setStatsLoading(false));
   }, []);
+
+  /* load DB bots when switching to bots tab */
+  useEffect(() => {
+    if (tab === 'bots') {
+      setDbBotsLoading(true);
+      fetchJSON('/api/chatbot/bots')
+        .then((data) => setDbBots(Array.isArray(data) ? data : []))
+        .catch(() => setDbBots([]))
+        .finally(() => setDbBotsLoading(false));
+    }
+  }, [tab]);
 
   /* load tickets when switching to tickets tab */
   const loadTickets = useCallback(() => {
@@ -382,6 +398,7 @@ export default function CustomerAiPage() {
       {/*  TAB: BOTS                                                    */}
       {/* ══════════════════════════════════════════════════════════════ */}
       {tab === 'bots' && (
+        <>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 animate-fade-in">
           {/* Chat area */}
           <div className="lg:col-span-3">
@@ -509,6 +526,57 @@ export default function CustomerAiPage() {
             </button>
           </div>
         </div>
+
+        {/* ── DB Bots Embed Section ── */}
+        {(dbBotsLoading || dbBots.length > 0) && (
+          <div className="mt-6 panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-4" style={{ color: MODULE_COLOR }}>CONFIGURED BOTS — EMBED</p>
+            {dbBotsLoading ? (
+              <p className="text-xs text-gray-500">Loading bots...</p>
+            ) : (
+              <div className="space-y-4">
+                {dbBots.map((bot) => (
+                  <div key={bot.id} className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-200">{bot.name}</p>
+                        {bot.description && <p className="text-xs text-gray-500 mt-0.5">{bot.description}</p>}
+                        <span
+                          className="text-[9px] font-bold px-1.5 py-0.5 rounded-full mt-1 inline-block"
+                          style={{ background: 'rgba(14,165,233,0.12)', color: '#38bdf8', border: '1px solid rgba(14,165,233,0.2)' }}
+                        >
+                          {bot.status}
+                        </span>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          const data = await fetchJSON(`/api/chatbot/bots/${bot.id}/embed`);
+                          setEmbedData(prev => ({ ...prev, [bot.id]: data.snippet }));
+                        }}
+                        className="chip text-[10px]"
+                      >
+                        &lt;/&gt; Embed
+                      </button>
+                    </div>
+                    {embedData[bot.id] && (
+                      <div className="mt-3 p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="hud-label text-[10px]">EMBED CODE</span>
+                          <button
+                            onClick={() => { navigator.clipboard.writeText(embedData[bot.id]); }}
+                            className="chip text-[10px]"
+                          >Copy</button>
+                        </div>
+                        <pre className="text-[11px] text-gray-400 overflow-x-auto whitespace-pre-wrap break-all">{embedData[bot.id]}</pre>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        </>
       )}
 
       {/* ══════════════════════════════════════════════════════════════ */}

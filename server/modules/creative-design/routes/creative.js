@@ -9,8 +9,11 @@ const { buildImagePromptOptimizer } = require('../prompts/imagePrompt');
 
 const router = express.Router();
 
-// Test Gemini connection directly
+// Test Gemini connection — dev/debug only
 router.get('/test-gemini', async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not found' });
+  }
   const { generateImage } = require('../../../services/gemini');
   try {
     const result = await generateImage('A simple red circle on a white background');

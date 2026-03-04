@@ -41,9 +41,13 @@ export default function AnalyticsPage() {
   const [insightsLoading, setInsightsLoading] = useState(false);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/analytics/overview`).then(r => r.json()).then(d => setOverview(d && typeof d === 'object' && !Array.isArray(d) ? d : { total: 0, modules: [] })).catch(() => {});
-    fetch(`${API_BASE}/api/analytics/activity?limit=50`).then(r => r.json()).then(d => setActivity(Array.isArray(d) ? d : [])).catch(() => {});
-  }, []);
+    const daysMap = { '24h': 1, '7d': 7, '30d': 30, 'All': null };
+    const d = daysMap[timeRange];
+    const qs = d ? `?days=${d}` : '';
+    fetch(`${API_BASE}/api/analytics/overview${qs}`).then(r => r.json()).then(d => setOverview(d && typeof d === 'object' && !Array.isArray(d) ? d : { total: 0, modules: [] })).catch(() => {});
+    const actQs = d ? `?limit=50&days=${d}` : '?limit=50';
+    fetch(`${API_BASE}/api/analytics/activity${actQs}`).then(r => r.json()).then(d => setActivity(Array.isArray(d) ? d : [])).catch(() => {});
+  }, [timeRange]);
 
   const moduleStats = MODULE_REGISTRY.filter(m => m.id !== 'analytics').map(mod => {
     const stat = overview.modules?.find(s => s.module_id === mod.id);

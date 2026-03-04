@@ -43,6 +43,8 @@ export default function CrmPage() {
   const [scoreInputs, setScoreInputs] = useState({ emails_opened: '0', pages_visited: '0', downloads: '0', days_in_pipeline: '0' });
   const [leadScore, setLeadScore] = useState(null);
   const [scoreLoading, setScoreLoading] = useState(false);
+  const [nbaData, setNbaData] = useState({});
+  const [nbaLoading, setNbaLoading] = useState({});
 
   useEffect(() => {
     setLoading(true);
@@ -227,14 +229,50 @@ export default function CrmPage() {
             <div className="divide-y divide-indigo-500/[0.04]">
               {filteredContacts.length === 0 && <div className="p-6 text-center text-sm text-gray-600">{loading ? 'Loading...' : 'No contacts yet'}</div>}
               {filteredContacts.map(c => (
-                <div key={c.id} className="group flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-3 sm:py-4 hover:bg-white/[0.01] transition-colors">
-                  <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-xs font-bold text-indigo-400 flex-shrink-0">{c.name?.split(' ').map(n => n[0]).join('') || '?'}</div>
-                  <div className="flex-1 min-w-0"><p className="text-xs font-semibold text-gray-300 truncate">{c.name}</p><p className="text-[10px] text-gray-500">{c.email}</p></div>
-                  <span className="text-[10px] text-gray-500 hidden md:block">{c.company}</span>
-                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${statusColor(c.status)}15`, color: statusColor(c.status), border: `1px solid ${statusColor(c.status)}25` }}>{c.status}</span>
-                  {c.score != null && <div className="w-10 h-10 rounded-full hidden sm:flex items-center justify-center text-[10px] font-bold" style={{ background: c.score > 75 ? 'rgba(34,197,94,0.1)' : c.score > 50 ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)', color: c.score > 75 ? '#22c55e' : c.score > 50 ? '#f59e0b' : '#ef4444' }}>{c.score}</div>}
-                  <button onClick={() => { setSelectedContact(selectedContact?.id === c.id ? null : c); setLeadScore(null); }} className="opacity-0 group-hover:opacity-100 chip text-[9px] transition-all" style={{ color: '#818cf8', borderColor: 'rgba(99,102,241,0.3)' }}>Score</button>
-                  <button onClick={() => removeContact(c.id)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 text-xs transition-all">&times;</button>
+                <div key={c.id} className="group flex flex-col px-3 sm:px-5 py-3 sm:py-4 hover:bg-white/[0.01] transition-colors">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-xs font-bold text-indigo-400 flex-shrink-0">{c.name?.split(' ').map(n => n[0]).join('') || '?'}</div>
+                    <div className="flex-1 min-w-0"><p className="text-xs font-semibold text-gray-300 truncate">{c.name}</p><p className="text-[10px] text-gray-500">{c.email}</p></div>
+                    <span className="text-[10px] text-gray-500 hidden md:block">{c.company}</span>
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${statusColor(c.status)}15`, color: statusColor(c.status), border: `1px solid ${statusColor(c.status)}25` }}>{c.status}</span>
+                    {c.score != null && <div className="w-10 h-10 rounded-full hidden sm:flex items-center justify-center text-[10px] font-bold" style={{ background: c.score > 75 ? 'rgba(34,197,94,0.1)' : c.score > 50 ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)', color: c.score > 75 ? '#22c55e' : c.score > 50 ? '#f59e0b' : '#ef4444' }}>{c.score}</div>}
+                    <button onClick={() => { setSelectedContact(selectedContact?.id === c.id ? null : c); setLeadScore(null); }} className="opacity-0 group-hover:opacity-100 chip text-[9px] transition-all" style={{ color: '#818cf8', borderColor: 'rgba(99,102,241,0.3)' }}>Score</button>
+                    <button
+                      onClick={async () => {
+                        setNbaLoading(prev => ({ ...prev, [c.id]: true }));
+                        try {
+                          const data = await postJSON(`/api/crm/contacts/${c.id}/next-action`, {});
+                          setNbaData(prev => ({ ...prev, [c.id]: data }));
+                        } catch {}
+                        setNbaLoading(prev => ({ ...prev, [c.id]: false }));
+                      }}
+                      className="opacity-0 group-hover:opacity-100 chip text-[10px] transition-all"
+                      disabled={nbaLoading[c.id]}
+                    >
+                      {nbaLoading[c.id] ? 'Analyzing...' : '⚡ Next Action'}
+                    </button>
+                    <button onClick={() => removeContact(c.id)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 text-xs transition-all">&times;</button>
+                  </div>
+                  {nbaData[c.id] && (
+                    <div className="mt-2 ml-12 p-3 rounded-xl text-xs space-y-1.5"
+                      style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)' }}>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-indigo-300">{nbaData[c.id].action}</span>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
+                          nbaData[c.id].urgency === 'high' ? 'bg-red-500/15 text-red-400' :
+                          nbaData[c.id].urgency === 'medium' ? 'bg-amber-500/15 text-amber-400' :
+                          'bg-emerald-500/15 text-emerald-400'
+                        }`}>{nbaData[c.id].urgency?.toUpperCase()}</span>
+                      </div>
+                      <p className="text-gray-400">{nbaData[c.id].reason}</p>
+                      {nbaData[c.id].message_template && (
+                        <div className="p-2 rounded-lg text-gray-300 italic" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                          "{nbaData[c.id].message_template}"
+                          <button onClick={() => navigator.clipboard.writeText(nbaData[c.id].message_template)} className="ml-2 chip text-[9px] not-italic">Copy</button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
-import { fetchJSON, postJSON, deleteJSON, connectSSE } from '../../lib/api';
+import { fetchJSON, postJSON, putJSON, deleteJSON, connectSSE } from '../../lib/api';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const AI_TEMPLATES = [
@@ -25,6 +25,13 @@ export default function AffiliatesPage() {
   const [showAddAffiliate, setShowAddAffiliate] = useState(false);
   const [newProgram, setNewProgram] = useState({ name: '', commissionType: 'percentage', commissionRate: '', cookieDuration: '30', terms: '' });
   const [newAffiliate, setNewAffiliate] = useState({ programId: '', name: '', email: '' });
+
+  // Payouts state
+  const [payouts, setPayouts] = useState([]);
+  const [payoutSummary, setPayoutSummary] = useState([]);
+  const [payoutsLoading, setPayoutsLoading] = useState(false);
+  const [showAddPayout, setShowAddPayout] = useState(false);
+  const [newPayout, setNewPayout] = useState({ affiliate_id: '', amount: '', period: '', notes: '' });
 
   useEffect(() => {
     setLoading(true);
@@ -82,6 +89,55 @@ export default function AffiliatesPage() {
     } catch (err) { console.error(err); }
   };
 
+  const loadPayouts = async () => {
+    setPayoutsLoading(true);
+    try {
+      const [p, s] = await Promise.all([
+        fetchJSON('/api/affiliates/payouts'),
+        fetchJSON('/api/affiliates/payouts/summary'),
+      ]);
+      setPayouts(p);
+      setPayoutSummary(s);
+    } catch (err) { console.error(err); }
+    finally { setPayoutsLoading(false); }
+  };
+
+  useEffect(() => {
+    if (tab === 'payouts') loadPayouts();
+  }, [tab]);
+
+  const addPayout = async () => {
+    if (!newPayout.affiliate_id || !newPayout.amount) return;
+    try {
+      const created = await postJSON('/api/affiliates/payouts', {
+        affiliate_id: parseInt(newPayout.affiliate_id),
+        amount: parseFloat(newPayout.amount),
+        period: newPayout.period || null,
+        notes: newPayout.notes || null,
+      });
+      setPayouts(prev => [created, ...prev]);
+      setNewPayout({ affiliate_id: '', amount: '', period: '', notes: '' });
+      setShowAddPayout(false);
+      loadPayouts();
+    } catch (err) { console.error(err); }
+  };
+
+  const markPaid = async (id) => {
+    try {
+      const updated = await putJSON(`/api/affiliates/payouts/${id}/mark-paid`, {});
+      setPayouts(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
+      loadPayouts();
+    } catch (err) { console.error(err); }
+  };
+
+  const deletePayout = async (id) => {
+    try {
+      await deleteJSON(`/api/affiliates/payouts/${id}`);
+      setPayouts(prev => prev.filter(p => p.id !== id));
+      loadPayouts();
+    } catch (err) { console.error(err); }
+  };
+
   const generate = (template) => {
     setSelectedTemplate(template); setGenerating(true); setOutput('');
     connectSSE('/api/affiliates/generate', { type: 'content', prompt: template.prompt }, {
@@ -110,7 +166,7 @@ export default function AffiliatesPage() {
         ].map((s, i) => (<div key={i} className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-1">{s.l}</p><p className="text-xl sm:text-2xl font-bold text-white font-mono">{s.v}</p></div>))}
       </div>
       <div className="flex flex-wrap gap-1 mb-6">
-        {['programs', 'affiliates', 'ai-tools'].map(t => (<button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: 'rgba(34,197,94,0.15)', borderColor: 'rgba(34,197,94,0.3)', color: '#4ade80' } : {}}>{t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1)}</button>))}
+        {['programs', 'affiliates', 'payouts', 'ai-tools'].map(t => (<button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: 'rgba(34,197,94,0.15)', borderColor: 'rgba(34,197,94,0.3)', color: '#4ade80' } : {}}>{t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1)}</button>))}
       </div>
 
       {tab === 'programs' && (
@@ -209,6 +265,101 @@ export default function AffiliatesPage() {
           </div>
         </div>
       )}
+
+      {tab === 'payouts' && (() => {
+        const totalPending = payoutSummary.reduce((sum, a) => sum + (a.pending_amount || 0), 0);
+        const totalPaid = payoutSummary.reduce((sum, a) => sum + (a.paid_amount || 0), 0);
+        const affiliatesWithPending = payoutSummary.filter(a => a.pending_count > 0).length;
+        return (
+          <div className="animate-fade-in space-y-4">
+            {/* Summary cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5">
+              {[
+                { l: 'TOTAL PENDING', v: payoutsLoading ? '—' : `$${totalPending.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, color: '#f59e0b' },
+                { l: 'TOTAL PAID', v: payoutsLoading ? '—' : `$${totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, color: '#22c55e' },
+                { l: 'AFFILIATES OWED', v: payoutsLoading ? '—' : affiliatesWithPending.toString(), color: '#a78bfa' },
+              ].map((s, i) => (
+                <div key={i} className="panel rounded-2xl p-4 sm:p-6">
+                  <p className="hud-label text-[11px] mb-1" style={{ color: s.color }}>{s.l}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-white font-mono">{s.v}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Add Payout button */}
+            <div className="flex justify-end mb-1">
+              <button onClick={() => setShowAddPayout(!showAddPayout)} className="chip text-[10px]" style={{ background: 'rgba(34,197,94,0.15)', borderColor: 'rgba(34,197,94,0.3)', color: '#4ade80' }}>+ Add Payout</button>
+            </div>
+
+            {/* Add Payout form */}
+            {showAddPayout && (
+              <div className="panel rounded-2xl p-4 space-y-3">
+                <p className="hud-label text-[11px] mb-2" style={{ color: '#4ade80' }}>NEW PAYOUT</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <select value={newPayout.affiliate_id} onChange={e => setNewPayout({ ...newPayout, affiliate_id: e.target.value })} className="input-field rounded px-3 py-2 text-xs">
+                    <option value="">Select affiliate</option>
+                    {affiliates.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                  </select>
+                  <input value={newPayout.amount} onChange={e => setNewPayout({ ...newPayout, amount: e.target.value })} placeholder="Amount ($)" type="number" min="0" step="0.01" className="input-field rounded px-3 py-2 text-xs" />
+                  <input value={newPayout.period} onChange={e => setNewPayout({ ...newPayout, period: e.target.value })} placeholder="Period (e.g. March 2026)" className="input-field rounded px-3 py-2 text-xs" />
+                  <input value={newPayout.notes} onChange={e => setNewPayout({ ...newPayout, notes: e.target.value })} placeholder="Notes (optional)" className="input-field rounded px-3 py-2 text-xs" />
+                </div>
+                <button onClick={addPayout} className="btn-accent px-4 py-1.5 rounded text-[10px]" style={{ background: '#22c55e' }}>Create Payout</button>
+              </div>
+            )}
+
+            {/* Payouts table */}
+            {payoutsLoading && payouts.length === 0 && <div className="panel rounded-2xl p-8 text-center text-sm text-gray-600">Loading...</div>}
+            {!payoutsLoading && payouts.length === 0 && (
+              <div className="panel rounded-2xl p-8 text-center">
+                <p className="text-sm text-gray-500">No payouts recorded yet</p>
+                <p className="text-xs text-gray-600 mt-1">Create a payout to track affiliate earnings and payments</p>
+              </div>
+            )}
+            {payouts.length > 0 && (
+              <div className="panel rounded-2xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[600px] text-xs">
+                    <thead>
+                      <tr className="border-b border-white/[0.04]">
+                        {['AFFILIATE', 'AMOUNT', 'PERIOD', 'STATUS', 'CREATED', 'ACTIONS'].map(h => (
+                          <th key={h} className="hud-label text-[10px] px-4 sm:px-6 py-3 text-left font-medium">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-indigo-500/[0.04]">
+                      {payouts.map(p => (
+                        <tr key={p.id} className={`group hover:bg-white/[0.01] transition-colors ${p.status === 'pending' ? 'bg-amber-500/[0.02]' : ''}`}>
+                          <td className="px-4 sm:px-6 py-3">
+                            <p className="font-semibold text-gray-300">{p.affiliate_name || '—'}</p>
+                            {p.affiliate_email && <p className="text-[10px] text-gray-600">{p.affiliate_email}</p>}
+                          </td>
+                          <td className="px-4 sm:px-6 py-3 font-mono font-bold text-emerald-400">${(p.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          <td className="px-4 sm:px-6 py-3 text-gray-500">{p.period || '—'}</td>
+                          <td className="px-4 sm:px-6 py-3">
+                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${p.status === 'paid' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>{p.status}</span>
+                          </td>
+                          <td className="px-4 sm:px-6 py-3 text-gray-600 font-mono">{p.created_at ? p.created_at.slice(0, 10) : '—'}</td>
+                          <td className="px-4 sm:px-6 py-3">
+                            <div className="flex items-center gap-2">
+                              {p.status === 'pending' && (
+                                <button onClick={() => markPaid(p.id)} className="chip text-[9px]" style={{ background: 'rgba(34,197,94,0.15)', borderColor: 'rgba(34,197,94,0.3)', color: '#4ade80' }}>Mark Paid</button>
+                              )}
+                              {p.status === 'pending' && (
+                                <button onClick={() => deletePayout(p.id)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 text-xs transition-all">&times;</button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {tab === 'ai-tools' && (
         <div className="space-y-4 sm:space-y-6 animate-fade-in">

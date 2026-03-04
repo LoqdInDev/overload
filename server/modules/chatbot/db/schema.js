@@ -38,4 +38,7 @@ function initDatabase() {
   `);
 }
 
+// Migration: add color column if it doesn't exist
+try { db.exec("ALTER TABLE cb_bots ADD COLUMN color TEXT DEFAULT '#6366f1'"); } catch {}
+
 module.exports = { initDatabase };

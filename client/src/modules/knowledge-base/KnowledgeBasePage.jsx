@@ -44,6 +44,10 @@ export default function KnowledgeBasePage() {
   const [improveOutput, setImproveOutput] = useState('');
   const [improveLoading, setImproveLoading] = useState(false);
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState(null);
+
   // Form state
   const [form, setForm] = useState({ title: '', content: '', category: '', status: 'draft' });
 
@@ -63,6 +67,23 @@ export default function KnowledgeBasePage() {
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // Debounced search
+  useEffect(() => {
+    if (searchQuery.length < 2) {
+      setSearchResults(null);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const results = await fetchJSON('/api/knowledge-base/search?q=' + encodeURIComponent(searchQuery));
+        setSearchResults(results);
+      } catch {
+        setSearchResults([]);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Stats
   const published = articles.filter(a => a.status === 'published').length;
@@ -381,8 +402,32 @@ export default function KnowledgeBasePage() {
             </div>
           )}
 
-          {/* Status filter pills */}
+          {/* Search input */}
           {!editing && (
+            <div className="relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search articles..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg pl-9 pr-10 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/40"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => { setSearchQuery(''); setSearchResults(null); }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                >
+                  × Clear
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Status filter pills */}
+          {!editing && !searchResults && (
             <div className="flex items-center gap-2">
               {[
                 { id: 'all', label: 'All', count: articles.length },
@@ -442,8 +487,45 @@ export default function KnowledgeBasePage() {
             </div>
           )}
 
+          {/* Search results */}
+          {!editing && searchResults !== null && searchQuery.length >= 2 && (
+            <div className="panel rounded-2xl overflow-hidden animate-fade-in">
+              <div className="px-4 sm:px-6 py-3 border-b border-white/[0.04]">
+                <p className="text-xs text-gray-500">{searchResults.length} result{searchResults.length !== 1 ? 's' : ''} for <strong className="text-gray-300">"{searchQuery}"</strong></p>
+              </div>
+              {searchResults.length === 0 ? (
+                <div className="px-4 sm:px-6 py-8 text-center">
+                  <p className="text-sm text-gray-500">No articles matched your search</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-white/[0.04]">
+                  {searchResults.map(a => (
+                    <div key={a.id} className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4 hover:bg-white/[0.02] transition-colors group">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <button onClick={() => { setTab('articles'); openEditor(a); setSearchQuery(''); setSearchResults(null); }} className="text-sm font-semibold text-gray-300 hover:text-white transition-colors text-left">
+                            {a.title}
+                          </button>
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: `${statusColor(a.status)}15`, color: statusColor(a.status), border: `1px solid ${statusColor(a.status)}25` }}>
+                            {a.status}
+                          </span>
+                        </div>
+                        {a.excerpt && (
+                          <p className="text-xs text-gray-500 mt-1 leading-relaxed" dangerouslySetInnerHTML={{ __html: a.excerpt.replace(/<mark>/g, '<mark style="background:rgba(59,130,246,0.3);color:#93c5fd;border-radius:2px;padding:0 2px">').replace(/<\/mark>/g, '</mark>') }} />
+                        )}
+                        <div className="flex items-center gap-2 mt-1">
+                          {a.category && <span className="text-xs text-gray-600">{a.category}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Article list */}
-          {filtered.length === 0 && !editing ? (
+          {(!searchResults || searchQuery.length < 2) && (filtered.length === 0 && !editing ? (
             <div className="panel rounded-2xl p-8 sm:p-12 text-center">
               <svg className="w-10 h-10 mx-auto mb-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
@@ -502,7 +584,7 @@ export default function KnowledgeBasePage() {
                 ))}
               </div>
             </div>
-          )}
+          ))}
         </div>
       )}
 

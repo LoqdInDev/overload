@@ -192,4 +192,71 @@ Be specific. Include realistic keyword examples even if estimated.`;
     .catch(() => sse.sendError(new Error('Generation failed')));
 });
 
+// POST /generate-brief — SSE: generate full SEO content brief from keyword
+router.post('/generate-brief', async (req, res) => {
+  const { keyword, url, niche } = req.body;
+  if (!keyword) return res.status(400).json({ error: 'keyword required' });
+
+  const wsId = req.workspace.id;
+  const sse = setupSSE(res);
+
+  // Pull related keywords from DB for context
+  let relatedKeywords = [];
+  try {
+    relatedKeywords = db.prepare(
+      'SELECT keyword, volume, difficulty, intent FROM seo_keywords WHERE workspace_id = ? AND keyword != ? LIMIT 10'
+    ).all(wsId, keyword);
+  } catch {}
+
+  const prompt = `You are an expert SEO content strategist. Create a comprehensive content brief for ranking this keyword.
+
+Target Keyword: "${keyword}"
+${niche ? `Niche: ${niche}` : ''}
+${url ? `Website URL: ${url}` : ''}
+${relatedKeywords.length > 0 ? `Related keywords in this workspace: ${relatedKeywords.map(k => `${k.keyword} (vol: ${k.volume || 'unknown'}, difficulty: ${k.difficulty || 'unknown'}, intent: ${k.intent || 'unknown'})`).join(', ')}` : ''}
+
+Generate a complete SEO content brief with these sections:
+
+## 📌 Target Keyword Analysis
+- Search intent (informational/navigational/commercial/transactional)
+- Target audience persona
+- Estimated difficulty assessment
+- Recommended word count range
+
+## 🏆 Title Options (3 variants)
+(Each under 60 characters, include keyword, different angles)
+
+## 📋 Meta Description (2 variants)
+(Under 155 characters each, compelling and keyword-rich)
+
+## 🗂️ Recommended H2 Structure
+(5-8 H2 headings that cover the topic comprehensively and include LSI keywords)
+
+## 🔑 Keywords to Include
+- Primary keyword (exact match)
+- 5-8 LSI/semantic keywords to weave in
+- 3-5 question-format keywords (for FAQ section / People Also Ask)
+
+## 🔗 Internal Link Opportunities
+(Types of pages to link to/from — categories, related topics)
+
+## 📊 Competitor Angle
+(What top-ranking pages typically cover, and one unique angle to differentiate)
+
+## ✅ Content Checklist
+(8-10 checkbox items: schema markup, image alt text, etc.)
+
+Be specific and actionable. Format with clear headers and bullet points.`;
+
+  try {
+    const { text } = await generateTextWithClaude(prompt, {
+      onChunk: (chunk) => sse.sendChunk(chunk),
+      maxTokens: 4096,
+    });
+    sse.sendResult({ content: text, keyword });
+  } catch (err) {
+    sse.sendError(err);
+  }
+});
+
 module.exports = router;

@@ -246,4 +246,33 @@ router.get('/conversations', (req, res) => {
   }
 });
 
+// GET /bots/:id/embed — returns JS embed snippet for the bot
+router.get('/bots/:id/embed', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const bot = db.prepare('SELECT * FROM cb_bots WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!bot) return res.status(404).json({ error: 'Bot not found' });
+
+    const API_BASE = process.env.API_URL || 'http://localhost:3000';
+    const snippet = `<!-- Overload Chatbot: ${bot.name} -->
+<script>
+  (function() {
+    var s = document.createElement('script');
+    s.src = '${API_BASE}/chatbot-widget.js';
+    s.setAttribute('data-bot-id', '${bot.id}');
+    s.setAttribute('data-workspace', '${wsId}');
+    s.setAttribute('data-name', '${(bot.name || 'Chat').replace(/'/g, "\\'")}');
+    s.setAttribute('data-color', '${bot.color || '#6366f1'}');
+    s.defer = true;
+    document.head.appendChild(s);
+  })();
+</script>
+<!-- End Overload Chatbot -->`;
+
+    res.json({ snippet, botId: bot.id, botName: bot.name });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

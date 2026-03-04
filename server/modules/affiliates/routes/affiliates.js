@@ -207,6 +207,109 @@ router.delete('/affiliates/:id', (req, res) => {
   }
 });
 
+// ─── PAYOUTS ─────────────────────────────────────────────────────────────────
+
+// GET /payouts — list all payouts with affiliate info
+router.get('/payouts', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const { affiliate_id, status } = req.query;
+    let sql = `
+      SELECT p.*, a.name as affiliate_name, a.email as affiliate_email,
+             pr.name as program_name, pr.commission_rate
+      FROM af_payouts p
+      LEFT JOIN af_affiliates a ON p.affiliate_id = a.id
+      LEFT JOIN af_programs pr ON p.program_id = pr.id
+      WHERE p.workspace_id = ?
+    `;
+    const params = [wsId];
+    if (affiliate_id) { sql += ' AND p.affiliate_id = ?'; params.push(affiliate_id); }
+    if (status) { sql += ' AND p.status = ?'; params.push(status); }
+    sql += ' ORDER BY p.created_at DESC';
+    res.json(db.prepare(sql).all(...params));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /payouts/summary — total owed, paid, pending per affiliate
+router.get('/payouts/summary', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const summary = db.prepare(`
+      SELECT
+        a.id as affiliate_id, a.name as affiliate_name, a.email,
+        COALESCE(SUM(CASE WHEN p.status = 'pending' THEN p.amount ELSE 0 END), 0) as pending_amount,
+        COALESCE(SUM(CASE WHEN p.status = 'paid' THEN p.amount ELSE 0 END), 0) as paid_amount,
+        COALESCE(SUM(p.amount), 0) as total_earned,
+        COUNT(CASE WHEN p.status = 'pending' THEN 1 END) as pending_count
+      FROM af_affiliates a
+      LEFT JOIN af_payouts p ON p.affiliate_id = a.id AND p.workspace_id = ?
+      WHERE a.workspace_id = ?
+      GROUP BY a.id
+      ORDER BY pending_amount DESC
+    `).all(wsId, wsId);
+    res.json(summary);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /payouts — create a payout record
+router.post('/payouts', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const { affiliate_id, program_id, amount, period, notes } = req.body;
+    if (!affiliate_id || !amount) return res.status(400).json({ error: 'affiliate_id and amount are required' });
+
+    const affiliate = db.prepare('SELECT * FROM af_affiliates WHERE id = ? AND workspace_id = ?').get(affiliate_id, wsId);
+    if (!affiliate) return res.status(404).json({ error: 'Affiliate not found' });
+
+    const result = db.prepare(
+      'INSERT INTO af_payouts (affiliate_id, program_id, amount, status, period, notes, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run(affiliate_id, program_id || null, amount, 'pending', period || null, notes || null, wsId);
+
+    const payout = db.prepare('SELECT * FROM af_payouts WHERE id = ?').get(result.lastInsertRowid);
+    logActivity('affiliates', 'create', 'Created payout', `$${amount} for ${affiliate.name}`, null, wsId);
+    res.status(201).json(payout);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /payouts/:id/mark-paid — mark a payout as paid
+router.put('/payouts/:id/mark-paid', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const payout = db.prepare('SELECT * FROM af_payouts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!payout) return res.status(404).json({ error: 'Payout not found' });
+
+    db.prepare('UPDATE af_payouts SET status = ?, paid_at = datetime(\'now\') WHERE id = ? AND workspace_id = ?')
+      .run('paid', req.params.id, wsId);
+
+    const updated = db.prepare('SELECT * FROM af_payouts WHERE id = ?').get(req.params.id);
+    logActivity('affiliates', 'update', 'Marked payout paid', `$${payout.amount}`, null, wsId);
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /payouts/:id — cancel/delete a payout
+router.delete('/payouts/:id', (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const payout = db.prepare('SELECT * FROM af_payouts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!payout) return res.status(404).json({ error: 'Payout not found' });
+    if (payout.status === 'paid') return res.status(400).json({ error: 'Cannot delete a paid payout' });
+
+    db.prepare('DELETE FROM af_payouts WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /optimize-commission — get AI commission structure recommendation
 router.post('/optimize-commission', async (req, res) => {
   const { current_rate, industry, product_margin, avg_order_value } = req.body;
