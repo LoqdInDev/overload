@@ -57,6 +57,7 @@ Also provide:
 
 // POST /vetting-checklist — SSE: generate influencer vetting checklist
 router.post('/vetting-checklist', async (req, res) => {
+  const wsId = req.workspace.id;
   const { handle, platform, niche } = req.body;
   if (!handle) return res.status(400).json({ error: 'handle required' });
 
@@ -96,6 +97,7 @@ Note: This is an AI-generated guide for manual vetting — you must verify all m
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
+    logActivity('influencers', 'vetting', `Generated vetting checklist for @${handle}`, platform || 'Instagram', null, wsId);
     sse.sendResult({ content: text });
   } catch (err) {
     sse.sendError(err);
@@ -215,7 +217,7 @@ router.put('/campaigns/:id', (req, res) => {
     db.prepare(
       'UPDATE inf_campaigns SET name = COALESCE(?, name), description = COALESCE(?, description), budget = COALESCE(?, budget), status = COALESCE(?, status) WHERE id = ? AND workspace_id = ?'
     ).run(name, description, budget, status, req.params.id, wsId);
-    const campaign = db.prepare('SELECT * FROM inf_campaigns WHERE id = ?').get(req.params.id);
+    const campaign = db.prepare('SELECT * FROM inf_campaigns WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     res.json(campaign);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -306,8 +308,8 @@ Be specific, clear, and professional.`;
   generateTextWithClaude(prompt, {
     onChunk: (chunk) => sse.sendChunk(chunk),
   })
-    .then(() => sse.sendResult({ done: true }))
-    .catch(() => sse.sendError({ message: 'Generation failed' }));
+    .then(({ text }) => sse.sendResult({ content: text, done: true }))
+    .catch((err) => sse.sendError(err));
 });
 
 module.exports = router;

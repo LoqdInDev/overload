@@ -511,7 +511,12 @@ export default function KnowledgeBasePage() {
                           </span>
                         </div>
                         {a.excerpt && (
-                          <p className="text-xs text-gray-500 mt-1 leading-relaxed" dangerouslySetInnerHTML={{ __html: a.excerpt.replace(/<mark>/g, '<mark style="background:rgba(59,130,246,0.3);color:#93c5fd;border-radius:2px;padding:0 2px">').replace(/<\/mark>/g, '</mark>') }} />
+                          <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                            {a.excerpt.split(/(<mark>[\s\S]*?<\/mark>)/).map((part, idx) => {
+                              const m = part.match(/^<mark>([\s\S]*?)<\/mark>$/);
+                              return m ? <mark key={idx} style={{ background: 'rgba(59,130,246,0.3)', color: '#93c5fd', borderRadius: '2px', padding: '0 2px' }}>{m[1]}</mark> : part;
+                            })}
+                          </p>
                         )}
                         <div className="flex items-center gap-2 mt-1">
                           {a.category && <span className="text-xs text-gray-600">{a.category}</span>}

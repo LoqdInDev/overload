@@ -127,8 +127,8 @@ function initDatabase() {
   });
   seedModes();
 
-  // Seed demo data if tables are empty
-  if (workspaces.length > 0) {
+  // Seed demo data only in non-production environments
+  if (process.env.NODE_ENV !== 'production' && workspaces.length > 0) {
     seedDemoData(workspaces[0].id);
   }
 }

@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { db } = require('../../../db/database');
+const { db, logActivity } = require('../../../db/database');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
 
 // POST /generate - SSE: generate SEO analysis, meta tags, keywords
 router.post('/generate', async (req, res) => {
+  const wsId = req.workspace.id;
   const sse = setupSSE(res);
 
   try {
@@ -71,6 +72,7 @@ Be specific and actionable in your recommendations.`;
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
+    logActivity('seo', 'generate', `Generated ${type || 'analysis'}`, null, null, wsId);
     sse.sendResult({ content: text, type: type || 'analysis' });
   } catch (error) {
     console.error('SEO generation error:', error);
@@ -188,8 +190,8 @@ Be specific. Include realistic keyword examples even if estimated.`;
   generateTextWithClaude(prompt, {
     onChunk: (chunk) => sse.sendChunk(chunk),
   })
-    .then(() => sse.sendResult({ done: true }))
-    .catch(() => sse.sendError(new Error('Generation failed')));
+    .then(({ text }) => sse.sendResult({ content: text, done: true }))
+    .catch((err) => sse.sendError(err));
 });
 
 // POST /generate-brief — SSE: generate full SEO content brief from keyword

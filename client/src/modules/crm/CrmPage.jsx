@@ -76,12 +76,12 @@ export default function CrmPage() {
   };
 
   const addDeal = async () => {
-    if (!newDeal.name.trim()) return;
+    if (!newDeal.name.trim() || !newDeal.contact_id) return;
     try {
       const created = await postJSON('/api/crm/deals', {
         ...newDeal,
         value: parseFloat(newDeal.value) || 0,
-        contact_id: parseInt(newDeal.contact_id) || contacts[0]?.id,
+        contact_id: parseInt(newDeal.contact_id) || null,
       });
       setDeals(prev => [created, ...prev]);
       setNewDeal({ name: '', value: '', contact_id: '', stage: 'lead' });

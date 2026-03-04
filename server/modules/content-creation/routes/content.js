@@ -59,50 +59,67 @@ router.post('/generate', async (req, res) => {
 // List all projects
 router.get('/projects', (req, res) => {
   const wsId = req.workspace.id;
-  const q = getQueries(wsId);
-  const type = req.query.type;
-  const projects = type ? q.getByType(type) : q.getAll();
-  res.json(projects);
+  try {
+    const q = getQueries(wsId);
+    const type = req.query.type;
+    const projects = type ? q.getByType(type) : q.getAll();
+    res.json(projects);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Get project by ID
 router.get('/projects/:id', (req, res) => {
   const wsId = req.workspace.id;
-  const q = getQueries(wsId);
-  const project = q.getById(req.params.id);
-  if (!project) return res.status(404).json({ error: 'Not found' });
-  res.json(project);
+  try {
+    const q = getQueries(wsId);
+    const project = q.getById(req.params.id);
+    if (!project) return res.status(404).json({ error: 'Not found' });
+    res.json(project);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Update project
 router.put('/projects/:id', (req, res) => {
   const wsId = req.workspace.id;
-  const q = getQueries(wsId);
-  const { title, content, metadata } = req.body;
-  const existing = q.getById(req.params.id);
-  if (!existing) return res.status(404).json({ error: 'Not found' });
+  try {
+    const q = getQueries(wsId);
+    const { title, content, metadata } = req.body;
+    const existing = q.getById(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Not found' });
 
-  q.update(
-    title || existing.title,
-    content || existing.content,
-    metadata ? JSON.stringify(metadata) : existing.metadata,
-    req.params.id
-  );
-  res.json({ success: true });
+    q.update(
+      title || existing.title,
+      content || existing.content,
+      metadata ? JSON.stringify(metadata) : existing.metadata,
+      req.params.id
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Delete project
 router.delete('/projects/:id', (req, res) => {
   const wsId = req.workspace.id;
-  const q = getQueries(wsId);
-  q.delete(req.params.id);
-  logActivity('content', 'delete', 'Deleted content project', null, req.params.id, wsId);
-  res.json({ success: true });
+  try {
+    const q = getQueries(wsId);
+    q.delete(req.params.id);
+    logActivity('content', 'delete', 'Deleted content project', null, req.params.id, wsId);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // GET /suggestions - Cross-module content suggestions
 router.get('/suggestions', (req, res) => {
   const wsId = req.workspace.id;
+  try {
   const seoKeywords = getSeoKeywordsForContent(wsId);
   const recentContent = getContentForSocial(wsId);
 
@@ -131,6 +148,9 @@ router.get('/suggestions', (req, res) => {
   }
 
   res.json(suggestions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // POST /score — score content quality

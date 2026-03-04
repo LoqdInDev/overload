@@ -269,7 +269,7 @@ router.post('/payouts', (req, res) => {
       'INSERT INTO af_payouts (affiliate_id, program_id, amount, status, period, notes, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(affiliate_id, program_id || null, amount, 'pending', period || null, notes || null, wsId);
 
-    const payout = db.prepare('SELECT * FROM af_payouts WHERE id = ?').get(result.lastInsertRowid);
+    const payout = db.prepare('SELECT * FROM af_payouts WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     logActivity('affiliates', 'create', 'Created payout', `$${amount} for ${affiliate.name}`, null, wsId);
     res.status(201).json(payout);
   } catch (err) {
@@ -287,7 +287,7 @@ router.put('/payouts/:id/mark-paid', (req, res) => {
     db.prepare('UPDATE af_payouts SET status = ?, paid_at = datetime(\'now\') WHERE id = ? AND workspace_id = ?')
       .run('paid', req.params.id, wsId);
 
-    const updated = db.prepare('SELECT * FROM af_payouts WHERE id = ?').get(req.params.id);
+    const updated = db.prepare('SELECT * FROM af_payouts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     logActivity('affiliates', 'update', 'Marked payout paid', `$${payout.amount}`, null, wsId);
     res.json(updated);
   } catch (err) {

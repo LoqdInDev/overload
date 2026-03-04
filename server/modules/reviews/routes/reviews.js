@@ -299,13 +299,15 @@ router.get('/history', (req, res) => {
 });
 
 // POST /analyze-sentiment — analyze sentiment trends across reviews
-router.post('/analyze-sentiment', (req, res) => {
+router.post('/analyze-sentiment', async (req, res) => {
+  const wsId = req.workspace.id;
   const { reviews, business_name } = req.body;
   if (!reviews?.length) return res.status(400).json({ error: 'reviews required' });
 
   const reviewTexts = reviews.slice(0, 30).map((r, i) => `${i+1}. "${r.text || r.content || r}"` ).join('\n');
 
-  generateTextWithClaude(`You are a customer sentiment analyst. Analyze these reviews for ${business_name || 'this business'}:
+  try {
+    const { text } = await generateTextWithClaude(`You are a customer sentiment analyst. Analyze these reviews for ${business_name || 'this business'}:
 
 ${reviewTexts}
 
@@ -322,25 +324,28 @@ Return JSON:
   "summary": "<2 sentence overall summary>"
 }
 
-Only return JSON.`)
-    .then(({ text }) => {
-      const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
-      try { res.json(JSON.parse(cleaned)); }
-      catch {
-        const m = cleaned.match(/\{[\s\S]*\}/);
-        if (m) { try { res.json(JSON.parse(m[0])); } catch { res.status(500).json({ error: 'Failed to parse sentiment analysis' }); } }
-        else res.status(500).json({ error: 'Failed to parse sentiment analysis' });
-      }
-    })
-    .catch(err => res.status(500).json({ error: err.message }));
+Only return JSON.`);
+    const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
+    try { res.json(JSON.parse(cleaned)); }
+    catch {
+      const m = cleaned.match(/\{[\s\S]*\}/);
+      if (m) { try { res.json(JSON.parse(m[0])); } catch { res.status(500).json({ error: 'Failed to parse sentiment analysis' }); } }
+      else res.status(500).json({ error: 'Failed to parse sentiment analysis' });
+    }
+    logActivity('reviews', 'analyze', 'Analyzed review sentiment', business_name || 'general', null, wsId);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // POST /generate-response — generate a response to a review
-router.post('/generate-response', (req, res) => {
+router.post('/generate-response', async (req, res) => {
+  const wsId = req.workspace.id;
   const { review_text, rating, business_name } = req.body;
   if (!review_text) return res.status(400).json({ error: 'review_text required' });
 
-  generateTextWithClaude(`You are a customer success expert. Write a professional response to this ${rating}-star review for ${business_name || 'our business'}:
+  try {
+    const { text } = await generateTextWithClaude(`You are a customer success expert. Write a professional response to this ${rating}-star review for ${business_name || 'our business'}:
 
 Review: "${review_text}"
 Rating: ${rating || '3'}/5
@@ -359,17 +364,18 @@ Return JSON:
   "tip": "<one tip for this type of review>"
 }
 
-Only return JSON.`)
-    .then(({ text }) => {
-      const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
-      try { res.json(JSON.parse(cleaned)); }
-      catch {
-        const m = cleaned.match(/\{[\s\S]*\}/);
-        if (m) { try { res.json(JSON.parse(m[0])); } catch { res.status(500).json({ error: 'Failed to parse review response' }); } }
-        else res.status(500).json({ error: 'Failed to parse review response' });
-      }
-    })
-    .catch(err => res.status(500).json({ error: err.message }));
+Only return JSON.`);
+    const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
+    try { res.json(JSON.parse(cleaned)); }
+    catch {
+      const m = cleaned.match(/\{[\s\S]*\}/);
+      if (m) { try { res.json(JSON.parse(m[0])); } catch { res.status(500).json({ error: 'Failed to parse review response' }); } }
+      else res.status(500).json({ error: 'Failed to parse review response' });
+    }
+    logActivity('reviews', 'generate-response', 'Generated review response', `${rating}-star review`, null, wsId);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // POST /request-campaign — SSE: generate a bulk review request campaign

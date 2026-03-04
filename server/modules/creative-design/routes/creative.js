@@ -205,7 +205,7 @@ router.post('/generate-stream', async (req, res) => {
 router.post('/regenerate', async (req, res) => {
   const sse = setupSSE(res);
   const { prompt, dimension } = req.body;
-  if (!prompt) return sse.sendError('prompt is required');
+  if (!prompt) return sse.sendError(new Error('prompt is required'));
   try {
     const ratio = dimension ? dimensionToAspectRatio(dimension) : '1:1';
     const gen = await generateImage(prompt, ratio);

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { db } = require('../../../db/database');
+const { db, logActivity } = require('../../../db/database');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
 
@@ -178,6 +178,7 @@ router.delete('/categories/:id', (req, res) => {
 
 // POST /generate - AI generation with SSE
 router.post('/generate', async (req, res) => {
+  const wsId = req.workspace.id;
   const sse = setupSSE(res);
 
   try {
@@ -192,6 +193,7 @@ router.post('/generate', async (req, res) => {
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
+    logActivity('knowledge-base', 'generate', `Generated ${type || 'article'}`, null, null, wsId);
     sse.sendResult({ content: text, type: type || 'article' });
   } catch (error) {
     console.error('Knowledge Base generation error:', error);
@@ -201,6 +203,7 @@ router.post('/generate', async (req, res) => {
 
 // POST /detect-gaps — analyze knowledge base for content gaps
 router.post('/detect-gaps', async (req, res) => {
+  const wsId = req.workspace.id;
   const { articles, workspace_type } = req.body;
   if (!articles?.length) return res.status(400).json({ error: 'articles required' });
 
@@ -234,6 +237,7 @@ Return top 8 gaps. Only return JSON.`);
 
 // POST /improve-article — SSE: get improvement suggestions for an article
 router.post('/improve-article', async (req, res) => {
+  const wsId = req.workspace.id;
   const { title, content } = req.body;
   if (!content) { res.status(400).json({ error: 'content required' }); return; }
 

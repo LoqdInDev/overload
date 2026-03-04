@@ -74,7 +74,7 @@ router.put('/budgets/:id', (req, res) => {
     db.prepare(
       'UPDATE bo_budgets SET name = COALESCE(?, name), total_budget = COALESCE(?, total_budget), period = COALESCE(?, period), status = COALESCE(?, status) WHERE id = ? AND workspace_id = ?'
     ).run(name, total_budget, period, status, req.params.id, wsId);
-    res.json(db.prepare('SELECT * FROM bo_budgets WHERE id = ?').get(req.params.id));
+    res.json(db.prepare('SELECT * FROM bo_budgets WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId));
   } catch (error) {
     console.error('Error updating budget:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -111,6 +111,7 @@ router.put('/allocations/:id', (req, res) => {
 
 // POST /optimize — AI budget reallocation recommendations
 router.post('/optimize', async (req, res) => {
+  const wsId = req.workspace.id;
   const { total_budget, channels, goal } = req.body;
   if (!channels?.length) return res.status(400).json({ error: 'channels required' });
 
@@ -139,6 +140,7 @@ Only return JSON.`);
       if (m) { try { res.json(JSON.parse(m[0])); } catch { res.status(500).json({ error: 'Failed to parse budget recommendation' }); } }
       else res.status(500).json({ error: 'Failed to parse budget recommendation' });
     }
+    logActivity('budget-optimizer', 'optimize', 'Generated budget optimization', goal || 'Sales', null, wsId);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

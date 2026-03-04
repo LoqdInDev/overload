@@ -14,7 +14,7 @@ router.get('/overview', (req, res) => {
   let dateCond = '';
   const params = [wsId];
   if (start_date) { dateCond += ' AND created_at >= ?'; params.push(start_date); }
-  else if (days) { dateCond += ` AND created_at >= datetime('now', '-${parseInt(days)} days')`; }
+  else if (days) { const safeDays = Math.min(Math.max(parseInt(days) || 7, 1), 365); dateCond += ` AND created_at >= datetime('now', '-${safeDays} days')`; }
   if (end_date) { dateCond += ' AND created_at <= ?'; params.push(end_date); }
 
   const stats = db.prepare(`
@@ -55,7 +55,6 @@ router.get('/activity', (req, res) => {
 router.get('/daily', (req, res) => {
   const wsId = req.workspace.id;
   const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
-  if (!Number.isInteger(days)) { return res.status(400).json({ error: 'Invalid days parameter' }); }
   const moduleId = req.query.module;
 
   let query = `
@@ -86,7 +85,7 @@ router.get('/module/:moduleId', (req, res) => {
   const baseParams = [moduleId, wsId];
   const dateParams = [];
   if (start_date) { dateCond += ' AND created_at >= ?'; dateParams.push(start_date); }
-  else if (days) { dateCond += ` AND created_at >= datetime('now', '-${parseInt(days)} days')`; }
+  else if (days) { const safeDays = Math.min(Math.max(parseInt(days) || 7, 1), 365); dateCond += ` AND created_at >= datetime('now', '-${safeDays} days')`; }
   if (end_date) { dateCond += ' AND created_at <= ?'; dateParams.push(end_date); }
 
   const total = db.prepare(

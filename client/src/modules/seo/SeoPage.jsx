@@ -112,35 +112,28 @@ export default function SeoPage() {
   }, []);
 
   const deleteAudit = async (id) => {
-    await deleteJSON(`/api/seo/audits/${id}`);
-    setAudits(prev => prev.filter(a => a.id !== id));
+    try {
+      await deleteJSON(`/api/seo/audits/${id}`);
+      setAudits(prev => prev.filter(a => a.id !== id));
+    } catch (err) { console.error(err); }
   };
 
   const deleteKeyword = async (id) => {
-    await deleteJSON(`/api/seo/keywords/${id}`);
-    setKeywords(prev => prev.filter(k => k.id !== id));
+    try {
+      await deleteJSON(`/api/seo/keywords/${id}`);
+      setKeywords(prev => prev.filter(k => k.id !== id));
+    } catch (err) { console.error(err); }
   };
 
-  const generate = async () => {
+  const generate = () => {
     if (!prompt.trim()) return;
     setGenerating(true); setOutput('');
-    try {
-      const res = await fetch(`${API_BASE}/api/seo/generate`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: activeTool, prompt: `[Tool: ${activeTool}] [Country: ${country}] [Intent: ${intent}]\n\n${prompt}` }),
-      });
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const lines = decoder.decode(value, { stream: true }).split('\n').filter(l => l.startsWith('data: '));
-        for (const line of lines) {
-          try { const d = JSON.parse(line.slice(6)); if (d.type === 'chunk') setOutput(p => p + d.text); else if (d.type === 'result') setOutput(d.data.content); } catch {}
-        }
-      }
-    } catch (e) { console.error(e); }
-    finally { setGenerating(false); }
+    connectSSE('/api/seo/generate', { type: activeTool, prompt: `[Tool: ${activeTool}] [Country: ${country}] [Intent: ${intent}]\n\n${prompt}` }, {
+      onChunk: (t) => setOutput(p => p + t),
+      onResult: (d) => { setOutput(d.content || ''); setGenerating(false); },
+      onError: (e) => { console.error(e); setGenerating(false); },
+      onDone: () => setGenerating(false),
+    });
   };
 
   const copy = () => { navigator.clipboard.writeText(output); setCopied(true); setTimeout(() => setCopied(false), 2000); };

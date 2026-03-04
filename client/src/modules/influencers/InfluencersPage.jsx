@@ -101,18 +101,19 @@ export default function InfluencersPage() {
     } catch (err) { console.error(err); }
   };
 
-  const generate = async () => {
+  const generate = () => {
     setGenerating(true); setOutput('');
     const fullPrompt = activeTool === 'find'
       ? `Find ${followerRange} influencers on ${platform} in the ${niche} niche. Provide name suggestions, estimated followers, engagement rate, and content style.`
       : activeTool === 'roi'
         ? `Calculate ROI for an influencer campaign: Budget $${budget}, Estimated reach ${reach}, Engagement rate ${engRate}%, Conversion rate ${convRate}%. Provide detailed breakdown.`
         : prompt;
-    try {
-      const res = await fetch(`${API_BASE}/api/influencers/generate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: activeTool, prompt: fullPrompt }) });
-      const reader = res.body.getReader(); const decoder = new TextDecoder();
-      while (true) { const { done, value } = await reader.read(); if (done) break; const lines = decoder.decode(value, { stream: true }).split('\n').filter(l => l.startsWith('data: ')); for (const line of lines) { try { const d = JSON.parse(line.slice(6)); if (d.type === 'chunk') setOutput(p => p + d.text); else if (d.type === 'result') setOutput(d.data.content); } catch {} } }
-    } catch (e) { console.error(e); } finally { setGenerating(false); }
+    connectSSE('/api/influencers/generate', { type: activeTool, prompt: fullPrompt }, {
+      onChunk: (t) => setOutput(p => p + t),
+      onResult: (d) => { setOutput(d.content || ''); setGenerating(false); },
+      onError: (e) => { console.error(e); setGenerating(false); },
+      onDone: () => setGenerating(false),
+    });
   };
 
   if (!activeTool) return (
