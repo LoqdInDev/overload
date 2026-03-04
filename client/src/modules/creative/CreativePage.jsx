@@ -90,9 +90,11 @@ function formatDate(dateStr) {
 }
 
 // Full-screen lightbox
-function ImageLightbox({ images, index, onClose }) {
+function ImageLightbox({ images, index, onClose, type }) {
   const [current, setCurrent] = useState(index);
   const [promptCopied, setPromptCopied] = useState(false);
+  const [caption, setCaption] = useState('');
+  const [captionLoading, setCaptionLoading] = useState(false);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -165,7 +167,7 @@ function ImageLightbox({ images, index, onClose }) {
 
         {/* Actions + prompt */}
         <div className="mt-4 w-full max-w-xl flex flex-col gap-2">
-          <div className="flex gap-2 justify-center">
+          <div className="flex gap-2 justify-center flex-wrap">
             <a href={imgSrc} download={`creative-${img.id || current}.png`}
               className="chip text-[10px]" style={{ background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' }}>
               <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
@@ -177,9 +179,32 @@ function ImageLightbox({ images, index, onClose }) {
               style={promptCopied ? { color: '#4ade80', borderColor: 'rgba(74,222,128,0.3)' } : {}}>
               {promptCopied ? 'Prompt Copied!' : 'Copy Prompt'}
             </button>
+            <button
+              onClick={() => {
+                if (captionLoading) return;
+                setCaption('');
+                setCaptionLoading(true);
+                connectSSE('/api/creative/caption', { prompt: img.prompt, alt: img.alt, type }, {
+                  onChunk: (chunk) => setCaption(prev => prev + chunk),
+                  onResult: () => setCaptionLoading(false),
+                  onError: () => setCaptionLoading(false),
+                  onDone: () => setCaptionLoading(false),
+                });
+              }}
+              className="chip text-[10px]"
+              style={{ color: '#a78bfa', borderColor: 'rgba(167,139,250,0.3)', background: caption || captionLoading ? 'rgba(167,139,250,0.1)' : undefined }}>
+              {captionLoading ? 'Writing...' : 'Generate Captions'}
+            </button>
           </div>
           {img.prompt && (
             <p className="text-[11px] text-gray-500 text-center leading-relaxed px-4 line-clamp-3">{img.prompt}</p>
+          )}
+          {(caption || captionLoading) && (
+            <div className="mt-1 bg-black/60 rounded-xl p-4 text-left max-h-52 overflow-y-auto text-xs text-gray-300 leading-relaxed whitespace-pre-wrap"
+              style={{ borderLeft: '2px solid rgba(167,139,250,0.4)' }}>
+              {caption}
+              {captionLoading && <span className="inline-block w-[2px] h-3.5 bg-violet-400 ml-0.5 animate-pulse" />}
+            </div>
           )}
         </div>
 
@@ -203,12 +228,12 @@ function ImageLightbox({ images, index, onClose }) {
 }
 
 // Individual image card with proper error fallback
-function ImageCard({ img, apiBase, onOpen }) {
+function ImageCard({ img, apiBase, onOpen, onRegenerate }) {
   const [failed, setFailed] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
   const imgSrc = img.dataUrl || (img.url ? `${apiBase}${img.url}` : null);
   const hasImage = !!imgSrc && !failed;
-  const isPromptReady = img.status === 'prompt_ready' || !img.url || failed;
+  const isPending = img.status === 'pending';
 
   const copyPrompt = () => {
     navigator.clipboard.writeText(img.prompt || img.alt || '');
@@ -219,7 +244,14 @@ function ImageCard({ img, apiBase, onOpen }) {
   return (
     <div className="panel rounded-2xl overflow-hidden group">
       <div className="relative">
-        {hasImage ? (
+        {isPending ? (
+          // Skeleton loading state while this image is still generating
+          <div className="w-full aspect-square flex flex-col items-center justify-center gap-3"
+            style={{ background: 'rgba(6,182,212,0.03)' }}>
+            <div className="w-6 h-6 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin" />
+            <p className="hud-label text-[9px]" style={{ color: '#22d3ee' }}>RENDERING</p>
+          </div>
+        ) : hasImage ? (
           <>
             <img
               src={imgSrc}
@@ -229,7 +261,6 @@ function ImageCard({ img, apiBase, onOpen }) {
               onClick={onOpen}
               className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105 cursor-zoom-in"
             />
-            {/* Hover overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-end pb-4 gap-2 px-4">
               <a href={imgSrc} download={`creative-${img.id || 'image'}.png`}
                 className="chip text-[10px] w-full justify-center" style={{ background: 'rgba(6,182,212,0.25)', borderColor: 'rgba(6,182,212,0.4)', color: '#22d3ee' }}>
@@ -244,7 +275,6 @@ function ImageCard({ img, apiBase, onOpen }) {
             </div>
           </>
         ) : (
-          // Prompt-ready / failed state — shows the AI-optimized prompt
           <div className="w-full aspect-square flex flex-col items-center justify-center p-5 text-center gap-3"
             style={{ background: 'rgba(6,182,212,0.04)' }}>
             <div className="w-10 h-10 rounded-xl flex items-center justify-center"
@@ -256,13 +286,13 @@ function ImageCard({ img, apiBase, onOpen }) {
             <div>
               {img.error ? (
                 <>
-                  <p className="hud-label text-[9px] mb-1.5" style={{ color: '#f87171' }}>GEMINI ERROR</p>
-                  <p className="text-[10px] text-red-400/80 leading-relaxed line-clamp-4">{img.error}</p>
+                  <p className="hud-label text-[9px] mb-1.5" style={{ color: '#f87171' }}>FAILED</p>
+                  <p className="text-[10px] text-red-400/80 leading-relaxed line-clamp-3">{img.error}</p>
                 </>
               ) : (
                 <>
                   <p className="hud-label text-[9px] mb-1.5" style={{ color: '#22d3ee' }}>AI PROMPT READY</p>
-                  <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-5">{img.prompt || img.alt}</p>
+                  <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-4">{img.prompt || img.alt}</p>
                 </>
               )}
             </div>
@@ -274,12 +304,23 @@ function ImageCard({ img, apiBase, onOpen }) {
         )}
       </div>
 
-      {/* Style notes footer */}
-      {img.style_notes && (
-        <div className="px-3 py-2 border-t border-white/[0.04]">
-          <p className="text-[10px] text-gray-600 line-clamp-2">{img.style_notes}</p>
-        </div>
-      )}
+      {/* Footer: style notes + regenerate */}
+      <div className="px-3 py-2 border-t border-white/[0.04] flex items-center justify-between gap-2">
+        {img.style_notes
+          ? <p className="text-[10px] text-gray-600 line-clamp-1 flex-1">{img.style_notes}</p>
+          : <span className="flex-1" />
+        }
+        {onRegenerate && img.prompt && (
+          <button onClick={onRegenerate}
+            className="flex-shrink-0 flex items-center gap-1 text-[9px] text-gray-600 hover:text-cyan-400 transition-colors"
+            title="Regenerate this image">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+            Retry
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -334,7 +375,43 @@ export default function CreativePage() {
     }
   };
 
-  const generate = async () => {
+  const regenerateImage = useCallback((img, index) => {
+    const selectedDim = (DIMENSIONS[activeType] || []).find(d => d.id === dimension);
+    setImages(prev => {
+      const next = [...prev];
+      next[index] = { ...next[index], status: 'pending', url: null, dataUrl: null, error: null };
+      return next;
+    });
+    connectSSE('/api/creative/regenerate', { prompt: img.prompt, dimension: selectedDim?.id }, {
+      onResult: (data) => {
+        setImages(prev => {
+          const next = [...prev];
+          next[index] = { ...next[index], status: 'completed', url: data.url, dataUrl: data.dataUrl };
+          return next;
+        });
+      },
+      onError: (err) => {
+        setImages(prev => {
+          const next = [...prev];
+          next[index] = { ...next[index], status: 'failed', error: err };
+          return next;
+        });
+      },
+    });
+  }, [activeType, dimension]);
+
+  const downloadAll = () => {
+    images.filter(im => im.dataUrl || im.url).forEach((im, i) => {
+      const a = document.createElement('a');
+      a.href = im.dataUrl || `${API_BASE}${im.url}`;
+      a.download = `creative-${i + 1}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+  };
+
+  const generate = () => {
     if (!prompt.trim() || !activeType) return;
     setGenerating(true);
     setError(null);
@@ -343,25 +420,33 @@ export default function CreativePage() {
     const selectedStyle = STYLES.find(s => s.id === style);
     const selectedDim = (DIMENSIONS[activeType] || []).find(d => d.id === dimension);
     const fullPrompt = `[Dimensions: ${selectedDim?.id || 'Auto'}] [Quantity: ${quantity}]\n\n[Style: ${selectedStyle?.name}] [Palette: ${COLOR_PALETTES.find(p => p.id === palette)?.name}]\n\n${prompt}`;
-    try {
-      const res = await fetch(`${API_BASE}/api/creative/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: activeType, prompt: fullPrompt }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
-      if (data.images) setImages(data.images);
-      if (data.warning) setError(`Gemini: ${data.warning}`);
-    } catch (e) {
-      console.error('Generation error:', e);
-      setError(e.message === 'Failed to fetch'
-        ? 'Could not reach the server. Please check your connection and try again.'
-        : (e.message || 'Failed to generate creatives. Please try again.'));
-      setShowInput(true);
-    } finally {
-      setGenerating(false);
-    }
+
+    connectSSE('/api/creative/generate-stream', { type: activeType, prompt: fullPrompt }, {
+      onChunk: (text) => {
+        try {
+          const msg = JSON.parse(text);
+          if (msg.step === 'prompts_ready') {
+            setImages((msg.prompts || []).map((p, i) => ({
+              id: `pending-${i}`, prompt: p.prompt, alt: p.alt,
+              style_notes: p.style_notes, status: 'pending', url: null, dataUrl: null,
+            })));
+          } else if (msg.step === 'image') {
+            setImages(prev => {
+              const next = [...prev];
+              next[msg.index] = { ...next[msg.index], ...msg.image };
+              return next;
+            });
+          }
+        } catch { /* non-JSON chunks */ }
+      },
+      onResult: () => setGenerating(false),
+      onError: (err) => {
+        setError(err || 'Generation failed. Please try again.');
+        setGenerating(false);
+        setShowInput(true);
+      },
+      onDone: () => setGenerating(false),
+    });
   };
 
   const applyBriefToGenerate = () => {
@@ -696,8 +781,8 @@ export default function CreativePage() {
                 </div>
               )}
 
-              {/* Generating state */}
-              {generating && (
+              {/* Generating state — only when no images yet */}
+              {generating && images.length === 0 && (
                 <div className="panel rounded-2xl p-6 sm:p-10 animate-fade-up text-center">
                   <div className="flex items-center justify-center gap-3 mb-5">
                     <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
@@ -714,30 +799,43 @@ export default function CreativePage() {
                 </div>
               )}
 
-              {/* Image gallery */}
-              {images.length > 0 && !generating && (
+              {/* Image gallery — shown during streaming too */}
+              {images.length > 0 && (
                 <div className="animate-fade-up">
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                      <span className="hud-label text-[11px]" style={{ color: '#4ade80' }}>
-                        GENERATED — {images.length} CREATIVES
+                      <div className="w-2 h-2 rounded-full" style={{ background: generating ? '#22d3ee' : '#4ade80', animation: generating ? 'pulse 1s infinite' : 'none' }} />
+                      <span className="hud-label text-[11px]" style={{ color: generating ? '#22d3ee' : '#4ade80' }}>
+                        {generating
+                          ? `RENDERING — ${images.filter(im => im.status === 'completed').length} / ${images.length} DONE`
+                          : `GENERATED — ${images.length} CREATIVES`}
                       </span>
-                      {promptReadyCount > 0 && (
+                      {promptReadyCount > 0 && !generating && (
                         <span className="chip text-[9px]" style={{ color: '#22d3ee', borderColor: 'rgba(6,182,212,0.2)' }}>
                           {promptReadyCount} prompt ready
                         </span>
                       )}
                     </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => setShowInput(v => !v)} className="chip text-[10px]">
-                        {showInput ? 'Hide Brief' : 'Edit Brief'}
-                      </button>
-                      <button onClick={generate} className="chip text-[10px]">Regenerate</button>
-                    </div>
+                    {!generating && (
+                      <div className="flex gap-2">
+                        {images.some(im => im.dataUrl || im.url) && (
+                          <button onClick={downloadAll} className="chip text-[10px]"
+                            style={{ color: '#22d3ee', borderColor: 'rgba(6,182,212,0.25)' }}>
+                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                            </svg>
+                            Download All
+                          </button>
+                        )}
+                        <button onClick={() => setShowInput(v => !v)} className="chip text-[10px]">
+                          {showInput ? 'Hide Brief' : 'Edit Brief'}
+                        </button>
+                        <button onClick={generate} className="chip text-[10px]">Regenerate</button>
+                      </div>
+                    )}
                   </div>
 
-                  {promptReadyCount === images.length && (
+                  {promptReadyCount === images.length && !generating && (
                     <div className="panel rounded-xl p-3 mb-3" style={{ borderColor: 'rgba(6,182,212,0.15)', background: 'rgba(6,182,212,0.04)' }}>
                       <p className="text-xs text-cyan-400/70">
                         <span className="font-semibold">AI prompts generated.</span> Image rendering requires Gemini API configuration. Copy these prompts to use in any image generation tool.
@@ -747,15 +845,18 @@ export default function CreativePage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                     {images.map((img, i) => (
-                      <ImageCard key={i} img={img} apiBase={API_BASE} onOpen={() => setLightbox({ index: i })} />
+                      <ImageCard key={img.id || i} img={img} apiBase={API_BASE}
+                        onOpen={img.dataUrl || img.url ? () => setLightbox({ index: i }) : undefined}
+                        onRegenerate={() => regenerateImage(img, i)} />
                     ))}
                   </div>
 
                   {lightbox && (
                     <ImageLightbox
                       images={images.filter(im => im.dataUrl || im.url)}
-                      index={lightbox.index}
+                      index={Math.min(lightbox.index, images.filter(im => im.dataUrl || im.url).length - 1)}
                       onClose={() => setLightbox(null)}
+                      type={activeType}
                     />
                   )}
                 </div>
