@@ -723,12 +723,12 @@ export default function CreativePage() {
                     {imageUrls.length > 0 ? (
                       <div className={`grid gap-0.5 ${imageUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
                         {displayUrls.map((url, i) => (
-                          <div key={i} className="relative overflow-hidden group/img cursor-zoom-in"
+                          <div key={i} className="relative overflow-hidden group/img cursor-zoom-in min-h-16 bg-white/[0.02]"
                             style={{ aspectRatio: imageUrls.length === 1 ? '4/3' : '1' }}
                             onClick={() => setHistoryLightbox({ images: lbImages, index: i })}>
                             <img src={`${API_BASE}${url}`} alt="" loading="lazy"
                               className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105"
-                              onError={e => { e.currentTarget.parentElement.style.display = 'none'; }} />
+                              onError={e => { e.currentTarget.style.display = 'none'; }} />
                             <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/40 transition-colors flex items-center justify-center">
                               <svg className="w-5 h-5 text-white opacity-0 group-hover/img:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
@@ -794,7 +794,7 @@ export default function CreativePage() {
                           onClick={() => setHistoryLightbox({ images: lbImages, index: i })}>
                           <img src={`${API_BASE}${url}`} alt="" loading="lazy"
                             className="w-full h-full object-cover transition-transform duration-300 group-hover/thumb:scale-110"
-                            onError={e => { e.currentTarget.parentElement.style.display = 'none'; }} />
+                            onError={e => { e.currentTarget.style.display = 'none'; }} />
                           <div className="absolute inset-0 bg-black/0 group-hover/thumb:bg-black/50 transition-colors flex items-center justify-center">
                             <svg className="w-3.5 h-3.5 text-white opacity-0 group-hover/thumb:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
