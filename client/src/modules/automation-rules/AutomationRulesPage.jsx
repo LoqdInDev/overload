@@ -236,6 +236,9 @@ export default function AutomationRulesPage() {
                                   <div className="flex items-center gap-3 mt-0.5">
                                     <span className="text-[10px]" style={{ color: textSecondary }}>{rule.run_count} runs</span>
                                     <span className="text-[10px]" style={{ color: textSecondary }}>Last: {timeAgo(rule.last_triggered)}</span>
+                                    {rule.trigger_config?.marketplace_recipe_id && (
+                                      <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>⚡ Marketplace</span>
+                                    )}
                                     {rule.requires_approval && (
                                       <span className="text-[10px] px-1 py-0.5 rounded" style={{ background: 'rgba(212,160,23,0.1)', color: '#D4A017' }}>needs approval</span>
                                     )}
