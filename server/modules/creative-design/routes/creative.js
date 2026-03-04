@@ -19,21 +19,38 @@ router.post('/generate', async (req, res) => {
     return res.status(400).json({ error: 'type and prompt are required' });
   }
 
+  // Extract dimension and quantity prefixes from prompt if present
+  // Format: "[Dimensions: 1080x1920] [Quantity: 4] actual prompt..."
+  let cleanPrompt = prompt;
+  let dimension = null;
+  let quantity = 3;
+
+  const dimMatch = prompt.match(/\[Dimensions:\s*([^\]]+)\]/i);
+  const qtyMatch = prompt.match(/\[Quantity:\s*(\d+)\]/i);
+  if (dimMatch) {
+    dimension = dimMatch[1].trim();
+    cleanPrompt = cleanPrompt.replace(dimMatch[0], '').trim();
+  }
+  if (qtyMatch) {
+    quantity = Math.min(Math.max(parseInt(qtyMatch[1], 10) || 3, 1), 8);
+    cleanPrompt = cleanPrompt.replace(qtyMatch[0], '').trim();
+  }
+
   try {
     // Step 1: Use Claude to optimize and create prompt variations
-    const optimizerPrompt = buildImagePromptOptimizer(type, prompt);
+    const optimizerPrompt = buildImagePromptOptimizer(type, cleanPrompt, quantity);
     const { parsed } = await generateWithClaude(optimizerPrompt, { temperature: 0.8 });
 
     const projectId = uuid();
-    const title = prompt.slice(0, 100);
-    q.createProject(projectId, type, title, prompt, JSON.stringify(parsed));
+    const title = cleanPrompt.slice(0, 100);
+    q.createProject(projectId, type, title, cleanPrompt, JSON.stringify(parsed));
 
     const imagePrompts = (parsed.prompts || []).map(p => p.prompt);
 
     // Step 2: Generate actual images via Gemini
     let generatedImages;
     try {
-      generatedImages = await generateImages(imagePrompts);
+      generatedImages = await generateImages(imagePrompts, { dimension });
     } catch (genErr) {
       console.error('Image generation failed, returning prompts only:', genErr.message);
       // Fall back to prompt-only mode if Gemini is unavailable

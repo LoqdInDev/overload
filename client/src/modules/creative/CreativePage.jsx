@@ -217,7 +217,7 @@ export default function CreativePage() {
     setShowInput(false);
     const selectedStyle = STYLES.find(s => s.id === style);
     const selectedDim = (DIMENSIONS[activeType] || []).find(d => d.id === dimension);
-    const fullPrompt = `[Style: ${selectedStyle?.name}] [Dimensions: ${selectedDim?.label || 'Auto'}] [Palette: ${COLOR_PALETTES.find(p => p.id === palette)?.name}] [Quantity: ${quantity}]\n\n${prompt}`;
+    const fullPrompt = `[Dimensions: ${selectedDim?.id || 'Auto'}] [Quantity: ${quantity}]\n\n[Style: ${selectedStyle?.name}] [Palette: ${COLOR_PALETTES.find(p => p.id === palette)?.name}]\n\n${prompt}`;
     try {
       const res = await fetch(`${API_BASE}/api/creative/generate`, {
         method: 'POST',

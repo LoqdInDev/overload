@@ -1,6 +1,6 @@
 const { getBrandContext, buildBrandSystemPrompt } = require('../../../services/brandContext');
 
-function buildImagePromptOptimizer(type, userPrompt) {
+function buildImagePromptOptimizer(type, userPrompt, count = 3) {
   const typeContext = {
     'ad-creative': 'high-converting social media advertisement image',
     'product-photo': 'professional product photography on a clean background',
@@ -32,7 +32,7 @@ Return a JSON object with this structure:
   ]
 }
 
-Generate 3 prompt variations. Each should be highly detailed, specifying:
+Generate ${count} prompt variation${count === 1 ? '' : 's'}. Each should be highly detailed, specifying:
 - Composition and layout
 - Lighting and color palette
 - Style (photorealistic, flat design, 3D render, etc.)
