@@ -44,7 +44,6 @@ async function generateImage(prompt, aspectRatio = '1:1') {
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: {
       responseModalities: ['TEXT', 'IMAGE'],
-      imageConfig: { aspectRatio },
     },
   };
 

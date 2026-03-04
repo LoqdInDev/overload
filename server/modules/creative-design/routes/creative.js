@@ -9,6 +9,17 @@ const { buildImagePromptOptimizer } = require('../prompts/imagePrompt');
 
 const router = express.Router();
 
+// Test Gemini connection directly
+router.get('/test-gemini', async (req, res) => {
+  const { generateImage } = require('../../../services/gemini');
+  try {
+    const result = await generateImage('A simple red circle on a white background');
+    res.json({ success: true, url: result.url, mimeType: result.mimeType });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Generate creative — creates optimized prompts via Claude, then generates images via Gemini
 router.post('/generate', async (req, res) => {
   const wsId = req.workspace.id;
