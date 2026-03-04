@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
-import { connectSSE, fetchJSON, deleteJSON } from '../../lib/api';
+import { connectSSE, fetchJSON, deleteJSON, postJSON } from '../../lib/api';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
 
 const CONTENT_TYPES = [
@@ -61,6 +61,10 @@ export default function ContentPage() {
   const [activeTab, setActiveTab] = useState('generate');
 
   const cancelRef = useRef(null);
+  const [contentScore, setContentScore] = useState(null);
+  const [repurposed, setRepurposed] = useState('');
+  const [repurposeLoading, setRepurposeLoading] = useState(false);
+  const [showRepurpose, setShowRepurpose] = useState(false);
 
   const loadHistory = () => {
     fetchJSON('/api/content/projects').then(data => { if (Array.isArray(data)) setHistory(data); }).catch(() => {});
@@ -415,6 +419,71 @@ export default function ContentPage() {
           <div className="bg-black/50 rounded-lg p-4 sm:p-7 max-h-[60vh] overflow-y-auto text-base text-gray-200 whitespace-pre-wrap leading-relaxed">
             {result}
           </div>
+        </div>
+      )}
+
+      {/* Content Score */}
+      {result && (
+        <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <span className="hud-label">Content Quality Score</span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn-ghost" style={{ fontSize: 12, padding: '4px 12px' }}
+                onClick={async () => {
+                  try {
+                    const score = await postJSON('/api/content/score', { content: result, content_type: activeType });
+                    setContentScore(score);
+                  } catch {}
+                }}>Analyze</button>
+              <button className="btn-ghost" style={{ fontSize: 12, padding: '4px 12px' }}
+                onClick={() => setShowRepurpose(!showRepurpose)}>Repurpose</button>
+            </div>
+          </div>
+          {contentScore && (
+            <div>
+              <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
+                {[['SEO', contentScore.seo], ['Readability', contentScore.readability], ['Engagement', contentScore.engagement]].map(([label, val]) => (
+                  <div key={label} style={{ flex: 1, textAlign: 'center' }}>
+                    <div style={{ fontSize: 28, fontWeight: 700, color: val >= 80 ? 'var(--success, #22c55e)' : val >= 60 ? 'var(--accent)' : 'var(--danger, #ef4444)' }}>{val}</div>
+                    <div className="hud-label">{label}</div>
+                  </div>
+                ))}
+                <div style={{ flex: 1, textAlign: 'center' }}>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--accent)' }}>{contentScore.overall_grade}</div>
+                  <div className="hud-label">Grade</div>
+                </div>
+              </div>
+              {contentScore.top_issue && <div className="chip" style={{ fontSize: 12 }}>⚠ {contentScore.top_issue}</div>}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Repurpose Panel */}
+      {showRepurpose && result && (
+        <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <span className="hud-label">Repurpose Content</span>
+            {!repurposeLoading && (
+              <button className="btn-accent" style={{ fontSize: 12, padding: '4px 12px' }}
+                onClick={() => {
+                  setRepurposed('');
+                  setRepurposeLoading(true);
+                  connectSSE('/api/content/repurpose', { content: result, original_type: activeType }, {
+                    onChunk: (chunk) => setRepurposed(prev => prev + chunk),
+                    onResult: () => setRepurposeLoading(false),
+                    onError: () => setRepurposeLoading(false),
+                    onDone: () => setRepurposeLoading(false),
+                  });
+                }}>Generate Repurposed Versions</button>
+            )}
+          </div>
+          {repurposeLoading && <div style={{ color: 'var(--muted)', fontSize: 13 }}>Generating repurposed versions...</div>}
+          {repurposed && (
+            <div style={{ whiteSpace: 'pre-wrap', fontSize: 13, lineHeight: 1.7, color: 'var(--text)' }}>
+              {repurposed}
+            </div>
+          )}
         </div>
       )}
       </ModuleWrapper>

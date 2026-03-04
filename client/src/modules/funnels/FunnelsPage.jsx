@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
-import { fetchJSON, putJSON, deleteJSON } from '../../lib/api';
+import { fetchJSON, putJSON, deleteJSON, postJSON } from '../../lib/api';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -41,6 +41,8 @@ export default function FunnelsPage() {
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');
   const [mainTab, setMainTab] = useState('builder'); // builder | list
+  const [funnelAnalysis, setFunnelAnalysis] = useState(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
 
   // Saved funnels
   const [funnels, setFunnels] = useState([]);
@@ -203,6 +205,70 @@ export default function FunnelsPage() {
         </div>
       </div>
       {output && <div className="mt-4 sm:mt-6 animate-fade-up"><div className="flex items-center gap-2 mb-3"><div className="w-2 h-2 rounded-full bg-violet-400" /><span className="hud-label text-[11px]" style={{ color: '#a78bfa' }}>{generating ? 'GENERATING...' : `${funnel?.stages[activeStage]} COPY READY`}</span></div><div className="panel rounded-2xl p-4 sm:p-6 lg:p-7"><pre className="text-sm sm:text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-violet-400 ml-0.5 animate-pulse" />}</pre></div></div>}
+
+      {/* Funnel Analysis */}
+      <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <span className="hud-label">Funnel Leakage Analysis</span>
+          <button className="btn-accent" style={{ fontSize: 12, padding: '4px 12px' }} disabled={analysisLoading}
+            onClick={async () => {
+              setAnalysisLoading(true);
+              try {
+                const result = await postJSON('/api/funnels/analyze-funnel', {
+                  funnel_name: funnel?.name,
+                  steps: (funnel?.stages || []).map((s, i) => ({ name: s, position: i + 1 }))
+                });
+                setFunnelAnalysis(result);
+              } catch {}
+              setAnalysisLoading(false);
+            }}>{analysisLoading ? 'Analyzing...' : 'Analyze Funnel'}</button>
+        </div>
+        {funnelAnalysis && (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+              <div className="panel" style={{ textAlign: 'center', padding: 12 }}>
+                <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--accent)' }}>{funnelAnalysis.overall_efficiency}</div>
+                <div className="hud-label">Efficiency Score</div>
+              </div>
+              <div className="panel" style={{ textAlign: 'center', padding: 12 }}>
+                <div style={{ fontSize: 20, fontWeight: 700 }}>{funnelAnalysis.estimated_current_conversion}</div>
+                <div className="hud-label">Current CVR</div>
+              </div>
+              <div className="panel" style={{ textAlign: 'center', padding: 12 }}>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#22c55e' }}>{funnelAnalysis.potential_conversion_with_fixes}</div>
+                <div className="hud-label">Potential CVR</div>
+              </div>
+            </div>
+            {funnelAnalysis.biggest_drop_off_step && (
+              <div className="chip" style={{ marginBottom: 12, color: '#ef4444', borderColor: '#ef4444' }}>
+                Biggest drop-off: {funnelAnalysis.biggest_drop_off_step} — {funnelAnalysis.drop_off_reason}
+              </div>
+            )}
+            {funnelAnalysis.step_analysis?.length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <div className="hud-label" style={{ marginBottom: 8 }}>Step-by-Step Analysis</div>
+                {funnelAnalysis.step_analysis.map((step, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
+                    <span style={{ minWidth: 8, height: 8, borderRadius: '50%', background: step.rating === 'good' ? '#22c55e' : step.rating === 'ok' ? 'var(--accent)' : '#ef4444', display: 'inline-block' }}></span>
+                    <span style={{ flex: 1 }}>{step.step}</span>
+                    <span className="chip" style={{ fontSize: 10 }}>{step.estimated_conversion}</span>
+                    <span style={{ fontSize: 11, color: 'var(--muted)' }}>{step.tip}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {funnelAnalysis.top_recommendations?.length > 0 && (
+              <div>
+                <div className="hud-label" style={{ marginBottom: 6 }}>Top Recommendations</div>
+                {funnelAnalysis.top_recommendations.map((rec, i) => (
+                  <div key={i} style={{ fontSize: 13, padding: '4px 0' }}>• {rec}</div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       <AIInsightsPanel moduleId="funnels" />
     </div>
   );

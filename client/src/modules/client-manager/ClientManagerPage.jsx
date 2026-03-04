@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
-import { fetchJSON, connectSSE } from '../../lib/api';
+import { fetchJSON, postJSON, connectSSE } from '../../lib/api';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const MODULE_COLOR = '#64748b';
@@ -78,6 +78,13 @@ export default function ClientManagerPage() {
   projects.forEach(p => {
     projectCountByClientId[p.client_id] = (projectCountByClientId[p.client_id] || 0) + 1;
   });
+
+  // Client Report Generator state
+  const [reportMetrics, setReportMetrics] = useState('');
+  const [reportPeriod, setReportPeriod] = useState('Last 30 days');
+  const [reportOutput, setReportOutput] = useState('');
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportClientName, setReportClientName] = useState('');
 
   const generate = async (template) => {
     setSelectedTemplate(template); setGenerating(true); setOutput('');
@@ -218,7 +225,61 @@ export default function ClientManagerPage() {
 
       {/* Clients */}
       {tab === 'clients' && (
-        <div className="animate-fade-in">
+        <div className="animate-fade-in space-y-4">
+          {/* Generate Client Report Panel */}
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>GENERATE CLIENT REPORT</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+              <input
+                type="text"
+                placeholder="Client name"
+                value={reportClientName}
+                onChange={e => setReportClientName(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none"
+              />
+              <input
+                type="text"
+                placeholder="Reporting period (e.g. Last 30 days)"
+                value={reportPeriod}
+                onChange={e => setReportPeriod(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none"
+              />
+              <input
+                type="text"
+                placeholder="Key metrics (e.g. CTR 3.2%, ROAS 4.5x)"
+                value={reportMetrics}
+                onChange={e => setReportMetrics(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none"
+              />
+            </div>
+            <button
+              disabled={reportLoading || !reportClientName.trim()}
+              onClick={() => {
+                setReportLoading(true);
+                setReportOutput('');
+                connectSSE('/api/client-manager/generate-report', {
+                  client_name: reportClientName,
+                  period: reportPeriod,
+                  metrics: reportMetrics ? reportMetrics.split(',').map(s => s.trim()) : [],
+                }, {
+                  onChunk: (text) => setReportOutput(p => p + text),
+                  onResult: (data) => { setReportOutput(data.content); setReportLoading(false); },
+                  onError: () => setReportLoading(false),
+                  onDone: () => setReportLoading(false),
+                });
+              }}
+              className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-50"
+              style={{ background: reportLoading ? `${MODULE_COLOR}4d` : MODULE_COLOR }}
+            >
+              {reportLoading ? 'Generating Report...' : 'Generate Client Report'}
+            </button>
+            {reportOutput && (
+              <div className="mt-4 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                <pre className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">{reportOutput}{reportLoading && <span className="inline-block w-1 h-3.5 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
+              </div>
+            )}
+          </div>
+
           {clients.length === 0 ? (
             <div className="panel rounded-2xl p-8 text-center"><p className="text-gray-500 text-sm">No clients yet.</p></div>
           ) : (

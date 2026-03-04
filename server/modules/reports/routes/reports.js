@@ -218,4 +218,42 @@ router.post('/schedules', (req, res) => {
   }
 });
 
+// POST /generate-executive-summary — SSE: generate executive summary
+router.post('/generate-executive-summary', (req, res) => {
+  const { report_name, period, metrics, business_name } = req.body;
+  if (!metrics?.length) { res.status(400).json({ error: 'metrics required' }); return; }
+
+  const sse = setupSSE(res);
+  const prompt = `You are a marketing analytics expert writing a professional executive summary for ${business_name || 'a client'}.
+
+Report: ${report_name || 'Marketing Performance Report'}
+Period: ${period || 'Last 30 days'}
+Key Metrics: ${JSON.stringify(metrics)}
+
+Write a polished executive summary with these sections:
+
+## Performance Highlights
+(3-4 bullet points on best wins this period — be specific with the numbers)
+
+## Areas Requiring Attention
+(2-3 bullet points on what needs improvement — be direct but diplomatic)
+
+## Strategic Recommendations
+(3 numbered, specific recommendations for next period)
+
+## Month-Over-Month Comparison
+(brief assessment of trend direction)
+
+## Focus for Next Period
+(top 1-2 priorities for the upcoming period)
+
+Write for a business executive who doesn't know marketing deeply. Use plain language. Be specific about numbers.`;
+
+  generateTextWithClaude(prompt, {
+    onChunk: (chunk) => sse.sendChunk(chunk),
+  })
+    .then(() => sse.sendResult({ done: true }))
+    .catch(() => sse.sendError(new Error('Generation failed')));
+});
+
 module.exports = router;

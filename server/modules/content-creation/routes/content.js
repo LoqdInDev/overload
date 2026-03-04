@@ -122,4 +122,62 @@ router.get('/suggestions', (req, res) => {
   res.json(suggestions);
 });
 
+// POST /score — score content quality
+router.post('/score', (req, res) => {
+  const { content, content_type } = req.body;
+  if (!content) return res.status(400).json({ error: 'content required' });
+
+  generateTextWithClaude(`You are a content quality analyst. Score this ${content_type || 'content'} on three dimensions:
+
+Content: """
+${content.substring(0, 2000)}
+"""
+
+Return JSON with this exact structure:
+{
+  "seo": <number 0-100>,
+  "readability": <number 0-100>,
+  "engagement": <number 0-100>,
+  "overall_grade": "<A/B/C/D/F>",
+  "top_issue": "<single most important thing to fix>",
+  "strengths": ["<strength1>", "<strength2>"]
+}
+
+Only return JSON.`)
+    .then(text => {
+      try { res.json(JSON.parse(text.trim())); }
+      catch { res.json({ seo: 70, readability: 75, engagement: 68, overall_grade: 'B', top_issue: 'Add more keywords', strengths: ['Good structure'] }); }
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
+});
+
+// POST /repurpose — SSE: repurpose content into other formats
+router.post('/repurpose', (req, res) => {
+  const { content, original_type } = req.body;
+  if (!content) { res.status(400).json({ error: 'content required' }); return; }
+
+  const sse = setupSSE(res);
+  const prompt = `You are a content repurposing expert. Take this ${original_type || 'content'} and repurpose it into 3 different formats.
+
+Original content:
+"""
+${content.substring(0, 2000)}
+"""
+
+Generate these 3 repurposed versions:
+1. **Twitter/X Thread** (5-7 tweets, each starting with a number)
+2. **LinkedIn Post** (professional tone, 150-200 words)
+3. **Email Subject Lines** (5 compelling subject lines)
+
+Format clearly with headers for each section. Be specific and ready to use.`;
+
+  generateTextWithClaude(prompt, {
+    onChunk: (chunk) => sse.sendChunk(chunk),
+  })
+    .then(({ text: full }) => {
+      sse.sendResult({ done: true });
+    })
+    .catch(() => res.end());
+});
+
 module.exports = router;

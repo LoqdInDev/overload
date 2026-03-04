@@ -123,4 +123,53 @@ router.delete('/keys/:id', (req, res) => {
   }
 });
 
+// POST /generate-docs — SSE: generate API documentation
+router.post('/generate-docs', async (req, res) => {
+  const { api_name, endpoints, base_url } = req.body;
+  if (!api_name) { res.status(400).json({ error: 'api_name required' }); return; }
+
+  const sse = setupSSE(res);
+  const prompt = `You are a technical writer. Generate comprehensive API documentation for:
+
+API Name: ${api_name}
+Base URL: ${base_url || 'https://api.example.com'}
+Endpoints: ${JSON.stringify(endpoints || [])}
+
+Generate documentation with:
+
+# ${api_name} API Documentation
+
+## Overview
+(brief description)
+
+## Authentication
+(how to authenticate)
+
+## Base URL
+\`${base_url || 'https://api.example.com'}\`
+
+## Endpoints
+(for each endpoint provided: method, path, description, request parameters, response format with example)
+
+## Error Codes
+(standard HTTP errors + any custom ones)
+
+## Code Examples
+(curl and JavaScript fetch examples for the first endpoint)
+
+## Rate Limits
+(standard rate limiting info)
+
+Make it professional and developer-friendly.`;
+
+  try {
+    const { text } = await generateTextWithClaude(prompt, {
+      onChunk: (chunk) => sse.sendChunk(chunk),
+    });
+    sse.sendResult({ content: text });
+  } catch (err) {
+    sse.sendError(err);
+  }
+});
+
 module.exports = router;

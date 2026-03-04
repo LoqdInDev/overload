@@ -83,6 +83,9 @@ export default function EmailSmsPage() {
   const [campaigns, setCampaigns] = useState([]);
   const [campaignsLoading, setCampaignsLoading] = useState(false);
 
+  const [subjectLines, setSubjectLines] = useState(null);
+  const [subjectLoading, setSubjectLoading] = useState(false);
+
   const loadCampaigns = useCallback(async () => {
     setCampaignsLoading(true);
     try {
@@ -513,6 +516,47 @@ export default function EmailSmsPage() {
               <div className={`${dark ? 'bg-black/50' : 'bg-gray-50'} rounded-lg p-4 sm:p-7 max-h-[60vh] overflow-y-auto text-base whitespace-pre-wrap leading-relaxed ${dark ? 'text-gray-200' : 'text-gray-800'}`}>
                 {result}
               </div>
+            </div>
+          )}
+
+          {/* Subject Line Generator */}
+          {result && activeType !== 'sms' && (
+            <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <span className="hud-label">Subject Line Generator</span>
+                <button className="btn-ghost" style={{ fontSize: 12, padding: '4px 12px' }} disabled={subjectLoading}
+                  onClick={async () => {
+                    setSubjectLoading(true);
+                    try {
+                      const res = await postJSON('/api/email-sms/generate-subject-lines', {
+                        topic: activeType,
+                        content_snippet: result.substring(0, 300)
+                      });
+                      setSubjectLines(res.subject_lines);
+                    } catch {}
+                    setSubjectLoading(false);
+                  }}>
+                  {subjectLoading ? 'Generating...' : 'Generate 5 Subject Lines'}
+                </button>
+              </div>
+              {subjectLines && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {subjectLines.map((sl, i) => (
+                    <div key={i} className="panel-interactive" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px' }}>
+                      <span style={{ fontSize: 18 }}>{sl.emoji}</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 14, fontWeight: 500 }}>{sl.text}</div>
+                        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                          <span className="chip" style={{ fontSize: 10, padding: '1px 6px', marginRight: 6 }}>{sl.trigger}</span>
+                          ~{sl.predicted_open_rate} open rate
+                        </div>
+                      </div>
+                      <button className="btn-ghost" style={{ fontSize: 11, padding: '3px 10px' }}
+                        onClick={() => navigator.clipboard.writeText(sl.text)}>Copy</button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </>

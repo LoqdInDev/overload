@@ -59,6 +59,8 @@ export default function WebsiteBuilderPage() {
   // Refinement
   const [refinePrompt, setRefinePrompt] = useState('');
   const [versions, setVersions] = useState([]);
+  const [seoAudit, setSeoAudit] = useState(null);
+  const [seoLoading, setSeoLoading] = useState(false);
 
   // Multi-page management
   const [activeSite, setActiveSite] = useState(null);
@@ -401,6 +403,50 @@ export default function WebsiteBuilderPage() {
               )}
 
               {saved && <span className="text-xs text-emerald-400">{editingPageId ? 'Page updated successfully.' : 'Page saved to your site.'}</span>}
+            </div>
+          )}
+        </div>
+      )}
+      {/* SEO Audit */}
+      {output && (
+        <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <span className="hud-label">SEO Audit</span>
+            <button className="btn-ghost" style={{ fontSize: 12, padding: '4px 12px' }} disabled={seoLoading}
+              onClick={async () => {
+                setSeoLoading(true);
+                try {
+                  const result = await postJSON('/api/website-builder/seo-audit', {
+                    html: output,
+                    page_title: pageType || ''
+                  });
+                  setSeoAudit(result);
+                } catch {}
+                setSeoLoading(false);
+              }}>
+              {seoLoading ? 'Auditing...' : 'Run SEO Audit'}
+            </button>
+          </div>
+          {seoAudit && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+                <div style={{ fontSize: 36, fontWeight: 700, color: seoAudit.overall_score >= 80 ? '#22c55e' : seoAudit.overall_score >= 60 ? 'var(--accent)' : '#ef4444' }}>
+                  {seoAudit.overall_score}
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>SEO Score</div>
+                  {seoAudit.top_fix && <div style={{ fontSize: 12, color: 'var(--muted)' }}>Top fix: {seoAudit.top_fix}</div>}
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {seoAudit.checks?.map((check, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
+                    <span>{check.status === 'pass' ? '✅' : check.status === 'warning' ? '⚠️' : '❌'}</span>
+                    <span style={{ fontWeight: 500, minWidth: 160 }}>{check.name}</span>
+                    <span style={{ color: 'var(--muted)', fontSize: 12 }}>{check.message}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

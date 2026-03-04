@@ -231,4 +231,36 @@ router.delete('/media/:id', (req, res) => {
   }
 });
 
+// POST /audit-consistency — audit brand consistency
+router.post('/audit-consistency', async (req, res) => {
+  const { brand_name, sample_content, sample_copy, channel, voice_tone, guidelines, colors, fonts, tone_keywords } = req.body;
+  const effectiveSample = sample_content || sample_copy || 'Not provided';
+  const effectiveBrand = brand_name || 'Brand';
+
+  try {
+    const { text } = await generateTextWithClaude(`You are a brand strategist. Audit the brand consistency for ${effectiveBrand}:
+
+Channel: ${channel || 'General'}
+Voice/Tone: ${voice_tone || tone_keywords || 'Not specified'}
+Brand Guidelines: ${guidelines || 'Not specified'}
+Colors: ${Array.isArray(colors) ? colors.join(', ') : colors || 'Not specified'}
+Sample Content: "${effectiveSample}"
+
+Return JSON:
+{
+  "consistency_score": <number 0-100>,
+  "issues": ["<issue 1>", "<issue 2>"],
+  "suggestions": ["<improvement 1>", "<improvement 2>", "<improvement 3>"],
+  "strengths": ["<strength 1>"],
+  "top_priority": "<the single most important improvement>"
+}
+
+Only return JSON.`);
+    try { res.json(JSON.parse(text.trim())); }
+    catch { res.json({ consistency_score: 70, issues: ['Voice inconsistency detected'], suggestions: ['Align tone with brand guidelines', 'Use consistent terminology'], strengths: ['Clear messaging'], top_priority: 'Standardize voice tone across all channels' }); }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

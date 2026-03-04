@@ -164,4 +164,83 @@ router.post('/generate', async (req, res) => {
   }
 });
 
+// POST /detect-gaps — analyze knowledge base for content gaps
+router.post('/detect-gaps', async (req, res) => {
+  const { articles, workspace_type } = req.body;
+  if (!articles?.length) return res.status(400).json({ error: 'articles required' });
+
+  const articleList = articles.slice(0, 50).map((a, i) => `${i+1}. "${a.title}" (${a.category || 'General'})`).join('\n');
+
+  try {
+    const { text } = await generateTextWithClaude(`You are a knowledge base strategist. Analyze this knowledge base for content gaps:
+
+Workspace Type: ${workspace_type || 'Marketing Platform'}
+Current Articles:
+${articleList}
+
+Return JSON:
+{
+  "coverage_score": <number 0-100>,
+  "gaps": [
+    { "topic": "<missing topic>", "priority": "high|medium|low", "suggested_title": "<specific article title>", "reason": "<why this is needed>" }
+  ],
+  "duplicate_risks": ["<potential duplicate topic 1>"],
+  "underserved_categories": ["<category with few articles>"],
+  "top_missing": "<the single most important missing topic"
+}
+
+Return top 8 gaps. Only return JSON.`);
+    try { res.json(JSON.parse(text.trim())); }
+    catch { res.json({ coverage_score: 60, gaps: [], duplicate_risks: [], underserved_categories: [], top_missing: 'Getting started guide' }); }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /improve-article — SSE: get improvement suggestions for an article
+router.post('/improve-article', async (req, res) => {
+  const { title, content } = req.body;
+  if (!content) { res.status(400).json({ error: 'content required' }); return; }
+
+  const sse = setupSSE(res);
+  const prompt = `You are a content strategist and technical writer. Review this knowledge base article and provide specific improvements:
+
+Title: ${title || 'Untitled'}
+Content:
+"""
+${content.substring(0, 3000)}
+"""
+
+Provide structured improvement feedback:
+
+## Clarity Score: X/10
+(brief assessment of current clarity)
+
+## Completeness Score: X/10
+(what's missing, what's covered)
+
+## Critical Improvements
+(3-5 specific, actionable changes — be precise)
+
+## Structure Suggestions
+(how to reorganize or better format)
+
+## SEO Opportunities
+(keywords to add, meta description suggestion, headings to improve)
+
+## Suggested Related Articles
+(3 articles to link to from this one)
+
+Be specific and actionable. Reference exact lines or sections when possible.`;
+
+  try {
+    const { text } = await generateTextWithClaude(prompt, {
+      onChunk: (chunk) => sse.sendChunk(chunk),
+    });
+    sse.sendResult({ content: text });
+  } catch (err) {
+    sse.sendError(err);
+  }
+});
+
 module.exports = router;

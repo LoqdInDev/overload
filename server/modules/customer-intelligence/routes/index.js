@@ -130,4 +130,35 @@ router.post('/generate', async (req, res) => {
   }
 });
 
+// POST /predict-churn — predict customer churn risk
+router.post('/predict-churn', (req, res) => {
+  const { customer_name, days_since_purchase, purchase_frequency, avg_order_value, support_tickets, email_open_rate } = req.body;
+
+  const days = parseInt(days_since_purchase) || 30;
+  const freq = parseFloat(purchase_frequency) || 1;
+  const tickets = parseInt(support_tickets) || 0;
+  const open_rate = parseFloat(email_open_rate) || 20;
+
+  // Calculate risk score
+  let score = 50;
+  if (days > 90) score += 30;
+  else if (days > 60) score += 20;
+  else if (days > 30) score += 10;
+  if (freq < 0.5) score += 15;
+  if (tickets > 3) score += 15;
+  if (open_rate < 10) score += 15;
+  score = Math.min(99, Math.max(1, score));
+
+  const tier = score >= 80 ? 'critical' : score >= 60 ? 'high' : score >= 40 ? 'medium' : 'low';
+
+  const interventions = {
+    critical: ['Send personal email from founder', 'Offer 25% win-back discount', 'Schedule customer success call'],
+    high: ['Send re-engagement email sequence', 'Offer loyalty bonus points', 'Request feedback survey'],
+    medium: ['Add to nurture email sequence', 'Send product usage tips', 'Offer referral incentive'],
+    low: ['Continue regular communication', 'Send educational content', 'Monitor engagement']
+  };
+
+  res.json({ customer_name, churn_risk_score: score, risk_tier: tier, days_since_purchase: days, intervention_strategy: interventions[tier] });
+});
+
 module.exports = router;

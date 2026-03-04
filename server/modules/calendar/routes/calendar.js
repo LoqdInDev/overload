@@ -188,4 +188,37 @@ router.post('/campaigns', (req, res) => {
   }
 });
 
+// POST /suggest-content-plan — AI-generate a content plan for a month
+router.post('/suggest-content-plan', (req, res) => {
+  const { month, business_type, goal, workspace_id } = req.body;
+  if (!month) return res.status(400).json({ error: 'month required' });
+
+  generateTextWithClaude(`You are a content marketing strategist. Create a content calendar for:
+
+Month: ${month}
+Business Type: ${business_type || 'E-commerce/Marketing'}
+Main Goal: ${goal || 'Brand awareness and engagement'}
+
+Generate a 4-week posting schedule with 3-4 posts per week. Return JSON:
+{
+  "plan": [
+    {
+      "week": 1,
+      "posts": [
+        { "day": "<like Monday March 3>", "platform": "<Instagram|Twitter|LinkedIn|Facebook|TikTok>", "content_type": "<Educational|Promotional|Entertainment|UGC|Behind-the-Scenes>", "topic": "<specific post topic>", "hook": "<opening hook text>" }
+      ]
+    }
+  ],
+  "theme": "<overarching monthly theme>",
+  "notes": "<2 strategic notes>"
+}
+
+Return exactly 4 weeks with 3-4 posts each. Only return JSON.`)
+    .then(({ text }) => {
+      try { res.json(JSON.parse(text.trim())); }
+      catch { res.status(500).json({ error: 'Parse failed' }); }
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
+});
+
 module.exports = router;

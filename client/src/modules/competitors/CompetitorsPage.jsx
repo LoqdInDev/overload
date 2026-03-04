@@ -61,6 +61,12 @@ export default function CompetitorsPage() {
   const [googleAdsOutput, setGoogleAdsOutput] = useState('');
   const [loadingGoogleAds, setLoadingGoogleAds] = useState(false);
 
+  // Content Gap
+  const [gapCompetitor, setGapCompetitor] = useState('');
+  const [gapTopics, setGapTopics] = useState('');
+  const [gapOutput, setGapOutput] = useState('');
+  const [gapLoading, setGapLoading] = useState(false);
+
   useEffect(() => {
     fetchJSON('/api/competitors/stats').then(setStats).catch(() => {});
     fetchJSON('/api/competitors').then(setCompetitors).catch(() => {});
@@ -472,6 +478,42 @@ export default function CompetitorsPage() {
 
             </div>
           )}
+
+          {/* ── Content Gap Panel ── */}
+          <div className="panel rounded-2xl p-5 animate-fade-in">
+            <p className="hud-label text-[11px] mb-3" style={{ color: '#fbbf24' }}>CONTENT GAP ANALYSIS</p>
+            <div style={{ display: 'grid', gap: 10, marginBottom: 12 }}>
+              <input className="input-field rounded-xl px-4 py-3 text-sm w-full"
+                placeholder="Competitor name or domain"
+                value={gapCompetitor}
+                onChange={e => setGapCompetitor(e.target.value)}
+                defaultValue={competitorName}
+              />
+              <input className="input-field rounded-xl px-4 py-3 text-sm w-full"
+                placeholder="Your current content topics (comma-separated)"
+                value={gapTopics}
+                onChange={e => setGapTopics(e.target.value)}
+              />
+            </div>
+            <button
+              className="chip text-[10px]"
+              style={{ color: '#fbbf24', borderColor: 'rgba(251,191,36,0.3)' }}
+              disabled={(!gapCompetitor && !competitorName) || gapLoading}
+              onClick={() => {
+                setGapOutput('');
+                setGapLoading(true);
+                connectSSE('/api/competitors/content-gap',
+                  { competitor_name: gapCompetitor || competitorName, your_topics: gapTopics.split(',').map(t => t.trim()).filter(Boolean) },
+                  {
+                    onChunk: (text) => setGapOutput(prev => prev + text),
+                    onResult: () => setGapLoading(false),
+                    onError: () => setGapLoading(false),
+                    onDone: () => setGapLoading(false),
+                  }
+                );
+              }}>{gapLoading ? 'Analyzing...' : 'Analyze Content Gap'}</button>
+            {gapOutput && <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans leading-relaxed mt-4">{gapOutput}{gapLoading && <span className="inline-block w-1.5 h-4 bg-yellow-400 ml-0.5 animate-pulse rounded-sm" />}</pre>}
+          </div>
 
         </div>
 

@@ -48,6 +48,12 @@ export default function ApiManagerPage() {
   const [newRateLimit, setNewRateLimit] = useState('100');
   const [creating, setCreating] = useState(false);
 
+  // Generate Docs state
+  const [docsApiName, setDocsApiName] = useState('');
+  const [docsBaseUrl, setDocsBaseUrl] = useState('');
+  const [docsOutput, setDocsOutput] = useState('');
+  const [docsLoading, setDocsLoading] = useState(false);
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -153,6 +159,49 @@ export default function ApiManagerPage() {
               </button>
             </div>
           </form>
+        </div>
+
+        {/* Generate API Docs Panel */}
+        <div className="panel rounded-2xl p-4 sm:p-6">
+          <p className="hud-label text-[11px] mb-3" style={{ color: '#0ea5e9' }}>GENERATE API DOCUMENTATION</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <input
+              type="text"
+              placeholder="API name (e.g. Payments API)"
+              value={docsApiName}
+              onChange={e => setDocsApiName(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-sky-500/30"
+            />
+            <input
+              type="text"
+              placeholder="Base URL (e.g. https://api.example.com)"
+              value={docsBaseUrl}
+              onChange={e => setDocsBaseUrl(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-sky-500/30"
+            />
+          </div>
+          <button
+            disabled={docsLoading || !docsApiName.trim()}
+            onClick={() => {
+              setDocsLoading(true);
+              setDocsOutput('');
+              connectSSE('/api/api-manager/generate-docs', { api_name: docsApiName, base_url: docsBaseUrl, keys }, {
+                onChunk: (text) => setDocsOutput(p => p + text),
+                onResult: (data) => { setDocsOutput(data.content); setDocsLoading(false); },
+                onError: () => setDocsLoading(false),
+                onDone: () => setDocsLoading(false),
+              });
+            }}
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-50"
+            style={{ background: docsLoading ? 'rgba(14,165,233,0.3)' : 'rgba(14,165,233,0.6)' }}
+          >
+            {docsLoading ? 'Generating...' : 'Generate Docs'}
+          </button>
+          {docsOutput && (
+            <div className="mt-4 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+              <pre className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">{docsOutput}{docsLoading && <span className="inline-block w-1 h-3.5 bg-sky-400 ml-0.5 animate-pulse" />}</pre>
+            </div>
+          )}
         </div>
 
         {/* Keys List */}

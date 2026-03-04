@@ -23,6 +23,11 @@ export default function ReferralLoyaltyPage() {
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [pointsOutput, setPointsOutput] = useState('');
+  const [pointsLoading, setPointsLoading] = useState(false);
+  const [pointsInputs, setPointsInputs] = useState({ product_category: '', avg_order_value: '50', desired_rewards: 'discounts, free products' });
+  const [viralData, setViralData] = useState(null);
+  const [viralInputs, setViralInputs] = useState({ total_users: '', referred_users: '', avg_referrals_per_user: '' });
   const [showAddProgram, setShowAddProgram] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [newProgram, setNewProgram] = useState({ name: '', type: '', reward_type: '', reward_value: '', rules: '' });
@@ -306,6 +311,59 @@ export default function ReferralLoyaltyPage() {
       {/* AI Tools */}
       {tab === 'ai-tools' && (
         <div className="animate-fade-in space-y-4 sm:space-y-6">
+          {/* Points Economy Designer */}
+          <div className="panel animate-fade-in" style={{ marginBottom: 16 }}>
+            <div className="hud-label" style={{ marginBottom: 12 }}>Points Economy Designer</div>
+            <div style={{ display: 'grid', gap: 10, marginBottom: 12 }}>
+              <input className="input" placeholder="Product category (e.g. skincare, supplements)" value={pointsInputs.product_category} onChange={e => setPointsInputs(p => ({ ...p, product_category: e.target.value }))} />
+              <input className="input" type="number" placeholder="Average order value ($)" value={pointsInputs.avg_order_value} onChange={e => setPointsInputs(p => ({ ...p, avg_order_value: e.target.value }))} />
+              <input className="input" placeholder="Desired rewards (e.g. discounts, free shipping)" value={pointsInputs.desired_rewards} onChange={e => setPointsInputs(p => ({ ...p, desired_rewards: e.target.value }))} />
+            </div>
+            <button className="btn-accent" disabled={!pointsInputs.product_category || pointsLoading}
+              onClick={() => {
+                setPointsOutput('');
+                setPointsLoading(true);
+                connectSSE('/api/referral-loyalty/design-points-economy', pointsInputs, {
+                  onChunk: (text) => setPointsOutput(prev => prev + text),
+                  onResult: () => setPointsLoading(false),
+                  onError: () => setPointsLoading(false),
+                  onDone: () => setPointsLoading(false),
+                });
+              }}>{pointsLoading ? 'Designing...' : 'Design Points Economy'}</button>
+            {pointsOutput && <div style={{ marginTop: 16, whiteSpace: 'pre-wrap', fontSize: 13, lineHeight: 1.7 }}>{pointsOutput}</div>}
+          </div>
+
+          {/* Viral Coefficient Calculator */}
+          <div className="panel animate-fade-in">
+            <div className="hud-label" style={{ marginBottom: 12 }}>Viral Coefficient (K-Factor)</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
+              {[['Total Users', 'total_users', '1000'], ['Referred Users', 'referred_users', '150'], ['Avg Referrals/User', 'avg_referrals_per_user', '1.5']].map(([label, key, placeholder]) => (
+                <div key={key}>
+                  <div className="hud-label" style={{ marginBottom: 4 }}>{label}</div>
+                  <input className="input" type="number" step="0.1" placeholder={placeholder} value={viralInputs[key]} onChange={e => setViralInputs(p => ({ ...p, [key]: e.target.value }))} />
+                </div>
+              ))}
+            </div>
+            <button className="btn-accent" onClick={async () => {
+              try { const result = await postJSON('/api/referral-loyalty/calculate-viral-coefficient', viralInputs); setViralData(result); } catch {}
+            }}>Calculate K-Factor</button>
+            {viralData && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 10 }}>
+                  <div style={{ fontSize: 48, fontWeight: 800, color: parseFloat(viralData.k_factor) >= 1 ? '#22c55e' : parseFloat(viralData.k_factor) >= 0.5 ? 'var(--accent)' : '#ef4444' }}>
+                    K={viralData.k_factor}
+                  </div>
+                  <div>
+                    <div className="chip" style={{ marginBottom: 4 }}>{viralData.growth_type}</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>{viralData.interpretation}</div>
+                  </div>
+                </div>
+                <div className="hud-label" style={{ marginBottom: 6 }}>Recommendations</div>
+                {viralData.recommendations?.map((rec, i) => <div key={i} style={{ fontSize: 13, padding: '3px 0' }}>• {rec}</div>)}
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             {AI_TEMPLATES.map(tool => (
               <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === tool.name ? 'border-rose-600/30' : ''}`}>

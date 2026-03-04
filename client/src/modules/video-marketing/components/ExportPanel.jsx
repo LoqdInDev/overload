@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { postJSON } from '../../../lib/api';
 
 const FORMAT_ICONS = {
   json: (
@@ -23,9 +24,11 @@ const FORMAT_ICONS = {
   ),
 };
 
-export default function ExportPanel({ campaignId, campaignName }) {
+export default function ExportPanel({ campaignId, campaignName, campaign }) {
   const [exporting, setExporting] = useState(null);
   const [hasVideos, setHasVideos] = useState(false);
+  const [perfPrediction, setPerfPrediction] = useState(null);
+  const [predLoading, setPredLoading] = useState(false);
 
   useEffect(() => {
     if (!campaignId) return;
@@ -108,6 +111,54 @@ export default function ExportPanel({ campaignId, campaignName }) {
 
   return (
     <div className="animate-fade-in">
+      {/* Performance Prediction */}
+      <div className="panel animate-fade-in" style={{ marginBottom: 24 }}>
+        <div className="hud-label" style={{ marginBottom: 12 }}>Campaign Performance Prediction</div>
+        {!perfPrediction && (
+          <button
+            className="btn-accent"
+            disabled={predLoading}
+            onClick={async () => {
+              setPredLoading(true);
+              try {
+                const result = await postJSON('/api/video/predict-performance', {
+                  product: campaign?.product_name || campaignName || '',
+                  angles: campaign?.angles?.length || 1,
+                  script_count: campaign?.scripts?.length || 1
+                });
+                setPerfPrediction(result);
+              } catch {}
+              setPredLoading(false);
+            }}
+          >
+            {predLoading ? 'Analyzing...' : 'Predict Performance'}
+          </button>
+        )}
+        {perfPrediction && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 16 }}>
+            <div className="panel" style={{ textAlign: 'center', padding: 16 }}>
+              <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--accent)' }}>{perfPrediction.viral_score}</div>
+              <div className="hud-label">Viral Score</div>
+            </div>
+            <div className="panel" style={{ textAlign: 'center', padding: 16 }}>
+              <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--accent)' }}>{perfPrediction.predicted_ctr}</div>
+              <div className="hud-label">Predicted CTR</div>
+            </div>
+            <div className="panel" style={{ textAlign: 'center', padding: 16 }}>
+              <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--accent)' }}>{perfPrediction.predicted_roas}</div>
+              <div className="hud-label">Predicted ROAS</div>
+            </div>
+          </div>
+        )}
+        {perfPrediction && (
+          <div style={{ marginTop: 8 }}>
+            <div style={{ marginBottom: 8, fontSize: 13 }}><strong>Strengths:</strong> {perfPrediction.strengths?.join(' · ')}</div>
+            <div style={{ marginBottom: 8, fontSize: 13, color: 'var(--muted)' }}><strong>Risks:</strong> {perfPrediction.risks?.join(' · ')}</div>
+            <div className="chip" style={{ marginTop: 8 }}>💡 {perfPrediction.top_recommendation}</div>
+          </div>
+        )}
+      </div>
+
       <div className="text-center mb-10">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl glass mb-5 animate-glow-pulse">
           <svg className="w-8 h-8 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>

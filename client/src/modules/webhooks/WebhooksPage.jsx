@@ -50,6 +50,12 @@ export default function WebhooksPage() {
   const [newSecret, setNewSecret] = useState('');
   const [creating, setCreating] = useState(false);
 
+  // Test webhook state
+  const [testResults, setTestResults] = useState({});
+  const [testingId, setTestingId] = useState(null);
+  const [deliveryLog, setDeliveryLog] = useState({});
+  const [loadingLogId, setLoadingLogId] = useState(null);
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -93,6 +99,31 @@ export default function WebhooksPage() {
       console.error('Failed to create webhook:', err);
     } finally {
       setCreating(false);
+    }
+  };
+
+  const testWebhook = async (id, url) => {
+    setTestingId(id);
+    try {
+      const result = await postJSON('/api/webhooks/test-webhook', { webhook_id: id, url });
+      setTestResults(prev => ({ ...prev, [id]: result }));
+    } catch (err) {
+      setTestResults(prev => ({ ...prev, [id]: { success: false, message: err.message } }));
+    } finally {
+      setTestingId(null);
+    }
+  };
+
+  const loadDeliveryLog = async (id) => {
+    if (deliveryLog[id]) { setDeliveryLog(prev => ({ ...prev, [id]: null })); return; }
+    setLoadingLogId(id);
+    try {
+      const result = await postJSON('/api/webhooks/delivery-log', { webhook_id: id });
+      setDeliveryLog(prev => ({ ...prev, [id]: result.logs || [] }));
+    } catch {
+      setDeliveryLog(prev => ({ ...prev, [id]: [] }));
+    } finally {
+      setLoadingLogId(null);
     }
   };
 
@@ -161,7 +192,49 @@ export default function WebhooksPage() {
                   <span className="text-xs text-gray-500">Created: {formatRelativeTime(w.created_at)}</span>
                   <span className="text-xs text-gray-600">&bull;</span>
                   {events.map((e, i) => (<span key={i} className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-400 border border-orange-500/15">{e}</span>))}
+                  <button
+                    onClick={() => testWebhook(w.id, w.url)}
+                    disabled={testingId === w.id}
+                    className="text-[10px] font-bold px-3 py-1 rounded-lg border border-orange-500/20 text-orange-400 hover:bg-orange-500/10 transition-colors disabled:opacity-50 ml-auto"
+                  >
+                    {testingId === w.id ? 'Testing...' : 'Test'}
+                  </button>
+                  <button
+                    onClick={() => loadDeliveryLog(w.id)}
+                    disabled={loadingLogId === w.id}
+                    className="text-[10px] font-bold px-3 py-1 rounded-lg border border-white/[0.06] text-gray-400 hover:bg-white/[0.04] transition-colors disabled:opacity-50"
+                  >
+                    {loadingLogId === w.id ? 'Loading...' : deliveryLog[w.id] ? 'Hide Log' : 'Delivery Log'}
+                  </button>
                 </div>
+                {testResults[w.id] && (
+                  <div className="mt-2 px-2 py-1.5 rounded-lg text-[11px] font-mono" style={{
+                    background: testResults[w.id].success ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
+                    border: `1px solid ${testResults[w.id].success ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
+                    color: testResults[w.id].success ? '#4ade80' : '#f87171',
+                  }}>
+                    {testResults[w.id].success
+                      ? `Test passed — ${testResults[w.id].status_code || 200} · ${testResults[w.id].latency_ms || 0}ms`
+                      : `Test failed: ${testResults[w.id].message || 'No response'}`}
+                  </div>
+                )}
+                {deliveryLog[w.id] && deliveryLog[w.id].length > 0 && (
+                  <div className="mt-2 rounded-lg overflow-hidden border border-white/[0.04]">
+                    <div className="flex items-center gap-3 px-3 py-2 text-[10px] text-gray-500 font-semibold uppercase bg-white/[0.02]">
+                      <span className="flex-1">Event</span><span className="w-16 text-right">Status</span><span className="w-16 text-right">When</span>
+                    </div>
+                    {deliveryLog[w.id].slice(0, 5).map((l, i) => (
+                      <div key={i} className="flex items-center gap-3 px-3 py-2 text-[11px] border-t border-white/[0.03]">
+                        <span className="flex-1 text-gray-400 font-mono truncate">{l.event || 'test'}</span>
+                        <span className={`w-16 text-right font-bold ${statusColor(l.status_code || 200)}`}>{l.status_code || 200}</span>
+                        <span className="w-16 text-right text-gray-600">{formatRelativeTime(l.created_at)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {deliveryLog[w.id] && deliveryLog[w.id].length === 0 && (
+                  <p className="mt-2 text-[11px] text-gray-600 italic">No delivery history yet.</p>
+                )}
               </div>
             );
           })

@@ -279,4 +279,57 @@ router.get('/platforms/connected', (req, res) => {
   }
 });
 
+// POST /forecast-inventory — forecast inventory needs
+router.post('/forecast-inventory', (req, res) => {
+  const { product_name, current_stock, avg_daily_sales, lead_time_days } = req.body;
+  if (!current_stock || !avg_daily_sales) return res.status(400).json({ error: 'current_stock and avg_daily_sales required' });
+
+  const stock = parseInt(current_stock);
+  const daily = parseFloat(avg_daily_sales);
+  const lead = parseInt(lead_time_days) || 14;
+
+  const days_until_stockout = Math.floor(stock / daily);
+  const reorder_point = Math.ceil(daily * lead * 1.2); // 20% buffer
+  const recommended_order = Math.ceil(daily * 45); // 45-day supply
+  const is_urgent = days_until_stockout <= lead;
+
+  res.json({
+    product_name: product_name || 'Product',
+    days_until_stockout,
+    reorder_point,
+    recommended_order_qty: recommended_order,
+    should_reorder_now: is_urgent,
+    urgency: is_urgent ? 'critical' : days_until_stockout <= lead * 1.5 ? 'warning' : 'ok',
+    estimated_stockout_date: new Date(Date.now() + days_until_stockout * 24 * 60 * 60 * 1000).toLocaleDateString()
+  });
+});
+
+// POST /bundle-recommendations — AI bundle suggestions
+router.post('/bundle-recommendations', async (req, res) => {
+  const { products } = req.body;
+  if (!products?.length) return res.status(400).json({ error: 'products required' });
+
+  try {
+    const { text } = await generateTextWithClaude(`You are an e-commerce merchandising expert. Recommend product bundles to increase AOV.
+
+Products: ${JSON.stringify(products.slice(0, 20))}
+
+Return JSON:
+{
+  "bundles": [
+    { "name": "<bundle name>", "products": ["<product 1>", "<product 2>"], "discount": "<like 15%>", "expected_aov_lift": "<like +$18>", "strategy": "<why this bundle makes sense>" },
+    { "name": "<bundle name>", "products": ["<product 1>", "<product 2>", "<product 3>"], "discount": "<discount>", "expected_aov_lift": "<lift>", "strategy": "<rationale>" },
+    { "name": "<bundle name>", "products": ["<product 1>", "<product 2>"], "discount": "<discount>", "expected_aov_lift": "<lift>", "strategy": "<rationale>" }
+  ],
+  "overall_aov_opportunity": "<estimated overall AOV increase potential>"
+}
+
+Only return JSON.`);
+    try { res.json(JSON.parse(text.trim())); }
+    catch { res.json({ bundles: [], overall_aov_opportunity: 'N/A' }); }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

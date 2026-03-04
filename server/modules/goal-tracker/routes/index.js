@@ -111,6 +111,45 @@ router.delete('/milestones/:id', (req, res) => {
   }
 });
 
+// POST /forecast — forecast goal achievement
+router.post('/forecast', (req, res) => {
+  const { goal_name, target_value, current_value, start_date, target_date } = req.body;
+  if (!target_value || !current_value) return res.status(400).json({ error: 'target_value and current_value required' });
+
+  const target = parseFloat(target_value);
+  const current = parseFloat(current_value);
+  const progress_pct = (current / target * 100).toFixed(1);
+
+  const start = start_date ? new Date(start_date) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const end = target_date ? new Date(target_date) : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
+  const now = new Date();
+
+  const total_days = Math.max(1, (end - start) / (1000 * 60 * 60 * 24));
+  const elapsed_days = Math.max(1, (now - start) / (1000 * 60 * 60 * 24));
+  const remaining_days = Math.max(0, (end - now) / (1000 * 60 * 60 * 24));
+
+  const daily_rate = current / elapsed_days;
+  const projected_final = current + (daily_rate * remaining_days);
+  const probability = Math.min(99, Math.max(1, Math.round((projected_final / target) * 85)));
+  const required_daily = remaining_days > 0 ? ((target - current) / remaining_days).toFixed(2) : 'N/A';
+
+  const on_track = projected_final >= target;
+
+  res.json({
+    progress_percent: parseFloat(progress_pct),
+    daily_rate: daily_rate.toFixed(2),
+    required_daily_rate: required_daily,
+    projected_final: Math.round(projected_final),
+    probability_of_success: probability,
+    on_track,
+    days_remaining: Math.round(remaining_days),
+    status: on_track ? 'on_track' : probability > 60 ? 'at_risk' : 'behind',
+    recommendation: on_track
+      ? `Great pace! You're on track to hit your goal.`
+      : `You need ${required_daily} units/day to hit your target. Current pace: ${daily_rate.toFixed(2)}/day.`
+  });
+});
+
 // POST /generate - AI generation with SSE
 router.post('/generate', async (req, res) => {
   const sse = setupSSE(res);

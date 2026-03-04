@@ -23,6 +23,8 @@ export default function AbTestingPage() {
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [sigInputs, setSigInputs] = useState({ control_visitors: '', control_conversions: '', variant_visitors: '', variant_conversions: '' });
+  const [sigResult, setSigResult] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -176,6 +178,63 @@ export default function AbTestingPage() {
 
       {tab === 'ai-tools' && (
         <div className="space-y-4 sm:space-y-6 animate-fade-in">
+          {/* Statistical Significance Calculator */}
+          <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
+            <div className="hud-label" style={{ marginBottom: 12 }}>Statistical Significance Calculator</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <div className="hud-label" style={{ marginBottom: 8 }}>Control (A)</div>
+                <div style={{ display: 'grid', gap: 8 }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>Visitors</div>
+                    <input className="input" type="number" placeholder="1000" value={sigInputs.control_visitors} onChange={e => setSigInputs(p => ({ ...p, control_visitors: e.target.value }))} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>Conversions</div>
+                    <input className="input" type="number" placeholder="50" value={sigInputs.control_conversions} onChange={e => setSigInputs(p => ({ ...p, control_conversions: e.target.value }))} />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div className="hud-label" style={{ marginBottom: 8 }}>Variant (B)</div>
+                <div style={{ display: 'grid', gap: 8 }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>Visitors</div>
+                    <input className="input" type="number" placeholder="1000" value={sigInputs.variant_visitors} onChange={e => setSigInputs(p => ({ ...p, variant_visitors: e.target.value }))} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>Conversions</div>
+                    <input className="input" type="number" placeholder="65" value={sigInputs.variant_conversions} onChange={e => setSigInputs(p => ({ ...p, variant_conversions: e.target.value }))} />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button className="btn-accent" style={{ marginTop: 12 }}
+              onClick={async () => {
+                try { const result = await postJSON('/api/ab-testing/calculate-significance', sigInputs); setSigResult(result); } catch {}
+              }}>Calculate Significance</button>
+            {sigResult && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 12 }}>
+                  <div style={{ textAlign: 'center', padding: 10, background: 'var(--surface)', borderRadius: 6 }}>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: parseFloat(sigResult.significance) >= 95 ? '#22c55e' : 'var(--accent)' }}>{sigResult.significance}</div>
+                    <div className="hud-label">Significance</div>
+                  </div>
+                  <div style={{ textAlign: 'center', padding: 10, background: 'var(--surface)', borderRadius: 6 }}>
+                    <div style={{ fontSize: 20, fontWeight: 700 }}>{sigResult.relative_lift}</div>
+                    <div className="hud-label">Relative Lift</div>
+                  </div>
+                  <div style={{ textAlign: 'center', padding: 10, background: 'var(--surface)', borderRadius: 6 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: sigResult.is_significant ? '#22c55e' : 'var(--muted)' }}>
+                      {sigResult.is_significant ? '✅ Significant' : '⏳ Not Yet'}
+                    </div>
+                    <div className="hud-label">Status</div>
+                  </div>
+                </div>
+                <div className="chip">{sigResult.recommendation}</div>
+              </div>
+            )}
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {AI_TEMPLATES.map(t => (
               <button key={t.name} onClick={() => generate(t)} disabled={generating} className={`panel-interactive rounded-2xl p-4 sm:p-6 text-left ${selectedTemplate?.name === t.name ? 'border-pink-500/20' : ''}`}>

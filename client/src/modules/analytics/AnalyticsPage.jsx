@@ -3,6 +3,8 @@ import { useTheme } from '../../context/ThemeContext';
 import { MODULE_REGISTRY, CATEGORIES } from '../../config/modules';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
+import { postJSON } from '../../lib/api';
+import { connectSSE } from '../../lib/api';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -33,6 +35,10 @@ export default function AnalyticsPage() {
   const [overview, setOverview] = useState({ total: 0, modules: [] });
   const [timeRange, setTimeRange] = useState('7d');
   const [expandedCat, setExpandedCat] = useState(null);
+  const [anomalyInputs, setAnomalyInputs] = useState({ metric_name: '', current_value: '', historical_average: '' });
+  const [anomalyResult, setAnomalyResult] = useState(null);
+  const [aiInsights, setAiInsights] = useState('');
+  const [insightsLoading, setInsightsLoading] = useState(false);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/analytics/overview`).then(r => r.json()).then(d => setOverview(d && typeof d === 'object' && !Array.isArray(d) ? d : { total: 0, modules: [] })).catch(() => {});
@@ -301,6 +307,56 @@ export default function AnalyticsPage() {
                   <span className={`text-[11px] font-medium ${muted}`}>+{activity.length - 15} more events</span>
                 </div>
               )}
+            </div>
+          )}
+        </div>
+
+        {/* AI Analytics Insights */}
+        <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <span className="hud-label">AI Analytics Insights</span>
+            <button className="btn-accent" style={{ fontSize: 12, padding: '4px 12px' }} disabled={insightsLoading}
+              onClick={() => {
+                setAiInsights('');
+                setInsightsLoading(true);
+                const metricsData = overview.modules || [];
+                connectSSE('/api/analytics/generate-insights',
+                  { metrics: metricsData.slice(0, 10), period: timeRange },
+                  {
+                    onChunk: (text) => setAiInsights(prev => prev + text),
+                    onResult: () => setInsightsLoading(false),
+                    onError: () => setInsightsLoading(false),
+                    onDone: () => setInsightsLoading(false),
+                  }
+                );
+              }}>{insightsLoading ? 'Analyzing...' : 'Generate AI Insights'}</button>
+          </div>
+          {aiInsights && (
+            <div style={{ whiteSpace: 'pre-wrap', fontSize: 14, lineHeight: 1.8, color: 'var(--text)' }}>
+              {aiInsights}
+            </div>
+          )}
+        </div>
+
+        {/* Anomaly Detector */}
+        <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
+          <div className="hud-label" style={{ marginBottom: 12 }}>Anomaly Detector</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 10, marginBottom: 10 }}>
+            <input className="input" placeholder="Metric name (e.g. Conversion Rate)" value={anomalyInputs.metric_name} onChange={e => setAnomalyInputs(p => ({ ...p, metric_name: e.target.value }))} />
+            <input className="input" type="number" placeholder="Current value" value={anomalyInputs.current_value} onChange={e => setAnomalyInputs(p => ({ ...p, current_value: e.target.value }))} />
+            <input className="input" type="number" placeholder="Avg (historical)" value={anomalyInputs.historical_average} onChange={e => setAnomalyInputs(p => ({ ...p, historical_average: e.target.value }))} />
+          </div>
+          <button className="btn-ghost" style={{ fontSize: 12, padding: '4px 12px' }}
+            onClick={async () => {
+              try { const result = await postJSON('/api/analytics/detect-anomaly', anomalyInputs); setAnomalyResult(result); } catch {}
+            }}>Check Anomaly</button>
+          {anomalyResult && (
+            <div style={{ marginTop: 10, display: 'flex', gap: 10, alignItems: 'center' }}>
+              <span style={{ fontSize: 20 }}>{anomalyResult.is_anomaly ? (anomalyResult.severity === 'high' ? '🚨' : '⚠️') : '✅'}</span>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500 }}>{anomalyResult.explanation}</div>
+                {anomalyResult.recommended_action && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>→ {anomalyResult.recommended_action}</div>}
+              </div>
             </div>
           )}
         </div>

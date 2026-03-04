@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import { postJSON } from '../../lib/api';
 import AIToolsTab from '../../components/shared/AIToolsTab';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
@@ -95,6 +96,10 @@ export default function IntegrationsPage() {
 
   // OAuth error state
   const [oauthError, setOauthError] = useState(null);
+
+  // Test connection state
+  const [testResults, setTestResults] = useState({});
+  const [testingId, setTestingId] = useState(null);
 
   const fetchProviders = useCallback(async () => {
     try {
@@ -208,6 +213,18 @@ export default function IntegrationsPage() {
     }
   };
 
+  const testConnection = async (integration) => {
+    setTestingId(integration);
+    try {
+      const result = await postJSON('/api/integrations/test-connection', { integration });
+      setTestResults(prev => ({ ...prev, [integration]: result }));
+    } catch (err) {
+      setTestResults(prev => ({ ...prev, [integration]: { status: 'error', message: err.message } }));
+    } finally {
+      setTestingId(null);
+    }
+  };
+
   const connected = providers.filter(p => p.status === 'connected');
   const available = providers.filter(p => p.status !== 'connected');
   const errorCount = providers.filter(p => p.status === 'error' || p.status === 'expired').length;
@@ -294,6 +311,13 @@ export default function IntegrationsPage() {
                   {p.status}
                 </span>
                 <button
+                  onClick={() => testConnection(p.id)}
+                  disabled={testingId === p.id}
+                  className="text-xs font-bold px-4 py-2 rounded-xl border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/10 transition-colors disabled:opacity-50"
+                >
+                  {testingId === p.id ? 'Testing...' : 'Test'}
+                </button>
+                <button
                   onClick={() => disconnect(p.id)}
                   disabled={disconnectingId === p.id}
                   className="text-xs font-bold px-4 py-2 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50 ml-auto sm:ml-0"
@@ -301,6 +325,17 @@ export default function IntegrationsPage() {
                   {disconnectingId === p.id ? 'Disconnecting...' : 'Disconnect'}
                 </button>
               </div>
+              {testResults[p.id] && (
+                <div className="mt-2 px-2 py-1.5 rounded-lg text-[11px] font-mono" style={{
+                  background: testResults[p.id].status === 'connected' ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
+                  border: `1px solid ${testResults[p.id].status === 'connected' ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
+                  color: testResults[p.id].status === 'connected' ? '#4ade80' : '#f87171',
+                }}>
+                  {testResults[p.id].status === 'connected'
+                    ? `Connected — ${testResults[p.id].latency_ms}ms latency · ${testResults[p.id].message || 'OK'}`
+                    : `Error: ${testResults[p.id].message || 'Connection failed'}`}
+                </div>
+              )}
             </div>
           ))}
         </div>

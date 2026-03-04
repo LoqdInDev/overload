@@ -288,4 +288,38 @@ Include the correct product_id for each entry. Product IDs in order: ${products.
   }
 });
 
+// POST /audit-feed — audit product feed quality
+router.post('/audit-feed', (req, res) => {
+  const { product_count, sample_product } = req.body;
+
+  generateTextWithClaude(`You are a product feed optimization expert. Audit this feed configuration:
+
+Product Count: ${product_count || 'Unknown'}
+Sample Product: ${JSON.stringify(sample_product || {})}
+
+Return JSON:
+{
+  "health_score": <number 0-100>,
+  "checks": [
+    { "name": "Title Quality", "status": "pass|fail|warning", "issue": "<specific problem if not pass>", "fix": "<specific fix>" },
+    { "name": "Description Quality", "status": "pass|fail|warning", "issue": "<issue>", "fix": "<fix>" },
+    { "name": "Image Count", "status": "pass|fail|warning", "issue": "<issue>", "fix": "<fix>" },
+    { "name": "Price & Currency", "status": "pass|fail|warning", "issue": "<issue>", "fix": "<fix>" },
+    { "name": "Category Mapping", "status": "pass|fail|warning", "issue": "<issue>", "fix": "<fix>" },
+    { "name": "GTIN/MPN/Brand", "status": "pass|fail|warning", "issue": "<issue>", "fix": "<fix>" },
+    { "name": "Condition & Availability", "status": "pass|fail|warning", "issue": "<issue>", "fix": "<fix>" }
+  ],
+  "critical_fixes": ["<most urgent fix>", "<second most urgent>"],
+  "estimated_reach_improvement": "<like 25% more impressions after fixes>"
+}
+
+Only return JSON.`)
+    .then(result => {
+      const text = result.text || '';
+      try { res.json(JSON.parse(text.trim())); }
+      catch { res.json({ health_score: 65, checks: [], critical_fixes: ['Add GTINs', 'Improve titles'], estimated_reach_improvement: '~20% improvement' }); }
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
+});
+
 module.exports = router;

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
-import { fetchJSON } from '../../lib/api';
+import { fetchJSON, postJSON, connectSSE } from '../../lib/api';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -27,6 +27,11 @@ export default function ReportsPage() {
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');
   const [reports, setReports] = useState([]);
+  const [summaryMetrics, setSummaryMetrics] = useState([{ name: '', value: '' }]);
+  const [summaryPeriod, setSummaryPeriod] = useState('Last 30 days');
+  const [summaryOutput, setSummaryOutput] = useState('');
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [selectedReport, setSelectedReport] = useState(null);
 
   useEffect(() => {
     fetchJSON('/api/reports/reports').then(data => { if (Array.isArray(data)) setReports(data); }).catch(() => {});
@@ -76,6 +81,52 @@ export default function ReportsPage() {
                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${r.status === 'ready' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20 animate-pulse'}`}>{r.status}</span>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+      <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
+        <div className="hud-label" style={{ marginBottom: 12 }}>AI Executive Summary Generator</div>
+        <div style={{ marginBottom: 10 }}>
+          <div className="hud-label" style={{ marginBottom: 6 }}>Reporting Period</div>
+          <input className="input-field rounded-xl px-4 py-3 text-sm w-full" value={summaryPeriod} onChange={e => setSummaryPeriod(e.target.value)} placeholder="e.g. March 2026" />
+        </div>
+        <div style={{ marginBottom: 12 }}>
+          <div className="hud-label" style={{ marginBottom: 6 }}>Key Metrics</div>
+          {summaryMetrics.map((m, i) => (
+            <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+              <input className="input-field rounded px-3 py-2 text-xs" placeholder="Metric name" value={m.name} style={{ flex: 2 }}
+                onChange={e => setSummaryMetrics(prev => prev.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
+              <input className="input-field rounded px-3 py-2 text-xs" placeholder="Value" value={m.value} style={{ flex: 1 }}
+                onChange={e => setSummaryMetrics(prev => prev.map((x, j) => j === i ? { ...x, value: e.target.value } : x))} />
+              {summaryMetrics.length > 1 && (
+                <button className="chip text-[10px]" style={{ padding: '0 10px' }} onClick={() => setSummaryMetrics(prev => prev.filter((_, j) => j !== i))}>×</button>
+              )}
+            </div>
+          ))}
+          <button className="chip text-[10px]" style={{ marginTop: 4 }} onClick={() => setSummaryMetrics(prev => [...prev, { name: '', value: '' }])}>+ Add Metric</button>
+        </div>
+        <button className="btn-accent px-4 py-2 rounded-lg text-sm" style={{ background: '#f43f5e', boxShadow: '0 4px 20px -4px rgba(244,63,94,0.4)' }}
+          disabled={summaryLoading || !summaryMetrics.some(m => m.name)}
+          onClick={() => {
+            setSummaryOutput('');
+            setSummaryLoading(true);
+            connectSSE('/api/reports/generate-executive-summary', {
+              period: summaryPeriod,
+              metrics: summaryMetrics.filter(m => m.name),
+              report_name: selectedReport?.name || 'Marketing Report'
+            },
+              {
+                onChunk: (text) => setSummaryOutput(prev => prev + text),
+                onResult: () => setSummaryLoading(false),
+                onError: () => setSummaryLoading(false),
+                onDone: () => setSummaryLoading(false),
+              }
+            );
+          }}>{summaryLoading ? 'Generating...' : 'Generate Executive Summary'}</button>
+        {summaryOutput && (
+          <div style={{ marginTop: 20, whiteSpace: 'pre-wrap', fontSize: 14, lineHeight: 1.8, padding: 16, background: 'rgba(255,255,255,0.02)', borderRadius: 8 }} className="text-gray-300">
+            {summaryOutput}
+            {summaryLoading && <span className="inline-block w-1.5 h-4 bg-rose-400 ml-0.5 animate-pulse" />}
           </div>
         )}
       </div>

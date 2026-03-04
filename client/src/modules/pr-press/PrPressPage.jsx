@@ -28,6 +28,11 @@ export default function PrPressPage() {
   const [showAddContact, setShowAddContact] = useState(false);
   const [newRelease, setNewRelease] = useState({ title: '', content: '', status: 'draft', target_date: '', distribution_list: '' });
   const [newContact, setNewContact] = useState({ name: '', outlet: '', email: '', beat: '', relationship: 'new' });
+  const [mediaAngles, setMediaAngles] = useState(null);
+  const [angleAnnouncement, setAngleAnnouncement] = useState('');
+  const [angleLoading, setAngleLoading] = useState(false);
+  const [contactScores, setContactScores] = useState({});
+  const [scoringContactId, setScoringContactId] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -208,8 +213,8 @@ export default function PrPressPage() {
           )}
           <div className="panel rounded-2xl overflow-hidden">
             {/* Desktop table header */}
-            <div className="hidden md:grid grid-cols-[1fr_120px_120px_1fr_100px_30px] gap-3 px-4 sm:px-6 py-3 border-b border-indigo-500/[0.06]">
-              {['Name', 'Outlet', 'Beat', 'Email', 'Relationship', ''].map(h => (
+            <div className="hidden md:grid grid-cols-[1fr_120px_120px_1fr_100px_80px_30px] gap-3 px-4 sm:px-6 py-3 border-b border-indigo-500/[0.06]">
+              {['Name', 'Outlet', 'Beat', 'Email', 'Relationship', 'Score', ''].map(h => (
                 <p key={h} className="text-[9px] font-bold text-gray-600 uppercase tracking-wider">{h}</p>
               ))}
             </div>
@@ -218,7 +223,7 @@ export default function PrPressPage() {
               {contacts.map(c => (
                 <div key={c.id} className="group hover:bg-white/[0.01] transition-colors">
                   {/* Desktop row */}
-                  <div className="hidden md:grid grid-cols-[1fr_120px_120px_1fr_100px_30px] gap-3 items-center px-4 sm:px-6 py-4">
+                  <div className="hidden md:grid grid-cols-[1fr_120px_120px_1fr_100px_80px_30px] gap-3 items-center px-4 sm:px-6 py-4">
                     <p className="text-sm font-semibold text-gray-300 truncate">{c.name}</p>
                     <p className="text-xs text-gray-400 truncate">{c.outlet || '--'}</p>
                     <p className="text-xs text-gray-500 truncate">{c.beat || '--'}</p>
@@ -231,8 +236,40 @@ export default function PrPressPage() {
                     >
                       {RELATIONSHIP_OPTIONS.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
                     </select>
+                    {contactScores[c.id] ? (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-center" style={{ background: '#6366f120', color: '#6366f1' }}>
+                        {contactScores[c.id].tier} · {contactScores[c.id].relevance_score}
+                      </span>
+                    ) : (
+                      <button
+                        disabled={scoringContactId === c.id}
+                        onClick={async () => {
+                          setScoringContactId(c.id);
+                          try {
+                            const result = await postJSON('/api/pr-press/score-contact', {
+                              contact_name: c.name,
+                              publication: c.outlet,
+                              beat: c.beat,
+                              announcement_type: angleAnnouncement || 'Product launch',
+                            });
+                            setContactScores(prev => ({ ...prev, [c.id]: result }));
+                          } catch {}
+                          setScoringContactId(null);
+                        }}
+                        className="text-[9px] font-bold px-2 py-0.5 rounded-full border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10 transition-colors"
+                      >
+                        {scoringContactId === c.id ? '...' : 'Score'}
+                      </button>
+                    )}
                     <button onClick={() => removeContact(c.id)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 text-xs transition-all">&times;</button>
                   </div>
+                  {/* Score details row */}
+                  {contactScores[c.id] && (
+                    <div className="hidden md:block px-4 sm:px-6 pb-3 text-[10px] text-gray-500 space-y-0.5 border-t border-indigo-500/[0.04]">
+                      <p><span className="text-gray-400">Pitch:</span> {contactScores[c.id].pitch_angle}</p>
+                      <p><span className="text-gray-400">Best time:</span> {contactScores[c.id].best_contact_time}{contactScores[c.id].warning ? <span className="text-yellow-500/70 ml-2"> {contactScores[c.id].warning}</span> : null}</p>
+                    </div>
+                  )}
                   {/* Mobile card */}
                   <div className="md:hidden px-4 py-3 space-y-1">
                     <div className="flex items-center justify-between gap-2">
@@ -262,6 +299,39 @@ export default function PrPressPage() {
       {/* AI Tools */}
       {tab === 'ai-tools' && (
         <div className="animate-fade-in space-y-4 sm:space-y-6">
+          {/* Media Angle Generator */}
+          <div className="panel animate-fade-in" style={{ marginBottom: 20 }}>
+            <div className="hud-label" style={{ marginBottom: 12 }}>Media Angle Generator</div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+              <input className="input-field rounded-xl px-4 py-3 flex-1" style={{ flex: 1 }} placeholder="Describe your announcement..."
+                value={angleAnnouncement} onChange={e => setAngleAnnouncement(e.target.value)} />
+              <button className="btn-accent" disabled={!angleAnnouncement || angleLoading}
+                style={{ background: MODULE_COLOR }}
+                onClick={async () => {
+                  setAngleLoading(true);
+                  try {
+                    const result = await postJSON('/api/pr-press/generate-angles', { announcement: angleAnnouncement });
+                    setMediaAngles(result.angles);
+                  } catch {}
+                  setAngleLoading(false);
+                }}>{angleLoading ? 'Generating...' : 'Generate Angles'}</button>
+            </div>
+            {mediaAngles && (
+              <div style={{ display: 'grid', gap: 10 }}>
+                {mediaAngles.map((angle, i) => (
+                  <div key={i} className="panel" style={{ padding: 14 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <span className="chip" style={{ fontSize: 11 }}>{angle.outlet_type}</span>
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{angle.angle}</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4, fontStyle: 'italic' }}>"{angle.hook}"</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>Why they care: {angle.why_they_care}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             {AI_TEMPLATES.map(tool => (
               <button key={tool.name} onClick={() => generate(tool)} disabled={generating} className={`panel-interactive rounded-xl p-4 sm:p-6 text-left ${selectedTemplate?.name === tool.name ? 'border-pink-700/30' : ''}`}>

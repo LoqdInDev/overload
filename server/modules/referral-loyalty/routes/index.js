@@ -135,6 +135,58 @@ router.delete('/:id', (req, res) => {
   }
 });
 
+// POST /design-points-economy — SSE: design a points economy
+router.post('/design-points-economy', (req, res) => {
+  const { product_category, avg_order_value, desired_rewards } = req.body;
+  if (!product_category) { res.status(400).json({ error: 'product_category required' }); return; }
+
+  const sse = setupSSE(res);
+  const prompt = `You are a loyalty program designer. Design a complete points economy for:
+
+Product Category: ${product_category}
+Average Order Value: $${avg_order_value || '50'}
+Desired Rewards: ${desired_rewards || 'discounts, free products'}
+
+Design a comprehensive points system with these sections:
+
+## Earn Rules
+(how customers earn points: purchase, referral, review, social share — with specific point values)
+
+## Tier Structure
+(Bronze/Silver/Gold or equivalent with thresholds and multipliers)
+
+## Redemption Catalog
+(how to redeem: discount thresholds, free products, exclusive access)
+
+## Bonus Multipliers
+(special earn opportunities: birthday, anniversary, challenges)
+
+## Communication Strategy
+(how to notify and engage members)
+
+Be specific with numbers. Make it feel premium and achievable.`;
+
+  generateTextWithClaude(prompt, {
+    onChunk: (chunk) => sse.sendChunk(chunk),
+  })
+    .then(() => sse.sendResult({ done: true }))
+    .catch(() => sse.sendError({ message: 'Generation failed' }));
+});
+
+// POST /calculate-viral-coefficient — calculate viral K factor
+router.post('/calculate-viral-coefficient', (req, res) => {
+  const { total_users, referred_users, avg_referrals_per_user } = req.body;
+
+  const k = parseFloat(avg_referrals_per_user || 0) * (parseFloat(referred_users || 0) / Math.max(1, parseFloat(total_users || 1)));
+  const interpretation = k >= 1 ? 'Viral! Your program is self-sustaining and growing exponentially.' : k >= 0.5 ? 'Strong referral activity. Getting close to viral threshold.' : k >= 0.2 ? 'Moderate referrals. Optimization can get you to viral.' : 'Low viral coefficient. Consider improving rewards.';
+
+  const recommendations = k >= 1 ? ['Scale your program', 'Increase tier benefits', 'Add leaderboards'] :
+    k >= 0.5 ? ['Increase referral reward', 'Add double-referral promotions', 'Remind at purchase moment'] :
+    ['Simplify the referral process', 'Increase incentive value', 'Add social proof to referral page'];
+
+  res.json({ k_factor: k.toFixed(2), interpretation, growth_type: k >= 1 ? 'Viral' : k >= 0.5 ? 'Strong' : k >= 0.2 ? 'Moderate' : 'Weak', recommendations });
+});
+
 // POST /generate - AI generation with SSE
 router.post('/generate', async (req, res) => {
   const sse = setupSSE(res);

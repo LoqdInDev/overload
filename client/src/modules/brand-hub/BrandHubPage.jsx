@@ -112,6 +112,11 @@ export default function BrandHubPage() {
   const [copied, setCopied] = useState(false);
   const [savedBrands, setSavedBrands] = useState([]);
 
+  /* ═══════════════════ AUDIT STATE ═══════════════════ */
+  const [auditInputs, setAuditInputs] = useState({ sample_content: '', channel: '' });
+  const [auditData, setAuditData] = useState(null);
+  const [auditLoading, setAuditLoading] = useState(false);
+
   /* ═══════════════════ MEDIA STATE ═══════════════════ */
   const [media, setMedia] = useState([]);
   const [mediaCategory, setMediaCategory] = useState('all');
@@ -604,6 +609,74 @@ export default function BrandHubPage() {
                 </span>
               ) : saveStatus === 'error' ? 'Error -- Try Again' : 'Save Brand Profile'}
             </button>
+
+            {/* Brand Consistency Audit */}
+            <div className={`rounded-2xl p-4 sm:p-6 mt-4 ${card}`}>
+              <p className="hud-label text-[11px] mb-3" style={{ color: COLOR }}>BRAND CONSISTENCY AUDIT</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <input
+                  type="text"
+                  placeholder="Channel (e.g. Instagram, Email newsletter)"
+                  value={auditInputs.channel}
+                  onChange={e => setAuditInputs(prev => ({ ...prev, channel: e.target.value }))}
+                  className={inputCls}
+                />
+                <textarea
+                  placeholder="Paste sample content to audit..."
+                  value={auditInputs.sample_content}
+                  onChange={e => setAuditInputs(prev => ({ ...prev, sample_content: e.target.value }))}
+                  rows={2}
+                  className={inputCls}
+                  style={{ resize: 'none' }}
+                />
+              </div>
+              <button
+                disabled={auditLoading || !auditInputs.sample_content.trim()}
+                onClick={async () => {
+                  setAuditLoading(true);
+                  setAuditData(null);
+                  try {
+                    const result = await postJSON('/api/brand-profile/audit-consistency', {
+                      ...auditInputs,
+                      brand_name: profile.brand_name,
+                      voice_tone: profile.voice_tone,
+                      guidelines: profile.guidelines,
+                    });
+                    setAuditData(result);
+                  } catch (e) { console.error(e); } finally { setAuditLoading(false); }
+                }}
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-50"
+                style={{ background: auditLoading ? `${COLOR}4d` : COLOR }}
+              >
+                {auditLoading ? 'Auditing...' : 'Run Consistency Audit'}
+              </button>
+              {auditData && (
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl font-bold font-mono" style={{ color: auditData.consistency_score >= 70 ? '#4ade80' : auditData.consistency_score >= 40 ? '#f59e0b' : '#f87171' }}>
+                      {auditData.consistency_score}/100
+                    </span>
+                    <span className={`text-xs font-bold ${dark ? 'text-gray-400' : 'text-gray-500'}`}>Brand Consistency Score</span>
+                  </div>
+                  {auditData.issues?.length > 0 && (
+                    <div>
+                      <p className="text-[11px] font-bold text-red-400 mb-1">Issues Found</p>
+                      <ul className="space-y-1">
+                        {auditData.issues.map((iss, i) => <li key={i} className={`text-xs ${dark ? 'text-gray-400' : 'text-gray-600'}`}>- {iss}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {auditData.suggestions?.length > 0 && (
+                    <div>
+                      <p className="text-[11px] font-bold text-emerald-400 mb-1">Suggestions</p>
+                      <ul className="space-y-1">
+                        {auditData.suggestions.map((s, i) => <li key={i} className={`text-xs ${dark ? 'text-gray-400' : 'text-gray-600'}`}>+ {s}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

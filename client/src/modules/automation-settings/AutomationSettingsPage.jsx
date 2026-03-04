@@ -3,7 +3,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useAutomation } from '../../context/AutomationContext';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import { useToast } from '../../context/ToastContext';
-import { fetchJSON, putJSON } from '../../lib/api';
+import { fetchJSON, putJSON, postJSON } from '../../lib/api';
 
 export default function AutomationSettingsPage() {
   usePageTitle('Automation Settings');
@@ -15,6 +15,15 @@ export default function AutomationSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [pausing, setPausing] = useState(false);
   const [dirty, setDirty] = useState(false);
+
+  // Execution Log state
+  const [execLog, setExecLog] = useState([]);
+  const [logLoaded, setLogLoaded] = useState(false);
+  const [logLoading, setLogLoading] = useState(false);
+
+  // Analyze Automation state
+  const [analysisData, setAnalysisData] = useState({});
+  const [analyzingId, setAnalyzingId] = useState(null);
 
   const cardBg = dark ? 'rgba(255,255,255,0.02)' : '#ffffff';
   const cardBorder = dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)';
@@ -261,8 +270,155 @@ export default function AutomationSettingsPage() {
               ))}
             </div>
           </div>
+          {/* Section 6: Execution Log */}
+          <div className="rounded-2xl p-5" style={sectionStyle}>
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-sm font-bold" style={{ color: textPrimary }}>Execution Log</h2>
+              <button
+                onClick={async () => {
+                  if (logLoaded) { setLogLoaded(false); setExecLog([]); return; }
+                  setLogLoading(true);
+                  try {
+                    const res = await fetchJSON('/api/automation/execution-log');
+                    setExecLog(res.logs || []);
+                    setLogLoaded(true);
+                  } catch { setExecLog([]); setLogLoaded(true); } finally { setLogLoading(false); }
+                }}
+                className="text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all"
+                style={{ background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', color: textSecondary }}
+              >
+                {logLoading ? 'Loading...' : logLoaded ? 'Hide Log' : 'View Execution Log'}
+              </button>
+            </div>
+            <p className="text-[11px] mb-4" style={{ color: textSecondary }}>Recent automation execution history</p>
+            {logLoaded && (
+              <div className="space-y-1 max-h-64 overflow-y-auto">
+                {execLog.length === 0 ? (
+                  <p className="text-xs italic" style={{ color: textSecondary }}>No execution history yet.</p>
+                ) : (
+                  execLog.slice(0, 20).map((log, i) => (
+                    <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs" style={{ background: dark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}>
+                      <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: log.status === 'completed' ? '#22c55e' : log.status === 'failed' ? '#ef4444' : '#f59e0b' }} />
+                      <span className="flex-1 truncate" style={{ color: textPrimary }}>{log.description || log.action_type || 'Action'}</span>
+                      <span className="flex-shrink-0 font-mono" style={{ color: textSecondary }}>{log.created_at ? new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Section 7: Analyze Automation Rule */}
+          <div className="rounded-2xl p-5" style={sectionStyle}>
+            <h2 className="text-sm font-bold mb-1" style={{ color: textPrimary }}>Analyze Automation Rule</h2>
+            <p className="text-[11px] mb-4" style={{ color: textSecondary }}>Get AI analysis on any automation rule</p>
+            <AnalyzeRulePanel
+              dark={dark}
+              textPrimary={textPrimary}
+              textSecondary={textSecondary}
+              inputStyle={inputStyle}
+              analysisData={analysisData}
+              setAnalysisData={setAnalysisData}
+              analyzingId={analyzingId}
+              setAnalyzingId={setAnalyzingId}
+            />
+          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function AnalyzeRulePanel({ dark, textPrimary, textSecondary, inputStyle, analysisData, setAnalysisData, analyzingId, setAnalyzingId }) {
+  const [ruleName, setRuleName] = useState('');
+  const [trigger, setTrigger] = useState('');
+  const [action, setAction] = useState('');
+
+  const analyze = async () => {
+    if (!ruleName.trim()) return;
+    const key = ruleName.trim();
+    setAnalyzingId(key);
+    try {
+      const result = await postJSON('/api/automation/analyze-automation', { rule_name: ruleName, trigger, action });
+      setAnalysisData(prev => ({ ...prev, [key]: result }));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAnalyzingId(null);
+    }
+  };
+
+  const result = analysisData[ruleName.trim()];
+
+  return (
+    <div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+        <input
+          type="text"
+          placeholder="Rule name"
+          value={ruleName}
+          onChange={e => setRuleName(e.target.value)}
+          className="w-full px-3 py-2 rounded-lg text-sm"
+          style={inputStyle}
+        />
+        <input
+          type="text"
+          placeholder="Trigger (e.g. New lead)"
+          value={trigger}
+          onChange={e => setTrigger(e.target.value)}
+          className="w-full px-3 py-2 rounded-lg text-sm"
+          style={inputStyle}
+        />
+        <input
+          type="text"
+          placeholder="Action (e.g. Send email)"
+          value={action}
+          onChange={e => setAction(e.target.value)}
+          className="w-full px-3 py-2 rounded-lg text-sm"
+          style={inputStyle}
+        />
+      </div>
+      <button
+        disabled={!ruleName.trim() || analyzingId === ruleName.trim()}
+        onClick={analyze}
+        className="px-4 py-2 rounded-lg text-xs font-semibold transition-all disabled:opacity-50"
+        style={{ background: 'rgba(212,160,23,0.15)', color: '#D4A017', border: '1px solid rgba(212,160,23,0.2)' }}
+      >
+        {analyzingId === ruleName.trim() ? 'Analyzing...' : 'Analyze Rule'}
+      </button>
+      {result && (
+        <div className="mt-4 space-y-3">
+          <div className="flex items-center gap-4">
+            <div>
+              <p className="text-[11px]" style={{ color: textSecondary }}>Effectiveness</p>
+              <p className="text-lg font-bold font-mono" style={{ color: '#D4A017' }}>{result.effectiveness_score}/10</p>
+            </div>
+            <div>
+              <p className="text-[11px]" style={{ color: textSecondary }}>Est. Monthly Savings</p>
+              <p className="text-lg font-bold font-mono text-emerald-400">{result.estimated_monthly_savings_hours}h</p>
+            </div>
+          </div>
+          {result.expected_impact && (
+            <p className="text-xs italic" style={{ color: textSecondary }}>{result.expected_impact}</p>
+          )}
+          {result.enhancement_suggestions?.length > 0 && (
+            <div>
+              <p className="text-[11px] font-bold text-emerald-400 mb-1">Enhancement Suggestions</p>
+              <ul className="space-y-1">
+                {result.enhancement_suggestions.map((s, i) => <li key={i} className="text-xs" style={{ color: textSecondary }}>+ {s}</li>)}
+              </ul>
+            </div>
+          )}
+          {result.potential_issues?.length > 0 && (
+            <div>
+              <p className="text-[11px] font-bold text-red-400 mb-1">Potential Issues</p>
+              <ul className="space-y-1">
+                {result.potential_issues.map((iss, i) => <li key={i} className="text-xs" style={{ color: textSecondary }}>- {iss}</li>)}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

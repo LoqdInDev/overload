@@ -46,6 +46,11 @@ export default function CalendarPage() {
   const [output, setOutput] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [newEvent, setNewEvent] = useState({ title: '', type: 'content', recurrence: null });
+  const [planMonth, setPlanMonth] = useState(new Date().toLocaleString('default', { month: 'long', year: 'numeric' }));
+  const [planBusinessType, setPlanBusinessType] = useState('E-commerce');
+  const [planGoal, setPlanGoal] = useState('Brand awareness');
+  const [contentPlan, setContentPlan] = useState(null);
+  const [planLoading, setPlanLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -123,6 +128,60 @@ export default function CalendarPage() {
       </div>
 
       <div className="flex flex-wrap gap-3 mb-6">{EVENT_TYPES.map(t => (<div key={t.id} className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full" style={{ background: t.color }} /><span className="text-xs text-gray-500">{t.name}</span></div>))}</div>
+
+      <div className="panel animate-fade-in" style={{ marginBottom: 20 }}>
+        <div className="hud-label" style={{ marginBottom: 12 }}>AI Content Planner</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
+          <input className="input-field rounded-xl px-4 py-3 text-sm" placeholder="Month (e.g. March 2026)" value={planMonth} onChange={e => setPlanMonth(e.target.value)} />
+          <input className="input-field rounded-xl px-4 py-3 text-sm" placeholder="Business type" value={planBusinessType} onChange={e => setPlanBusinessType(e.target.value)} />
+          <input className="input-field rounded-xl px-4 py-3 text-sm" placeholder="Main goal" value={planGoal} onChange={e => setPlanGoal(e.target.value)} />
+        </div>
+        <button className="chip text-[10px]" style={{ background: 'rgba(14,165,233,0.15)', borderColor: 'rgba(14,165,233,0.3)', color: '#38bdf8' }} disabled={planLoading}
+          onClick={async () => {
+            setPlanLoading(true);
+            try {
+              const result = await postJSON('/api/calendar/suggest-content-plan', { month: planMonth, business_type: planBusinessType, goal: planGoal });
+              setContentPlan(result);
+            } catch {}
+            setPlanLoading(false);
+          }}>{planLoading ? 'Generating Plan...' : 'Generate Content Plan'}</button>
+        {contentPlan && (
+          <div style={{ marginTop: 16 }}>
+            {contentPlan.theme && <div className="chip" style={{ marginBottom: 12 }}>Monthly Theme: {contentPlan.theme}</div>}
+            {contentPlan.plan?.map((week, wi) => (
+              <div key={wi} style={{ marginBottom: 16 }}>
+                <div className="hud-label" style={{ marginBottom: 8 }}>Week {week.week}</div>
+                <div style={{ display: 'grid', gap: 6 }}>
+                  {week.posts?.map((post, pi) => (
+                    <div key={pi} className="panel-interactive" style={{ padding: 10, display: 'flex', gap: 12, alignItems: 'center' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', gap: 6, marginBottom: 4 }}>
+                          <span className="chip" style={{ fontSize: 10 }}>{post.platform}</span>
+                          <span className="chip" style={{ fontSize: 10 }}>{post.content_type}</span>
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 500 }} className="text-gray-300">{post.topic}</div>
+                        <div style={{ fontSize: 11, color: '#6b7280' }}>{post.day}</div>
+                      </div>
+                      <button className="chip text-[10px] flex-shrink-0" style={{ color: '#38bdf8', borderColor: 'rgba(14,165,233,0.3)' }}
+                        onClick={async () => {
+                          try {
+                            const created = await postJSON('/api/calendar/events', {
+                              title: post.topic,
+                              module_id: post.content_type?.toLowerCase() || 'content',
+                              date: new Date().toISOString().slice(0, 10),
+                              notes: post.hook || ''
+                            });
+                            setEvents(e => [...e, created]);
+                          } catch {}
+                        }}>Add to Calendar</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
         <div className="lg:col-span-3">

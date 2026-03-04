@@ -23,6 +23,9 @@ export default function AudienceBuilderPage() {
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [seedDescription, setSeedDescription] = useState('');
+  const [lookalikeOutput, setLookalikeOutput] = useState('');
+  const [lookalikeLoading, setLookalikeLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -95,7 +98,7 @@ export default function AudienceBuilderPage() {
       </div>
 
       <div className="flex flex-wrap gap-1 mb-6">
-        {['audiences', 'ai-tools'].map(t => (<button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: 'rgba(139,92,246,0.15)', borderColor: 'rgba(139,92,246,0.3)', color: '#a78bfa' } : {}}>{t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1)}</button>))}
+        {['audiences', 'ai-tools', 'lookalike'].map(t => (<button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: 'rgba(139,92,246,0.15)', borderColor: 'rgba(139,92,246,0.3)', color: '#a78bfa' } : {}}>{t === 'ai-tools' ? 'AI Tools' : t === 'lookalike' ? 'Lookalike Builder' : t.charAt(0).toUpperCase() + t.slice(1)}</button>))}
       </div>
 
       {tab === 'audiences' && (
@@ -164,6 +167,40 @@ export default function AudienceBuilderPage() {
               <pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-violet-400 ml-0.5 animate-pulse" />}</pre>
             </div>
           )}
+        </div>
+      )}
+
+      {tab === 'lookalike' && (
+        <div className="animate-fade-in">
+          <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
+            <div className="hud-label" style={{ marginBottom: 12 }}>AI Lookalike Audience Builder</div>
+            <div style={{ marginBottom: 12 }}>
+              <div className="hud-label" style={{ marginBottom: 6 }}>Describe Your Best Customers</div>
+              <textarea className="input-field rounded-xl px-4 py-3 text-sm w-full" style={{ minHeight: 80, resize: 'vertical' }}
+                placeholder="e.g. Women 28-45, interested in fitness and wellness, shop online 2-3x/month, health-conscious, follow fitness influencers, household income $60K+"
+                value={seedDescription} onChange={e => setSeedDescription(e.target.value)} />
+            </div>
+            <button className="btn-accent px-4 py-2 rounded-lg text-sm" style={{ background: '#8b5cf6' }} disabled={!seedDescription || lookalikeLoading}
+              onClick={() => {
+                setLookalikeOutput('');
+                setLookalikeLoading(true);
+                connectSSE('/api/audience-builder/build-lookalike',
+                  { seed_description: seedDescription },
+                  {
+                    onChunk: (text) => setLookalikeOutput(prev => prev + text),
+                    onResult: () => setLookalikeLoading(false),
+                    onError: () => setLookalikeLoading(false),
+                    onDone: () => setLookalikeLoading(false),
+                  }
+                );
+              }}>{lookalikeLoading ? 'Building Audience...' : 'Build Lookalike Audience'}</button>
+            {lookalikeOutput && (
+              <div style={{ marginTop: 16, whiteSpace: 'pre-wrap', fontSize: 13, lineHeight: 1.8 }} className="text-gray-300">
+                {lookalikeOutput}
+                {lookalikeLoading && <span className="inline-block w-1.5 h-4 bg-violet-400 ml-0.5 animate-pulse rounded-sm" />}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

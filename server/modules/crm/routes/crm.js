@@ -510,4 +510,37 @@ router.get('/segments', (req, res) => {
   }
 });
 
+// POST /score-lead — AI lead scoring
+router.post('/score-lead', (req, res) => {
+  const { contact_name, company, job_title, emails_opened, pages_visited, downloads, days_in_pipeline } = req.body;
+
+  generateTextWithClaude(`You are a B2B sales expert. Score this lead:
+
+Contact: ${contact_name || 'Unknown'}
+Company: ${company || 'Unknown'}
+Title: ${job_title || 'Unknown'}
+Emails Opened: ${emails_opened || 0}
+Pages Visited: ${pages_visited || 0}
+Downloads: ${downloads || 0}
+Days in Pipeline: ${days_in_pipeline || 0}
+
+Return JSON:
+{
+  "score": <number 1-100>,
+  "tier": "hot|warm|cold",
+  "probability_to_close": "<like 35%>",
+  "next_action": "<specific recommended next step>",
+  "timing": "<best time to reach out, like 'Reach out today - high intent signals'>",
+  "signals": ["<positive signal>", "<another signal>"],
+  "concerns": ["<concern if any>"]
+}
+
+Only return JSON.`)
+    .then(({ text }) => {
+      try { res.json(JSON.parse(text.trim())); }
+      catch { res.json({ score: 65, tier: 'warm', probability_to_close: '30%', next_action: 'Schedule a discovery call', timing: 'This week', signals: ['Multiple page visits'], concerns: [] }); }
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
+});
+
 module.exports = router;

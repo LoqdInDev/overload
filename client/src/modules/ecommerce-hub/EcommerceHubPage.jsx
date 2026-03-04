@@ -3,6 +3,7 @@ import { usePageTitle } from '../../hooks/usePageTitle';
 import { fetchJSON, postJSON, deleteJSON, connectSSE } from '../../lib/api';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
+
 const MODULE_COLOR = '#8b5cf6';
 
 const AI_TEMPLATES = [
@@ -52,6 +53,12 @@ export default function EcommerceHubPage() {
   const [newProductStock, setNewProductStock] = useState('');
   const [newProductStoreId, setNewProductStoreId] = useState('');
   const [creatingProduct, setCreatingProduct] = useState(false);
+
+  // Inventory Forecaster state
+  const [inventoryInputs, setInventoryInputs] = useState({ product_name: '', current_stock: '', avg_daily_sales: '', lead_time_days: '14' });
+  const [inventoryForecast, setInventoryForecast] = useState(null);
+  const [bundleData, setBundleData] = useState(null);
+  const [bundleLoading, setBundleLoading] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -309,6 +316,41 @@ export default function EcommerceHubPage() {
                 </button>
               </div>
             </form>
+          </div>
+
+          {/* Inventory Forecaster */}
+          <div className="panel rounded-2xl p-4 sm:p-6 animate-fade-in">
+            <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>INVENTORY FORECASTER</p>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <input className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" placeholder="Product name" value={inventoryInputs.product_name} onChange={e => setInventoryInputs(p => ({ ...p, product_name: e.target.value }))} />
+              <input className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" type="number" placeholder="Current stock qty" value={inventoryInputs.current_stock} onChange={e => setInventoryInputs(p => ({ ...p, current_stock: e.target.value }))} />
+              <input className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" type="number" placeholder="Avg daily sales" value={inventoryInputs.avg_daily_sales} onChange={e => setInventoryInputs(p => ({ ...p, avg_daily_sales: e.target.value }))} />
+              <input className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" type="number" placeholder="Lead time (days)" value={inventoryInputs.lead_time_days} onChange={e => setInventoryInputs(p => ({ ...p, lead_time_days: e.target.value }))} />
+            </div>
+            <button className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors" style={{ background: 'rgba(139,92,246,0.6)' }} onClick={async () => {
+              try { const result = await postJSON('/api/ecommerce-hub/forecast-inventory', inventoryInputs); setInventoryForecast(result); } catch {}
+            }}>Forecast Inventory</button>
+            {inventoryForecast && (
+              <div className="mt-3 grid grid-cols-3 gap-3">
+                <div className="text-center p-3 rounded-lg bg-white/[0.04]">
+                  <div className="text-xl font-bold" style={{ color: inventoryForecast.urgency === 'critical' ? '#ef4444' : inventoryForecast.urgency === 'warning' ? '#f59e0b' : '#22c55e' }}>{inventoryForecast.days_until_stockout}d</div>
+                  <div className="text-[10px] text-gray-500 uppercase tracking-wide mt-1">Until Stockout</div>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-white/[0.04]">
+                  <div className="text-xl font-bold text-white">{inventoryForecast.reorder_point}</div>
+                  <div className="text-[10px] text-gray-500 uppercase tracking-wide mt-1">Reorder Point</div>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-white/[0.04]">
+                  <div className="text-xl font-bold text-white">{inventoryForecast.recommended_order_qty}</div>
+                  <div className="text-[10px] text-gray-500 uppercase tracking-wide mt-1">Recommended Order</div>
+                </div>
+              </div>
+            )}
+            {inventoryForecast?.should_reorder_now && (
+              <div className="mt-2 text-xs px-3 py-1.5 rounded-full border inline-block" style={{ borderColor: '#ef4444', color: '#ef4444' }}>
+                Reorder NOW — stockout by {inventoryForecast.estimated_stockout_date}
+              </div>
+            )}
           </div>
 
           {/* Low Stock Alerts */}

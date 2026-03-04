@@ -1,6 +1,7 @@
 const express = require('express');
 const { v4: uuid } = require('uuid');
-const { generateWithClaude } = require('../../../services/claude');
+const { generateWithClaude, generateTextWithClaude } = require('../../../services/claude');
+const { setupSSE } = require('../../../services/sse');
 const { generateImages } = require('../../../services/gemini');
 const { db, logActivity } = require('../../../db/database');
 const { getQueries } = require('../db/queries');
@@ -109,6 +110,49 @@ router.delete('/projects/:id', (req, res) => {
   q.deleteProject(req.params.id);
   logActivity('creative', 'delete', 'Deleted creative project', null, req.params.id, wsId);
   res.json({ success: true });
+});
+
+// POST /generate-brief — generate a creative brief
+router.post('/generate-brief', async (req, res) => {
+  const { product, goal, audience } = req.body;
+  if (!product) return res.status(400).json({ error: 'product required' });
+
+  const sse = setupSSE(res);
+  const prompt = `You are a senior creative director. Generate a detailed creative brief for:
+
+Product: ${product}
+Goal: ${goal || 'Brand Awareness'}
+Target Audience: ${audience || 'General consumers'}
+
+Create a comprehensive creative brief with these sections:
+## Visual Direction
+(specific visual style, mood, composition)
+
+## Color Palette
+(3-5 specific colors with hex codes and rationale)
+
+## Typography
+(recommended fonts and hierarchy)
+
+## Messaging Hierarchy
+(primary message, secondary, CTA)
+
+## Do's and Don'ts
+(specific creative guidelines)
+
+## Reference Aesthetic
+(describe the visual world — be specific and evocative)
+
+Be specific, actionable, and inspiring.`;
+
+  try {
+    await generateTextWithClaude(prompt, {
+      onChunk: (chunk) => sse.sendChunk(chunk),
+    });
+    sse.sendResult({ done: true });
+  } catch (err) {
+    sse.sendError(err);
+  }
 });
 
 module.exports = router;

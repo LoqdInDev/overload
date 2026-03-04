@@ -130,4 +130,35 @@ router.post('/invites', (req, res) => {
   }
 });
 
+// POST /generate-role-brief — generate a role performance brief
+router.post('/generate-role-brief', async (req, res) => {
+  const { name, role, email, role_name, responsibilities } = req.body;
+  const effectiveRole = role_name || role || 'Team Member';
+  const effectiveName = name || 'Team Member';
+  if (!effectiveRole) return res.status(400).json({ error: 'role required' });
+
+  try {
+    const { text } = await generateTextWithClaude(`You are an HR and team performance expert. Generate a concise role brief for:
+
+Name: ${effectiveName}
+Role: ${effectiveRole}
+${email ? `Email: ${email}` : ''}
+${responsibilities ? `Responsibilities: ${responsibilities}` : ''}
+
+Return JSON:
+{
+  "kpis": ["<KPI 1>", "<KPI 2>", "<KPI 3>"],
+  "success_metrics": ["<30-day success metric>", "<60-day metric>", "<90-day metric>"],
+  "collaboration": ["<who they work with and how>", "<cross-team touchpoint>"],
+  "summary": "<one-sentence role summary>"
+}
+
+Only return JSON.`);
+    try { res.json(JSON.parse(text.trim())); }
+    catch { res.json({ kpis: ['Task completion rate', 'Quality score', 'Deadlines met'], success_metrics: ['Fully onboarded', 'First project delivered', 'Autonomous delivery'], collaboration: ['Collaborate with team lead weekly', 'Cross-functional standups'], summary: `${effectiveRole} responsible for delivering high-quality work aligned with team goals.` }); }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

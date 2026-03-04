@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
-import { fetchJSON } from '../../lib/api';
+import { fetchJSON, connectSSE } from '../../lib/api';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -14,6 +14,12 @@ export default function TheAdvisorPage() {
   const [briefing, setBriefing] = useState(null);
   const [advisorActions, setAdvisorActions] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Priority Action Plan state
+  const [businessStage, setBusinessStage] = useState('');
+  const [primaryGoal, setPrimaryGoal] = useState('');
+  const [priorityOutput, setPriorityOutput] = useState('');
+  const [priorityLoading, setPriorityLoading] = useState(false);
 
   const loadData = () => {
     setLoading(true);
@@ -96,6 +102,49 @@ export default function TheAdvisorPage() {
             </>
           )}
         </button>
+      </div>
+
+      {/* Priority Action Plan */}
+      <div className="panel rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 animate-fade-in">
+        <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>PRIORITY ACTION PLAN</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <input
+            type="text"
+            placeholder="Business stage (e.g. Early-stage startup)"
+            value={businessStage}
+            onChange={e => setBusinessStage(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none"
+          />
+          <input
+            type="text"
+            placeholder="Primary goal (e.g. Double monthly revenue)"
+            value={primaryGoal}
+            onChange={e => setPrimaryGoal(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none"
+          />
+        </div>
+        <button
+          disabled={priorityLoading || !primaryGoal.trim()}
+          onClick={() => {
+            setPriorityLoading(true);
+            setPriorityOutput('');
+            connectSSE('/api/the-advisor/prioritize-actions', { business_stage: businessStage, primary_goal: primaryGoal }, {
+              onChunk: (text) => setPriorityOutput(p => p + text),
+              onResult: (data) => { setPriorityOutput(data.content); setPriorityLoading(false); },
+              onError: () => setPriorityLoading(false),
+              onDone: () => setPriorityLoading(false),
+            });
+          }}
+          className="btn-accent px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+          style={{ background: priorityLoading ? 'rgba(212,160,23,0.3)' : MODULE_COLOR }}
+        >
+          {priorityLoading ? 'Generating Plan...' : 'Generate Priority Plan'}
+        </button>
+        {priorityOutput && (
+          <div className="mt-4 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+            <pre className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">{priorityOutput}{priorityLoading && <span className="inline-block w-1 h-3.5 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
+          </div>
+        )}
       </div>
 
       {/* AI Generated Briefing Output */}

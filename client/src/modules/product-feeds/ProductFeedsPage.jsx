@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchJSON, connectSSE, deleteJSON, putJSON } from '../../lib/api';
+import { fetchJSON, connectSSE, deleteJSON, putJSON, postJSON } from '../../lib/api';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
@@ -30,6 +30,8 @@ export default function ProductFeedsPage() {
   const [loading, setLoading] = useState(true);
   const [editingProductId, setEditingProductId] = useState(null);
   const [editProduct, setEditProduct] = useState({});
+  const [feedAudit, setFeedAudit] = useState(null);
+  const [auditLoading, setAuditLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -259,6 +261,62 @@ export default function ProductFeedsPage() {
 
       {tab === 'ai-optimize' && (
         <div className="space-y-4 sm:space-y-6 animate-fade-in">
+          {/* Feed Health Audit */}
+          <div className="panel animate-fade-in">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <span className="hud-label">Feed Health Audit</span>
+              <button className="btn-accent" style={{ fontSize: 12, padding: '4px 12px' }} disabled={auditLoading}
+                onClick={async () => {
+                  setAuditLoading(true);
+                  try {
+                    const result = await postJSON('/api/product-feeds/audit-feed', {
+                      product_count: products.length,
+                      sample_product: products[0] || {}
+                    });
+                    setFeedAudit(result);
+                  } catch {}
+                  setAuditLoading(false);
+                }}>{auditLoading ? 'Auditing...' : 'Run Feed Audit'}</button>
+            </div>
+            {feedAudit && (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 36, fontWeight: 800, color: feedAudit.health_score >= 80 ? '#22c55e' : feedAudit.health_score >= 60 ? 'var(--accent)' : '#ef4444' }}>{feedAudit.health_score}</div>
+                    <div className="hud-label">Health Score</div>
+                  </div>
+                  {feedAudit.estimated_reach_improvement && (
+                    <div className="chip" style={{ color: '#22c55e', borderColor: '#22c55e' }}>
+                      {feedAudit.estimated_reach_improvement}
+                    </div>
+                  )}
+                </div>
+                {feedAudit.checks?.length > 0 && (
+                  <div style={{ marginBottom: 12 }}>
+                    <div className="hud-label" style={{ marginBottom: 8 }}>Checks</div>
+                    {feedAudit.checks.map((check, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '6px 0', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
+                        <span style={{ fontSize: 14 }}>{check.status === 'pass' ? '✅' : check.status === 'warning' ? '⚠️' : '❌'}</span>
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontWeight: 500 }}>{check.name}</span>
+                          {check.issue && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 2 }}>{check.issue}</div>}
+                          {check.fix && check.status !== 'pass' && <div style={{ fontSize: 11, color: '#22c55e', marginTop: 2 }}>Fix: {check.fix}</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {feedAudit.critical_fixes?.length > 0 && (
+                  <div>
+                    <div className="hud-label" style={{ marginBottom: 6 }}>Critical Fixes</div>
+                    {feedAudit.critical_fixes.map((fix, i) => (
+                      <div key={i} style={{ fontSize: 13, padding: '3px 0', color: '#ef4444' }}>• {fix}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">{AI_TOOLS.map(t => (<button key={t.name} onClick={() => generate(t)} disabled={generating} className="panel-interactive rounded-2xl p-4 sm:p-6 text-left"><p className="text-sm font-bold text-gray-200">{t.name}</p><p className="text-xs text-gray-500 mt-1 line-clamp-2">{t.prompt}</p></button>))}</div>
           {(generating || output) && <div className="panel rounded-2xl p-4 sm:p-7"><div className="flex items-center gap-2 mb-3"><div className={`w-2 h-2 rounded-full ${generating ? 'bg-slate-400 animate-pulse' : 'bg-emerald-400'}`} /><span className="hud-label text-[11px]" style={{ color: generating ? '#94a3b8' : '#4ade80' }}>{generating ? 'OPTIMIZING...' : 'OPTIMIZATION READY'}</span></div><pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-slate-400 ml-0.5 animate-pulse" />}</pre></div>}
         </div>

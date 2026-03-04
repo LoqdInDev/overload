@@ -1,6 +1,8 @@
 const express = require('express');
 const { db } = require('../../../db/database');
 const pm = require('../../../services/platformManager');
+const { generateTextWithClaude } = require('../../../services/claude');
+const { setupSSE } = require('../../../services/sse');
 
 const router = express.Router();
 
@@ -160,6 +162,73 @@ router.get('/platforms/connected', (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
+});
+
+// POST /detect-anomaly — detect metric anomalies
+router.post('/detect-anomaly', (req, res) => {
+  const { metric_name, current_value, historical_average, standard_deviation } = req.body;
+  if (!metric_name) return res.status(400).json({ error: 'metric_name required' });
+
+  generateTextWithClaude(`You are a data analyst. Analyze this metric for anomalies:
+
+Metric: ${metric_name}
+Current Value: ${current_value}
+Historical Average: ${historical_average}
+Standard Deviation: ${standard_deviation || 'Unknown'}
+
+Return JSON:
+{
+  "is_anomaly": <true|false>,
+  "severity": "none|low|medium|high",
+  "z_score": <approximate z-score>,
+  "explanation": "<2 sentences explaining what this means>",
+  "likely_causes": ["<cause 1>", "<cause 2>"],
+  "recommended_action": "<specific action to take>"
+}
+
+Only return JSON.`)
+    .then(({ text }) => {
+      try { res.json(JSON.parse(text.trim())); }
+      catch { res.json({ is_anomaly: false, severity: 'none', z_score: 0.5, explanation: 'Value within normal range.', likely_causes: [], recommended_action: 'Continue monitoring' }); }
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
+});
+
+// POST /generate-insights — SSE: generate AI insights on analytics data
+router.post('/generate-insights', (req, res) => {
+  const { metrics, period } = req.body;
+  if (!metrics?.length) { res.status(400).json({ error: 'metrics required' }); return; }
+
+  const sse = setupSSE(res);
+  const prompt = `You are a marketing analytics expert. Generate actionable insights for this data:
+
+Period: ${period || 'Last 30 days'}
+Metrics: ${JSON.stringify(metrics)}
+
+Write a structured analysis with:
+
+## Performance Summary
+(2-3 sentences on overall performance)
+
+## Key Wins
+(what's working well, be specific)
+
+## Areas of Concern
+(what needs attention, be specific)
+
+## Top 3 Recommendations
+(numbered, specific, actionable)
+
+## Leading Indicators to Watch
+(what to monitor going forward)
+
+Be specific, data-driven, and actionable.`;
+
+  generateTextWithClaude(prompt, {
+    onChunk: (chunk) => sse.sendChunk(chunk),
+  })
+    .then(() => sse.sendResult({ done: true }))
+    .catch(() => sse.sendError(new Error('Generation failed')));
 });
 
 module.exports = router;

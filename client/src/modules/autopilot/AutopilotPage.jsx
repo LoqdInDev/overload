@@ -68,6 +68,12 @@ export default function AutopilotPage() {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const cancelRef = useRef(null);
 
+  // 30-Day Strategy Generator
+  const [strategyBusinessType, setStrategyBusinessType] = useState('');
+  const [strategyGoal, setStrategyGoal] = useState('');
+  const [strategyOutput, setStrategyOutput] = useState('');
+  const [strategyLoading, setStrategyLoading] = useState(false);
+
   // Settings
   const [settings, setSettings] = useState(null);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -520,6 +526,49 @@ export default function AutopilotPage() {
       {/* AI Insights Tab */}
       {dashTab === 'insights' && (
         <div className="animate-fade-in space-y-6">
+          {/* 30-Day Strategy Generator */}
+          <div className="panel rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>30-DAY STRATEGY GENERATOR</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              <input
+                type="text"
+                placeholder="Business type (e.g. SaaS, E-commerce)"
+                value={strategyBusinessType}
+                onChange={e => setStrategyBusinessType(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none"
+              />
+              <input
+                type="text"
+                placeholder="Main goal (e.g. Increase signups by 40%)"
+                value={strategyGoal}
+                onChange={e => setStrategyGoal(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none"
+              />
+            </div>
+            <button
+              disabled={strategyLoading || !strategyGoal.trim()}
+              onClick={() => {
+                setStrategyLoading(true);
+                setStrategyOutput('');
+                connectSSE('/api/autopilot/generate-strategy', { business_type: strategyBusinessType, goal: strategyGoal }, {
+                  onChunk: (text) => setStrategyOutput(p => p + text),
+                  onResult: (data) => { setStrategyOutput(data.content); setStrategyLoading(false); },
+                  onError: () => setStrategyLoading(false),
+                  onDone: () => setStrategyLoading(false),
+                });
+              }}
+              className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-50"
+              style={{ background: strategyLoading ? 'rgba(245,158,11,0.3)' : 'rgba(245,158,11,0.7)' }}
+            >
+              {strategyLoading ? 'Generating Strategy...' : 'Generate 30-Day Strategy'}
+            </button>
+            {strategyOutput && (
+              <div className="mt-4 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                <pre className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">{strategyOutput}{strategyLoading && <span className="inline-block w-1 h-3.5 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
+              </div>
+            )}
+          </div>
+
           <div>
             <div className="flex items-center gap-3 mb-4">
               <p className="hud-label text-[11px]" style={{ color: MODULE_COLOR }}>AI ANALYSIS TOOLS</p>

@@ -164,4 +164,57 @@ router.post('/workflows/:id/run', async (req, res) => {
   }
 });
 
+// POST /suggest-workflow — SSE: AI-suggest a workflow for a business goal
+router.post('/suggest-workflow', async (req, res) => {
+  const { goal_description, goal, business_type } = req.body;
+  const effectiveGoal = goal_description || goal;
+  if (!effectiveGoal) { res.status(400).json({ error: 'goal required' }); return; }
+
+  const sse = setupSSE(res);
+  const prompt = `You are a marketing automation expert. Design a workflow for:
+
+Business Goal: ${effectiveGoal}
+Business Type: ${business_type || 'E-commerce/Marketing'}
+
+Design a complete automation workflow:
+
+## Trigger
+(what starts this workflow — be specific: form submit, purchase, tag added, etc.)
+
+## Conditions/Filters
+(who qualifies: audience segment, behavior conditions)
+
+## Step 1: Immediate Action
+(what happens first, within minutes)
+
+## Step 2: Day 1 Action
+(follow-up within 24 hours)
+
+## Step 3: Day 3-7 Action
+(mid-sequence touchpoint)
+
+## Step 4: Day 14+ Action
+(long-term nurture)
+
+## Exit Conditions
+(what removes someone from this workflow)
+
+## Expected Results
+(realistic outcomes from this workflow)
+
+## Integration Requirements
+(what tools/modules this workflow connects to)
+
+Be specific and actionable. Name actual actions (send email, add tag, create task, etc.).`;
+
+  try {
+    const { text } = await generateTextWithClaude(prompt, {
+      onChunk: (chunk) => sse.sendChunk(chunk),
+    });
+    sse.sendResult({ content: text });
+  } catch (err) {
+    sse.sendError(err);
+  }
+});
+
 module.exports = router;

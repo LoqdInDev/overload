@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
+import { postJSON } from '../../lib/api';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -63,6 +64,9 @@ export default function AdsPage() {
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState(null);
+  const [adScore, setAdScore] = useState(null);
+  const [scoreLoading, setScoreLoading] = useState(false);
+  const [headlineVariations, setHeadlineVariations] = useState(null);
 
   const generateCampaign = async () => {
     if (!campaign.name.trim() || !activePlatform) return;
@@ -431,6 +435,78 @@ export default function AdsPage() {
               ))}</ul>
             </div>
           )}
+
+          {/* Ad Score Panel */}
+          <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <span className="hud-label">Ad Quality Score</span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="btn-ghost" style={{ fontSize: 12, padding: '4px 12px' }} disabled={scoreLoading}
+                  onClick={async () => {
+                    setScoreLoading(true);
+                    try {
+                      const scoreResult = await postJSON('/api/ads/score-ad', {
+                        headline: result.ad_content?.headlines?.[0] || campaign.name,
+                        body_copy: result.ad_content?.primary_texts?.[0] || result.ad_content?.descriptions?.[0],
+                        cta: result.ad_content?.cta,
+                        platform: activePlatform,
+                        objective: campaign.objective
+                      });
+                      setAdScore(scoreResult);
+                    } catch {}
+                    setScoreLoading(false);
+                  }}>{scoreLoading ? 'Scoring...' : 'Score This Ad'}</button>
+                <button className="btn-ghost" style={{ fontSize: 12, padding: '4px 12px' }}
+                  onClick={async () => {
+                    try {
+                      const varResult = await postJSON('/api/ads/generate-headline-variations', {
+                        headline: result.ad_content?.headlines?.[0] || campaign.name,
+                        platform: activePlatform
+                      });
+                      setHeadlineVariations(varResult.variations);
+                    } catch {}
+                  }}>Headline Variations</button>
+              </div>
+            </div>
+            {adScore && (
+              <div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 12 }}>
+                  {[['Overall', adScore.overall_score], ['Hook', adScore.hook_strength], ['Clarity', adScore.clarity], ['CTA', adScore.cta_effectiveness], ['Platform Fit', adScore.platform_fit]].map(([label, val]) => (
+                    <div key={label} style={{ textAlign: 'center', padding: 8, background: 'var(--surface)', borderRadius: 6 }}>
+                      <div style={{ fontSize: 22, fontWeight: 700, color: val >= 8 ? '#22c55e' : val >= 6 ? 'var(--accent)' : '#ef4444' }}>{val}</div>
+                      <div className="hud-label" style={{ fontSize: 9 }}>{label}</div>
+                    </div>
+                  ))}
+                </div>
+                {adScore.improvements?.length > 0 && (
+                  <div>
+                    <div className="hud-label" style={{ marginBottom: 6 }}>Improvements</div>
+                    {adScore.improvements.map((imp, i) => <div key={i} className="chip" style={{ fontSize: 11, marginRight: 6, marginBottom: 6 }}>• {imp}</div>)}
+                  </div>
+                )}
+                {adScore.rewritten_headline && (
+                  <div style={{ marginTop: 10, padding: 10, background: 'var(--surface)', borderRadius: 6, fontSize: 13 }}>
+                    <span className="hud-label">Suggested headline: </span>{adScore.rewritten_headline}
+                  </div>
+                )}
+              </div>
+            )}
+            {headlineVariations && (
+              <div style={{ marginTop: 12 }}>
+                <div className="hud-label" style={{ marginBottom: 8 }}>Headline Variations</div>
+                {headlineVariations.map((v, i) => (
+                  <div key={i} className="panel-interactive" style={{ padding: 10, marginBottom: 6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span className="chip" style={{ fontSize: 10 }}>{v.approach}</span>
+                      <button className="btn-ghost" style={{ fontSize: 10, padding: '2px 8px' }} onClick={() => navigator.clipboard.writeText(v.headline)}>Copy</button>
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 500, marginTop: 4 }}>{v.headline}</div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{v.strength}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
       </ModuleWrapper>

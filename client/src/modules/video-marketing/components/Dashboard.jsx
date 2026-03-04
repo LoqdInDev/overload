@@ -179,6 +179,7 @@ export default function Dashboard({ campaign, setCampaign, currentStep, setCurre
         <ExportPanel
           campaignId={campaign.id}
           campaignName={campaign.product_name}
+          campaign={campaign}
         />
       )}
 

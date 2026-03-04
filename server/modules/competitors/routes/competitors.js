@@ -300,6 +300,44 @@ router.get('/ads', async (req, res) => {
   }
 });
 
+// POST /content-gap — SSE: analyze content gap vs competitor
+router.post('/content-gap', (req, res) => {
+  const { your_brand, competitor_name, your_topics } = req.body;
+  if (!competitor_name) { res.status(400).json({ error: 'competitor_name required' }); return; }
+
+  const sse = setupSSE(res);
+  const prompt = `You are a competitive content strategist. Analyze the content gap between these brands:
+
+Your Brand: ${your_brand || 'Unknown'}
+Your Current Topics: ${Array.isArray(your_topics) ? your_topics.join(', ') : your_topics || 'Not specified'}
+Competitor: ${competitor_name}
+
+Generate a content gap analysis:
+
+## Executive Summary
+(What's the competitive content situation? 2 sentences)
+
+## Topics Competitor Wins At
+(5-7 topics they likely rank for and you should compete on — with estimated traffic opportunity each)
+
+## Your Unique Advantage
+(2-3 topics where you have an edge or opportunity to dominate)
+
+## Content Format Gaps
+(video, podcast, guides, tools — what formats are they using that you're not?)
+
+## 90-Day Content Plan to Close the Gap
+(specific content pieces with titles and formats)
+
+Be strategic and specific.`;
+
+  generateTextWithClaude(prompt, {
+    onChunk: (chunk) => sse.sendChunk(chunk),
+  })
+    .then(() => sse.sendResult({ done: true }))
+    .catch(() => sse.sendError(new Error('Generation failed')));
+});
+
 // DELETE /:id - delete a competitor and cascade its reports and alerts
 router.delete('/:id', (req, res) => {
   const wsId = req.workspace.id;

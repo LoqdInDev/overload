@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
-import { fetchJSON, postJSON, putJSON, deleteJSON } from '../../lib/api';
+import { fetchJSON, postJSON, putJSON, deleteJSON, connectSSE } from '../../lib/api';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
@@ -48,6 +48,13 @@ export default function InfluencersPage() {
   const [campaignsLoading, setCampaignsLoading] = useState(false);
   const [showAddCampaign, setShowAddCampaign] = useState(false);
   const [newCampaign, setNewCampaign] = useState({ name: '', budget: '', status: 'planning' });
+  const [roiData, setRoiData] = useState(null);
+  const [roiInputs, setRoiInputs] = useState({ followers: '', engagement_rate: '3', fee: '', avg_order_value: '50', product_margin: '40' });
+  const [briefProduct, setBriefProduct] = useState('');
+  const [briefGoal, setBriefGoal] = useState('Brand Awareness');
+  const [briefNiche, setBriefNiche] = useState('');
+  const [briefOutput, setBriefOutput] = useState('');
+  const [briefLoading, setBriefLoading] = useState(false);
 
   useEffect(() => {
     if (activeTool === 'campaigns') {
@@ -146,23 +153,65 @@ export default function InfluencersPage() {
 
       {activeTool === 'brief' && (
         <div className="space-y-4 sm:space-y-6">
-          <div className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-3">CAMPAIGN DETAILS</p><textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={4} placeholder="Describe your product, campaign goals, target audience, budget, and preferred content format..." className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base resize-none" /></div>
-          <button onClick={generate} disabled={generating || !prompt.trim()} className="btn-accent w-full py-3 rounded-lg" style={{ background: generating ? '#1e1e2e' : '#ec4899' }}>{generating ? <span className="flex items-center gap-2"><span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />GENERATING...</span> : 'GENERATE CAMPAIGN BRIEF'}</button>
+          {/* Brief Generator */}
+          <div className="panel animate-fade-in">
+            <div className="hud-label" style={{ marginBottom: 12 }}>Campaign Brief Generator</div>
+            <div style={{ display: 'grid', gap: 10, marginBottom: 12 }}>
+              <input className="input" placeholder="Product/Service name" value={briefProduct} onChange={e => setBriefProduct(e.target.value)} />
+              <input className="input" placeholder="Influencer niche (e.g. fitness, beauty)" value={briefNiche} onChange={e => setBriefNiche(e.target.value)} />
+              <select className="input" value={briefGoal} onChange={e => setBriefGoal(e.target.value)}>
+                {['Brand Awareness', 'Sales', 'Product Launch', 'Event Promotion', 'App Downloads'].map(g => <option key={g}>{g}</option>)}
+              </select>
+            </div>
+            <button className="btn-accent" disabled={!briefProduct || briefLoading}
+              onClick={() => {
+                setBriefOutput('');
+                setBriefLoading(true);
+                connectSSE('/api/influencers/generate-brief', { product: briefProduct, goal: briefGoal, influencer_niche: briefNiche },
+                  {
+                    onChunk: (text) => setBriefOutput(prev => prev + text),
+                    onResult: () => setBriefLoading(false),
+                    onError: () => setBriefLoading(false),
+                    onDone: () => setBriefLoading(false),
+                  }
+                );
+              }}>{briefLoading ? 'Generating...' : 'Generate Brief'}</button>
+            {briefOutput && <div style={{ marginTop: 16, whiteSpace: 'pre-wrap', fontSize: 13, lineHeight: 1.7 }}>{briefOutput}</div>}
+          </div>
         </div>
       )}
 
       {activeTool === 'roi' && (
         <div className="space-y-4 sm:space-y-6">
-          <div className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-3">CAMPAIGN INPUTS</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
-              <div><label className="text-[10px] text-gray-500 block mb-1">Campaign Budget ($)</label><input type="number" value={budget} onChange={e => setBudget(e.target.value)} className="w-full input-field rounded-xl px-4 py-3 text-base" /></div>
-              <div><label className="text-[10px] text-gray-500 block mb-1">Est. Reach</label><input type="number" value={reach} onChange={e => setReach(e.target.value)} className="w-full input-field rounded-xl px-4 py-3 text-base" /></div>
-              <div><label className="text-[10px] text-gray-500 block mb-1">Engagement Rate (%)</label><input type="number" value={engRate} onChange={e => setEngRate(e.target.value)} className="w-full input-field rounded-xl px-4 py-3 text-base" /></div>
-              <div><label className="text-[10px] text-gray-500 block mb-1">Conversion Rate (%)</label><input type="number" value={convRate} onChange={e => setConvRate(e.target.value)} className="w-full input-field rounded-xl px-4 py-3 text-base" /></div>
+          <div className="panel animate-fade-in" style={{ marginBottom: 16 }}>
+            <div className="hud-label" style={{ marginBottom: 12 }}>Influencer ROI Calculator</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+              {[['Followers', 'followers', 'e.g. 50000'], ['Engagement Rate %', 'engagement_rate', 'e.g. 3.5'], ['Campaign Fee ($)', 'fee', 'e.g. 500'], ['Avg Order Value ($)', 'avg_order_value', 'e.g. 50'], ['Product Margin %', 'product_margin', 'e.g. 40']].map(([label, key, placeholder]) => (
+                <div key={key}>
+                  <div className="hud-label" style={{ marginBottom: 4 }}>{label}</div>
+                  <input className="input" type="number" placeholder={placeholder}
+                    value={roiInputs[key]} onChange={e => setRoiInputs(prev => ({ ...prev, [key]: e.target.value }))} />
+                </div>
+              ))}
             </div>
+            <button className="btn-accent" onClick={async () => {
+              try {
+                const result = await postJSON('/api/influencers/calculate-roi', roiInputs);
+                setRoiData(result);
+              } catch {}
+            }}>Calculate ROI</button>
+            {roiData && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 16 }}>
+                {[['Estimated Reach', roiData.reach?.toLocaleString()], ['Projected Sales', roiData.projected_sales], ['ROI', roiData.roi_percent + '%']].map(([label, val]) => (
+                  <div key={label} style={{ textAlign: 'center', padding: 12, background: 'var(--surface)', borderRadius: 6 }}>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: label === 'ROI' ? (roiData.is_profitable ? '#22c55e' : '#ef4444') : 'var(--accent)' }}>{val}</div>
+                    <div className="hud-label">{label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {roiData && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8 }}>Break-even at {roiData.breakeven_sales} sales · Projected revenue: ${roiData.projected_revenue}</div>}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{[{ label: 'Est. Impressions', val: Number(reach).toLocaleString() }, { label: 'Est. Engagements', val: Math.round(Number(reach) * Number(engRate) / 100).toLocaleString() }, { label: 'Est. Conversions', val: Math.round(Number(reach) * Number(engRate) / 100 * Number(convRate) / 100).toLocaleString() }, { label: 'Cost / Conversion', val: `$${(Number(budget) / Math.max(1, Number(reach) * Number(engRate) / 100 * Number(convRate) / 100)).toFixed(2)}` }].map((s, i) => (<div key={i} className="panel rounded-lg p-3 sm:p-5 text-center"><p className="hud-label text-[11px] mb-1">{s.label}</p><p className="text-lg font-bold text-pink-400 font-mono">{s.val}</p></div>))}</div>
-          <button onClick={generate} disabled={generating} className="btn-accent w-full py-3 rounded-lg" style={{ background: generating ? '#1e1e2e' : '#ec4899' }}>{generating ? <span className="flex items-center gap-2"><span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />CALCULATING...</span> : 'CALCULATE FULL ROI'}</button>
         </div>
       )}
 

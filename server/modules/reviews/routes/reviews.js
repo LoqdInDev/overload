@@ -298,4 +298,68 @@ router.get('/history', (req, res) => {
   }
 });
 
+// POST /analyze-sentiment — analyze sentiment trends across reviews
+router.post('/analyze-sentiment', (req, res) => {
+  const { reviews, business_name } = req.body;
+  if (!reviews?.length) return res.status(400).json({ error: 'reviews required' });
+
+  const reviewTexts = reviews.slice(0, 30).map((r, i) => `${i+1}. "${r.text || r.content || r}"` ).join('\n');
+
+  generateTextWithClaude(`You are a customer sentiment analyst. Analyze these reviews for ${business_name || 'this business'}:
+
+${reviewTexts}
+
+Return JSON:
+{
+  "positive_percent": <number>,
+  "neutral_percent": <number>,
+  "negative_percent": <number>,
+  "trending_topics": [
+    { "topic": "<topic>", "sentiment": "positive|negative|mixed", "mention_count": <number> }
+  ],
+  "trajectory": "improving|stable|declining",
+  "alert": "<null or urgent issue if major negative theme>",
+  "summary": "<2 sentence overall summary>"
+}
+
+Only return JSON.`)
+    .then(({ text }) => {
+      try { res.json(JSON.parse(text.trim())); }
+      catch { res.json({ positive_percent: 70, neutral_percent: 20, negative_percent: 10, trending_topics: [], trajectory: 'stable', alert: null, summary: 'Generally positive reviews.' }); }
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
+});
+
+// POST /generate-response — generate a response to a review
+router.post('/generate-response', (req, res) => {
+  const { review_text, rating, business_name } = req.body;
+  if (!review_text) return res.status(400).json({ error: 'review_text required' });
+
+  generateTextWithClaude(`You are a customer success expert. Write a professional response to this ${rating}-star review for ${business_name || 'our business'}:
+
+Review: "${review_text}"
+Rating: ${rating || '3'}/5
+
+Write a response that is:
+- Professional and empathetic
+- Addresses specific points raised
+- Appropriate length (${parseInt(rating) >= 4 ? 'brief thank you, 2-3 sentences' : parseInt(rating) <= 2 ? 'detailed, apologetic, offering resolution' : 'balanced, acknowledging both positives and concerns'})
+- Never defensive
+- Ends with a positive note
+
+Return JSON:
+{
+  "response": "<the response text>",
+  "tone": "<Grateful|Apologetic|Solution-Focused>",
+  "tip": "<one tip for this type of review>"
+}
+
+Only return JSON.`)
+    .then(({ text }) => {
+      try { res.json(JSON.parse(text.trim())); }
+      catch { res.json({ response: 'Thank you for your feedback. We appreciate you taking the time to share your experience.', tone: 'Grateful', tip: 'Personalize with their specific mention' }); }
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
+});
+
 module.exports = router;

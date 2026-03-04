@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
-import { fetchJSON, deleteJSON } from '../../lib/api';
+import { fetchJSON, deleteJSON, postJSON } from '../../lib/api';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -87,6 +87,11 @@ export default function SocialPage() {
   const [publishTarget, setPublishTarget] = useState(null);
   const [publishStatus, setPublishStatus] = useState(null);
   const [publishText, setPublishText] = useState('');
+  const [captionVariations, setCaptionVariations] = useState(null);
+  const [hashtagData, setHashtagData] = useState(null);
+  const [hashtagTopic, setHashtagTopic] = useState('');
+  const [varLoading, setVarLoading] = useState(false);
+  const [hashLoading, setHashLoading] = useState(false);
 
   const fetchAccounts = useCallback(async () => {
     try {
@@ -796,6 +801,74 @@ export default function SocialPage() {
                 </div>
               </div>
             )}
+
+            {/* Caption Variations */}
+            {result && (
+              <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <span className="hud-label">Caption Variations</span>
+                  <button className="btn-ghost" style={{ fontSize: 12, padding: '4px 12px' }} disabled={varLoading}
+                    onClick={async () => {
+                      setVarLoading(true);
+                      try {
+                        const res = await postJSON('/api/social/generate-variations', { caption: result, platform: activeType });
+                        setCaptionVariations(res.variations);
+                      } catch {}
+                      setVarLoading(false);
+                    }}>
+                    {varLoading ? 'Generating...' : 'Get 3 Variations'}
+                  </button>
+                </div>
+                {captionVariations && captionVariations.map((v, i) => (
+                  <div key={i} className="panel-interactive" style={{ marginBottom: 8, padding: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span className="chip" style={{ fontSize: 11 }}>{v.tone}</span>
+                      <button className="btn-ghost" style={{ fontSize: 11, padding: '2px 8px' }} onClick={() => navigator.clipboard.writeText(v.caption)}>Copy</button>
+                    </div>
+                    <div style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 4 }}>{v.caption}</div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>{v.why}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Hashtag Intelligence */}
+            <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
+              <div className="hud-label" style={{ marginBottom: 12 }}>Hashtag Intelligence</div>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                <input className="input-field rounded-xl px-4 py-3 flex-1" placeholder="Topic (e.g. sustainable fashion)"
+                  value={hashtagTopic} onChange={e => setHashtagTopic(e.target.value)} />
+                <button className="btn-accent" style={{ whiteSpace: 'nowrap' }} disabled={!hashtagTopic || hashLoading}
+                  onClick={async () => {
+                    setHashLoading(true);
+                    try {
+                      const res = await postJSON('/api/social/hashtag-intelligence', { topic: hashtagTopic, platform: activeType });
+                      setHashtagData(res);
+                    } catch {}
+                    setHashLoading(false);
+                  }}>{hashLoading ? 'Analyzing...' : 'Find Hashtags'}</button>
+              </div>
+              {hashtagData && (
+                <div>
+                  {[['🔥 Mega (>1M)', hashtagData.mega], ['⚡ High (100K-1M)', hashtagData.high], ['🎯 Niche (<100K)', hashtagData.niche]].map(([label, tags]) => (
+                    tags?.length > 0 && (
+                      <div key={label} style={{ marginBottom: 10 }}>
+                        <div className="hud-label" style={{ marginBottom: 6 }}>{label}</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                          {tags.map((t, i) => (
+                            <span key={i} className="chip" style={{ cursor: 'pointer', fontSize: 12 }}
+                              onClick={() => navigator.clipboard.writeText(t.tag)} title={t.reach}>
+                              {t.tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  ))}
+                  {hashtagData.strategy && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8 }}>💡 {hashtagData.strategy}</div>}
+                </div>
+              )}
+            </div>
           </div>
         );
       })()}

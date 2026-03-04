@@ -207,4 +207,37 @@ router.delete('/affiliates/:id', (req, res) => {
   }
 });
 
+// POST /optimize-commission — get AI commission structure recommendation
+router.post('/optimize-commission', (req, res) => {
+  const { current_rate, industry, product_margin, avg_order_value } = req.body;
+
+  generateTextWithClaude(`You are an affiliate marketing strategist. Recommend an optimal commission structure:
+
+Current Commission Rate: ${current_rate || '10'}%
+Industry: ${industry || 'E-commerce'}
+Product Margin: ${product_margin || '40'}%
+Average Order Value: $${avg_order_value || '50'}
+
+Return JSON:
+{
+  "recommended_base_rate": "<like 12%>",
+  "tier_structure": [
+    { "tier": "Bronze", "threshold": "<like $0-$1000/month sales>", "commission": "<rate>", "perks": ["<perk>"] },
+    { "tier": "Silver", "threshold": "<like $1000-$5000/month>", "commission": "<rate>", "perks": ["<perk>"] },
+    { "tier": "Gold", "threshold": "<like $5000+/month>", "commission": "<rate>", "perks": ["<perk>"] }
+  ],
+  "bonus_suggestions": ["<performance bonus idea>", "<seasonal bonus>"],
+  "rationale": "<2-3 sentence explanation>",
+  "competitor_benchmark": "<what competitors typically offer>"
+}
+
+Only return JSON.`)
+    .then(result => {
+      const text = result.text || '';
+      try { res.json(JSON.parse(text.trim())); }
+      catch { res.json({ recommended_base_rate: '12%', tier_structure: [{ tier: 'Bronze', threshold: '$0-$1000/month', commission: '10%', perks: ['Monthly report'] }, { tier: 'Silver', threshold: '$1000-$5000/month', commission: '15%', perks: ['Priority support', 'Monthly report'] }, { tier: 'Gold', threshold: '$5000+/month', commission: '20%', perks: ['Dedicated manager', 'Co-marketing', 'Priority support'] }], bonus_suggestions: ['10% bonus in Q4', 'New affiliate onboarding bonus'], rationale: 'Tiered structure motivates growth', competitor_benchmark: '8-15% typical in this industry' }); }
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
+});
+
 module.exports = router;

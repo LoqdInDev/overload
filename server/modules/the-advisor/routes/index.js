@@ -182,4 +182,44 @@ Be concise, data-focused, and actionable. Reference actual numbers and modules f
   }
 });
 
+// POST /prioritize-actions — SSE: AI prioritize actions across platform
+router.post('/prioritize-actions', async (req, res) => {
+  const { business_stage, primary_goal, recent_activity } = req.body;
+
+  const sse = setupSSE(res);
+  const prompt = `You are a senior marketing strategist acting as a business advisor. Prioritize the top 5 actions for this business:
+
+Business Stage: ${business_stage || 'Growth'}
+Primary Goal: ${primary_goal || 'Increase revenue'}
+Recent Activity: ${recent_activity || 'Using content creation and ads'}
+
+Generate a priority action plan:
+
+# Your Top 5 Priorities This Week
+
+## Priority 1: [Action Title]
+**Impact:** High/Medium/Low
+**Time to implement:** X hours
+**Where in Overload:** [Module name]
+**Why this matters:** (2 sentences on the expected impact)
+**Exact next step:** (one specific, immediate action)
+
+[Repeat for priorities 2-5]
+
+---
+## Strategic Note
+(2-3 sentences of strategic context tying these priorities together)
+
+Be specific, actionable, and realistic. Focus on quick wins combined with strategic moves.`;
+
+  try {
+    const { text } = await generateTextWithClaude(prompt, {
+      onChunk: (chunk) => sse.sendChunk(chunk),
+    });
+    sse.sendResult({ content: text });
+  } catch (err) {
+    sse.sendError(err);
+  }
+});
+
 module.exports = router;

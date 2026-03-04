@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Overload — Module Vision Report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080810;
+      --surface: #0f0f1a;
+      --surface2: #16162a;
+      --border: rgba(255,255,255,0.07);
+      --text: #e8e8f0;
+      --muted: #6b6b85;
+      --dim: #3a3a55;
+      --header-bg: rgba(8,8,16,0.92);
+      --nav-bg: rgba(8,8,16,0.88);
+      --grid-line: rgba(255,255,255,0.015);
+      --logo-color: white;
+      --principle-num-color: rgba(255,255,255,0.06);
+      --top5-rank-start: #fff;
+      --top5-rank-end: rgba(255,255,255,0.1);
+      --impact-bg-mult: rgba(255,255,255,0.03);
+
+      --create:    #f97316;
+      --advertise: #ef4444;
+      --analyze:   #3b82f6;
+      --manage:    #10b981;
+      --connect:   #a855f7;
+      --automate:  #f59e0b;
+      --settings:  #8b92a5;
+    }
+
+    html.light {
+      --bg: #f4f4f8;
+      --surface: #ffffff;
+      --surface2: #eeeef5;
+      --border: rgba(0,0,0,0.08);
+      --text: #1a1a2e;
+      --muted: #7a7a96;
+      --dim: #c0c0d8;
+      --header-bg: rgba(244,244,248,0.94);
+      --nav-bg: rgba(244,244,248,0.90);
+      --grid-line: rgba(0,0,0,0.04);
+      --logo-color: #1a1a2e;
+      --principle-num-color: rgba(0,0,0,0.05);
+      --top5-rank-start: #1a1a2e;
+      --top5-rank-end: rgba(26,26,46,0.12);
+      --impact-bg-mult: rgba(0,0,0,0.02);
+
+      --create:    #d9600a;
+      --advertise: #c93030;
+      --analyze:   #2563eb;
+      --manage:    #059669;
+      --connect:   #7c3aed;
+      --automate:  #d97706;
+      --settings:  #6b7280;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      min-height: 100vh;
+      transition: background 0.25s, color 0.25s;
+    }
+
+    /* ── BACKGROUND GRID ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── THEME TOGGLE ── */
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 12px 5px 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .theme-toggle:hover { border-color: rgba(128,128,200,0.3); }
+    .toggle-track {
+      width: 32px;
+      height: 18px;
+      border-radius: 9px;
+      background: var(--dim);
+      position: relative;
+      transition: background 0.25s;
+      flex-shrink: 0;
+    }
+    html.light .toggle-track { background: var(--analyze); }
+    .toggle-thumb {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: white;
+      transition: transform 0.25s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    html.light .toggle-thumb { transform: translateX(14px); }
+    .toggle-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--header-bg);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      transition: background 0.25s, border-color 0.25s;
+    }
+
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      height: 60px;
+    }
+
+    .logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 3px;
+      color: var(--logo-color);
+      white-space: nowrap;
+      transition: color 0.25s;
+    }
+
+    .logo span {
+      color: var(--create);
+    }
+
+    .header-subtitle {
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .header-search {
+      flex: 1;
+      max-width: 320px;
+      margin-left: auto;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 14px 8px 36px;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+      position: relative;
+    }
+
+    .search-wrap {
+      position: relative;
+    }
+
+    .search-wrap svg {
+      position: absolute;
+      left: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .search-input:focus { border-color: rgba(255,255,255,0.2); }
+    .search-input::placeholder { color: var(--muted); }
+
+    .header-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .header-count strong {
+      color: var(--text);
+      font-size: 15px;
+    }
+
+    /* ── CATEGORY NAV ── */
+    .cat-nav {
+      position: sticky;
+      top: 60px;
+      z-index: 99;
+      background: var(--nav-bg);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      transition: background 0.25s, border-color 0.25s;
+    }
+
+    .cat-nav-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      gap: 2px;
+      align-items: center;
+      height: 46px;
+    }
+
+    .cat-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.18s;
+      white-space: nowrap;
+    }
+
+    .cat-btn:hover { color: var(--text); background: var(--surface); }
+
+    .cat-btn.active {
+      color: white;
+      background: var(--cat-color, var(--surface2));
+    }
+
+    .cat-btn .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--cat-color, var(--muted));
+      flex-shrink: 0;
+    }
+
+    .cat-btn-all { margin-right: 8px; }
+
+    /* ── MAIN CONTENT ── */
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 40px 32px 80px;
+    }
+
+    /* ── CATEGORY SECTION ── */
+    .category-section {
+      margin-bottom: 64px;
+    }
+
+    .category-section[data-hidden="true"] { display: none; }
+
+    .category-header {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      margin-bottom: 28px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .category-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      letter-spacing: 4px;
+      color: var(--cat-color);
+    }
+
+    .category-desc {
+      font-size: 15px;
+      color: var(--muted);
+    }
+
+    .category-count {
+      margin-left: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* ── MODULE GRID ── */
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+      gap: 20px;
+    }
+
+    /* ── MODULE CARD ── */
+    .module-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+
+    .module-card[data-hidden="true"] { display: none; }
+
+    .module-card:hover {
+      border-color: rgba(255,255,255,0.13);
+      transform: translateY(-1px);
+    }
+
+    .module-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .module-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: rgba(var(--cat-rgb, 255,255,255), 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .module-name {
+      font-size: 17px;
+      font-weight: 600;
+      color: white;
+      letter-spacing: 0.01em;
+    }
+
+    .module-cat-tag {
+      margin-left: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--cat-color);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: rgba(var(--cat-rgb, 255,255,255), 0.08);
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .module-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .module-col {
+      padding: 16px 18px;
+    }
+
+    .module-col:first-child {
+      border-right: 1px solid var(--border);
+    }
+
+    .col-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .col-label.now { color: var(--muted); }
+    .col-label.now::before {
+      content: '';
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .col-label.vision { color: var(--cat-color); }
+    .col-label.vision::before {
+      content: '';
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--cat-color);
+      flex-shrink: 0;
+    }
+
+    .feature-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .feature-list li {
+      font-size: 14px;
+      line-height: 1.5;
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+    }
+
+    .feature-list.now li { color: var(--muted); }
+
+    .feature-list.now li::before {
+      content: '–';
+      flex-shrink: 0;
+      margin-top: 0px;
+      color: var(--dim);
+    }
+
+    .feature-list.vision li { color: var(--text); }
+
+    .feature-list.vision li::before {
+      content: '+';
+      flex-shrink: 0;
+      font-weight: 700;
+      color: var(--cat-color);
+      font-size: 15px;
+      margin-top: -1px;
+    }
+
+    /* ── IMPACT STRIP ── */
+    .module-impact {
+      border-top: 1px solid var(--border);
+      padding: 12px 18px;
+      background: rgba(var(--cat-rgb, 0,0,0), 0.03);
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .impact-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--cat-color);
+      white-space: nowrap;
+      padding-top: 1px;
+      flex-shrink: 0;
+    }
+
+    .impact-text {
+      font-size: 14px;
+      color: #a0a0b8;
+      line-height: 1.55;
+    }
+
+    /* ── TOP FEATURE HIGHLIGHT ── */
+    .top-feature {
+      border-top: 1px solid var(--border);
+      padding: 9px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .top-feature-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .top-feature-text {
+      font-size: 14px;
+      color: white;
+      font-weight: 500;
+    }
+
+    .star-icon {
+      color: var(--cat-color);
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    /* ── UNIVERSAL PRINCIPLES BANNER ── */
+    .principles {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 32px;
+      margin-bottom: 52px;
+      display: grid;
+      grid-template-columns: auto 1fr 1fr 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    .principles-header {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
+      letter-spacing: 3px;
+      color: var(--muted);
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      align-self: center;
+    }
+
+    .principle {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .principle-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      line-height: 1;
+      color: var(--principle-num-color);
+      letter-spacing: 2px;
+    }
+
+    .principle-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .principle-desc {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    /* ── TOP 5 BANNER ── */
+    .top5 {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 32px;
+      margin-bottom: 64px;
+    }
+
+    .top5-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 24px;
+      letter-spacing: 3px;
+      color: white;
+      margin-bottom: 20px;
+    }
+
+    .top5-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+    }
+
+    .top5-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .top5-rank {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 40px;
+      line-height: 1;
+      background: linear-gradient(180deg, var(--top5-rank-start) 0%, var(--top5-rank-end) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 2px;
+    }
+
+    .top5-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .top5-desc {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .module-grid { grid-template-columns: 1fr; }
+      .module-body { grid-template-columns: 1fr; }
+      .module-col:first-child { border-right: none; border-bottom: 1px solid var(--border); }
+      .principles { grid-template-columns: 1fr; }
+      .principles-header { writing-mode: horizontal-tb; transform: none; }
+      .top5-grid { grid-template-columns: 1fr 1fr; }
+      .header-inner { flex-wrap: wrap; height: auto; padding: 12px 0; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">OVER<span>LOAD</span></div>
+    <div class="header-subtitle">Module Vision Report — 2026</div>
+    <div class="header-search">
+      <div class="search-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="search-input" id="searchInput" type="text" placeholder="Search modules...">
+      </div>
+    </div>
+    <div class="header-count" id="visibleCount"><strong>37</strong> modules</div>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+      <div class="toggle-track"><div class="toggle-thumb"></div></div>
+      <span class="toggle-label" id="themeLabel">Dark</span>
+    </button>
+  </div>
+</header>
+
+<nav class="cat-nav">
+  <div class="cat-nav-inner">
+    <button class="cat-btn cat-btn-all active" data-cat="all" onclick="filterCat('all', this)">
+      All
+    </button>
+    <button class="cat-btn" data-cat="CREATE"    style="--cat-color:var(--create)"    onclick="filterCat('CREATE',this)">    <span class="dot"></span> Create </button>
+    <button class="cat-btn" data-cat="ADVERTISE" style="--cat-color:var(--advertise)" onclick="filterCat('ADVERTISE',this)"> <span class="dot"></span> Advertise </button>
+    <button class="cat-btn" data-cat="ANALYZE"   style="--cat-color:var(--analyze)"   onclick="filterCat('ANALYZE',this)">   <span class="dot"></span> Analyze </button>
+    <button class="cat-btn" data-cat="MANAGE"    style="--cat-color:var(--manage)"    onclick="filterCat('MANAGE',this)">    <span class="dot"></span> Manage </button>
+    <button class="cat-btn" data-cat="CONNECT"   style="--cat-color:var(--connect)"   onclick="filterCat('CONNECT',this)">   <span class="dot"></span> Connect </button>
+    <button class="cat-btn" data-cat="AUTOMATE"  style="--cat-color:var(--automate)"  onclick="filterCat('AUTOMATE',this)">  <span class="dot"></span> Automate </button>
+    <button class="cat-btn" data-cat="SETTINGS"  style="--cat-color:var(--settings)"  onclick="filterCat('SETTINGS',this)">  <span class="dot"></span> Settings </button>
+  </div>
+</nav>
+
+<main id="mainContent">
+
+  <!-- UNIVERSAL PRINCIPLES -->
+  <div class="principles" id="principles">
+    <div class="principles-header">PRINCIPLES</div>
+    <div class="principle">
+      <div class="principle-num">01</div>
+      <div class="principle-name">The Feedback Loop Gap</div>
+      <div class="principle-desc">Tools generate outputs but never learn from performance. Fix: every module ingests results data and improves future outputs automatically.</div>
+    </div>
+    <div class="principle">
+      <div class="principle-num">02</div>
+      <div class="principle-name">The Last-Mile Gap</div>
+      <div class="principle-desc">Tools plan and create but execution is still manual. Fix: every module needs a built-in Deploy / Publish / Send action.</div>
+    </div>
+    <div class="principle">
+      <div class="principle-num">03</div>
+      <div class="principle-name">The Explanation Gap</div>
+      <div class="principle-desc">Tools show what happened, not why or what to do next. Fix: every result surfaces an AI insight card with next best action.</div>
+    </div>
+  </div>
+
+  <!-- TOP 5 -->
+  <div class="top5" id="top5section">
+    <div class="top5-title">THE 5 HIGHEST-IMPACT CHANGES</div>
+    <div class="top5-grid">
+      <div class="top5-item">
+        <div class="top5-rank">01</div>
+        <div class="top5-name">Brand Hub as a Living Engine</div>
+        <div class="top5-desc">Every module pulls voice, colors, and competitive positioning from one source of truth. Everything gets smarter together.</div>
+      </div>
+      <div class="top5-item">
+        <div class="top5-rank">02</div>
+        <div class="top5-name">The Feedback Loop</div>
+        <div class="top5-desc">Every content module reads from Analytics and CRM. Outputs that learn from their own performance over time.</div>
+      </div>
+      <div class="top5-item">
+        <div class="top5-rank">03</div>
+        <div class="top5-name">Unified Contact Intelligence</div>
+        <div class="top5-desc">CRM, Audience Builder, Email, Loyalty, and Customer AI all see the same real-time behavioral record per contact.</div>
+      </div>
+      <div class="top5-item">
+        <div class="top5-rank">04</div>
+        <div class="top5-name">The Advisor as Chief of Staff</div>
+        <div class="top5-desc">Not just answering questions — proactively surfacing the 3 most important actions every Monday, ranked by revenue impact.</div>
+      </div>
+      <div class="top5-item">
+        <div class="top5-rank">05</div>
+        <div class="top5-name">Autopilot with Guardrails</div>
+        <div class="top5-desc">A self-optimizing engine with human-defined intervention thresholds. 80% of routine marketing executes automatically.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULE SECTIONS RENDERED BY JS -->
+  <div id="sections"></div>
+
+</main>
+
+<script>
+const CATEGORIES = {
+  CREATE:    { color: '#f97316', rgb: '249,115,22',  desc: 'Content production & creative output', icon: '✦' },
+  ADVERTISE: { color: '#ef4444', rgb: '239,68,68',   desc: 'Paid growth, campaigns & conversion',  icon: '◈' },
+  ANALYZE:   { color: '#3b82f6', rgb: '59,130,246',  desc: 'Intelligence, insights & tracking',    icon: '◎' },
+  MANAGE:    { color: '#10b981', rgb: '16,185,129',  desc: 'Operations, customers & assets',       icon: '◧' },
+  CONNECT:   { color: '#a855f7', rgb: '168,85,247',  desc: 'Integrations, APIs & data flow',       icon: '◉' },
+  AUTOMATE:  { color: '#f59e0b', rgb: '245,158,11',  desc: 'Workflows, AI execution & autopilot',  icon: '◑' },
+  SETTINGS:  { color: '#8b92a5', rgb: '139,146,165', desc: 'Brand, team & platform configuration', icon: '◫' },
+};
+
+const MODULES = [
+  // ─── CREATE ───
+  {
+    id: 'video-marketing', name: 'Video Marketing', category: 'CREATE', icon: '🎬',
+    current: ['Upload video & get script suggestions', 'Basic metadata editor', 'Simple description generator'],
+    vision: ['Script → Storyboard → Shot List pipeline', 'Hook Library per platform (YouTube / TikTok / Reels)', 'Thumbnail Analyzer with CTR prediction score', 'Caption + Subtitle Generator (SRT/VTT export)', 'Platform Resize Matrix (16:9, 9:16, 1:1, 4:5)', 'Performance Prediction Score before publishing'],
+    impact: 'Transforms video from a blank-page problem into a guided production system. Every video ships with stronger hooks, optimized thumbnails, and platform-ready specs — reducing post-production time by ~60%.',
+    topFeature: 'Performance Prediction Score flags weak hooks before you publish'
+  },
+  {
+    id: 'ai-content', name: 'AI Content', category: 'CREATE', icon: '✍️',
+    current: ['AI writes blog posts, captions, copy', 'Basic prompt-to-output generation', 'Template library'],
+    vision: ['Brand Voice DNA — writes in your exact tone always', 'Outline → Draft → Polish three-stage pipeline', 'Repurposing Engine (blog → tweet thread, email, YouTube script, LinkedIn, podcast outline)', 'SEO Weave — integrates target keywords as it writes', 'Content Calendar gap detection', 'Originality Confidence Score', 'Performance Replay — learns from past high-performing pieces'],
+    impact: 'Turns content generation from a "generate and pray" single-shot into a strategic, brand-consistent factory with memory. Repurposing alone multiplies output 5x from the same source material.',
+    topFeature: 'Repurposing Engine — one source, every format'
+  },
+  {
+    id: 'creative-design', name: 'Creative & Design', category: 'CREATE', icon: '🎨',
+    current: ['Template library', 'Basic design editing tools', 'Export options'],
+    vision: ['Brand-Locked Canvas — templates pre-filled with brand assets', 'Creative Brief Generator (goal → full design direction doc)', 'Variation Engine — one design → 5 layout/color/copy variants', 'Ad Spec Compliance Checker (Meta, Google, TikTok safe zones)', 'Competitor Creative Intelligence feed', 'Motion Export — static → animated GIF or CSS banner'],
+    impact: 'Eliminates blank-canvas paralysis and brand drift simultaneously. The variation engine feeds directly into A/B Testing, creating a closed creative experimentation loop.',
+    topFeature: 'Ad Spec Compliance Checker — zero disapprovals before upload'
+  },
+  {
+    id: 'email-sms', name: 'Email & SMS', category: 'CREATE', icon: '📨',
+    current: ['Campaign builder with templates', 'Basic scheduling', 'Contact list sending'],
+    vision: ['Behavioral Triggers (cart abandon, pricing page visits, win-back)', 'Inbox Preview Matrix (Gmail, Outlook, Apple Mail, dark mode)', 'Subject Line Predictor — AI ranks 3 options by predicted open rate', 'SMS Smart Timing per contact based on past behavior', 'Dynamic Content Blocks per segment', 'Revenue Attribution — which email drove which purchase', 'Reply Handler — AI auto-replies to SMS responses'],
+    impact: 'Shifts from broadcast messaging to behavioral orchestration. Revenue attribution alone proves ROI per campaign — critical for budget justification. Behavioral triggers convert high-intent moments automatically.',
+    topFeature: 'Behavioral Triggers fire at the exact moment of peak intent'
+  },
+  {
+    id: 'social-media', name: 'Social Media', category: 'CREATE', icon: '📱',
+    current: ['Post composer + scheduler', 'Multi-platform publishing', 'Basic calendar view'],
+    vision: ['Social Listening Feed — brand/competitor/keyword monitoring', 'Engagement Score — AI-predicted score before every post goes live', 'Thread Builder — native Twitter/X composer with drag-to-reorder', 'Trend Injection — trending niche topics with one-click post creation', 'Comment Sentiment Dashboard — aggregate sentiment across all platforms', 'Content Pillars — balance tracker with over/under warnings', 'Competitor Post Tracker — what they posted, what won'],
+    impact: 'Transforms social from a publishing queue into a live operating system. Trend injection keeps content relevant without monitoring 10 platforms manually. Engagement prediction stops weak posts before they damage reach.',
+    topFeature: 'Engagement Score — know before you post whether it will land'
+  },
+  {
+    id: 'website-builder', name: 'Website Builder', category: 'CREATE', icon: '🌐',
+    current: ['Template-based page builder', 'Section drag-and-drop', 'Basic export'],
+    vision: ['Conversion Architecture AI — structure pages around goals, not aesthetics', 'Heatmap Prediction before the page is even live', 'CRO Score (0–100) rating headline clarity, CTA placement, trust signals', 'A/B Test Builder integrated with Analytics', 'SEO Foundation Layer — auto-generates meta, OG, schema from content', 'Personalization Blocks — different content per UTM source or visitor type'],
+    impact: 'Shifts page building from visual exercise to conversion engineering. CRO Score gives non-designers an objective standard to optimize toward. Personalization blocks eliminate one-size-fits-all landing pages.',
+    topFeature: 'CRO Score — instant, objective page quality rating'
+  },
+  {
+    id: 'pr-press', name: 'PR & Press', category: 'CREATE', icon: '📰',
+    current: ['Press release writer', 'Media contact list', 'Template library'],
+    vision: ['Newsworthiness Scorer — rate your announcement before writing', 'Journalist Matching — by beat and recent coverage', 'Pitch Email Generator — personalized per journalist, not a blast', 'Coverage Tracker — paste URLs, auto-extract metrics (DA, readership, sentiment)', 'Crisis Communications Mode — holding statement in 30 seconds', 'Embargo Manager — scheduled go-live at embargo lift', 'PR ROI Calculator — earned media value vs. ad equivalency'],
+    impact: 'PR becomes accountable and measurable instead of a black box. Journalist matching increases pitch-to-placement rate by targeting relevance over volume. Coverage tracking turns PR into a quantified channel.',
+    topFeature: 'Newsworthiness Scorer — know before you pitch if the story will land'
+  },
+
+  // ─── ADVERTISE ───
+  {
+    id: 'paid-ads', name: 'Paid Ads', category: 'ADVERTISE', icon: '🎯',
+    current: ['Ad copy generator', 'Campaign overview dashboard', 'Basic creative builder'],
+    vision: ['Ad Formula Library (PAS, BAB, AIDA, Feature→Benefit→Proof)', 'Audience × Creative Matrix — 3 audiences × 3 creatives = 9 ready-to-upload ads', 'Live Performance Feed via Meta + Google API (ROAS, CPC, CTR per ad)', 'Winner Detection — statistical significance alert, auto-pause losers', 'Ad Fatigue Monitor — frequency tracking with creative refresh suggestions', 'Budget Pacing Tracker — daily burn rate vs. monthly budget', 'Retargeting Sequence Builder — multi-touch visual timeline'],
+    impact: 'Merges creative generation with live performance data — something no single current tool does. Winner detection running on real data eliminates the instinct-based "let it run longer" mistake that wastes thousands.',
+    topFeature: 'Audience × Creative Matrix generates all 9 test variants at once'
+  },
+  {
+    id: 'funnels', name: 'Funnels', category: 'ADVERTISE', icon: '⬇️',
+    current: ['Funnel stage tracker', 'Contact movement between stages', 'Basic conversion metrics'],
+    vision: ['Drag-to-Build Visual Funnel with live math ("fix this stage → +$47k/mo")', 'Drop-off Detector — AI pinpoints exact worst-converting stage vs. industry average', 'Stage Content Assignment — which email/ad/page belongs at each stage', 'Multi-Touch Attribution — full journey, not just last-click', 'Funnel Benchmarking vs. industry conversion rates', 'Funnel Simulator — change any variable, see revenue output change live', 'One-Click Funnel Deploy — Website Builder + Email + Ads all at once'],
+    impact: 'Turns funnel tracking into a revenue engineering tool. The simulator lets you see the financial impact of improving any single stage — making optimization decisions obvious, not instinctual.',
+    topFeature: 'Funnel Simulator — instantly see what fixing any stage is worth in revenue'
+  },
+  {
+    id: 'influencers', name: 'Influencers', category: 'ADVERTISE', icon: '🌟',
+    current: ['Influencer discovery', 'Outreach templates', 'Basic contact management'],
+    vision: ['True Audience Quality Score (engagement ÷ followers, authenticity estimate, ICP overlap)', 'Rate Card Estimator — AI calculates fair market rate per creator', 'Campaign Brief Generator tailored to creator style', 'Content Approval Workflow — draft → review → approve without email', 'Link Tracking per influencer with UTM attribution dashboard', 'Relationship Score — history, deadlines met, content quality, communication', 'Repost & Amplify — one-click to schedule creator post on owned channels'],
+    impact: 'Transforms influencer marketing from reach-buying to ROI-measured partnerships. Revenue attribution per creator proves which relationships are worth scaling. Relationship scores prevent starting fresh every campaign.',
+    topFeature: 'Revenue attribution per creator — know exactly which influencer drove sales'
+  },
+  {
+    id: 'affiliates', name: 'Affiliates', category: 'ADVERTISE', icon: '🤝',
+    current: ['Affiliate program builder', 'Link generator', 'Basic commission tracking'],
+    vision: ['Tiered Commission Logic with auto-upgrade at revenue thresholds', 'Affiliate Portal — personal dashboard with earnings, links, assets, calendar', 'Fraud Detection — suspicious patterns flagged automatically', 'Creative Asset Library with affiliate links pre-embedded', 'Co-marketing Proposal Generator for high-performers', 'Payout Automation with configurable rules and bulk export', 'Optional Leaderboard to gamify competition'],
+    impact: 'A self-managing affiliate engine reduces admin time by ~80%. Tiered commissions motivate performance without manual intervention. The affiliate portal reduces support emails from affiliates asking for their stats.',
+    topFeature: 'Self-managing tiers — best affiliates automatically unlock better rates'
+  },
+  {
+    id: 'product-feeds', name: 'Product Feeds', category: 'ADVERTISE', icon: '📦',
+    current: ['Product catalog management', 'Feed export in standard formats', 'Basic category mapping'],
+    vision: ['Feed Health Score per product (title quality, description, image, category, price)', 'AI Title Optimizer — rewrites to Google Shopping and Meta Catalog best practices', 'Disapproval Predictor — scans for rejection triggers before submission', 'Seasonal Relevance Tagger — when to boost or pause products', 'Competitor Price Monitoring — alerts when you are 10%+ above market', 'Feed Version Control — roll back if a submission spikes disapprovals', 'Multi-Destination Routing — Google, Meta, TikTok, Pinterest, Bing from one catalog'],
+    impact: 'Feed quality directly controls how many impressions products receive on shopping platforms. A 20% improvement in feed health score typically produces 30-40% more eligible impressions without increasing spend.',
+    topFeature: 'Disapproval Predictor — fix issues before Google rejects the whole feed'
+  },
+  {
+    id: 'ab-testing', name: 'A/B Testing', category: 'ADVERTISE', icon: '⚖️',
+    current: ['Basic variant creator', 'Side-by-side winner comparison', 'Manual result review'],
+    vision: ['Statistical Significance Engine — real-time confidence display, no premature winners', 'Multi-Variate Testing — test headline × CTA × image simultaneously', 'Test Library — archived results, searchable, pattern recognition over time', 'Test Prioritization Score — impact × confidence × effort (AIR framework)', 'Bayesian vs. Frequentist statistical model toggle', 'Audience Segmentation by test (mobile only, new visitors only)', 'Auto-Implement Winner — update live page/email/ad when significance is reached'],
+    impact: 'Most A/B testing fails because winners are called too early. The significance engine alone prevents wasted optimizations. The test library turns institutional knowledge into a searchable asset that compounds over time.',
+    topFeature: 'Auto-Implement Winner — significance reached → live update, no manual step'
+  },
+  {
+    id: 'budget-optimizer', name: 'Budget Optimizer', category: 'ADVERTISE', icon: '💰',
+    current: ['Budget allocation with AI recommendations', 'Channel comparison view', 'Spend tracking'],
+    vision: ['Channel Attribution Model — true cost-per-acquisition across all channels', 'Marginal Return Curves — shows exact point of diminishing returns per channel', 'Scenario Planner — drag budget sliders, see projected revenue change live', 'Momentum Scoring — improving channels get green arrows, declining get red flags', 'Automated Reallocation rules — "if ROAS drops below X, reduce budget Y%"', 'Campaign-level optimization — not just channel-level'],
+    impact: 'Most brands under-spend on high-ROAS channels and over-spend on familiar ones out of habit. Marginal return curves make the optimal allocation mathematically obvious. Scenario planner justifies reallocation decisions to stakeholders.',
+    topFeature: 'Marginal Return Curves — see exactly when more spend stops working'
+  },
+  {
+    id: 'referral-loyalty', name: 'Referral & Loyalty', category: 'ADVERTISE', icon: '💎',
+    current: ['Referral program builder', 'Points system', 'Basic reward management'],
+    vision: ['Lifecycle Stage Triggers — rewards that fire based on purchase milestones and behavioral events', 'Gamification Layer — progress bars, badges, streak bonuses', 'Referral Virality Score (K-factor) — identifies super-spreaders to reward', 'Personalized Reward Catalog — customers choose from a menu, AI learns preferences', 'Social Share Integration — generates custom branded share card per referrer', 'Churn Prevention Trigger — win-back reward sent at optimal inactivity threshold', 'ROI Dashboard — program cost vs. LTV of acquired customers'],
+    impact: 'Moves loyalty from a transactional discount mechanism to a behavioral engagement system. Virality scoring identifies who drives the most growth so you invest in the right relationships. K-factor compounding multiplies acquisition budget.',
+    topFeature: 'K-factor Virality Score — find and invest in your super-spreaders'
+  },
+
+  // ─── ANALYZE ───
+  {
+    id: 'analytics', name: 'Analytics', category: 'ANALYZE', icon: '📊',
+    current: ['Traffic, conversion, revenue dashboards', 'Standard metrics display', 'Date range filtering'],
+    vision: ['Anomaly Alerting — AI detects unusual changes and explains likely cause proactively', 'Cohort Analysis — track groups by acquisition date, see retention evolution', 'Attribution Pathways — Sankey diagram of full conversion journey across all channels', 'Narrative Reports — AI writes plain-English performance story weekly', 'Revenue Forecasting — 30/60/90-day projections with confidence intervals', 'Custom KPI Builder — define your own success formula', 'Cross-Module Intelligence — email, ads, referrals all attributed in one view'],
+    impact: 'Dashboards show what happened. This shows why and what to do next. Narrative reports eliminate the "data translation tax" — the hours spent turning numbers into insights for stakeholders.',
+    topFeature: 'Proactive Anomaly Alerting — you find out about problems before clients do'
+  },
+  {
+    id: 'seo', name: 'SEO', category: 'ANALYZE', icon: '🔍',
+    current: ['Keyword rank tracker', 'Basic site audit', 'Content keyword recommendations'],
+    vision: ['SERP Landscape View — who ranks 1–10, their DR, page type, estimated traffic, content angle', 'Content Gap Intelligence — what top-ranking pages cover that yours does not', 'Internal Link Graph — visual map, orphaned pages, equity flow visualization', 'Core Web Vitals Monitor — LCP/CLS/INP tracked per page over time', 'Featured Snippet Optimizer — rewrites answer blocks for positions 2–10', 'Backlink Velocity Tracker vs. competitors', 'AI Content Brief Generator — full brief for any target keyword in one click'],
+    impact: 'Most SEO tools tell you what is wrong. This tells you what to build and why it will win. Content briefs remove the guesswork from every new article — writers have exact requirements before starting.',
+    topFeature: 'AI Content Brief Generator — every article starts with a winning blueprint'
+  },
+  {
+    id: 'crm', name: 'CRM', category: 'ANALYZE', icon: '👥',
+    current: ['Contact database', 'Pipeline stage tracking', 'Deal management'],
+    vision: ['Deal Health Score (0–100) per open deal based on engagement signals and stage velocity', 'Next Best Action — one specific recommendation per contact, not a list', 'Conversation Intelligence — emails/calls summarized, objections extracted, commitments logged', 'Churn Prediction — early warning score for existing customers with recommended action', 'Pipeline Velocity Dashboard — stage conversion rates, win/loss reasons, rep performance', 'Automated Follow-Up Sequences with human review gate', 'Company Intelligence Feed — news, funding, leadership changes as conversation starters'],
+    impact: 'Most CRMs store data. This one advises action. Deal health scoring prevents deals from going dark silently. Churn prediction identifies at-risk customers 30–60 days before they cancel — early enough to save the relationship.',
+    topFeature: 'Churn Prediction — catch at-risk customers before they tell you they are leaving'
+  },
+  {
+    id: 'reviews', name: 'Reviews', category: 'ANALYZE', icon: '⭐',
+    current: ['Review aggregator across platforms', 'Response template library', 'Basic rating display'],
+    vision: ['Sentiment Trend Graph — by platform, product, location, over time', 'Topic Extraction — AI clusters reviews into themes with percentage breakdown', 'Net Promoter Intelligence — estimates NPS from review language without a survey', 'Review Velocity Monitor — alerts on spikes and drops', 'Competitor Review Benchmarking — your topics vs. competitors at a glance', 'Review Request Automation — optimal post-purchase timing per customer', 'Review-to-Content Pipeline — one-click to turn 5-star review into ad copy or social post'],
+    impact: 'Reviews contain the most honest product feedback you will ever receive — and most businesses barely read them. Topic clustering surfaces product decisions, not just PR wins. The content pipeline turns customer praise into acquisition assets.',
+    topFeature: 'Review-to-Content Pipeline — your best customers write your best ad copy'
+  },
+  {
+    id: 'competitor-intel', name: 'Competitor Intel', category: 'ANALYZE', icon: '🕵️',
+    current: ['AI analysis with website scraping', 'Meta Ad Library feed', 'Google Ads Intelligence (AI)', 'Tracked competitor profiles'],
+    vision: ['Change Detection — weekly monitoring of competitor websites, alerts on pricing/messaging shifts', 'Share of Voice Tracker — % of organic + paid SERP real estate vs. competitors', 'Ad Spend Estimation — model-based monthly ad budget estimates per competitor', 'Content Publishing Velocity tracker per competitor', 'Strategic Position Map — 2×2 matrix plotting competitors visually', 'Battlecard Generator — per-competitor one-page win sheet', 'Competitor Alert Digest — weekly email of all competitor activity'],
+    impact: 'Upgrades from reactive research tool to proactive intelligence system. Change detection means you find out when a competitor drops prices before your customers do. Battlecards arm sales teams to win competitive deals.',
+    topFeature: 'Change Detection — know when competitors update pricing or messaging automatically'
+  },
+  {
+    id: 'calendar', name: 'Calendar', category: 'ANALYZE', icon: '📅',
+    current: ['Event creation with recurring options', 'Calendar grid view', 'AI Fill Calendar', 'Team events'],
+    vision: ['Content Pillar Balance View — visual warning when promotional content is over-represented', 'Campaign Layers — overlay multiple campaigns, toggle on/off per layer', 'Capacity Planning — team member assignments with over/under-load visualization', 'Deadline Ripple — change a launch date, all dependencies cascade automatically', 'Seasonal Intelligence — AI suggests campaign ideas for upcoming holidays and events', 'AI Fill Calendar enhanced — full brief + asset checklist per generated event'],
+    impact: 'Most calendars are just event buckets. This one shows strategic balance at a glance and makes capacity visible before it becomes a crisis. Deadline ripple eliminates the panic of late-cascade effects on dependencies.',
+    topFeature: 'Deadline Ripple — move one date and all dependencies auto-cascade'
+  },
+  {
+    id: 'client-reports', name: 'Client Reports', category: 'ANALYZE', icon: '📋',
+    current: ['Report generator pulling from connected modules', 'PDF export', 'Customizable metrics display'],
+    vision: ['Automated Monthly Report — auto-compiles on the 1st, human reviews then publishes', 'Client Portal — white-labeled live dashboard URL per client, 24/7 access', 'Executive Summary Generator — 3-paragraph plain-English narrative of the period', 'Goal vs. Actual Tracking per metric with delta display', 'Benchmark Comparison — "your CTR is 1.4x the industry average"', 'Interactive Annotations — explain metric changes with notes stored permanently', 'Proposal Generator — from the report, one-click upsell proposal'],
+    impact: 'Reports that auto-generate eliminate the biggest time sink in agency work. Client portals reduce "how did we do?" emails by 70%. The proposal generator creates a natural upsell moment at the exact moment of maximum proven value.',
+    topFeature: 'Proposal Generator — turn every great month into an upsell opportunity'
+  },
+  {
+    id: 'audience-builder', name: 'Audience Builder', category: 'ANALYZE', icon: '🎯',
+    current: ['Segment builder with attribute filters', 'Audience export for ad platforms', 'Basic list management'],
+    vision: ['Behavioral Cohort Builder — segment by actions ("visited pricing page 2x, no purchase")', 'Lookalike Generator — AI profiles your best customers, outputs targeting description', 'Audience Overlap Detector — flag segments that are 80%+ the same people', 'Audience Journey Map — how contacts move between segments over time', 'Real-Time Segment Updates — auto-add/remove as contacts qualify/disqualify', 'Suppression Management — opt-out, competitor, inactive lists applied everywhere', 'Predictive Segment AI — who is most likely to convert in the next 30 days'],
+    impact: 'Behavioral segments outperform demographic segments by 3–5x in conversion rate across every channel. Predictive segments focus sales and marketing effort on the highest-probability opportunities instead of spraying the full list.',
+    topFeature: 'Predictive Segment — the 30-day conversion likelihood list for sales to call first'
+  },
+  {
+    id: 'goal-tracker', name: 'Goal Tracker', category: 'ANALYZE', icon: '🏆',
+    current: ['Goal setting', 'Progress tracking', 'Milestone logging'],
+    vision: ['OKR Framework — Objective → Key Results hierarchy, not just goals', 'Auto-Pull Metrics — Key Results connect to live module data, no manual entry', 'Dependency Mapping — visual chain from KR to enabling tasks', 'Weekly Check-In Prompts — AI asks for blockers every Monday, saves to goal history', 'Goal Health Scoring — On Track / At Risk / Off Track with pace analysis', 'Retrospective Generator — AI writes the quarter-end review automatically', 'Team Goal Visibility — everyone sees company goals and their contribution'],
+    impact: 'Most goal trackers are abandoned within 6 weeks because they require manual updates. Auto-pull metrics solve the adoption problem. Team visibility creates alignment — every individual knows how their work connects to the company number.',
+    topFeature: 'Auto-Pull Metrics — goals update themselves, so you actually keep using them'
+  },
+
+  // ─── MANAGE ───
+  {
+    id: 'ecommerce-hub', name: 'E-commerce Hub', category: 'MANAGE', icon: '🛍️',
+    current: ['Product catalog', 'Order management', 'Revenue tracking and dashboard'],
+    vision: ['Inventory Intelligence — predictive restock alerts with lead time awareness', 'Abandoned Cart Recovery — pixel-based detection → personalized email + SMS sequence', 'Bundle Opportunity Detector — AI finds frequent co-purchase patterns', 'Price Elasticity Simulator — "raise price $5 = −3% volume, +8% margin"', 'Return Intelligence — categorized by reason with product/UX fix suggestions', 'Customer LTV Segmentation with VIP automation triggers', 'Cross-sell Engine — post-purchase next-best-product recommendation'],
+    impact: 'Inventory intelligence alone prevents the two most expensive e-commerce mistakes: stockouts and overstock. Abandoned cart recovery typically recovers 5–15% of lost revenue with minimal effort. Price elasticity simulation removes fear from pricing decisions.',
+    topFeature: 'Bundle Opportunity Detector — your data tells you exactly what products to bundle'
+  },
+  {
+    id: 'customer-ai', name: 'Customer AI', category: 'MANAGE', icon: '🤖',
+    current: ['AI-powered customer chat', 'Support ticket handling', 'FAQ automation'],
+    vision: ['Intent Detection — classify every interaction (support, purchase intent, churn signal, upsell)', 'Conversation Memory — full cross-session history, AI never forgets context', 'Proactive Outreach Triggers — not just reactive chat, AI initiates at risk moments', 'Escalation Intelligence — detect churn trajectory before customer escalates', 'CSAT Prediction — predict satisfaction before survey arrives, trigger service recovery', 'Knowledge Base Integration — auto-surface articles, log unanswered questions for creation', 'Customer DNA Card — personality type, preferred channel, best contact time, sentiment history'],
+    impact: 'Reactive support is a cost center. Proactive customer success is a retention engine. Escalation intelligence prevents churn conversations by catching warning signs 1–2 weeks earlier. CSAT prediction with service recovery can reduce negative reviews by 40%.',
+    topFeature: 'Escalation Intelligence — stop churn conversations before they start'
+  },
+  {
+    id: 'knowledge-base', name: 'Knowledge Base', category: 'MANAGE', icon: '📚',
+    current: ['Article editor', 'AI-assisted writing', 'Basic organization and search'],
+    vision: ['Usage Analytics — most/least read articles, exit points, zero-result searches logged as gaps', 'Freshness Score — articles not updated in 90 days flagged for review', 'AI Article Generator from top support tickets — draft articles for common questions', 'Decision Tree Builder — interactive troubleshooting flows, not just static text', 'Multi-Language Auto-Translation with human review flags', 'Feedback Loop — "Was this helpful?" score, <60% triggers rewrite flag', 'Semantic Search — natural language queries find relevant articles even without exact keywords'],
+    impact: 'A knowledge base that no one reads is expensive documentation. Usage analytics surface what customers are actually looking for, and the feedback loop makes quality self-correcting. Semantic search increases self-service resolution rate by ~35%.',
+    topFeature: 'Zero-Result Search Log — a live, prioritized list of what to write next'
+  },
+
+  // ─── CONNECT ───
+  {
+    id: 'integrations-hub', name: 'Integrations Hub', category: 'CONNECT', icon: '🔌',
+    current: ['Pre-built integration connectors', 'Enable/disable toggles', 'Basic sync settings'],
+    vision: ['Connection Health Monitor — live green/yellow/red per integration with alert on failures', 'Data Flow Visualizer — diagram of which data flows between which systems', 'Integration Wizard — guided setup with test-connection verification at each step', 'Sync Conflict Resolver — surface data conflicts and define source-of-truth rules', 'Integration Marketplace — community-submitted templates for popular combinations', 'Usage Metrics per integration — API calls, records synced, error rate'],
+    impact: 'Integration failures are silent business killers — broken syncs mean wrong data, missed automations, and lost leads. Health monitoring catches failures in minutes instead of weeks when someone notices a discrepancy.',
+    topFeature: 'Connection Health Monitor — know about broken integrations before they break workflows'
+  },
+  {
+    id: 'api-manager', name: 'API Manager', category: 'CONNECT', icon: '⚙️',
+    current: ['API key management', 'Documentation viewer', 'Basic access control'],
+    vision: ['Rate Limit Visualizer — usage vs. limit, trending, time-to-limit estimate', 'Endpoint Performance Dashboard — call volume, latency, error rate per endpoint', 'Permission Scope Builder — visual checkbox selector for granular key permissions', 'API Change Log — auto-generated per version, machine-readable', 'Sandbox Environment — toggle any key to safe test mode with realistic fake data', 'Webhook + API Correlation — trace an API call through to its webhook outcome with latency'],
+    impact: 'API management becomes a product feature, not just key storage. Sandbox environments eliminate the fear of testing integrations against production data. Scope builder reduces security risk from over-permissioned keys.',
+    topFeature: 'Sandbox Mode — test any integration safely without touching production data'
+  },
+  {
+    id: 'webhooks', name: 'Webhooks', category: 'CONNECT', icon: '🔗',
+    current: ['Webhook creation', 'Event selection', 'Basic delivery log'],
+    vision: ['Event Catalog — visual browser of all webhook events across all modules', 'Payload Inspector — sample payload per event, live or mock, for instant development', 'Retry Logic Builder — configure attempts, backoff strategy, failure alerting', 'Delivery Log with Replay — full history with exact payload sent, response received, one-click replay', 'Transformation Layer — rename fields, filter data, restructure JSON without middleware', 'Delivery SLA Monitor — p50/p95/p99 delivery time per endpoint with degradation alerts'],
+    impact: 'Webhooks are only valuable if developers can build with them quickly and trust them in production. The payload inspector and replay feature cut integration development time from days to hours. Retry logic prevents silent data loss.',
+    topFeature: 'Payload Inspector + Replay — developers can build and debug in one place'
+  },
+
+  // ─── AUTOMATE ───
+  {
+    id: 'workflow-builder', name: 'Workflow Builder', category: 'AUTOMATE', icon: '⚡',
+    current: ['Visual automation builder', 'Trigger + action configuration', 'Basic conditional logic'],
+    vision: ['Pre-built Workflow Library — 50+ proven workflows ready to clone', 'AI Workflow Generator — describe in plain English, AI builds the workflow', 'Advanced Conditional Logic — multi-branch if/then/else, unlimited conditions', 'Error Handling Built In — retry, skip, alert, or alternate path on step failure', 'Execution Timeline — visual trace of every run, step-by-step with duration and output', 'Version History — every change versioned, roll back any time', 'Workflow Analytics — run count, average completion time, failure rate per step'],
+    impact: 'Most automation builders are used by technical people only. AI generation and the template library democratize automation for the whole team. Execution timelines give confidence that workflows are actually doing what was intended.',
+    topFeature: 'AI Workflow Generator — describe what you want, it builds the automation'
+  },
+  {
+    id: 'the-advisor', name: 'The Advisor', category: 'AUTOMATE', icon: '🧠',
+    current: ['AI assistant surfaces insights', 'Recommendations panel', 'Module-specific tips'],
+    vision: ['Insight Prioritization — top 3 insights only, ranked by revenue impact × effort × confidence', 'Weekly Strategy Brief — every Monday: wins, concerns, this week action items, one growth idea', 'Decision Support Mode — presents a decision, AI asks 3 questions, gives reasoned recommendation', 'Competitor Signal Watch — proactively surfaces competitor changes worth acting on', 'Opportunity Surfacing — "1,200 uncontacted leads at your conversion rate = $4,200"', 'Memory — remembers past recommendations, tracks whether they were acted on, and learns', 'Voice Mode — record a voice question, get an audio response'],
+    impact: 'The gap between having data and making decisions costs businesses significant revenue. An advisor that proactively surfaces the top 3 most important actions eliminates analysis paralysis and creates accountability for execution.',
+    topFeature: 'Weekly Strategy Brief — one document, every Monday, tells you exactly what to do'
+  },
+  {
+    id: 'autopilot', name: 'Autopilot', category: 'AUTOMATE', icon: '🚀',
+    current: ['Automated ongoing task execution', 'Basic rule-based actions', 'Activity log'],
+    vision: ['Autopilot Modes — Awareness / Conversion / Retention mode with different optimization priorities', 'Task Queue Transparency — see exactly what Autopilot is doing, did today, queued for tomorrow', 'Intervention Thresholds — human-defined guardrails: "if cost-per-lead exceeds $25, pause and alert"', 'A/B Test Generation — Autopilot creates and runs small tests proactively, reports winners', 'Fatigue Detection — detects audience saturation, introduces fresh creative automatically', 'Budget Self-Optimization — shifts budget toward winners within defined limits daily', 'Autopilot Score — composite health indicator across content freshness, audience, campaigns, budget'],
+    impact: 'The goal of Autopilot is to make 80% of routine marketing execution hands-off, with humans reserving their time for strategy and approval. Intervention thresholds create trust — the AI knows when to stop and ask.',
+    topFeature: 'Intervention Thresholds — you define the guardrails, Autopilot operates within them'
+  },
+
+  // ─── SETTINGS ───
+  {
+    id: 'brand-hub', name: 'Brand Hub', category: 'SETTINGS', icon: '🏷️',
+    current: ['Logo upload', 'Color palette settings', 'Font selection', 'Basic voice guidelines'],
+    vision: ['Brand DNA Extractor — paste URL, AI extracts brand assets in 30 seconds', 'Voice & Tone Examples — 10 sample sentences showing the brand voice in action', 'Competitor Differentiation Map — how you are positioned vs. each competitor', 'Brand Compliance Checker — upload any asset, AI rates it against brand guidelines', 'Brand Asset Library — all logos, icons, photos organized and searchable', 'Multi-Brand Support — agencies switch between client brand profiles instantly', 'Brand Score — consistency rating across all recent module outputs'],
+    impact: 'Brand Hub becomes the intelligence layer that powers every other module. When every module pulls from a single source of truth, brand consistency scales automatically instead of degrading with team growth.',
+    topFeature: 'Brand Score — know when any module is drifting from your brand identity'
+  },
+  {
+    id: 'team', name: 'Team', category: 'SETTINGS', icon: '👤',
+    current: ['User management', 'Role assignment', 'Basic permissions'],
+    vision: ['Activity Feed — real-time visibility into what the team published, launched, approved today', 'Granular Role-Based Access per module (create/review/publish as separate permissions)', 'Task Assignment — assign work to team members from any module, track completion', 'Performance Dashboard — tasks completed, content published, campaigns launched per person', 'Guest Collaborator Mode — time-limited, scoped access for clients and contractors', 'Onboarding Flows — role-specific checklists auto-assigned to new team members', 'Approval Workflows — content/campaigns require sign-off before going live'],
+    impact: 'The gap between a 2-person team and a 20-person team is almost entirely process visibility and approval control. Granular permissions prevent junior mistakes in production. Approval workflows scale quality without micromanagement.',
+    topFeature: 'Approval Workflows — quality gates that scale without micromanagement'
+  },
+  {
+    id: 'client-manager', name: 'Client Manager', category: 'SETTINGS', icon: '🏢',
+    current: ['Client profiles', 'Workspace switching', 'Basic contact info'],
+    vision: ['Client Health Score — composite of module usage, goal progress, report engagement, billing status', 'Service Package Tracker — which services is each client using vs. paying for', 'Renewal Intelligence — 60/30/14-day alerts with health score and expansion opportunities', 'Intake Automation — new client onboarding checklist auto-created and tracked', 'Client Communication Log — full timeline of all emails, calls, notes per client', 'Expansion Opportunity Detector — AI identifies upsell gaps based on usage patterns', 'White-Label Settings — per-client domain, logo, and report branding'],
+    impact: 'Renewal intelligence alone can increase retention by 15–25% by surfacing at-risk clients before they decide to leave. The health score turns client management from reactive firefighting to proactive success management.',
+    topFeature: 'Renewal Intelligence — never get surprised by a client who decides not to renew'
+  },
+  {
+    id: 'automation-settings', name: 'Automation Settings', category: 'SETTINGS', icon: '🔧',
+    current: ['Rule builder for cross-module triggers', 'Basic condition/action editor', 'Active rules list'],
+    vision: ['Automation Library — browse proven cross-module flows, one-click activate', 'Conflict Detection — flag when two automations could fire simultaneously on the same contact', 'Frequency Caps — contact-level limits regardless of how many automations qualify them', 'Audit Log — every automation action logged with trigger, contact, time, outcome', 'Test Mode — run any automation against a sample contact, preview every step before live', 'Business Hours Enforcement — all messaging automations respect contact timezone', 'Performance Attribution — revenue generated vs. unsubscribes caused per automation rule'],
+    impact: 'Without conflict detection and frequency caps, growing automation libraries silently damage contact relationships through message flooding. Attribution per automation rule makes it clear which rules are assets vs. liabilities.',
+    topFeature: 'Frequency Caps — one setting that prevents automation from annoying your best contacts'
+  },
+];
+
+// ─── RENDER ───
+function getCatVar(cat) {
+  const map = { CREATE:'create', ADVERTISE:'advertise', ANALYZE:'analyze', MANAGE:'manage', CONNECT:'connect', AUTOMATE:'automate', SETTINGS:'settings' };
+  return map[cat] || 'settings';
+}
+
+function renderModules() {
+  const container = document.getElementById('sections');
+  const cats = ['CREATE','ADVERTISE','ANALYZE','MANAGE','CONNECT','AUTOMATE','SETTINGS'];
+
+  cats.forEach(cat => {
+    const info = CATEGORIES[cat];
+    const mods = MODULES.filter(m => m.category === cat);
+    const cv = getCatVar(cat);
+
+    const section = document.createElement('section');
+    section.className = 'category-section';
+    section.dataset.category = cat;
+    section.innerHTML = `
+      <div class="category-header" style="--cat-color:var(--${cv})">
+        <div class="category-name" style="color:var(--${cv})">${cat}</div>
+        <div class="category-desc">${info.desc}</div>
+        <div class="category-count">${mods.length} MODULES</div>
+      </div>
+      <div class="module-grid" id="grid-${cat}"></div>
+    `;
+    container.appendChild(section);
+
+    const grid = section.querySelector('.module-grid');
+    mods.forEach(m => {
+      const card = document.createElement('div');
+      card.className = 'module-card';
+      card.dataset.module = m.id;
+      card.dataset.name = m.name.toLowerCase();
+      card.dataset.category = cat;
+      card.innerHTML = `
+        <div class="module-card-header" style="--cat-color:var(--${cv})">
+          <div class="module-icon" style="--cat-color:var(--${cv})">${m.icon}</div>
+          <div class="module-name">${m.name}</div>
+          <div class="module-cat-tag" style="--cat-color:var(--${cv});--cat-rgb:${info.rgb}">${cat}</div>
+        </div>
+        <div class="module-body">
+          <div class="module-col">
+            <div class="col-label now">Currently</div>
+            <ul class="feature-list now">
+              ${m.current.map(f => `<li>${f}</li>`).join('')}
+            </ul>
+          </div>
+          <div class="module-col">
+            <div class="col-label vision" style="--cat-color:var(--${cv})">Vision</div>
+            <ul class="feature-list vision" style="--cat-color:var(--${cv})">
+              ${m.vision.map(f => `<li>${f}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+        <div class="module-impact" style="--cat-color:var(--${cv});--cat-rgb:${info.rgb}">
+          <div class="impact-label">Why It Matters</div>
+          <div class="impact-text">${m.impact}</div>
+        </div>
+        <div class="top-feature" style="--cat-color:var(--${cv})">
+          <div class="top-feature-label">Top Feature</div>
+          <div class="star-icon">★</div>
+          <div class="top-feature-text">${m.topFeature}</div>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  });
+}
+
+// ─── CATEGORY FILTER ───
+let activeCat = 'all';
+
+function filterCat(cat, btn) {
+  activeCat = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const principles = document.getElementById('principles');
+  const top5 = document.getElementById('top5section');
+
+  if (cat === 'all') {
+    document.querySelectorAll('.category-section').forEach(s => s.dataset.hidden = 'false');
+    document.querySelectorAll('.module-card').forEach(c => c.dataset.hidden = 'false');
+    principles.style.display = '';
+    top5.style.display = '';
+  } else {
+    principles.style.display = 'none';
+    top5.style.display = 'none';
+    document.querySelectorAll('.category-section').forEach(s => {
+      s.dataset.hidden = s.dataset.category !== cat ? 'true' : 'false';
+    });
+    document.querySelectorAll('.module-card').forEach(c => {
+      c.dataset.hidden = c.dataset.category !== cat ? 'true' : 'false';
+    });
+  }
+  updateCount();
+}
+
+// ─── SEARCH ───
+document.getElementById('searchInput').addEventListener('input', function() {
+  const q = this.value.toLowerCase().trim();
+
+  if (!q) {
+    document.querySelectorAll('.module-card').forEach(c => {
+      c.dataset.hidden = activeCat !== 'all' && c.dataset.category !== activeCat ? 'true' : 'false';
+    });
+    document.querySelectorAll('.category-section').forEach(s => {
+      s.dataset.hidden = activeCat !== 'all' && s.dataset.category !== activeCat ? 'true' : 'false';
+    });
+    document.getElementById('principles').style.display = activeCat === 'all' ? '' : 'none';
+    document.getElementById('top5section').style.display = activeCat === 'all' ? '' : 'none';
+  } else {
+    document.getElementById('principles').style.display = 'none';
+    document.getElementById('top5section').style.display = 'none';
+
+    document.querySelectorAll('.module-card').forEach(c => {
+      const matches = c.dataset.name.includes(q) || c.textContent.toLowerCase().includes(q);
+      const catMatch = activeCat === 'all' || c.dataset.category === activeCat;
+      c.dataset.hidden = !(matches && catMatch) ? 'true' : 'false';
+    });
+
+    document.querySelectorAll('.category-section').forEach(s => {
+      const anyVisible = [...s.querySelectorAll('.module-card')].some(c => c.dataset.hidden !== 'true');
+      s.dataset.hidden = !anyVisible ? 'true' : 'false';
+    });
+  }
+  updateCount();
+});
+
+function updateCount() {
+  const visible = document.querySelectorAll('.module-card:not([data-hidden="true"])').length;
+  document.getElementById('visibleCount').innerHTML = `<strong>${visible}</strong> module${visible !== 1 ? 's' : ''}`;
+}
+
+function toggleTheme() {
+  const isLight = document.documentElement.classList.toggle('light');
+  document.getElementById('themeLabel').textContent = isLight ? 'Light' : 'Dark';
+  localStorage.setItem('overload-vision-theme', isLight ? 'light' : 'dark');
+}
+
+// Restore saved theme
+if (localStorage.getItem('overload-vision-theme') === 'light') {
+  document.documentElement.classList.add('light');
+  document.getElementById('themeLabel').textContent = 'Light';
+}
+
+renderModules();
+</script>
+</body>
+</html>

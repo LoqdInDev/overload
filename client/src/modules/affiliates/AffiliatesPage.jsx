@@ -19,6 +19,8 @@ export default function AffiliatesPage() {
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [commissionData, setCommissionData] = useState(null);
+  const [commInputs, setCommInputs] = useState({ current_rate: '', industry: 'E-commerce', product_margin: '40', avg_order_value: '50' });
   const [showAddProgram, setShowAddProgram] = useState(false);
   const [showAddAffiliate, setShowAddAffiliate] = useState(false);
   const [newProgram, setNewProgram] = useState({ name: '', commissionType: 'percentage', commissionRate: '', cookieDuration: '30', terms: '' });
@@ -210,6 +212,47 @@ export default function AffiliatesPage() {
 
       {tab === 'ai-tools' && (
         <div className="space-y-4 sm:space-y-6 animate-fade-in">
+          <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
+            <div className="hud-label" style={{ marginBottom: 12 }}>Commission Structure Optimizer</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+              {[['Current Rate %', 'current_rate', '10'], ['Product Margin %', 'product_margin', '40'], ['Avg Order Value $', 'avg_order_value', '50']].map(([label, key, placeholder]) => (
+                <div key={key}>
+                  <div className="hud-label" style={{ marginBottom: 4 }}>{label}</div>
+                  <input className="input" type="number" placeholder={placeholder} value={commInputs[key]} onChange={e => setCommInputs(prev => ({ ...prev, [key]: e.target.value }))} />
+                </div>
+              ))}
+              <div>
+                <div className="hud-label" style={{ marginBottom: 4 }}>Industry</div>
+                <select className="input" value={commInputs.industry} onChange={e => setCommInputs(prev => ({ ...prev, industry: e.target.value }))}>
+                  {['E-commerce', 'SaaS', 'Digital Products', 'Physical Products', 'Services'].map(i => <option key={i}>{i}</option>)}
+                </select>
+              </div>
+            </div>
+            <button className="btn-accent" onClick={async () => {
+              try { const result = await postJSON('/api/affiliates/optimize-commission', commInputs); setCommissionData(result); } catch {}
+            }}>Optimize Commission</button>
+            {commissionData && (
+              <div style={{ marginTop: 16 }}>
+                <div className="chip" style={{ marginBottom: 12 }}>Recommended Base Rate: <strong>{commissionData.recommended_base_rate}</strong></div>
+                <div className="hud-label" style={{ marginBottom: 8 }}>Tier Structure</div>
+                <div style={{ display: 'grid', gap: 8 }}>
+                  {commissionData.tier_structure?.map((tier, i) => (
+                    <div key={i} className="panel" style={{ padding: 12 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <span style={{ fontWeight: 600 }}>{['Bronze', 'Silver', 'Gold'][i] === tier.tier ? ['🥉', '🥈', '🥇'][i] : ''} {tier.tier}</span>
+                        <span className="chip" style={{ fontSize: 11 }}>{tier.commission} commission</span>
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--muted)' }}>{tier.threshold}</div>
+                      <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                        {tier.perks?.map((perk, j) => <span key={j} className="chip" style={{ fontSize: 10 }}>{perk}</span>)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {commissionData.rationale && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>{commissionData.rationale}</div>}
+              </div>
+            )}
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {AI_TEMPLATES.map(t => (
               <button key={t.name} onClick={() => generate(t)} disabled={generating} className={`panel-interactive rounded-2xl p-4 sm:p-6 text-left ${selectedTemplate?.name === t.name ? 'border-emerald-500/20' : ''}`}>

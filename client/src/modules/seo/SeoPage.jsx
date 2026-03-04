@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
-import { fetchJSON, deleteJSON } from '../../lib/api';
+import { fetchJSON, deleteJSON, connectSSE } from '../../lib/api';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
@@ -60,6 +60,10 @@ export default function SeoPage() {
   const [copied, setCopied] = useState(false);
   const [audits, setAudits] = useState([]);
   const [keywords, setKeywords] = useState([]);
+  const [gapYourKeywords, setGapYourKeywords] = useState('');
+  const [gapCompetitor, setGapCompetitor] = useState('');
+  const [gapOutput, setGapOutput] = useState('');
+  const [gapLoading, setGapLoading] = useState(false);
 
   useEffect(() => {
     fetchJSON('/api/seo/audits').then(setAudits).catch(() => {});
@@ -166,6 +170,34 @@ export default function SeoPage() {
           )}
         </div>
       )}
+      <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
+        <div className="hud-label" style={{ marginBottom: 12 }}>Keyword Gap Analysis</div>
+        <div style={{ display: 'grid', gap: 10, marginBottom: 12 }}>
+          <div>
+            <div className="hud-label" style={{ marginBottom: 4 }}>Your Current Keywords</div>
+            <input className="input-field rounded-xl px-4 py-3 w-full" placeholder="e.g. digital marketing, email campaigns, social media" value={gapYourKeywords} onChange={e => setGapYourKeywords(e.target.value)} />
+          </div>
+          <div>
+            <div className="hud-label" style={{ marginBottom: 4 }}>Competitor Domain</div>
+            <input className="input-field rounded-xl px-4 py-3 w-full" placeholder="e.g. competitor.com" value={gapCompetitor} onChange={e => setGapCompetitor(e.target.value)} />
+          </div>
+        </div>
+        <button className="btn-accent px-4 py-2 rounded-lg text-sm" disabled={!gapCompetitor || gapLoading}
+          onClick={() => {
+            setGapOutput('');
+            setGapLoading(true);
+            connectSSE('/api/seo/keyword-gap',
+              { your_keywords: gapYourKeywords.split(',').map(k => k.trim()).filter(Boolean), competitor_domain: gapCompetitor },
+              {
+                onChunk: (text) => setGapOutput(prev => prev + text),
+                onResult: () => setGapLoading(false),
+                onError: () => setGapLoading(false),
+                onDone: () => setGapLoading(false),
+              }
+            );
+          }}>{gapLoading ? 'Analyzing...' : 'Analyze Keyword Gap'}</button>
+        {gapOutput && <div style={{ marginTop: 16, whiteSpace: 'pre-wrap', fontSize: 13, lineHeight: 1.8 }} className="text-gray-300">{gapOutput}</div>}
+      </div>
       </ModuleWrapper>
     </div>
   );

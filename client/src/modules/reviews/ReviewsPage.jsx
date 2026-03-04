@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
-import { fetchJSON, connectSSE } from '../../lib/api';
+import { fetchJSON, connectSSE, postJSON } from '../../lib/api';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
 
 const TOOLS = [
@@ -32,12 +32,20 @@ export default function ReviewsPage() {
   const [output, setOutput] = useState('');
   const [stats, setStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
+  const [reviews, setReviews] = useState([]);
+  const [sentimentData, setSentimentData] = useState(null);
+  const [sentimentLoading, setSentimentLoading] = useState(false);
+  const [responseData, setResponseData] = useState({});
+  const [generatingResponseFor, setGeneratingResponseFor] = useState(null);
 
   useEffect(() => {
     fetchJSON('/api/reviews/stats')
       .then(data => setStats(data))
       .catch(err => console.error('Failed to load review stats:', err))
       .finally(() => setLoadingStats(false));
+    fetchJSON('/api/reviews/reviews')
+      .then(data => setReviews(Array.isArray(data) ? data : []))
+      .catch(() => {});
   }, []);
 
   const generate = () => {
@@ -68,6 +76,100 @@ export default function ReviewsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 stagger">
         {TOOLS.map(t => (<button key={t.id} onClick={() => setActiveTool(t.id)} className="panel-interactive rounded-2xl p-4 sm:p-7 text-center group"><div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center" style={{ background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.12)' }}><svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={t.icon} /></svg></div><p className="text-sm font-bold text-gray-300 group-hover:text-white transition-colors">{t.name}</p></button>))}
       </div>
+      {/* Sentiment Analysis */}
+      <div className="panel animate-fade-in" style={{ marginBottom: 16, marginTop: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <span className="hud-label">Sentiment Trend Analysis</span>
+          <button className="btn-accent" style={{ fontSize: 12, padding: '4px 12px' }} disabled={sentimentLoading}
+            onClick={async () => {
+              setSentimentLoading(true);
+              try {
+                const result = await postJSON('/api/reviews/analyze-sentiment', {
+                  reviews: reviews,
+                  business_name: ''
+                });
+                setSentimentData(result);
+              } catch {}
+              setSentimentLoading(false);
+            }}>{sentimentLoading ? 'Analyzing...' : 'Analyze Sentiment'}</button>
+        </div>
+        {sentimentData && (
+          <div>
+            <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
+              {[['Positive', sentimentData.positive_percent, '#22c55e'], ['Neutral', sentimentData.neutral_percent, '#6b7280'], ['Negative', sentimentData.negative_percent, '#ef4444']].map(([label, val, color]) => (
+                <div key={label} style={{ textAlign: 'center', flex: 1, padding: 10, background: 'rgba(255,255,255,0.02)', borderRadius: 6 }}>
+                  <div style={{ fontSize: 22, fontWeight: 700, color }}>{val}%</div>
+                  <div className="hud-label">{label}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <span className="chip" style={{ fontSize: 11 }}>Trend: {sentimentData.trajectory}</span>
+              {sentimentData.alert && <span className="chip" style={{ fontSize: 11, borderColor: '#ef4444', color: '#ef4444' }}>⚠ {sentimentData.alert}</span>}
+            </div>
+            {sentimentData.trending_topics?.length > 0 && (
+              <div>
+                <div className="hud-label" style={{ marginBottom: 6 }}>Trending Topics</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {sentimentData.trending_topics.map((t, i) => (
+                    <span key={i} className="chip" style={{ fontSize: 11, borderColor: t.sentiment === 'positive' ? '#22c55e' : t.sentiment === 'negative' ? '#ef4444' : undefined }}>
+                      {t.topic} ({t.mention_count}x)
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {sentimentData.summary && <div style={{ fontSize: 12, color: '#6b7280', marginTop: 8 }}>{sentimentData.summary}</div>}
+          </div>
+        )}
+      </div>
+
+      {/* Reviews list with generate response */}
+      {reviews.length > 0 && (
+        <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
+          <div className="hud-label" style={{ marginBottom: 12 }}>Reviews ({reviews.length})</div>
+          <div className="divide-y divide-indigo-500/[0.04]">
+            {reviews.slice(0, 10).map(r => (
+              <div key={r.id} style={{ padding: '10px 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', gap: 6, marginBottom: 4 }}>
+                      {r.rating && <span style={{ color: '#eab308' }}>{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</span>}
+                      {r.author && <span style={{ fontSize: 11, color: '#6b7280' }}>{r.author}</span>}
+                      {r.source && <span className="chip" style={{ fontSize: 10 }}>{r.source}</span>}
+                    </div>
+                    <p style={{ fontSize: 13, color: '#d1d5db' }}>{r.content}</p>
+                  </div>
+                  <button className="chip text-[10px] flex-shrink-0" style={{ color: '#eab308', borderColor: 'rgba(234,179,8,0.3)' }}
+                    disabled={generatingResponseFor === r.id}
+                    onClick={async () => {
+                      setGeneratingResponseFor(r.id);
+                      try {
+                        const result = await postJSON('/api/reviews/generate-response', {
+                          review_text: r.content,
+                          rating: r.rating,
+                          business_name: ''
+                        });
+                        setResponseData(prev => ({ ...prev, [r.id]: result }));
+                      } catch {}
+                      setGeneratingResponseFor(null);
+                    }}>{generatingResponseFor === r.id ? '...' : 'Generate Response'}</button>
+                </div>
+                {responseData[r.id] && (
+                  <div style={{ marginTop: 8, padding: 10, background: 'rgba(234,179,8,0.05)', borderRadius: 6, borderLeft: '2px solid rgba(234,179,8,0.3)' }}>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
+                      <span className="chip" style={{ fontSize: 10 }}>{responseData[r.id].tone}</span>
+                    </div>
+                    <p style={{ fontSize: 12, color: '#d1d5db', lineHeight: 1.6 }}>{responseData[r.id].response}</p>
+                    {responseData[r.id].tip && <p style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>Tip: {responseData[r.id].tip}</p>}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       </ModuleWrapper>
     </div>
   );

@@ -125,4 +125,63 @@ router.get('/logs', (req, res) => {
   }
 });
 
+// POST /test-webhook — send a test payload to a webhook
+router.post('/test-webhook', async (req, res) => {
+  const { webhook_url, url, webhook_id, event_type } = req.body;
+  const effectiveUrl = webhook_url || url;
+  if (!effectiveUrl) return res.status(400).json({ error: 'url required' });
+
+  const testPayload = {
+    event: event_type || 'test.fired',
+    timestamp: new Date().toISOString(),
+    data: { test: true, message: 'Webhook test from Overload', id: Math.random().toString(36).slice(2) }
+  };
+
+  const startTime = Date.now();
+  try {
+    const response = await fetch(effectiveUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'User-Agent': 'Overload-Webhooks/1.0' },
+      body: JSON.stringify(testPayload),
+      signal: AbortSignal.timeout(10000)
+    });
+    const latency = Date.now() - startTime;
+    const responseText = await response.text().catch(() => '');
+
+    res.json({ success: true, status_code: response.status, latency_ms: latency, response_preview: responseText.substring(0, 200), payload_sent: testPayload });
+  } catch (err) {
+    res.json({ success: false, error: err.message, latency_ms: Date.now() - startTime, payload_sent: testPayload });
+  }
+});
+
+// GET /delivery-log — get webhook delivery history
+router.get('/delivery-log', (req, res) => {
+  const workspace_id = req.workspace.id;
+  try {
+    const logs = db.prepare(`
+      SELECT * FROM wh_webhook_logs WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 50
+    `).all(workspace_id);
+    res.json({ logs: logs || [] });
+  } catch {
+    res.json({ logs: [] });
+  }
+});
+
+// POST /delivery-log — get delivery log for a specific webhook
+router.post('/delivery-log', (req, res) => {
+  const workspace_id = req.workspace.id;
+  const { webhook_id } = req.body;
+  try {
+    let logs;
+    if (webhook_id) {
+      logs = db.prepare(`SELECT * FROM wh_webhook_logs WHERE workspace_id = ? AND webhook_id = ? ORDER BY created_at DESC LIMIT 20`).all(workspace_id, webhook_id);
+    } else {
+      logs = db.prepare(`SELECT * FROM wh_webhook_logs WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 50`).all(workspace_id);
+    }
+    res.json({ logs: logs || [] });
+  } catch {
+    res.json({ logs: [] });
+  }
+});
+
 module.exports = router;

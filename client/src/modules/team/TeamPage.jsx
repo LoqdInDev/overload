@@ -40,6 +40,10 @@ export default function TeamPage() {
   const [invites, setInvites] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Role Brief Generator
+  const [roleBriefs, setRoleBriefs] = useState({});
+  const [briefLoadingId, setBriefLoadingId] = useState(null);
+
   useEffect(() => {
     fetchJSON('/api/team/members')
       .then(data => setMembers(Array.isArray(data) ? data : []))
@@ -79,6 +83,18 @@ export default function TeamPage() {
       setInviteRole('editor');
     } catch (err) {
       console.error('Failed to send invite:', err);
+    }
+  };
+
+  const generateRoleBrief = async (member) => {
+    setBriefLoadingId(member.id);
+    try {
+      const result = await postJSON('/api/team/generate-role-brief', { name: member.name, role: member.role, email: member.email });
+      setRoleBriefs(prev => ({ ...prev, [member.id]: result }));
+    } catch (err) {
+      console.error('Failed to generate role brief:', err);
+    } finally {
+      setBriefLoadingId(null);
     }
   };
 
@@ -140,7 +156,8 @@ export default function TeamPage() {
             </div>
           ) : (
             members.map(member => (
-              <div key={member.id} className="panel rounded-2xl p-4 sm:p-6 flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-6 hover:border-indigo-500/15 transition-all">
+              <div key={member.id} className="panel rounded-2xl p-4 sm:p-6 hover:border-indigo-500/15 transition-all">
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-6">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold" style={{ background: `${roleColor(member.role)}20`, color: roleColor(member.role), border: `1px solid ${roleColor(member.role)}30` }}>
                   {getInitials(member.name)}
                 </div>
@@ -166,8 +183,50 @@ export default function TeamPage() {
                 </select>
                 <span className="text-xs text-gray-500 w-24 text-right hidden md:block">{member.status === 'active' ? 'Active' : member.created_at ? new Date(member.created_at).toLocaleDateString() : 'Inactive'}</span>
                 <div className="flex flex-wrap gap-1 flex-shrink-0">
+                  <button
+                    onClick={() => roleBriefs[member.id] ? setRoleBriefs(prev => { const n = {...prev}; delete n[member.id]; return n; }) : generateRoleBrief(member)}
+                    disabled={briefLoadingId === member.id}
+                    className="chip text-[10px] disabled:opacity-50"
+                    style={{ color: MODULE_COLOR, borderColor: `${MODULE_COLOR}30` }}
+                  >
+                    {briefLoadingId === member.id ? '...' : roleBriefs[member.id] ? 'Hide Brief' : 'Role Brief'}
+                  </button>
                   <button onClick={() => handleRemoveMember(member.id)} className="chip text-[10px]" style={{ color: '#ef4444' }}>&times;</button>
                 </div>
+              </div>
+              {roleBriefs[member.id] && (
+                <div className="mt-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] animate-fade-in">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                    {roleBriefs[member.id].kpis?.length > 0 && (
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wide">KPIs</p>
+                        <ul className="space-y-0.5">
+                          {roleBriefs[member.id].kpis.map((k, i) => <li key={i} className="text-xs text-gray-400">- {k}</li>)}
+                        </ul>
+                      </div>
+                    )}
+                    {roleBriefs[member.id].success_metrics?.length > 0 && (
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wide">Success Metrics</p>
+                        <ul className="space-y-0.5">
+                          {roleBriefs[member.id].success_metrics.map((m, i) => <li key={i} className="text-xs text-gray-400">- {m}</li>)}
+                        </ul>
+                      </div>
+                    )}
+                    {roleBriefs[member.id].collaboration?.length > 0 && (
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wide">Collaboration</p>
+                        <ul className="space-y-0.5">
+                          {roleBriefs[member.id].collaboration.map((c, i) => <li key={i} className="text-xs text-gray-400">- {c}</li>)}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                  {roleBriefs[member.id].summary && (
+                    <p className="text-xs text-gray-500 italic">{roleBriefs[member.id].summary}</p>
+                  )}
+                </div>
+              )}
               </div>
             ))
           )}

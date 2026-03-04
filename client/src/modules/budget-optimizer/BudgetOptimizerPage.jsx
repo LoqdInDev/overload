@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchJSON, connectSSE, deleteJSON, putJSON } from '../../lib/api';
+import { fetchJSON, connectSSE, deleteJSON, putJSON, postJSON } from '../../lib/api';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
@@ -16,6 +16,8 @@ export default function BudgetOptimizerPage() {
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [optimization, setOptimization] = useState(null);
+  const [optLoading, setOptLoading] = useState(false);
   const [budgets, setBudgets] = useState([]);
   const [allocations, setAllocations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -183,7 +185,55 @@ export default function BudgetOptimizerPage() {
           )}
         </div>
       )}
-      {tab === 'ai-tools' && (<div className="space-y-4 sm:space-y-6 animate-fade-in"><div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{AI_TEMPLATES.map(t => (<button key={t.name} onClick={() => generate(t)} disabled={generating} className={`panel-interactive rounded-2xl p-4 sm:p-6 text-left ${selectedTemplate?.name === t.name ? 'border-emerald-500/20' : ''}`}><p className="text-sm font-bold text-gray-300">{t.name}</p><p className="text-xs text-gray-600 mt-1 line-clamp-2">{t.prompt}</p></button>))}</div>{(generating || output) && <div className="panel rounded-2xl p-4 sm:p-7"><div className="flex items-center gap-2 mb-3"><div className={`w-2 h-2 rounded-full ${generating ? 'bg-emerald-400 animate-pulse' : 'bg-emerald-400'}`} /><span className="hud-label text-[11px]" style={{ color: '#34d399' }}>{generating ? 'GENERATING...' : 'READY'}</span></div><pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-emerald-400 ml-0.5 animate-pulse" />}</pre></div>}</div>)}
+      {tab === 'ai-tools' && (
+        <div className="space-y-4 sm:space-y-6 animate-fade-in">
+          {/* AI Budget Optimization */}
+          <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <span className="hud-label">AI Budget Optimizer</span>
+              <button className="btn-accent" style={{ fontSize: 12, padding: '4px 12px' }} disabled={optLoading}
+                onClick={async () => {
+                  setOptLoading(true);
+                  try {
+                    const result = await postJSON('/api/budget-optimizer/optimize', {
+                      total_budget: totalBudget,
+                      channels: allocations.map(a => ({ channel: a.channel, budget: a.budget, spent: a.spent, roas: a.roas })),
+                      goal: 'Sales'
+                    });
+                    setOptimization(result);
+                  } catch {}
+                  setOptLoading(false);
+                }}>{optLoading ? 'Optimizing...' : 'Optimize Allocation'}</button>
+            </div>
+            {optimization && (
+              <div>
+                <div className="chip" style={{ marginBottom: 12, color: '#22c55e', borderColor: '#22c55e' }}>
+                  {optimization.overall_expected_improvement}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>{optimization.top_insight}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {optimization.recommendations?.map((rec, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', background: 'var(--surface)', borderRadius: 6, fontSize: 13 }}>
+                      <div style={{ flex: 1, fontWeight: 500 }}>{rec.channel}</div>
+                      <div style={{ color: 'var(--muted)' }}>{rec.current_percent}%</div>
+                      <div style={{ color: 'var(--muted)' }}>→</div>
+                      <div style={{ color: rec.change === 'increase' ? '#22c55e' : rec.change === 'decrease' ? '#ef4444' : 'var(--muted)', fontWeight: 600 }}>{rec.recommended_percent}%</div>
+                      <div className="chip" style={{ fontSize: 10, padding: '2px 8px' }}>{rec.expected_roas_impact}</div>
+                    </div>
+                  ))}
+                </div>
+                {optimization.channels_to_pause?.length > 0 && (
+                  <div style={{ marginTop: 10, fontSize: 12, color: '#ef4444' }}>
+                    Consider pausing: {optimization.channels_to_pause.join(', ')}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{AI_TEMPLATES.map(t => (<button key={t.name} onClick={() => generate(t)} disabled={generating} className={`panel-interactive rounded-2xl p-4 sm:p-6 text-left ${selectedTemplate?.name === t.name ? 'border-emerald-500/20' : ''}`}><p className="text-sm font-bold text-gray-300">{t.name}</p><p className="text-xs text-gray-600 mt-1 line-clamp-2">{t.prompt}</p></button>))}</div>
+          {(generating || output) && <div className="panel rounded-2xl p-4 sm:p-7"><div className="flex items-center gap-2 mb-3"><div className={`w-2 h-2 rounded-full ${generating ? 'bg-emerald-400 animate-pulse' : 'bg-emerald-400'}`} /><span className="hud-label text-[11px]" style={{ color: '#34d399' }}>{generating ? 'GENERATING...' : 'READY'}</span></div><pre className="text-base text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{output}{generating && <span className="inline-block w-1.5 h-4 bg-emerald-400 ml-0.5 animate-pulse" />}</pre></div>}
+        </div>
+      )}
       <AIInsightsPanel moduleId="budget-optimizer" />
     </div>
   );

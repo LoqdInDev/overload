@@ -50,6 +50,11 @@ export default function WorkflowBuilderPage() {
   const [newWorkflow, setNewWorkflow] = useState({ name: '', description: '', trigger_type: 'schedule' });
   const [runningId, setRunningId] = useState(null);
 
+  // AI Workflow Suggester
+  const [workflowGoal, setWorkflowGoal] = useState('');
+  const [workflowOutput, setWorkflowOutput] = useState('');
+  const [workflowLoading, setWorkflowLoading] = useState(false);
+
   useEffect(() => {
     setLoading(true);
     fetchJSON('/api/workflow-builder/workflows')
@@ -142,6 +147,43 @@ export default function WorkflowBuilderPage() {
       {/* Workflows Tab */}
       {tab === 'workflows' && (
         <div className="animate-fade-in">
+          {/* AI Workflow Suggester */}
+          <div className="panel rounded-2xl p-4 sm:p-6 mb-4">
+            <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>AI WORKFLOW SUGGESTER</p>
+            <div className="flex gap-3">
+              <input
+                type="text"
+                placeholder="Describe your automation goal (e.g. nurture leads who fill out contact form)"
+                value={workflowGoal}
+                onChange={e => setWorkflowGoal(e.target.value)}
+                className="flex-1 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none"
+                style={{ '--tw-ring-color': MODULE_COLOR }}
+              />
+              <button
+                disabled={workflowLoading || !workflowGoal.trim()}
+                onClick={() => {
+                  setWorkflowLoading(true);
+                  setWorkflowOutput('');
+                  connectSSE('/api/workflow-builder/suggest-workflow', { goal: workflowGoal }, {
+                    onChunk: (text) => setWorkflowOutput(p => p + text),
+                    onResult: (data) => { setWorkflowOutput(data.content); setWorkflowLoading(false); },
+                    onError: () => setWorkflowLoading(false),
+                    onDone: () => setWorkflowLoading(false),
+                  });
+                }}
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-50 whitespace-nowrap"
+                style={{ background: workflowLoading ? `${MODULE_COLOR}4d` : MODULE_COLOR }}
+              >
+                {workflowLoading ? 'Thinking...' : 'Suggest Workflow'}
+              </button>
+            </div>
+            {workflowOutput && (
+              <div className="mt-3 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                <pre className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">{workflowOutput}{workflowLoading && <span className="inline-block w-1 h-3.5 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
+              </div>
+            )}
+          </div>
+
           {/* Add Workflow Button */}
           <div className="flex justify-end mb-4">
             <button

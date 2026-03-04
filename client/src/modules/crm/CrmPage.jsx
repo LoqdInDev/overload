@@ -39,6 +39,10 @@ export default function CrmPage() {
   const [showAddDeal, setShowAddDeal] = useState(false);
   const [newContact, setNewContact] = useState({ name: '', email: '', company: '', status: 'lead' });
   const [newDeal, setNewDeal] = useState({ name: '', value: '', contact_id: '', stage: 'lead' });
+  const [selectedContact, setSelectedContact] = useState(null);
+  const [scoreInputs, setScoreInputs] = useState({ emails_opened: '0', pages_visited: '0', downloads: '0', days_in_pipeline: '0' });
+  const [leadScore, setLeadScore] = useState(null);
+  const [scoreLoading, setScoreLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -229,11 +233,62 @@ export default function CrmPage() {
                   <span className="text-[10px] text-gray-500 hidden md:block">{c.company}</span>
                   <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${statusColor(c.status)}15`, color: statusColor(c.status), border: `1px solid ${statusColor(c.status)}25` }}>{c.status}</span>
                   {c.score != null && <div className="w-10 h-10 rounded-full hidden sm:flex items-center justify-center text-[10px] font-bold" style={{ background: c.score > 75 ? 'rgba(34,197,94,0.1)' : c.score > 50 ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)', color: c.score > 75 ? '#22c55e' : c.score > 50 ? '#f59e0b' : '#ef4444' }}>{c.score}</div>}
+                  <button onClick={() => { setSelectedContact(selectedContact?.id === c.id ? null : c); setLeadScore(null); }} className="opacity-0 group-hover:opacity-100 chip text-[9px] transition-all" style={{ color: '#818cf8', borderColor: 'rgba(99,102,241,0.3)' }}>Score</button>
                   <button onClick={() => removeContact(c.id)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 text-xs transition-all">&times;</button>
                 </div>
               ))}
             </div>
           </div>
+
+          {/* Lead Scoring Panel */}
+          {selectedContact && (
+            <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
+              <div className="hud-label" style={{ marginBottom: 12 }}>Lead Score — {selectedContact.name}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+                {[['Emails Opened', 'emails_opened'], ['Pages Visited', 'pages_visited'], ['Downloads', 'downloads'], ['Days in Pipeline', 'days_in_pipeline']].map(([label, key]) => (
+                  <div key={key}>
+                    <div className="hud-label" style={{ marginBottom: 4 }}>{label}</div>
+                    <input className="input-field rounded px-3 py-2 text-xs w-full" type="number" value={scoreInputs[key]} onChange={e => setScoreInputs(p => ({ ...p, [key]: e.target.value }))} />
+                  </div>
+                ))}
+              </div>
+              <button className="btn-accent px-4 py-1.5 rounded text-[10px]" style={{ background: '#6366f1' }} disabled={scoreLoading}
+                onClick={async () => {
+                  setScoreLoading(true);
+                  try {
+                    const result = await postJSON('/api/crm/score-lead', {
+                      contact_name: selectedContact.name,
+                      company: selectedContact.company,
+                      job_title: selectedContact.job_title || selectedContact.title,
+                      ...scoreInputs
+                    });
+                    setLeadScore(result);
+                  } catch {}
+                  setScoreLoading(false);
+                }}>{scoreLoading ? 'Scoring...' : 'Calculate Score'}</button>
+              {leadScore && (
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 10 }}>
+                    <div style={{ fontSize: 40, fontWeight: 800, color: leadScore.tier === 'hot' ? '#ef4444' : leadScore.tier === 'warm' ? '#f59e0b' : '#6b7280' }}>
+                      {leadScore.score}
+                    </div>
+                    <div>
+                      <div className="chip" style={{
+                        background: leadScore.tier === 'hot' ? 'rgba(239,68,68,0.12)' : leadScore.tier === 'warm' ? 'rgba(245,158,11,0.12)' : 'rgba(107,114,128,0.12)',
+                        borderColor: leadScore.tier === 'hot' ? '#ef4444' : leadScore.tier === 'warm' ? '#f59e0b' : '#6b7280',
+                        marginBottom: 4, display: 'inline-block'
+                      }}>{leadScore.tier?.toUpperCase()} LEAD</div>
+                      <div style={{ fontSize: 12, color: '#6b7280' }}>{leadScore.probability_to_close} close probability</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 13, marginBottom: 6 }}>
+                    <strong>Next Action:</strong> {leadScore.next_action}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#6b7280' }}>{leadScore.timing}</div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

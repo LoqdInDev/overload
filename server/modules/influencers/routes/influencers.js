@@ -197,4 +197,68 @@ router.get('/searches', (req, res) => {
   }
 });
 
+// POST /calculate-roi — calculate influencer ROI
+router.post('/calculate-roi', (req, res) => {
+  const { followers, engagement_rate, fee, avg_order_value, product_margin } = req.body;
+  if (!followers || !fee) return res.status(400).json({ error: 'followers and fee required' });
+
+  const reach = Math.round(followers * 0.6);
+  const clicks = Math.round(reach * (parseFloat(engagement_rate) || 3) / 100 * 0.15);
+  const sales = Math.round(clicks * 0.02);
+  const revenue = sales * (parseFloat(avg_order_value) || 50);
+  const profit = revenue * ((parseFloat(product_margin) || 40) / 100);
+  const roi = Math.round(((profit - parseFloat(fee)) / parseFloat(fee)) * 100);
+  const breakeven_sales = Math.ceil(parseFloat(fee) / ((parseFloat(avg_order_value) || 50) * (parseFloat(product_margin) || 40) / 100));
+
+  res.json({ reach, estimated_clicks: clicks, projected_sales: sales, projected_revenue: revenue.toFixed(2), roi_percent: roi, breakeven_sales, is_profitable: roi > 0 });
+});
+
+// POST /generate-brief — generate influencer campaign brief (SSE)
+router.post('/generate-brief', (req, res) => {
+  const { product, goal, influencer_niche, platform } = req.body;
+  if (!product) { res.status(400).json({ error: 'product required' }); return; }
+
+  const sse = setupSSE(res);
+  const prompt = `You are an influencer marketing expert. Create a complete campaign brief for:
+
+Product: ${product}
+Campaign Goal: ${goal || 'Brand Awareness'}
+Influencer Niche: ${influencer_niche || 'Lifestyle'}
+Platform: ${platform || 'Instagram'}
+
+Write a professional influencer brief with these sections:
+
+## Campaign Overview
+(2-3 sentences on what this campaign is about)
+
+## Content Requirements
+(specific content formats, length, style)
+
+## Key Messages
+(3-5 bullet points the influencer must communicate)
+
+## Do's
+(5 specific things to do)
+
+## Don'ts
+(5 specific things to avoid)
+
+## Required Hashtags & Tags
+(list all required hashtags and brand account tags)
+
+## CTA Requirements
+(exact call-to-action, promo code, link structure)
+
+## Deliverables & Timeline
+(what's required and when)
+
+Be specific, clear, and professional.`;
+
+  generateTextWithClaude(prompt, {
+    onChunk: (chunk) => sse.sendChunk(chunk),
+  })
+    .then(() => sse.sendResult({ done: true }))
+    .catch(() => sse.sendError({ message: 'Generation failed' }));
+});
+
 module.exports = router;

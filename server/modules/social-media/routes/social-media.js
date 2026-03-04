@@ -510,4 +510,59 @@ router.get('/pages/:providerId', async (req, res) => {
   }
 });
 
+// POST /generate-variations — generate 3 caption variations
+router.post('/generate-variations', (req, res) => {
+  const { caption, platform } = req.body;
+  if (!caption) return res.status(400).json({ error: 'caption required' });
+
+  generateTextWithClaude(`You are a social media expert. Create 3 variations of this caption for ${platform || 'social media'}:
+
+Original: "${caption}"
+
+Return JSON:
+{
+  "variations": [
+    { "tone": "Professional", "caption": "<rewritten caption>", "why": "<why this works>" },
+    { "tone": "Casual & Fun", "caption": "<rewritten caption>", "why": "<why this works>" },
+    { "tone": "Viral Hook", "caption": "<rewritten caption>", "why": "<why this works>" }
+  ]
+}
+
+Make each variation distinctly different. Keep platform best practices. Only return JSON.`)
+    .then(text => {
+      try { res.json(JSON.parse(text.trim())); }
+      catch { res.json({ variations: [
+        { tone: 'Professional', caption: caption, why: 'Clear and direct' },
+        { tone: 'Casual & Fun', caption: caption + ' 🔥', why: 'Relatable tone' },
+        { tone: 'Viral Hook', caption: 'You won\'t believe this... ' + caption, why: 'Creates curiosity' }
+      ]}); }
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
+});
+
+// POST /hashtag-intelligence — get smart hashtag recommendations
+router.post('/hashtag-intelligence', (req, res) => {
+  const { topic, platform } = req.body;
+  if (!topic) return res.status(400).json({ error: 'topic required' });
+
+  generateTextWithClaude(`You are a hashtag strategist. Generate a strategic hashtag set for:
+Topic: ${topic}
+Platform: ${platform || 'Instagram'}
+
+Return JSON:
+{
+  "mega": [{ "tag": "#example", "reach": "2.1M posts" }],
+  "high": [{ "tag": "#example", "reach": "450K posts" }],
+  "niche": [{ "tag": "#example", "reach": "12K posts" }],
+  "strategy": "<brief hashtag mix strategy>"
+}
+
+Provide 3-4 tags per category. Make them real and relevant. Only return JSON.`)
+    .then(text => {
+      try { res.json(JSON.parse(text.trim())); }
+      catch { res.json({ mega: [{ tag: '#marketing', reach: '10M+' }], high: [{ tag: '#digitalmarketing', reach: '500K' }], niche: [{ tag: '#' + topic.replace(/\s/g,''), reach: '10K' }], strategy: 'Mix mega for reach, niche for engagement' }); }
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
+});
+
 module.exports = router;

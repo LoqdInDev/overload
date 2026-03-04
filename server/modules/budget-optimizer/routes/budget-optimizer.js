@@ -109,4 +109,34 @@ router.put('/allocations/:id', (req, res) => {
   }
 });
 
+// POST /optimize — AI budget reallocation recommendations
+router.post('/optimize', (req, res) => {
+  const { total_budget, channels, goal } = req.body;
+  if (!channels?.length) return res.status(400).json({ error: 'channels required' });
+
+  generateTextWithClaude(`You are a marketing budget allocation expert. Recommend optimal budget reallocation:
+
+Total Budget: $${total_budget || 'Unknown'}
+Business Goal: ${goal || 'Sales'}
+Current Channels: ${JSON.stringify(channels)}
+
+Return JSON:
+{
+  "recommendations": [
+    { "channel": "<name>", "current_percent": <number>, "recommended_percent": <number>, "change": "<increase|decrease|maintain>", "rationale": "<brief reason>", "expected_roas_impact": "<like +0.5x>" }
+  ],
+  "overall_expected_improvement": "<like 23% better ROAS>",
+  "top_insight": "<the most important reallocation insight>",
+  "channels_to_pause": ["<channel names to pause if any>"]
+}
+
+Only return JSON.`)
+    .then(result => {
+      const text = result.text || '';
+      try { res.json(JSON.parse(text.trim())); }
+      catch { res.status(500).json({ error: 'Parse failed' }); }
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
+});
+
 module.exports = router;

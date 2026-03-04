@@ -154,4 +154,42 @@ router.put('/audits/:id', (req, res) => {
   }
 });
 
+// POST /keyword-gap — SSE: analyze keyword gaps vs competitor
+router.post('/keyword-gap', (req, res) => {
+  const { your_keywords, competitor_domain, your_domain } = req.body;
+  if (!competitor_domain) { res.status(400).json({ error: 'competitor_domain required' }); return; }
+
+  const sse = setupSSE(res);
+  const prompt = `You are an SEO strategist. Analyze the keyword gap between these sites:
+
+Your Domain: ${your_domain || 'Unknown'}
+Your Current Keywords: ${Array.isArray(your_keywords) ? your_keywords.join(', ') : your_keywords || 'Not specified'}
+Competitor Domain: ${competitor_domain}
+
+Generate a keyword gap analysis with these sections:
+
+## Gap Overview
+(2-3 sentences on the competitive keyword landscape)
+
+## High-Opportunity Keywords
+(10 keywords the competitor likely ranks for that you should target — include difficulty estimate and content type)
+
+## Quick Wins (Low Competition)
+(5 long-tail keywords you could rank for in 60-90 days)
+
+## Content Gap Strategy
+(3 content types/formats to create to close the gap)
+
+## Priority Action Plan
+(numbered list: what to do first, second, third)
+
+Be specific. Include realistic keyword examples even if estimated.`;
+
+  generateTextWithClaude(prompt, {
+    onChunk: (chunk) => sse.sendChunk(chunk),
+  })
+    .then(() => sse.sendResult({ done: true }))
+    .catch(() => sse.sendError(new Error('Generation failed')));
+});
+
 module.exports = router;

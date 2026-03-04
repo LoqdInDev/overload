@@ -23,6 +23,8 @@ export default function GoalTrackerPage() {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [showAddGoal, setShowAddGoal] = useState(false);
   const [newGoal, setNewGoal] = useState({ name: '', target_value: '', current_value: '', metric: '', deadline: '', status: 'active' });
+  const [forecasts, setForecasts] = useState({});
+  const [forecastingId, setForecastingId] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -142,9 +144,19 @@ export default function GoalTrackerPage() {
                         <span>{goal.metric || ''} {goal.current_value}</span>
                         <span>Target: {goal.target_value}{goal.deadline ? ` by ${goal.deadline}` : ''}</span>
                       </div>
+                      {forecasts[goal.id] && (
+                        <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: forecasts[goal.id].on_track ? '#22c55e' : '#ef4444' }}>
+                            {forecasts[goal.id].probability_of_success}% success prob.
+                          </span>
+                          <span className="chip" style={{ fontSize: 9, borderColor: forecasts[goal.id].on_track ? '#22c55e' : '#ef4444', color: forecasts[goal.id].on_track ? '#22c55e' : '#ef4444' }}>
+                            {forecasts[goal.id].on_track ? '✅ On Track' : '⚠ Behind'}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  );
-                })}
+                );
+              })}
               </div>
             )}
           </div>
@@ -216,6 +228,44 @@ export default function GoalTrackerPage() {
                       </div>
                     </div>
                     {goal.notes && <p className="text-xs text-gray-600 mt-2">{goal.notes}</p>}
+                    <div style={{ marginTop: 8 }}>
+                      <button className="chip text-[10px]" style={{ color: MODULE_COLOR, borderColor: `${MODULE_COLOR}40` }}
+                        disabled={forecastingId === goal.id}
+                        onClick={async () => {
+                          setForecastingId(goal.id);
+                          try {
+                            const result = await postJSON('/api/goal-tracker/forecast', {
+                              goal_name: goal.name,
+                              target_value: goal.target_value,
+                              current_value: goal.current_value,
+                              start_date: goal.created_at,
+                              target_date: goal.deadline
+                            });
+                            setForecasts(prev => ({ ...prev, [goal.id]: result }));
+                          } catch {}
+                          setForecastingId(null);
+                        }}>{forecastingId === goal.id ? '...' : 'Forecast'}</button>
+                    </div>
+                    {forecasts[goal.id] && (
+                      <div style={{ marginTop: 8, padding: 10, background: 'rgba(255,255,255,0.02)', borderRadius: 6 }}>
+                        <div style={{ display: 'flex', gap: 12, marginBottom: 6 }}>
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: 20, fontWeight: 700, color: forecasts[goal.id].on_track ? '#22c55e' : '#ef4444' }}>
+                              {forecasts[goal.id].probability_of_success}%
+                            </div>
+                            <div className="hud-label" style={{ fontSize: 9 }}>Success Prob.</div>
+                          </div>
+                          <div style={{ flex: 1, fontSize: 12, color: '#6b7280' }}>
+                            <div>{forecasts[goal.id].recommendation}</div>
+                            <div style={{ marginTop: 4 }}>
+                              <span className="chip" style={{ fontSize: 10, borderColor: forecasts[goal.id].on_track ? '#22c55e' : '#ef4444', color: forecasts[goal.id].on_track ? '#22c55e' : '#ef4444' }}>
+                                {forecasts[goal.id].on_track ? '✅ On Track' : '⚠ Behind Pace'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}

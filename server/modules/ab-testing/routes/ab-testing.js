@@ -104,4 +104,69 @@ router.delete('/tests/:id', (req, res) => {
   }
 });
 
+// POST /calculate-significance — calculate statistical significance
+router.post('/calculate-significance', (req, res) => {
+  const { control_visitors, control_conversions, variant_visitors, variant_conversions } = req.body;
+
+  const cv = parseInt(control_visitors) || 1;
+  const cc = parseInt(control_conversions) || 0;
+  const vv = parseInt(variant_visitors) || 1;
+  const vc = parseInt(variant_conversions) || 0;
+
+  const control_rate = cc / cv;
+  const variant_rate = vc / vv;
+  const lift = control_rate > 0 ? ((variant_rate - control_rate) / control_rate * 100) : 0;
+
+  // Simple Z-score approximation
+  const p_pool = (cc + vc) / (cv + vv);
+  const se = Math.sqrt(p_pool * (1 - p_pool) * (1/cv + 1/vv));
+  const z = se > 0 ? Math.abs(variant_rate - control_rate) / se : 0;
+  const significance = Math.min(99.9, Math.round((1 - Math.exp(-0.717 * z - 0.416 * z * z)) * 100 * 10) / 10);
+
+  const is_significant = significance >= 95;
+  let recommendation;
+  if (!is_significant) recommendation = 'Continue testing — not enough data yet';
+  else if (lift > 0) recommendation = `Variant wins with ${lift.toFixed(1)}% lift — implement it`;
+  else recommendation = 'Control wins — stick with original';
+
+  res.json({
+    control_rate: (control_rate * 100).toFixed(2) + '%',
+    variant_rate: (variant_rate * 100).toFixed(2) + '%',
+    relative_lift: lift.toFixed(1) + '%',
+    significance: significance + '%',
+    is_significant,
+    confidence_level: significance >= 99 ? '99%' : significance >= 95 ? '95%' : significance >= 90 ? '90%' : '<90%',
+    recommendation,
+    min_sample_size: Math.ceil(Math.max(cv, vv) * 0.2 + 1000)
+  });
+});
+
+// POST /predict-winner — AI predict the winner based on psychology
+router.post('/predict-winner', (req, res) => {
+  const { test_name, variant_a, variant_b } = req.body;
+
+  generateTextWithClaude(`You are a conversion psychology expert. Predict which A/B test variant will win:
+
+Test: ${test_name || 'A/B Test'}
+Variant A: ${variant_a}
+Variant B: ${variant_b}
+
+Return JSON:
+{
+  "predicted_winner": "A|B",
+  "confidence": "<Low|Medium|High>",
+  "reasoning": "<2-3 sentences on psychological principles>",
+  "key_factor": "<the single most important factor>",
+  "caveat": "<any important caveat or audience consideration>"
+}
+
+Only return JSON.`)
+    .then(result => {
+      const text = result.text || '';
+      try { res.json(JSON.parse(text.trim())); }
+      catch { res.json({ predicted_winner: 'B', confidence: 'Medium', reasoning: 'Based on standard conversion principles', key_factor: 'Specificity', caveat: 'Results may vary by audience' }); }
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
+});
+
 module.exports = router;

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
-import { fetchJSON, postJSON, deleteJSON } from '../../lib/api';
+import { fetchJSON, postJSON, deleteJSON, connectSSE } from '../../lib/api';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -104,6 +104,11 @@ export default function CreativePage() {
   const [activeTab, setActiveTab] = useState('generate');
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [briefProduct, setBriefProduct] = useState('');
+  const [briefGoal, setBriefGoal] = useState('Brand Awareness');
+  const [briefAudience, setBriefAudience] = useState('');
+  const [briefOutput, setBriefOutput] = useState('');
+  const [briefLoading, setBriefLoading] = useState(false);
 
   const loadHistory = useCallback(async () => {
     setHistoryLoading(true);
@@ -253,11 +258,11 @@ export default function CreativePage() {
 
         {/* Tabs */}
         <div className="ml-auto flex gap-1">
-          {['generate', 'history'].map(tab => (
+          {['generate', 'brief', 'history'].map(tab => (
             <button key={tab} onClick={() => { setActiveTab(tab); if (tab === 'history') loadHistory(); }}
               className={`chip text-[10px] capitalize ${activeTab === tab ? 'active' : ''}`}
               style={activeTab === tab ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-              {tab === 'history' ? 'History' : 'Generate'}
+              {tab === 'history' ? 'History' : tab === 'brief' ? 'Creative Brief' : 'Generate'}
             </button>
           ))}
         </div>
@@ -326,6 +331,48 @@ export default function CreativePage() {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Creative Brief Tab */}
+      {activeTab === 'brief' && (
+        <div className="panel animate-fade-in">
+          <div className="hud-label" style={{ marginBottom: 16 }}>AI Creative Brief Generator</div>
+          <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
+            <div>
+              <div className="hud-label" style={{ marginBottom: 4 }}>Product / Brand</div>
+              <input className="input-field rounded-xl px-4 py-3 w-full" value={briefProduct} onChange={e => setBriefProduct(e.target.value)} placeholder="e.g. Premium Skincare Serum" />
+            </div>
+            <div>
+              <div className="hud-label" style={{ marginBottom: 4 }}>Campaign Goal</div>
+              <select className="input-field rounded-xl px-4 py-3 w-full" value={briefGoal} onChange={e => setBriefGoal(e.target.value)}>
+                {['Brand Awareness', 'Product Launch', 'Conversion', 'Retargeting', 'Seasonal Campaign'].map(g => <option key={g}>{g}</option>)}
+              </select>
+            </div>
+            <div>
+              <div className="hud-label" style={{ marginBottom: 4 }}>Target Audience</div>
+              <input className="input-field rounded-xl px-4 py-3 w-full" value={briefAudience} onChange={e => setBriefAudience(e.target.value)} placeholder="e.g. Women 25-45, health-conscious" />
+            </div>
+          </div>
+          <button className="btn-accent w-full py-3 rounded-lg" disabled={!briefProduct || briefLoading}
+            style={{ background: briefLoading ? '#1e1e2e' : '#06b6d4', boxShadow: briefLoading ? 'none' : '0 4px 20px -4px rgba(6,182,212,0.4)' }}
+            onClick={() => {
+              setBriefOutput('');
+              setBriefLoading(true);
+              connectSSE('/api/creative/generate-brief', { product: briefProduct, goal: briefGoal, audience: briefAudience }, {
+                onChunk: (chunk) => setBriefOutput(prev => prev + chunk),
+                onResult: () => setBriefLoading(false),
+                onError: () => setBriefLoading(false),
+                onDone: () => setBriefLoading(false),
+              });
+            }}>
+            {briefLoading ? 'Generating Brief...' : 'Generate Creative Brief'}
+          </button>
+          {briefOutput && (
+            <div style={{ marginTop: 20, whiteSpace: 'pre-wrap', fontSize: 14, lineHeight: 1.8, color: 'var(--text)' }}>
+              {briefOutput}
             </div>
           )}
         </div>

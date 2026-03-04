@@ -195,4 +195,52 @@ Include project progress, upcoming milestones, and recommended next steps.`;
   }
 });
 
+// POST /generate-report — SSE: generate a client-facing report
+router.post('/generate-report', async (req, res) => {
+  const { client_name, period, metrics } = req.body;
+  if (!client_name) { res.status(400).json({ error: 'client_name required' }); return; }
+
+  const sse = setupSSE(res);
+  const prompt = `You are a marketing agency account manager. Write a professional client report for ${client_name}:
+
+Reporting Period: ${period || 'Last 30 days'}
+Key Metrics: ${JSON.stringify(metrics || [])}
+
+Write a polished client-facing report:
+
+# Marketing Performance Report — ${client_name}
+## Period: ${period || 'Last 30 days'}
+
+---
+
+## Executive Highlights
+(3-4 bullet points on the best results — lead with wins, use specific numbers)
+
+## What Worked This Period
+(2-3 specific strategies or campaigns that delivered results)
+
+## Areas We're Improving
+(1-2 items — frame constructively, show the plan)
+
+## Recommendations for Next Month
+(3 numbered, specific recommendations)
+
+## Next Month Focus
+(top priority going into the next period)
+
+---
+*Report prepared by [Your Agency] — ${new Date().toLocaleDateString()}*
+
+Write for a client who trusts you but wants clarity and results. Confident and professional tone.`;
+
+  try {
+    const { text } = await generateTextWithClaude(prompt, {
+      onChunk: (chunk) => sse.sendChunk(chunk),
+    });
+    sse.sendResult({ content: text });
+  } catch (err) {
+    sse.sendError(err);
+  }
+});
+
 module.exports = router;

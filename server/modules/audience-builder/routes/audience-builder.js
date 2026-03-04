@@ -104,4 +104,50 @@ router.delete('/audiences/:id', (req, res) => {
   }
 });
 
+// POST /build-lookalike — SSE: build a lookalike audience spec
+router.post('/build-lookalike', (req, res) => {
+  const { seed_description, platforms } = req.body;
+  if (!seed_description) { res.status(400).json({ error: 'seed_description required' }); return; }
+
+  const sse = setupSSE(res);
+  const prompt = `You are a digital advertising audience specialist. Build a lookalike audience specification based on this seed audience:
+
+Seed Audience: ${seed_description}
+Target Platforms: ${Array.isArray(platforms) ? platforms.join(', ') : platforms || 'Facebook, Google, TikTok'}
+
+Generate a detailed lookalike audience spec with:
+
+## Core Demographics
+(age range, gender split, income level, education, location targets)
+
+## Interest Targeting
+(20+ specific interest categories, organized by strength — primary/secondary/tertiary)
+
+## Behavioral Signals
+(specific behaviors to target on each platform)
+
+## Facebook/Meta Targeting
+(specific audience parameters, lookalike percentage recommendation)
+
+## Google Targeting
+(in-market segments, affinity audiences, custom intent keywords)
+
+## TikTok Targeting
+(hashtag communities, creator lookalikes, behavioral targeting)
+
+## Exclusions
+(audiences to exclude to improve quality)
+
+## Estimated Audience Size
+(rough estimate per platform)
+
+Be specific with real targeting options that exist on these platforms.`;
+
+  generateTextWithClaude(prompt, {
+    onChunk: (chunk) => sse.sendChunk(chunk),
+  })
+    .then(() => sse.sendResult({ done: true }))
+    .catch(() => sse.sendError(new Error('Generation failed')));
+});
+
 module.exports = router;

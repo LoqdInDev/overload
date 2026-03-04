@@ -36,6 +36,14 @@ export default function KnowledgeBasePage() {
   const [aiTopic, setAiTopic] = useState('');
   const [aiFormat, setAiFormat] = useState('help-article');
 
+  // Gap Detector state
+  const [gapData, setGapData] = useState(null);
+  const [gapLoading, setGapLoading] = useState(false);
+
+  // Improve Article state
+  const [improveOutput, setImproveOutput] = useState('');
+  const [improveLoading, setImproveLoading] = useState(false);
+
   // Form state
   const [form, setForm] = useState({ title: '', content: '', category: '', status: 'draft' });
 
@@ -345,6 +353,34 @@ export default function KnowledgeBasePage() {
             </div>
           )}
 
+          {/* AI Article Improvement */}
+          {editing && editing !== 'new' && (
+            <div className="panel rounded-2xl p-3 sm:p-4 animate-fade-in">
+              <div className="flex items-center justify-between mb-2">
+                <span className="hud-label text-[10px]" style={{ color: MODULE_COLOR }}>AI ARTICLE IMPROVEMENT</span>
+                <button
+                  className="text-xs px-3 py-1.5 rounded-md font-medium transition-colors disabled:opacity-40"
+                  style={{ background: `${MODULE_COLOR}20`, color: MODULE_COLOR }}
+                  disabled={improveLoading}
+                  onClick={() => {
+                    setImproveOutput('');
+                    setImproveLoading(true);
+                    const cancelRef = { current: false };
+                    connectSSE('/api/knowledge-base/improve-article',
+                      { title: form.title, content: form.content },
+                      { onChunk: (chunk) => setImproveOutput(prev => prev + chunk), onResult: () => setImproveLoading(false), onDone: () => setImproveLoading(false), onError: () => setImproveLoading(false) }
+                    );
+                  }}>{improveLoading ? 'Analyzing...' : 'Improve This Article'}</button>
+              </div>
+              {improveOutput && (
+                <pre className="text-xs text-gray-400 whitespace-pre-wrap font-sans leading-relaxed mt-2 max-h-60 overflow-y-auto">
+                  {improveOutput}
+                  {improveLoading && <span className="inline-block w-1 h-3.5 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}
+                </pre>
+              )}
+            </div>
+          )}
+
           {/* Status filter pills */}
           {!editing && (
             <div className="flex items-center gap-2">
@@ -362,6 +398,47 @@ export default function KnowledgeBasePage() {
                   {f.label} <span className="font-mono ml-1 opacity-60">{f.count}</span>
                 </button>
               ))}
+            </div>
+          )}
+
+          {/* Gap Detector */}
+          {!editing && (
+            <div className="panel rounded-2xl p-4 sm:p-5 animate-fade-in">
+              <div className="flex items-center justify-between">
+                <span className="hud-label text-[10px]" style={{ color: MODULE_COLOR }}>KNOWLEDGE GAP DETECTOR</span>
+                <button
+                  className="text-xs px-3 py-1.5 rounded-md font-medium transition-colors"
+                  style={{ background: `${MODULE_COLOR}20`, color: MODULE_COLOR }}
+                  disabled={gapLoading}
+                  onClick={async () => {
+                    setGapLoading(true);
+                    try {
+                      const result = await postJSON('/api/knowledge-base/detect-gaps', {
+                        articles: articles || [],
+                        workspace_type: 'Marketing Platform'
+                      });
+                      setGapData(result);
+                    } catch {}
+                    setGapLoading(false);
+                  }}>{gapLoading ? 'Analyzing...' : 'Detect Gaps'}</button>
+              </div>
+              {gapData && (
+                <div className="mt-3">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="text-2xl font-bold" style={{ color: MODULE_COLOR }}>{gapData.coverage_score}%</div>
+                    <div className="text-xs text-gray-500">Coverage &middot; Top missing: <strong className="text-gray-300">{gapData.top_missing}</strong></div>
+                  </div>
+                  {gapData.gaps?.slice(0, 5).map((gap, i) => (
+                    <div key={i} className="flex items-start justify-between gap-2 p-2 mb-1.5 rounded-lg border border-white/[0.04] hover:border-white/[0.08] transition-colors cursor-pointer">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-medium text-gray-300">{gap.suggested_title}</div>
+                        <div className="text-[10px] text-gray-600 mt-0.5">{gap.reason}</div>
+                      </div>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: gap.priority === 'high' ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)', color: gap.priority === 'high' ? '#ef4444' : '#f59e0b', border: `1px solid ${gap.priority === 'high' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'}` }}>{gap.priority}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
