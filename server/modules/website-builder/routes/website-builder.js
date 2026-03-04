@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const archiver = require('archiver');
 const { db, logActivity } = require('../../../db/database');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
@@ -183,67 +184,56 @@ router.post('/pages/:id/duplicate', (req, res) => {
   }
 });
 
-// POST /deploy — deploy site to Vercel
-router.post('/deploy', async (req, res) => {
-  const wsId = req.workspace.id;
-  const { site_id } = req.body;
-  const VERCEL_TOKEN = process.env.VERCEL_TOKEN;
-
-  if (!VERCEL_TOKEN) {
-    return res.status(400).json({ error: 'VERCEL_TOKEN not configured. Add VERCEL_TOKEN=your_token to your .env file to enable one-click deployment.' });
-  }
-  if (!site_id) return res.status(400).json({ error: 'site_id required' });
-
+// GET /sites/:id/export — download all pages as a ZIP file
+router.get('/sites/:id/export', (req, res) => {
   try {
-    const site = db.prepare('SELECT * FROM wb_sites WHERE id = ? AND workspace_id = ?').get(site_id, wsId);
+    const wsId = req.workspace.id;
+    const site = db.prepare('SELECT * FROM wb_sites WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!site) return res.status(404).json({ error: 'Site not found' });
 
-    const pages = db.prepare('SELECT * FROM wb_pages WHERE site_id = ? AND workspace_id = ?').all(site_id, wsId);
-    if (!pages.length) return res.status(400).json({ error: 'No pages to deploy. Save at least one page first.' });
+    const pages = db.prepare('SELECT * FROM wb_pages WHERE site_id = ? AND workspace_id = ? ORDER BY created_at ASC').all(req.params.id, wsId);
+    if (!pages.length) return res.status(400).json({ error: 'No pages to export' });
 
-    // Build Vercel file list — first page becomes index.html
+    const siteName = site.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || 'site';
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${siteName}.zip"`);
+
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    archive.pipe(res);
+
     const usedNames = new Set();
-    const files = pages.map((p, i) => {
+    const fileMap = [];
+
+    pages.forEach((page, i) => {
       let filename;
-      if (i === 0 || p.slug === 'landing' || p.slug === 'index') {
+      if (i === 0 || page.slug === 'landing' || page.slug === 'index') {
         filename = 'index.html';
       } else {
-        filename = `${p.slug.replace(/[^a-z0-9-]/g, '') || `page-${i}`}.html`;
+        filename = `${page.slug.replace(/[^a-z0-9-]/g, '') || `page-${i}`}.html`;
       }
-      // Ensure uniqueness
-      if (usedNames.has(filename)) filename = filename.replace('.html', `-${Date.now()}.html`);
+      if (usedNames.has(filename)) filename = filename.replace('.html', `-${i}.html`);
       usedNames.add(filename);
-      return {
-        file: filename,
-        data: p.content || '<!DOCTYPE html><html><body><h1>Empty Page</h1></body></html>',
-        encoding: 'utf8',
-      };
+      fileMap.push({ name: page.name, file: filename });
+      archive.append(page.content || '<!DOCTYPE html><html><body><h1>Empty Page</h1></body></html>', { name: filename });
     });
 
-    const siteName = (site.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || 'my-site').substring(0, 52);
+    const readme = `# ${site.name}
 
-    const response = await fetch('https://api.vercel.com/v13/deployments', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${VERCEL_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: siteName,
-        files,
-        projectSettings: { framework: null },
-      }),
-    });
+Exported from Overload on ${new Date().toLocaleDateString()}.
 
-    const data = await response.json();
-    if (!response.ok) {
-      return res.status(400).json({ error: data.error?.message || 'Vercel deployment failed' });
-    }
+## Pages
+${fileMap.map((f) => `- ${f.name} → ${f.file}`).join('\n')}
 
-    const deployUrl = `https://${data.url}`;
-    db.prepare('UPDATE wb_sites SET domain = ? WHERE id = ? AND workspace_id = ?').run(deployUrl, site_id, wsId);
-    logActivity('website-builder', 'deploy', 'Deployed site to Vercel', site.name, null, wsId);
-    res.json({ url: deployUrl, id: data.id, state: data.readyState || 'BUILDING' });
+## Deploy options
+- **Netlify Drop**: drag this folder to app.netlify.com/drop
+- **Vercel**: run \`npx vercel\` in this directory
+- **GitHub Pages**: push to a repo and enable Pages in Settings
+- **Any host**: upload the HTML files to any static file host
+`;
+    archive.append(readme, { name: 'README.md' });
+    archive.finalize();
+
+    logActivity('website-builder', 'export', 'Exported site as ZIP', site.name, null, wsId);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

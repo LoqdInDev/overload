@@ -108,9 +108,9 @@ export default function WebsiteBuilderPage() {
   const [seoLoading, setSeoLoading] = useState(false);
   const [seoError, setSeoError] = useState(null);
 
-  /* ── deploy ── */
-  const [deploying, setDeploying] = useState(false);
-  const [deployResult, setDeployResult] = useState(null);
+  /* ── export ── */
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState(null);
 
   /* ── A/B variants ── */
   const [variantsOpen, setVariantsOpen] = useState(false);
@@ -160,7 +160,7 @@ export default function WebsiteBuilderPage() {
     setSaved(false);
     setVersions([]);
     setEditingPageId(null);
-    setDeployResult(null);
+    setExportError(null);
     setSeoAudit(null);
     setSeoError(null);
     const prompt = templatePrompt || buildPrompt();
@@ -313,20 +313,31 @@ export default function WebsiteBuilderPage() {
     }
   };
 
-  const deploySite = async () => {
+  const exportSite = async () => {
     const siteId = editingPageSiteId || (sites.length > 0 ? sites[0].id : null);
-    if (!siteId || deploying) return;
-    setDeploying(true);
-    setDeployResult(null);
+    if (!siteId || exporting) return;
+    setExporting(true);
+    setExportError(null);
     try {
-      const result = await postJSON('/api/website-builder/deploy', { site_id: siteId });
-      setDeployResult(result);
-      // Update local sites list with new domain
-      setSites((prev) => prev.map((s) => (s.id === siteId ? { ...s, domain: result.url } : s)));
+      const response = await fetch(`/api/website-builder/sites/${siteId}/export`);
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Export failed');
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const cd = response.headers.get('Content-Disposition') || '';
+      const match = cd.match(/filename="(.+?)"/);
+      a.download = match ? match[1] : 'site.zip';
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (err) {
-      setDeployResult({ error: err.message || 'Deployment failed' });
+      setExportError(err.message);
+      setTimeout(() => setExportError(null), 5000);
     } finally {
-      setDeploying(false);
+      setExporting(false);
     }
   };
 
@@ -356,7 +367,7 @@ export default function WebsiteBuilderPage() {
     setActiveTab('preview');
     setSeoAudit(null);
     setSeoError(null);
-    setDeployResult(null);
+    setExportError(null);
   };
 
   const duplicatePage = async (page) => {
@@ -435,6 +446,30 @@ export default function WebsiteBuilderPage() {
           )}
         </div>
         <div className="flex flex-wrap gap-2">
+          <button
+            onClick={async () => {
+              setExporting(true);
+              setExportError(null);
+              try {
+                const response = await fetch(`/api/website-builder/sites/${activeSite.id}/export`);
+                if (!response.ok) { const e = await response.json(); throw new Error(e.error || 'Export failed'); }
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const cd = response.headers.get('Content-Disposition') || '';
+                const m = cd.match(/filename="(.+?)"/);
+                a.download = m ? m[1] : 'site.zip';
+                a.click();
+                URL.revokeObjectURL(url);
+              } catch (err) { setExportError(err.message); }
+              setExporting(false);
+            }}
+            disabled={exporting || sitePages.length < 1}
+            className="px-4 py-2 rounded-lg text-xs font-bold border border-indigo-500/10 text-gray-400 hover:text-white hover:border-indigo-500/20 transition-all disabled:opacity-40"
+          >
+            {exporting ? 'Exporting...' : 'Export ZIP'}
+          </button>
           <button
             onClick={checkBrandConsistency}
             disabled={consistencyLoading || sitePages.length < 1}
@@ -635,7 +670,7 @@ export default function WebsiteBuilderPage() {
       {/* Header */}
       <div className="flex items-center gap-3 sm:gap-5 mb-6 sm:mb-8">
         <button
-          onClick={() => { setPageType(null); setOutput(''); setSaved(false); setVersions([]); setEditingPageId(null); setEditingPageSiteId(null); setDeployResult(null); }}
+          onClick={() => { setPageType(null); setOutput(''); setSaved(false); setVersions([]); setEditingPageId(null); setEditingPageSiteId(null); setExportError(null); }}
           className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white transition-all"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
@@ -826,17 +861,17 @@ export default function WebsiteBuilderPage() {
 
               <div className="h-6 w-px bg-white/10 hidden sm:block" />
 
-              {/* Deploy */}
+              {/* Export Site */}
               <button
-                onClick={deploySite}
-                disabled={deploying || (!saved && !editingPageId)}
+                onClick={exportSite}
+                disabled={exporting || (!saved && !editingPageId)}
                 className="px-4 py-3 rounded-xl text-sm font-bold border transition-all flex items-center gap-1.5 disabled:opacity-40"
                 style={{ borderColor: 'rgba(217,70,239,0.2)', color: '#e879f9', background: 'rgba(217,70,239,0.08)' }}
-                title={!saved && !editingPageId ? 'Save page first to deploy' : 'Deploy to Vercel'}
+                title={!saved && !editingPageId ? 'Save page first to export' : 'Download all pages as ZIP'}
               >
-                {deploying ? (
-                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 border-2 border-fuchsia-600 border-t-fuchsia-300 rounded-full animate-spin" />Deploying...</span>
-                ) : 'Deploy to Vercel'}
+                {exporting ? (
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 border-2 border-fuchsia-600 border-t-fuchsia-300 rounded-full animate-spin" />Exporting...</span>
+                ) : 'Export Site (.zip)'}
               </button>
 
               {/* A/B Variants */}
@@ -861,18 +896,10 @@ export default function WebsiteBuilderPage() {
             </div>
           )}
 
-          {/* Deploy result */}
-          {deployResult && (
-            <div className={`p-4 rounded-xl border ${deployResult.error ? 'border-red-500/20 bg-red-500/5' : 'border-emerald-500/20 bg-emerald-500/5'}`}>
-              {deployResult.error ? (
-                <p className="text-sm text-red-400">{deployResult.error}</p>
-              ) : (
-                <div>
-                  <p className="text-sm font-bold text-emerald-400 mb-1">Deployed successfully!</p>
-                  <a href={deployResult.url} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-300 hover:underline font-mono">{deployResult.url}</a>
-                  <p className="text-xs text-gray-600 mt-1">Status: {deployResult.state}</p>
-                </div>
-              )}
+          {/* Export error */}
+          {exportError && (
+            <div className="p-4 rounded-xl border border-red-500/20 bg-red-500/5">
+              <p className="text-sm text-red-400">{exportError}</p>
             </div>
           )}
 
