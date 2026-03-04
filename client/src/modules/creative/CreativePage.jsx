@@ -631,7 +631,7 @@ export default function CreativePage() {
   const templates = TEMPLATES[activeType] || [];
   const dims = DIMENSIONS[activeType] || [];
   const hasOutput = images.length > 0 || generating;
-  const promptReadyCount = images.filter(i => i.status === 'prompt_ready' || !i.url).length;
+  const promptReadyCount = images.filter(i => i.status === 'prompt_ready').length;
 
   return (
     <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
