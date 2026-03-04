@@ -323,32 +323,37 @@ router.get('/recipes', (req, res) => {
 
 // POST /marketplace/install/:recipeId — install a recipe as an automation rule
 router.post('/install/:recipeId', (req, res) => {
-  const wsId = req.workspace.id;
-  const { recipeId } = req.params;
-
-  if (!VALID_RECIPE_ID.test(recipeId)) return res.status(400).json({ error: 'Invalid recipe ID' });
-
-  const recipe = RECIPES.find(r => r.id === recipeId);
-  if (!recipe) return res.status(404).json({ error: 'Recipe not found' });
-
   try {
-    const existing = db.prepare(
-      "SELECT id FROM ae_rules WHERE workspace_id = ? AND trigger_config LIKE ?"
-    ).get(wsId, `%"marketplace_recipe_id":"${recipeId}"%`);
-    if (existing) return res.status(409).json({ error: 'Recipe already installed' });
-  } catch {}
+    const wsId = req.workspace.id;
+    const { recipeId } = req.params;
 
-  const triggerConfig = JSON.stringify({ ...recipe.trigger.config, marketplace_recipe_id: recipe.id });
-  const actionConfig = JSON.stringify(recipe.action.config);
+    if (!VALID_RECIPE_ID.test(recipeId)) return res.status(400).json({ error: 'Invalid recipe ID' });
 
-  const result = db.prepare(
-    `INSERT INTO ae_rules (workspace_id, module_id, name, trigger_type, trigger_config, action_type, action_config, requires_approval, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')`
-  ).run(wsId, recipe.modules[0], recipe.name, recipe.trigger.type, triggerConfig, recipe.action.type, actionConfig, recipe.requires_approval ? 1 : 0);
+    const recipe = RECIPES.find(r => r.id === recipeId);
+    if (!recipe) return res.status(404).json({ error: 'Recipe not found' });
 
-  logActivity('automation-engine', 'install_recipe', `Installed recipe: ${recipe.name}`, recipe.name, result.lastInsertRowid, wsId);
+    try {
+      const existing = db.prepare(
+        "SELECT id FROM ae_rules WHERE workspace_id = ? AND trigger_config LIKE ?"
+      ).get(wsId, `%"marketplace_recipe_id":"${recipeId}"%`);
+      if (existing) return res.status(409).json({ error: 'Recipe already installed' });
+    } catch {}
 
-  res.json({ success: true, rule_id: result.lastInsertRowid });
+    const triggerConfig = JSON.stringify({ ...recipe.trigger.config, marketplace_recipe_id: recipe.id });
+    const actionConfig = JSON.stringify(recipe.action.config);
+
+    const result = db.prepare(
+      `INSERT INTO ae_rules (workspace_id, module_id, name, trigger_type, trigger_config, action_type, action_config, requires_approval, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')`
+    ).run(wsId, recipe.modules[0], recipe.name, recipe.trigger.type, triggerConfig, recipe.action.type, actionConfig, recipe.requires_approval ? 1 : 0);
+
+    try { logActivity('automation-engine', 'install_recipe', `Installed recipe: ${recipe.name}`, recipe.name, result.lastInsertRowid, wsId); } catch {}
+
+    res.json({ success: true, rule_id: result.lastInsertRowid });
+  } catch (err) {
+    console.error('[marketplace] install error:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // DELETE /marketplace/uninstall/:recipeId — uninstall (delete the created rule)

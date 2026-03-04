@@ -353,7 +353,9 @@ function MarketplaceTab({ dark, rules, onInstalled }) {
       setJustInstalled(recipe.id);
       setTimeout(() => setJustInstalled(null), 3000);
       onInstalled?.();
-    } catch { /* silent */ }
+    } catch (err) {
+      console.error('[marketplace] install failed:', err?.message || err);
+    }
     setActing(null);
   }
 
