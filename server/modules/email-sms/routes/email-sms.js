@@ -470,4 +470,68 @@ Make them creative, specific, and compelling. Only return JSON.`)
     .catch(err => res.status(500).json({ error: err.message }));
 });
 
+// POST /analyze — AI-powered email quality analysis
+router.post('/analyze', async (req, res) => {
+  const { content, subject, type } = req.body;
+  if (!content) return res.status(400).json({ error: 'content required' });
+  try {
+    const { text } = await generateTextWithClaude(
+      `You are an email deliverability and marketing expert. Analyze this ${type === 'sms' ? 'SMS' : 'email'} and return a strict JSON analysis.
+${subject ? `Subject line: ${subject}\n` : ''}Content:
+${content.slice(0, 3000)}
+
+Return ONLY valid JSON with this exact structure:
+{
+  "overall_score": <0-100>,
+  "spam_score": { "score": <0-100>, "grade": "<A|B|C|D|F>", "issues": ["..."] },
+  "readability": { "score": <0-100>, "grade": "<A|B|C|D|F>", "level": "<Easy|Medium|Hard>" },
+  "subject_quality": { "score": <0-100>, "grade": "<A|B|C|D|F>", "issues": ["..."], "strengths": ["..."] },
+  "cta_strength": { "score": <0-100>, "grade": "<A|B|C|D|F>", "found": <true|false>, "suggestions": ["..."] },
+  "improvements": ["Top improvement 1", "Top improvement 2", "Top improvement 3"]
+}`, { temperature: 0.2 });
+
+    const clean = text.replace(/```json\n?|\n?```/g, '').trim();
+    res.json(JSON.parse(clean));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /sequence-plan — generate a structured drip/welcome sequence plan
+router.post('/sequence-plan', async (req, res) => {
+  const wsId = req.workspace?.id;
+  const { brief, sequence_type, count = 5 } = req.body;
+  if (!brief) return res.status(400).json({ error: 'brief required' });
+  try {
+    const brandBlock = wsId ? buildBrandSystemPrompt(getBrandContext(wsId)) : '';
+    const { text } = await generateTextWithClaude(
+      `You are an expert email sequence strategist. Create a detailed ${sequence_type || 'drip'} sequence plan.
+Brief: ${brief}
+Number of emails: ${count}
+${brandBlock || ''}
+
+Return ONLY valid JSON:
+{
+  "sequence_name": "<name>",
+  "goal": "<overall goal>",
+  "emails": [
+    {
+      "step": 1,
+      "title": "<email title>",
+      "subject": "<suggested subject line>",
+      "goal": "<what this email achieves>",
+      "timing": "<e.g. Day 1, Day 3, Day 7>",
+      "hook": "<compelling opening line or angle>",
+      "key_points": ["point 1", "point 2", "point 3"]
+    }
+  ]
+}`, { temperature: 0.6 });
+
+    const clean = text.replace(/```json\n?|\n?```/g, '').trim();
+    res.json(JSON.parse(clean));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
