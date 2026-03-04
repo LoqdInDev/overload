@@ -339,6 +339,7 @@ export default function CreativePage() {
   const [quantity, setQuantity] = useState('4');
   const [useBrandHub, setUseBrandHub] = useState(false);
   const [referenceImage, setReferenceImage] = useState(null); // { dataUrl, base64, mimeType, name }
+  const [imageColors, setImageColors] = useState([]); // dominant colors extracted from reference image
   const fileInputRef = useRef(null);
   const [generating, setGenerating] = useState(false);
   const [images, setImages] = useState([]);
@@ -420,6 +421,40 @@ export default function CreativePage() {
     });
   };
 
+  // Extract dominant colors from reference image via Canvas
+  useEffect(() => {
+    if (!referenceImage) { setImageColors([]); return; }
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const size = 80;
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, size, size);
+      const data = ctx.getImageData(0, 0, size, size).data;
+      const counts = {};
+      const bucket = 36;
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] < 128) continue; // skip transparent
+        const r = Math.round(data[i] / bucket) * bucket;
+        const g = Math.round(data[i + 1] / bucket) * bucket;
+        const b = Math.round(data[i + 2] / bucket) * bucket;
+        if ((r + g + b) / 3 < 25 || (r + g + b) / 3 > 230) continue; // skip near-black/white
+        const key = `${r},${g},${b}`;
+        counts[key] = (counts[key] || 0) + 1;
+      }
+      const colors = Object.entries(counts)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5)
+        .map(([rgb]) => {
+          const [r, g, b] = rgb.split(',').map(Number);
+          return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        });
+      setImageColors(colors);
+    };
+    img.src = referenceImage.dataUrl;
+  }, [referenceImage]);
+
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -430,6 +465,7 @@ export default function CreativePage() {
       const dataUrl = ev.target.result;
       const base64 = dataUrl.split(',')[1];
       setReferenceImage({ dataUrl, base64, mimeType: file.type, name: file.name });
+      setPalette('image-colors'); // auto-select image colors when uploading a reference
     };
     reader.readAsDataURL(file);
   };
@@ -443,7 +479,9 @@ export default function CreativePage() {
     setShowInput(false);
     const selectedStyle = STYLES.find(s => s.id === style);
     const selectedDim = (DIMENSIONS[activeType] || []).find(d => d.id === dimension);
-    const selectedPalette = COLOR_PALETTES.find(p => p.id === palette);
+    const selectedPalette = palette === 'image-colors' && imageColors.length
+      ? { name: 'Image Colors', colors: imageColors }
+      : COLOR_PALETTES.find(p => p.id === palette);
 
     if (referenceImage) {
       // Variation mode — use reference image endpoint
@@ -600,7 +638,7 @@ export default function CreativePage() {
       <ModuleWrapper moduleId="creative">
       {/* Header */}
       <div className="flex items-center gap-3 sm:gap-5 mb-6 sm:mb-8">
-        <button onClick={() => { setActiveType(null); setImages([]); setPrompt(''); setActiveTab('generate'); setShowInput(true); setError(null); setReferenceImage(null); }}
+        <button onClick={() => { setActiveType(null); setImages([]); setPrompt(''); setActiveTab('generate'); setShowInput(true); setError(null); setReferenceImage(null); setImageColors([]); if (palette === 'image-colors') setPalette('brand'); }}
           className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white hover:border-indigo-500/25 transition-all">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
@@ -966,7 +1004,7 @@ export default function CreativePage() {
                           <img src={referenceImage.dataUrl} alt="Reference"
                             className="w-20 h-20 rounded-xl object-cover"
                             style={{ border: '1px solid rgba(6,182,212,0.3)' }} />
-                          <button onClick={() => setReferenceImage(null)}
+                          <button onClick={() => { setReferenceImage(null); setImageColors([]); if (palette === 'image-colors') setPalette('brand'); }}
                             className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold"
                             style={{ background: '#ef4444', border: '1px solid rgba(0,0,0,0.3)' }}>
                             ×
@@ -1207,6 +1245,21 @@ export default function CreativePage() {
               <div className="panel rounded-2xl p-4 sm:p-5">
                 <p className="hud-label text-[11px] mb-2.5">COLOR PALETTE</p>
                 <div className="space-y-1">
+                  {/* Image Colors — only available when a reference image is loaded */}
+                  {referenceImage && imageColors.length > 0 && (
+                    <button onClick={() => setPalette('image-colors')}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border text-xs transition-all ${
+                        palette === 'image-colors' ? 'border-cyan-500/30 bg-cyan-500/[0.08] text-cyan-300' : 'border-indigo-500/8 bg-white/[0.01] text-gray-400 hover:text-gray-200'
+                      }`}>
+                      <div className="flex gap-0.5 flex-shrink-0">
+                        {imageColors.slice(0, 5).map((c, i) => (
+                          <div key={i} className="w-3 h-3 rounded-full" style={{ background: c }} />
+                        ))}
+                      </div>
+                      <span className="font-semibold text-[11px]">Image Colors</span>
+                      <span className="ml-auto text-[9px] opacity-50">from upload</span>
+                    </button>
+                  )}
                   {COLOR_PALETTES.map(p => (
                     <button key={p.id} onClick={() => setPalette(p.id)}
                       className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border text-xs transition-all ${
