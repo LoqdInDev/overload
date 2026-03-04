@@ -13,12 +13,12 @@ const CREATIVE_TYPES = [
 ];
 
 const STYLES = [
-  { id: 'minimal', name: 'Minimal', desc: 'Clean lines, whitespace, modern' },
-  { id: 'bold', name: 'Bold & Vibrant', desc: 'High contrast, saturated colors' },
-  { id: 'luxury', name: 'Luxury', desc: 'Premium, elegant, dark tones' },
-  { id: 'playful', name: 'Playful', desc: 'Fun, colorful, rounded shapes' },
-  { id: 'corporate', name: 'Corporate', desc: 'Professional, structured, clean' },
-  { id: 'retro', name: 'Retro / Vintage', desc: 'Nostalgic, warm, textured' },
+  { id: 'minimal', name: 'Minimal' },
+  { id: 'bold', name: 'Bold & Vibrant' },
+  { id: 'luxury', name: 'Luxury' },
+  { id: 'playful', name: 'Playful' },
+  { id: 'corporate', name: 'Corporate' },
+  { id: 'retro', name: 'Retro / Vintage' },
 ];
 
 const DIMENSIONS = {
@@ -86,8 +86,78 @@ const COLOR_PALETTES = [
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
-  const d = new Date(dateStr);
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// Individual image card with proper error fallback
+function ImageCard({ img, apiBase, onCopy }) {
+  const [failed, setFailed] = useState(false);
+  const [promptCopied, setPromptCopied] = useState(false);
+  const hasImage = img.url && !failed;
+  const isPromptReady = img.status === 'prompt_ready' || !img.url || failed;
+
+  const copyPrompt = () => {
+    navigator.clipboard.writeText(img.prompt || img.alt || '');
+    setPromptCopied(true);
+    setTimeout(() => setPromptCopied(false), 2000);
+  };
+
+  return (
+    <div className="panel rounded-2xl overflow-hidden group">
+      <div className="relative">
+        {hasImage ? (
+          <>
+            <img
+              src={`${apiBase}${img.url}`}
+              alt={img.alt || 'Generated creative'}
+              loading="lazy"
+              onError={() => setFailed(true)}
+              className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+            {/* Hover overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-end pb-4 gap-2 px-4">
+              <a href={`${apiBase}${img.url}`} download
+                className="chip text-[10px] w-full justify-center" style={{ background: 'rgba(6,182,212,0.25)', borderColor: 'rgba(6,182,212,0.4)', color: '#22d3ee' }}>
+                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                Download
+              </a>
+              <button onClick={copyPrompt} className="chip text-[10px] w-full justify-center">
+                {promptCopied ? 'Copied!' : 'Copy Prompt'}
+              </button>
+            </div>
+          </>
+        ) : (
+          // Prompt-ready / failed state — shows the AI-optimized prompt
+          <div className="w-full aspect-square flex flex-col items-center justify-center p-5 text-center gap-3"
+            style={{ background: 'rgba(6,182,212,0.04)' }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.15)' }}>
+              <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+              </svg>
+            </div>
+            <div>
+              <p className="hud-label text-[9px] mb-1.5" style={{ color: '#22d3ee' }}>AI PROMPT READY</p>
+              <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-5">{img.prompt || img.alt}</p>
+            </div>
+            <button onClick={copyPrompt}
+              className="chip text-[10px] mt-1" style={{ color: promptCopied ? '#4ade80' : '#22d3ee', borderColor: promptCopied ? 'rgba(74,222,128,0.3)' : 'rgba(6,182,212,0.25)' }}>
+              {promptCopied ? 'Copied!' : 'Copy Prompt'}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Style notes footer */}
+      {img.style_notes && (
+        <div className="px-3 py-2 border-t border-white/[0.04]">
+          <p className="text-[10px] text-gray-600 line-clamp-2">{img.style_notes}</p>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function CreativePage() {
@@ -102,13 +172,17 @@ export default function CreativePage() {
   const [images, setImages] = useState([]);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('generate');
+  const [showInput, setShowInput] = useState(true);
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+
+  // Creative Brief state
   const [briefProduct, setBriefProduct] = useState('');
   const [briefGoal, setBriefGoal] = useState('Brand Awareness');
   const [briefAudience, setBriefAudience] = useState('');
   const [briefOutput, setBriefOutput] = useState('');
   const [briefLoading, setBriefLoading] = useState(false);
+  const [briefCopied, setBriefCopied] = useState(false);
 
   const loadHistory = useCallback(async () => {
     setHistoryLoading(true);
@@ -123,24 +197,8 @@ export default function CreativePage() {
   }, []);
 
   useEffect(() => {
-    if (activeType && activeTab === 'history') {
-      loadHistory();
-    }
+    if (activeType && activeTab === 'history') loadHistory();
   }, [activeTab, activeType, loadHistory]);
-
-  const saveProject = async (generatedImages, type, promptText) => {
-    try {
-      const urls = generatedImages.filter(img => img.url).map(img => img.url);
-      await postJSON('/api/creative/projects', {
-        type,
-        title: promptText.slice(0, 100),
-        prompt: promptText,
-        urls,
-      });
-    } catch (e) {
-      console.error('Failed to auto-save project:', e);
-    }
-  };
 
   const deleteProject = async (id) => {
     try {
@@ -155,6 +213,8 @@ export default function CreativePage() {
     if (!prompt.trim() || !activeType) return;
     setGenerating(true);
     setError(null);
+    setImages([]);
+    setShowInput(false);
     const selectedStyle = STYLES.find(s => s.id === style);
     const selectedDim = (DIMENSIONS[activeType] || []).find(d => d.id === dimension);
     const fullPrompt = `[Style: ${selectedStyle?.name}] [Dimensions: ${selectedDim?.label || 'Auto'}] [Palette: ${COLOR_PALETTES.find(p => p.id === palette)?.name}] [Quantity: ${quantity}]\n\n${prompt}`;
@@ -166,24 +226,30 @@ export default function CreativePage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
-      if (data.images) {
-        setImages(data.images);
-        // Auto-save to project history only if the server didn't already save it
-        if (!data.projectId) {
-          await saveProject(data.images, activeType, fullPrompt);
-        }
-      }
+      if (data.images) setImages(data.images);
       if (data.warning) console.warn('Creative warning:', data.warning);
     } catch (e) {
       console.error('Generation error:', e);
       setError(e.message === 'Failed to fetch'
         ? 'Could not reach the server. Please check your connection and try again.'
         : (e.message || 'Failed to generate creatives. Please try again.'));
+      setShowInput(true);
     } finally {
       setGenerating(false);
     }
   };
 
+  const applyBriefToGenerate = () => {
+    if (briefOutput) {
+      setPrompt(briefOutput.slice(0, 2000));
+      setActiveTab('generate');
+      setShowInput(true);
+    }
+  };
+
+  // ────────────────────────────────────────────────────────
+  //  LANDING SCREEN
+  // ────────────────────────────────────────────────────────
   if (!activeType) {
     return (
       <div className="p-4 sm:p-6 lg:p-12">
@@ -196,7 +262,7 @@ export default function CreativePage() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 stagger">
           {CREATIVE_TYPES.map(type => (
-            <button key={type.id} onClick={() => { setActiveType(type.id); setDimension(DIMENSIONS[type.id]?.[0]?.id || null); setActiveTab('generate'); }}
+            <button key={type.id} onClick={() => { setActiveType(type.id); setDimension(DIMENSIONS[type.id]?.[0]?.id || null); setActiveTab('generate'); setImages([]); setShowInput(true); }}
               className="panel-interactive rounded-2xl p-4 sm:p-7 text-center group">
               <div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center transition-all duration-300 group-hover:scale-110"
                 style={{ background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.12)' }}>
@@ -209,7 +275,6 @@ export default function CreativePage() {
           ))}
         </div>
 
-        {/* Templates Preview */}
         <div className="mt-10">
           <div className="flex items-center gap-3 sm:gap-5 mb-4">
             <p className="hud-label text-[11px]">QUICK START TEMPLATES</p>
@@ -220,7 +285,7 @@ export default function CreativePage() {
               tmpls.slice(0, 1).map(t => {
                 const ct = CREATIVE_TYPES.find(c => c.id === type);
                 return (
-                  <button key={`${type}-${t.name}`} onClick={() => { setActiveType(type); setPrompt(t.prompt); setDimension(DIMENSIONS[type]?.[0]?.id || null); setActiveTab('generate'); }}
+                  <button key={`${type}-${t.name}`} onClick={() => { setActiveType(type); setPrompt(t.prompt); setDimension(DIMENSIONS[type]?.[0]?.id || null); setActiveTab('generate'); setShowInput(true); }}
                     className="panel-interactive rounded-lg p-4 sm:p-6 text-left group">
                     <p className="hud-label text-[11px] mb-1.5" style={{ color: '#06b6d4' }}>{ct?.name}</p>
                     <p className="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">{t.name}</p>
@@ -236,46 +301,54 @@ export default function CreativePage() {
     );
   }
 
+  // ────────────────────────────────────────────────────────
+  //  GENERATOR SCREEN
+  // ────────────────────────────────────────────────────────
   const currentType = CREATIVE_TYPES.find(t => t.id === activeType);
   const templates = TEMPLATES[activeType] || [];
   const dims = DIMENSIONS[activeType] || [];
+  const hasOutput = images.length > 0 || generating;
+  const promptReadyCount = images.filter(i => i.status === 'prompt_ready' || !i.url).length;
 
   return (
     <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
       <ModuleWrapper moduleId="creative">
       {/* Header */}
       <div className="flex items-center gap-3 sm:gap-5 mb-6 sm:mb-8">
-        <button onClick={() => { setActiveType(null); setImages([]); setPrompt(''); setActiveTab('generate'); }}
+        <button onClick={() => { setActiveType(null); setImages([]); setPrompt(''); setActiveTab('generate'); setShowInput(true); setError(null); }}
           className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white hover:border-indigo-500/25 transition-all">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
           </svg>
         </button>
-        <div>
+        <div className="flex-1">
           <p className="hud-label text-[11px]" style={{ color: '#06b6d4' }}>{currentType?.name?.toUpperCase()} GENERATOR</p>
           <h2 className="text-xl sm:text-2xl font-bold text-white">Create {currentType?.name}</h2>
         </div>
-
         {/* Tabs */}
-        <div className="ml-auto flex gap-1">
-          {['generate', 'brief', 'history'].map(tab => (
-            <button key={tab} onClick={() => { setActiveTab(tab); if (tab === 'history') loadHistory(); }}
-              className={`chip text-[10px] capitalize ${activeTab === tab ? 'active' : ''}`}
-              style={activeTab === tab ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-              {tab === 'history' ? 'History' : tab === 'brief' ? 'Creative Brief' : 'Generate'}
+        <div className="flex gap-1">
+          {[
+            { id: 'generate', label: 'Generate' },
+            { id: 'brief', label: 'Creative Brief' },
+            { id: 'history', label: 'History' },
+          ].map(tab => (
+            <button key={tab.id} onClick={() => { setActiveTab(tab.id); if (tab.id === 'history') loadHistory(); }}
+              className={`chip text-[10px] ${activeTab === tab.id ? 'active' : ''}`}
+              style={activeTab === tab.id ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+              {tab.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* History Tab */}
+      {/* ── HISTORY TAB ── */}
       {activeTab === 'history' && (
         <div className="animate-fade-in">
           {historyLoading ? (
             <div className="panel rounded-2xl p-10 text-center">
-              <div className="flex items-center justify-center gap-3 mb-2">
+              <div className="flex items-center justify-center gap-3">
                 <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                <span className="hud-label text-[11px]" style={{ color: '#06b6d4' }}>LOADING HISTORY</span>
+                <span className="hud-label text-[11px]" style={{ color: '#06b6d4' }}>LOADING</span>
               </div>
             </div>
           ) : history.length === 0 ? (
@@ -283,47 +356,37 @@ export default function CreativePage() {
               <p className="text-gray-500 text-sm">No projects yet. Generate some creatives to see them here.</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {history.map(project => {
-                const imageUrls = project.image_urls
-                  ? project.image_urls.split(',').filter(Boolean)
-                  : [];
+                const imageUrls = project.image_urls ? project.image_urls.split(',').filter(Boolean) : [];
                 const typeLabel = CREATIVE_TYPES.find(t => t.id === project.type)?.name || project.type;
                 return (
-                  <div key={project.id} className="panel rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                    {/* Thumbnails */}
-                    <div className="flex gap-1.5 flex-shrink-0">
-                      {imageUrls.slice(0, 4).map((url, i) => (
+                  <div key={project.id} className="panel rounded-xl p-3 sm:p-4 flex items-center gap-3 sm:gap-4 group">
+                    <div className="flex gap-1 flex-shrink-0">
+                      {imageUrls.slice(0, 3).map((url, i) => (
                         <img key={i} src={`${API_BASE}${url}`} alt="" loading="lazy"
-                          className="w-[60px] h-[60px] rounded-lg object-cover border border-indigo-500/10" />
+                          className="w-12 h-12 rounded-lg object-cover border border-indigo-500/10"
+                          onError={(e) => { e.target.style.display = 'none'; }} />
                       ))}
                       {imageUrls.length === 0 && (
-                        <div className="w-[60px] h-[60px] rounded-lg flex items-center justify-center"
+                        <div className="w-12 h-12 rounded-lg flex items-center justify-center"
                           style={{ background: 'rgba(6,182,212,0.05)', border: '1px solid rgba(6,182,212,0.1)' }}>
-                          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
                           </svg>
                         </div>
                       )}
                     </div>
-
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="chip text-[10px] px-2 py-0.5" style={{ color: '#06b6d4', borderColor: 'rgba(6,182,212,0.2)', background: 'rgba(6,182,212,0.08)' }}>
-                          {typeLabel}
-                        </span>
-                        {imageUrls.length > 0 && (
-                          <span className="text-[10px] text-gray-600">{imageUrls.length} image{imageUrls.length !== 1 ? 's' : ''}</span>
-                        )}
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="hud-label text-[9px]" style={{ color: '#06b6d4' }}>{typeLabel}</span>
+                        <span className="text-[10px] text-gray-600">{formatDate(project.created_at)}</span>
+                        {imageUrls.length > 0 && <span className="text-[10px] text-gray-600">{imageUrls.length} images</span>}
                       </div>
                       <p className="text-sm text-gray-300 truncate">{project.title || 'Untitled'}</p>
-                      <p className="text-[10px] text-gray-600 mt-0.5">{formatDate(project.created_at)}</p>
                     </div>
-
-                    {/* Delete */}
                     <button onClick={() => deleteProject(project.id)}
-                      className="flex-shrink-0 p-2 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-400/8 transition-all border border-transparent hover:border-red-400/15">
+                      className="flex-shrink-0 p-2 rounded-lg text-gray-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
                       </svg>
@@ -336,231 +399,303 @@ export default function CreativePage() {
         </div>
       )}
 
-      {/* Creative Brief Tab */}
+      {/* ── CREATIVE BRIEF TAB ── */}
       {activeTab === 'brief' && (
-        <div className="panel animate-fade-in">
-          <div className="hud-label" style={{ marginBottom: 16 }}>AI Creative Brief Generator</div>
-          <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
-            <div>
-              <div className="hud-label" style={{ marginBottom: 4 }}>Product / Brand</div>
-              <input className="input-field rounded-xl px-4 py-3 w-full" value={briefProduct} onChange={e => setBriefProduct(e.target.value)} placeholder="e.g. Premium Skincare Serum" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 animate-fade-in">
+          {/* Left: Brief form */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="panel rounded-2xl p-4 sm:p-6">
+              <p className="hud-label text-[11px] mb-4">BRIEF DETAILS</p>
+              <div className="space-y-4">
+                <div>
+                  <p className="hud-label text-[10px] mb-2">PRODUCT / BRAND</p>
+                  <input className="w-full input-field rounded-xl px-4 py-3 text-sm"
+                    value={briefProduct} onChange={e => setBriefProduct(e.target.value)}
+                    placeholder="e.g. Premium Skincare Serum" />
+                </div>
+                <div>
+                  <p className="hud-label text-[10px] mb-2">CAMPAIGN GOAL</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {['Brand Awareness', 'Product Launch', 'Conversion', 'Retargeting', 'Seasonal Campaign'].map(g => (
+                      <button key={g} onClick={() => setBriefGoal(g)}
+                        className={`chip text-[10px] ${briefGoal === g ? 'active' : ''}`}
+                        style={briefGoal === g ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                        {g}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="hud-label text-[10px] mb-2">TARGET AUDIENCE</p>
+                  <input className="w-full input-field rounded-xl px-4 py-3 text-sm"
+                    value={briefAudience} onChange={e => setBriefAudience(e.target.value)}
+                    placeholder="e.g. Women 25-45, health-conscious" />
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="hud-label" style={{ marginBottom: 4 }}>Campaign Goal</div>
-              <select className="input-field rounded-xl px-4 py-3 w-full" value={briefGoal} onChange={e => setBriefGoal(e.target.value)}>
-                {['Brand Awareness', 'Product Launch', 'Conversion', 'Retargeting', 'Seasonal Campaign'].map(g => <option key={g}>{g}</option>)}
-              </select>
+
+            <button onClick={() => {
+                setBriefOutput('');
+                setBriefLoading(true);
+                connectSSE('/api/creative/generate-brief', { product: briefProduct, goal: briefGoal, audience: briefAudience }, {
+                  onChunk: (chunk) => setBriefOutput(prev => prev + chunk),
+                  onResult: () => setBriefLoading(false),
+                  onError: () => setBriefLoading(false),
+                  onDone: () => setBriefLoading(false),
+                });
+              }}
+              disabled={!briefProduct || briefLoading}
+              className="btn-accent w-full py-3 rounded-lg font-bold text-sm tracking-wide"
+              style={{ background: briefLoading ? '#1e1e2e' : '#06b6d4', boxShadow: briefLoading ? 'none' : '0 4px 20px -4px rgba(6,182,212,0.4)' }}>
+              {briefLoading ? (
+                <span className="flex items-center gap-2">
+                  <span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />
+                  GENERATING BRIEF...
+                </span>
+              ) : 'GENERATE CREATIVE BRIEF'}
+            </button>
+
+            {/* Brief output */}
+            {briefOutput && (
+              <div className="panel rounded-2xl p-4 sm:p-6 animate-fade-up">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full" style={{ background: briefLoading ? '#06b6d4' : '#4ade80', animation: briefLoading ? 'pulse 1s infinite' : 'none' }} />
+                    <span className="hud-label text-[11px]" style={{ color: briefLoading ? '#06b6d4' : '#4ade80' }}>
+                      {briefLoading ? 'GENERATING' : 'CREATIVE BRIEF'}
+                    </span>
+                  </div>
+                  {!briefLoading && (
+                    <div className="flex gap-2">
+                      <button onClick={() => { navigator.clipboard.writeText(briefOutput); setBriefCopied(true); setTimeout(() => setBriefCopied(false), 2000); }}
+                        className="chip text-[10px]" style={{ color: briefCopied ? '#4ade80' : undefined }}>
+                        {briefCopied ? 'Copied!' : 'Copy'}
+                      </button>
+                      <button onClick={applyBriefToGenerate}
+                        className="chip text-[10px]" style={{ color: '#22d3ee', borderColor: 'rgba(6,182,212,0.3)', background: 'rgba(6,182,212,0.1)' }}>
+                        Use as Brief →
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="bg-black/40 rounded-xl p-4 sm:p-5 max-h-[55vh] overflow-y-auto text-sm text-gray-300 whitespace-pre-wrap leading-relaxed"
+                  style={{ borderLeft: '2px solid rgba(6,182,212,0.3)' }}>
+                  {briefOutput}
+                  {briefLoading && <span className="inline-block w-[2px] h-4 bg-cyan-400 ml-0.5 animate-pulse" />}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right: tips sidebar */}
+          <div className="space-y-4">
+            <div className="panel rounded-2xl p-4 sm:p-5">
+              <p className="hud-label text-[11px] mb-3">HOW IT WORKS</p>
+              <div className="space-y-3">
+                {[
+                  { step: '01', text: 'Describe your product and campaign goal' },
+                  { step: '02', text: 'AI generates a full creative direction with color, type, and messaging' },
+                  { step: '03', text: 'Click "Use as Brief →" to apply it to your image generation' },
+                ].map(s => (
+                  <div key={s.step} className="flex items-start gap-3">
+                    <span className="hud-label text-[10px] flex-shrink-0 mt-0.5" style={{ color: '#22d3ee' }}>{s.step}</span>
+                    <p className="text-xs text-gray-500 leading-relaxed">{s.text}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div>
-              <div className="hud-label" style={{ marginBottom: 4 }}>Target Audience</div>
-              <input className="input-field rounded-xl px-4 py-3 w-full" value={briefAudience} onChange={e => setBriefAudience(e.target.value)} placeholder="e.g. Women 25-45, health-conscious" />
+            <div className="panel rounded-2xl p-4 sm:p-5">
+              <p className="hud-label text-[11px] mb-3">WHAT'S INCLUDED</p>
+              <div className="space-y-2">
+                {['Visual Direction', 'Color Palette (with hex codes)', 'Typography recommendations', 'Messaging Hierarchy', "Do's & Don'ts", 'Reference Aesthetic'].map(item => (
+                  <div key={item} className="flex items-center gap-2 text-xs text-gray-500">
+                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-500/50 flex-shrink-0" />
+                    {item}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-          <button className="btn-accent w-full py-3 rounded-lg" disabled={!briefProduct || briefLoading}
-            style={{ background: briefLoading ? '#1e1e2e' : '#06b6d4', boxShadow: briefLoading ? 'none' : '0 4px 20px -4px rgba(6,182,212,0.4)' }}
-            onClick={() => {
-              setBriefOutput('');
-              setBriefLoading(true);
-              connectSSE('/api/creative/generate-brief', { product: briefProduct, goal: briefGoal, audience: briefAudience }, {
-                onChunk: (chunk) => setBriefOutput(prev => prev + chunk),
-                onResult: () => setBriefLoading(false),
-                onError: () => setBriefLoading(false),
-                onDone: () => setBriefLoading(false),
-              });
-            }}>
-            {briefLoading ? 'Generating Brief...' : 'Generate Creative Brief'}
-          </button>
-          {briefOutput && (
-            <div style={{ marginTop: 20, whiteSpace: 'pre-wrap', fontSize: 14, lineHeight: 1.8, color: 'var(--text)' }}>
-              {briefOutput}
-            </div>
-          )}
         </div>
       )}
 
-      {/* Generate Tab */}
+      {/* ── GENERATE TAB ── */}
       {activeTab === 'generate' && (
-        <>
+        <div className="space-y-4 sm:space-y-5">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-            {/* Left: Controls */}
-            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-              {/* Templates */}
-              <div className="panel rounded-2xl p-4 sm:p-6">
-                <p className="hud-label text-[11px] mb-3">TEMPLATES</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {templates.map(t => (
-                    <button key={t.name} onClick={() => setPrompt(t.prompt)}
-                      className={`text-left px-4 py-3 rounded-lg border text-sm transition-all ${
-                        prompt === t.prompt ? 'border-cyan-500/30 bg-cyan-500/8 text-cyan-300' : 'border-indigo-500/8 bg-white/[0.01] text-gray-400 hover:text-gray-200 hover:border-indigo-500/15'
-                      }`}>
-                      <p className="font-semibold">{t.name}</p>
-                      <p className="text-xs text-gray-600 mt-0.5 line-clamp-1">{t.prompt}</p>
-                    </button>
-                  ))}
+            {/* Left: Input */}
+            <div className="lg:col-span-2 space-y-4">
+              {showInput && !generating && (
+                <div className="space-y-4 animate-fade-in">
+                  {/* Templates (compact chips) */}
+                  <div>
+                    <p className="hud-label text-[11px] mb-2">TEMPLATES</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {templates.map(t => (
+                        <button key={t.name} onClick={() => setPrompt(t.prompt)}
+                          className={`chip text-[10px] ${prompt === t.prompt ? 'active' : ''}`}
+                          style={prompt === t.prompt ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                          {t.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Brief */}
+                  <div className="panel rounded-2xl p-4 sm:p-5">
+                    <p className="hud-label text-[11px] mb-2">CREATIVE BRIEF</p>
+                    <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={4}
+                      placeholder="Describe your visual in detail — subject, composition, mood, lighting, colors, text overlays..."
+                      className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                  </div>
+
+                  {/* Generate */}
+                  <button onClick={generate} disabled={generating || !prompt.trim()}
+                    className="btn-accent w-full py-3 rounded-lg font-bold text-sm tracking-wide"
+                    style={{ background: !prompt.trim() ? '#1e1e2e' : '#06b6d4', boxShadow: !prompt.trim() ? 'none' : '0 4px 20px -4px rgba(6,182,212,0.4)' }}>
+                    GENERATE {quantity} CREATIVES
+                  </button>
                 </div>
-              </div>
+              )}
 
-              {/* Prompt */}
-              <div className="panel rounded-2xl p-4 sm:p-6">
-                <p className="hud-label text-[11px] mb-3">CREATIVE BRIEF</p>
-                <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={4}
-                  placeholder="Describe your visual in detail — subject, composition, mood, lighting, colors, text overlays..."
-                  className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base resize-none" />
-              </div>
+              {/* Error */}
+              {error && (
+                <div className="panel rounded-xl p-4 animate-fade-up" style={{ borderColor: 'rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.05)' }}>
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                    </svg>
+                    <p className="text-xs text-red-400 flex-1">{error}</p>
+                    <button onClick={() => setError(null)} className="text-[10px] text-red-400/60 hover:text-red-400 font-semibold">Dismiss</button>
+                  </div>
+                </div>
+              )}
 
-              {/* Generate */}
-              <button onClick={generate} disabled={generating || !prompt.trim()}
-                className="btn-accent w-full py-3 rounded-lg"
-                style={{ background: generating ? '#1e1e2e' : '#06b6d4', boxShadow: generating ? 'none' : '0 4px 20px -4px rgba(6,182,212,0.4)' }}>
-                {generating ? (
-                  <span className="flex items-center gap-2">
-                    <span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />
-                    GENERATING...
-                  </span>
-                ) : `GENERATE ${quantity} CREATIVES`}
-              </button>
+              {/* Generating state */}
+              {generating && (
+                <div className="panel rounded-2xl p-6 sm:p-10 animate-fade-up text-center">
+                  <div className="flex items-center justify-center gap-3 mb-5">
+                    <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                    <span className="hud-label text-[11px]" style={{ color: '#06b6d4' }}>RENDERING VISUALS</span>
+                  </div>
+                  <div className="flex justify-center gap-1 mb-5">
+                    {[0, 1, 2, 3, 4].map(i => (
+                      <div key={i} className="w-1.5 rounded-full overflow-hidden" style={{ height: 32, background: 'rgba(6,182,212,0.1)' }}>
+                        <div className="w-full rounded-full bg-cyan-400" style={{ height: '40%', animation: `pulse 1.2s ease-in-out ${i * 0.15}s infinite` }} />
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500">Creating {quantity} variations with {STYLES.find(s => s.id === style)?.name} style</p>
+                </div>
+              )}
+
+              {/* Image gallery */}
+              {images.length > 0 && !generating && (
+                <div className="animate-fade-up">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                      <span className="hud-label text-[11px]" style={{ color: '#4ade80' }}>
+                        GENERATED — {images.length} CREATIVES
+                      </span>
+                      {promptReadyCount > 0 && (
+                        <span className="chip text-[9px]" style={{ color: '#22d3ee', borderColor: 'rgba(6,182,212,0.2)' }}>
+                          {promptReadyCount} prompt ready
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => setShowInput(v => !v)} className="chip text-[10px]">
+                        {showInput ? 'Hide Brief' : 'Edit Brief'}
+                      </button>
+                      <button onClick={generate} className="chip text-[10px]">Regenerate</button>
+                    </div>
+                  </div>
+
+                  {promptReadyCount === images.length && (
+                    <div className="panel rounded-xl p-3 mb-3" style={{ borderColor: 'rgba(6,182,212,0.15)', background: 'rgba(6,182,212,0.04)' }}>
+                      <p className="text-xs text-cyan-400/70">
+                        <span className="font-semibold">AI prompts generated.</span> Image rendering requires Gemini API configuration. Copy these prompts to use in any image generation tool.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+                    {images.map((img, i) => (
+                      <ImageCard key={i} img={img} apiBase={API_BASE} />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Right: Settings */}
-            <div className="space-y-4 sm:space-y-6">
+            <div className="space-y-4">
               {/* Style */}
-              <div className="panel rounded-2xl p-4 sm:p-6">
-                <p className="hud-label text-[11px] mb-3">VISUAL STYLE</p>
+              <div className="panel rounded-2xl p-4 sm:p-5">
+                <p className="hud-label text-[11px] mb-2.5">VISUAL STYLE</p>
                 <div className="grid grid-cols-2 gap-1.5">
                   {STYLES.map(s => (
                     <button key={s.id} onClick={() => setStyle(s.id)}
-                      className={`chip text-[10px] justify-center flex-col items-start px-2.5 py-2 ${style === s.id ? 'active' : ''}`}
+                      className={`chip text-[10px] justify-center ${style === s.id ? 'active' : ''}`}
                       style={style === s.id ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                      <span className="font-bold">{s.name}</span>
+                      {s.name}
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Dimensions */}
-              <div className="panel rounded-2xl p-4 sm:p-6">
-                <p className="hud-label text-[11px] mb-3">DIMENSIONS</p>
+              <div className="panel rounded-2xl p-4 sm:p-5">
+                <p className="hud-label text-[11px] mb-2.5">DIMENSIONS</p>
                 <div className="grid grid-cols-2 gap-1.5">
                   {dims.map(d => (
                     <button key={d.id} onClick={() => setDimension(d.id)}
-                      className={`chip text-[10px] justify-center flex-col items-center py-2 ${dimension === d.id ? 'active' : ''}`}
+                      className={`chip text-[10px] flex-col items-center py-2 ${dimension === d.id ? 'active' : ''}`}
                       style={dimension === d.id ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
                       <span className="font-bold">{d.label}</span>
-                      <span className="text-[10px] opacity-60">{d.desc}</span>
+                      <span className="text-[9px] opacity-60">{d.desc}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Color Palette */}
-              <div className="panel rounded-2xl p-4 sm:p-6">
-                <p className="hud-label text-[11px] mb-3">COLOR PALETTE</p>
-                <div className="space-y-1.5">
+              {/* Color Palette (compact) */}
+              <div className="panel rounded-2xl p-4 sm:p-5">
+                <p className="hud-label text-[11px] mb-2.5">COLOR PALETTE</p>
+                <div className="grid grid-cols-2 gap-1.5">
                   {COLOR_PALETTES.map(p => (
                     <button key={p.id} onClick={() => setPalette(p.id)}
-                      className={`w-full flex items-center gap-2.5 px-4 py-3 rounded-lg border text-xs transition-all ${
-                        palette === p.id ? 'border-cyan-500/30 bg-cyan-500/8 text-cyan-300' : 'border-indigo-500/8 bg-white/[0.01] text-gray-400 hover:text-gray-200'
+                      className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border text-xs transition-all ${
+                        palette === p.id ? 'border-cyan-500/30 bg-cyan-500/[0.08] text-cyan-300' : 'border-indigo-500/8 bg-white/[0.01] text-gray-400 hover:text-gray-200'
                       }`}>
-                      <div className="flex gap-1">
+                      <div className="flex gap-0.5 flex-shrink-0">
                         {p.colors.map((c, i) => (
-                          <div key={i} className="w-3 h-3 rounded-full" style={{ background: c }} />
+                          <div key={i} className="w-2.5 h-2.5 rounded-full" style={{ background: c }} />
                         ))}
                       </div>
-                      <span className="font-semibold">{p.name}</span>
+                      <span className="font-semibold text-[10px] truncate">{p.name}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Quantity */}
-              <div className="panel rounded-2xl p-4 sm:p-6">
-                <p className="hud-label text-[11px] mb-3">QUANTITY</p>
+              <div className="panel rounded-2xl p-4 sm:p-5">
+                <p className="hud-label text-[11px] mb-2.5">QUANTITY</p>
                 <div className="grid grid-cols-3 gap-1.5">
                   {['2', '4', '6'].map(q => (
                     <button key={q} onClick={() => setQuantity(q)}
                       className={`chip text-[10px] justify-center ${quantity === q ? 'active' : ''}`}
                       style={quantity === q ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                      {q} images
+                      {q} imgs
                     </button>
                   ))}
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Error */}
-          {error && (
-            <div className="panel rounded-xl p-4 mt-4 animate-fade-up" style={{ borderColor: 'rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.05)' }}>
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                </svg>
-                <p className="text-xs text-red-400 flex-1">{error}</p>
-                <button onClick={() => setError(null)} className="text-[10px] text-red-400/60 hover:text-red-400 font-semibold">Dismiss</button>
-              </div>
-            </div>
-          )}
-
-          {/* Generation Loading */}
-          {generating && (
-            <div className="panel rounded-2xl p-6 sm:p-10 mt-6 animate-fade-up text-center">
-              <div className="flex items-center justify-center gap-3 sm:gap-5 mb-4">
-                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                <span className="hud-label text-[11px]" style={{ color: '#06b6d4' }}>RENDERING VISUALS</span>
-              </div>
-              <div className="flex justify-center gap-1">
-                {[0, 1, 2, 3, 4].map(i => (
-                  <div key={i} className="w-1.5 h-8 rounded-full bg-cyan-500/20" style={{ animation: `pulse 1.2s ease-in-out ${i * 0.15}s infinite` }}>
-                    <div className="w-full rounded-full bg-cyan-400" style={{ height: '40%', animation: `pulse 1.2s ease-in-out ${i * 0.15}s infinite` }} />
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-gray-500 mt-4">Creating {quantity} variations with {STYLES.find(s => s.id === style)?.name} style...</p>
-            </div>
-          )}
-
-          {/* Output Gallery */}
-          {images.length > 0 && (
-            <div className="mt-6 animate-fade-up">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                  <span className="hud-label text-[11px]" style={{ color: '#4ade80' }}>GENERATED — {images.length} CREATIVES</span>
-                </div>
-                <button onClick={generate} className="chip text-[10px] self-start sm:self-auto">Regenerate</button>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">
-                {images.map((img, i) => (
-                  <div key={i} className="panel rounded-2xl overflow-hidden group">
-                    <div className="relative">
-                      {img.url ? (
-                        <>
-                          <img src={`${API_BASE}${img.url}`} alt={img.alt || 'Generated creative'} loading="lazy" className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-wrap items-end justify-center pb-4 gap-2">
-                            <a href={`${API_BASE}${img.url}`} download className="chip text-[10px]" style={{ background: 'rgba(6,182,212,0.2)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' }}>
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                              </svg>
-                              Download
-                            </a>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="w-full aspect-square flex flex-col items-center justify-center p-4 text-center" style={{ background: 'rgba(6,182,212,0.05)' }}>
-                          <svg className="w-8 h-8 text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-                          </svg>
-                          <p className="text-xs text-gray-500">{img.alt || 'Prompt ready'}</p>
-                          {img.error && <p className="text-[10px] text-red-400 mt-1">{img.error}</p>}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
+        </div>
       )}
       </ModuleWrapper>
     </div>
