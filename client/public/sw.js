@@ -23,9 +23,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 
-  // Skip non-GET requests and API calls
+  // Skip non-GET requests, API calls, and cross-origin media
   if (request.method !== 'GET') return;
   if (request.url.includes('/api/')) return;
+  if (request.url.includes('/uploads/')) return;
+  if (request.url.includes('/videos/')) return;
 
   // HTML navigation requests: network-first (prevents stale HTML after deploys)
   if (request.mode === 'navigate') {
