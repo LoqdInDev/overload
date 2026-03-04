@@ -182,11 +182,12 @@ router.delete('/:jobId', (req, res) => {
 });
 
 // POST /analyze-hook — analyze a single hook text
-router.post('/analyze-hook', (req, res) => {
+router.post('/analyze-hook', async (req, res) => {
   const { hook } = req.body;
   if (!hook) return res.status(400).json({ error: 'hook required' });
 
-  generateTextWithClaude(`You are a viral marketing expert. Analyze this video hook for effectiveness:
+  try {
+    const { text } = await generateTextWithClaude(`You are a viral marketing expert. Analyze this video hook for effectiveness:
 
 "${hook}"
 
@@ -198,23 +199,25 @@ Return a JSON object with this exact structure:
   "improved_versions": [<improved hook 1>, <improved hook 2>, <improved hook 3>]
 }
 
-Only return the JSON, no markdown.`)
-    .then(text => {
-      try {
-        const result = JSON.parse(text.trim());
-        res.json(result);
-      } catch {
-        res.json({ score: 7, strengths: ['Has curiosity gap'], weaknesses: ['Could be more specific'], improved_versions: [hook] });
-      }
-    })
-    .catch(err => res.status(500).json({ error: err.message }));
+Only return the JSON, no markdown.`);
+    const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
+    try { res.json(JSON.parse(cleaned)); }
+    catch {
+      const m = cleaned.match(/\{[\s\S]*\}/);
+      if (m) res.json(JSON.parse(m[0]));
+      else res.status(500).json({ error: 'Failed to parse hook analysis' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // POST /predict-performance — predict campaign performance
-router.post('/predict-performance', (req, res) => {
+router.post('/predict-performance', async (req, res) => {
   const { product, angles, script_count } = req.body;
 
-  generateTextWithClaude(`You are a video marketing performance analyst. Predict performance for this campaign:
+  try {
+    const { text } = await generateTextWithClaude(`You are a video marketing performance analyst. Predict performance for this campaign:
 
 Product: ${product || 'Unknown'}
 Number of angles: ${angles || 1}
@@ -230,16 +233,17 @@ Return JSON with this exact structure:
   "top_recommendation": "<one actionable tip>"
 }
 
-Only return the JSON.`)
-    .then(text => {
-      try {
-        const result = JSON.parse(text.trim());
-        res.json(result);
-      } catch {
-        res.json({ viral_score: 72, predicted_ctr: '3.1%', predicted_roas: '3.8x', strengths: ['Multi-angle approach'], risks: ['Unknown product'], top_recommendation: 'Test 3 hooks per script' });
-      }
-    })
-    .catch(err => res.status(500).json({ error: err.message }));
+Only return the JSON.`);
+    const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
+    try { res.json(JSON.parse(cleaned)); }
+    catch {
+      const m = cleaned.match(/\{[\s\S]*\}/);
+      if (m) res.json(JSON.parse(m[0]));
+      else res.status(500).json({ error: 'Failed to parse performance prediction' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

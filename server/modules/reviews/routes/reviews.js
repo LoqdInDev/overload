@@ -324,8 +324,13 @@ Return JSON:
 
 Only return JSON.`)
     .then(({ text }) => {
-      try { res.json(JSON.parse(text.trim())); }
-      catch { res.json({ positive_percent: 70, neutral_percent: 20, negative_percent: 10, trending_topics: [], trajectory: 'stable', alert: null, summary: 'Generally positive reviews.' }); }
+      const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
+      try { res.json(JSON.parse(cleaned)); }
+      catch {
+        const m = cleaned.match(/\{[\s\S]*\}/);
+        if (m) res.json(JSON.parse(m[0]));
+        else res.status(500).json({ error: 'Failed to parse sentiment analysis' });
+      }
     })
     .catch(err => res.status(500).json({ error: err.message }));
 });
@@ -356,8 +361,13 @@ Return JSON:
 
 Only return JSON.`)
     .then(({ text }) => {
-      try { res.json(JSON.parse(text.trim())); }
-      catch { res.json({ response: 'Thank you for your feedback. We appreciate you taking the time to share your experience.', tone: 'Grateful', tip: 'Personalize with their specific mention' }); }
+      const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
+      try { res.json(JSON.parse(cleaned)); }
+      catch {
+        const m = cleaned.match(/\{[\s\S]*\}/);
+        if (m) res.json(JSON.parse(m[0]));
+        else res.status(500).json({ error: 'Failed to parse review response' });
+      }
     })
     .catch(err => res.status(500).json({ error: err.message }));
 });

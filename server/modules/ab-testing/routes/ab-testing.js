@@ -142,10 +142,11 @@ router.post('/calculate-significance', (req, res) => {
 });
 
 // POST /predict-winner — AI predict the winner based on psychology
-router.post('/predict-winner', (req, res) => {
+router.post('/predict-winner', async (req, res) => {
   const { test_name, variant_a, variant_b } = req.body;
 
-  generateTextWithClaude(`You are a conversion psychology expert. Predict which A/B test variant will win:
+  try {
+    const { text } = await generateTextWithClaude(`You are a conversion psychology expert. Predict which A/B test variant will win:
 
 Test: ${test_name || 'A/B Test'}
 Variant A: ${variant_a}
@@ -160,13 +161,17 @@ Return JSON:
   "caveat": "<any important caveat or audience consideration>"
 }
 
-Only return JSON.`)
-    .then(result => {
-      const text = result.text || '';
-      try { res.json(JSON.parse(text.trim())); }
-      catch { res.json({ predicted_winner: 'B', confidence: 'Medium', reasoning: 'Based on standard conversion principles', key_factor: 'Specificity', caveat: 'Results may vary by audience' }); }
-    })
-    .catch(err => res.status(500).json({ error: err.message }));
+Only return JSON.`);
+    const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
+    try { res.json(JSON.parse(cleaned)); }
+    catch {
+      const m = cleaned.match(/\{[\s\S]*\}/);
+      if (m) res.json(JSON.parse(m[0]));
+      else res.status(500).json({ error: 'Failed to parse winner prediction' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

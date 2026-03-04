@@ -537,8 +537,13 @@ Return JSON:
 
 Only return JSON.`)
     .then(({ text }) => {
-      try { res.json(JSON.parse(text.trim())); }
-      catch { res.json({ score: 65, tier: 'warm', probability_to_close: '30%', next_action: 'Schedule a discovery call', timing: 'This week', signals: ['Multiple page visits'], concerns: [] }); }
+      const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
+      try { res.json(JSON.parse(cleaned)); }
+      catch {
+        const m = cleaned.match(/\{[\s\S]*\}/);
+        if (m) res.json(JSON.parse(m[0]));
+        else res.status(500).json({ error: 'Failed to parse lead score' });
+      }
     })
     .catch(err => res.status(500).json({ error: err.message }));
 });

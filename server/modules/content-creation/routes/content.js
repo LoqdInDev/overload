@@ -123,11 +123,12 @@ router.get('/suggestions', (req, res) => {
 });
 
 // POST /score — score content quality
-router.post('/score', (req, res) => {
+router.post('/score', async (req, res) => {
   const { content, content_type } = req.body;
   if (!content) return res.status(400).json({ error: 'content required' });
 
-  generateTextWithClaude(`You are a content quality analyst. Score this ${content_type || 'content'} on three dimensions:
+  try {
+    const { text } = await generateTextWithClaude(`You are a content quality analyst. Score this ${content_type || 'content'} on three dimensions:
 
 Content: """
 ${content.substring(0, 2000)}
@@ -143,12 +144,17 @@ Return JSON with this exact structure:
   "strengths": ["<strength1>", "<strength2>"]
 }
 
-Only return JSON.`)
-    .then(text => {
-      try { res.json(JSON.parse(text.trim())); }
-      catch { res.json({ seo: 70, readability: 75, engagement: 68, overall_grade: 'B', top_issue: 'Add more keywords', strengths: ['Good structure'] }); }
-    })
-    .catch(err => res.status(500).json({ error: err.message }));
+Only return JSON.`);
+    const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
+    try { res.json(JSON.parse(cleaned)); }
+    catch {
+      const m = cleaned.match(/\{[\s\S]*\}/);
+      if (m) res.json(JSON.parse(m[0]));
+      else res.status(500).json({ error: 'Failed to parse score result' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // POST /repurpose — SSE: repurpose content into other formats
@@ -175,9 +181,9 @@ Format clearly with headers for each section. Be specific and ready to use.`;
     onChunk: (chunk) => sse.sendChunk(chunk),
   })
     .then(({ text: full }) => {
-      sse.sendResult({ done: true });
+      sse.sendResult({ content: full, done: true });
     })
-    .catch(() => res.end());
+    .catch((err) => sse.sendError(err));
 });
 
 module.exports = router;

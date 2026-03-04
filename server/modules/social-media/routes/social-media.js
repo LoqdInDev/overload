@@ -525,11 +525,12 @@ router.get('/pages/:providerId', async (req, res) => {
 });
 
 // POST /generate-variations — generate 3 caption variations
-router.post('/generate-variations', (req, res) => {
+router.post('/generate-variations', async (req, res) => {
   const { caption, platform } = req.body;
   if (!caption) return res.status(400).json({ error: 'caption required' });
 
-  generateTextWithClaude(`You are a social media expert. Create 3 variations of this caption for ${platform || 'social media'}:
+  try {
+    const { text } = await generateTextWithClaude(`You are a social media expert. Create 3 variations of this caption for ${platform || 'social media'}:
 
 Original: "${caption}"
 
@@ -542,16 +543,17 @@ Return JSON:
   ]
 }
 
-Make each variation distinctly different. Keep platform best practices. Only return JSON.`)
-    .then(text => {
-      try { res.json(JSON.parse(text.trim())); }
-      catch { res.json({ variations: [
-        { tone: 'Professional', caption: caption, why: 'Clear and direct' },
-        { tone: 'Casual & Fun', caption: caption + ' 🔥', why: 'Relatable tone' },
-        { tone: 'Viral Hook', caption: 'You won\'t believe this... ' + caption, why: 'Creates curiosity' }
-      ]}); }
-    })
-    .catch(err => res.status(500).json({ error: err.message }));
+Make each variation distinctly different. Keep platform best practices. Only return JSON.`);
+    const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
+    try { res.json(JSON.parse(cleaned)); }
+    catch {
+      const m = cleaned.match(/\{[\s\S]*\}/);
+      if (m) res.json(JSON.parse(m[0]));
+      else res.status(500).json({ error: 'Failed to parse caption variations' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // POST /cross-platform - SSE: generate adapted posts for all platforms at once
@@ -662,11 +664,12 @@ router.post('/best-times', async (req, res) => {
 });
 
 // POST /hashtag-intelligence — get smart hashtag recommendations
-router.post('/hashtag-intelligence', (req, res) => {
+router.post('/hashtag-intelligence', async (req, res) => {
   const { topic, platform } = req.body;
   if (!topic) return res.status(400).json({ error: 'topic required' });
 
-  generateTextWithClaude(`You are a hashtag strategist. Generate a strategic hashtag set for:
+  try {
+    const { text } = await generateTextWithClaude(`You are a hashtag strategist. Generate a strategic hashtag set for:
 Topic: ${topic}
 Platform: ${platform || 'Instagram'}
 
@@ -678,12 +681,17 @@ Return JSON:
   "strategy": "<brief hashtag mix strategy>"
 }
 
-Provide 3-4 tags per category. Make them real and relevant. Only return JSON.`)
-    .then(text => {
-      try { res.json(JSON.parse(text.trim())); }
-      catch { res.json({ mega: [{ tag: '#marketing', reach: '10M+' }], high: [{ tag: '#digitalmarketing', reach: '500K' }], niche: [{ tag: '#' + topic.replace(/\s/g,''), reach: '10K' }], strategy: 'Mix mega for reach, niche for engagement' }); }
-    })
-    .catch(err => res.status(500).json({ error: err.message }));
+Provide 3-4 tags per category. Make them real and relevant. Only return JSON.`);
+    const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
+    try { res.json(JSON.parse(cleaned)); }
+    catch {
+      const m = cleaned.match(/\{[\s\S]*\}/);
+      if (m) res.json(JSON.parse(m[0]));
+      else res.status(500).json({ error: 'Failed to parse hashtag recommendations' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;
