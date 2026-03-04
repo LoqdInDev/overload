@@ -25,6 +25,12 @@ function initDatabase() {
       created_at TEXT DEFAULT (datetime('now'))
     );
   `);
+
+  // Safe migrations for existing DBs
+  const contactCols = ['ai_score INTEGER', 'ai_tier TEXT', 'ai_pitch_angle TEXT', 'ai_best_time TEXT', 'ai_warning TEXT'];
+  for (const col of contactCols) {
+    try { db.exec(`ALTER TABLE pp_contacts ADD COLUMN ${col}`); } catch {}
+  }
 }
 
 module.exports = { initDatabase };
