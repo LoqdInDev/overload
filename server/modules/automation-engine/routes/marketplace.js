@@ -162,7 +162,7 @@ const RECIPES = [
   {
     id: 'ad-performance-report',
     name: 'Weekly Ad Performance Report',
-    description: 'Every Friday, generate a comprehensive ad performance report with insights and next week's recommendations.',
+    description: "Every Friday, generate a comprehensive ad performance report with insights and next week's recommendations.",
     category: 'Ads & Budget',
     icon: '📊',
     modules: ['ads'],
