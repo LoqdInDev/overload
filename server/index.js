@@ -175,7 +175,11 @@ app.all('/api/*', (req, res) => {
 
 // Serve generated media — UUIDs in filenames act as access tokens
 const dataDir = process.env.DB_PATH ? path.dirname(process.env.DB_PATH) : process.cwd();
-const setCors = (req, res, next) => { res.setHeader('Access-Control-Allow-Origin', '*'); next(); };
+const setCors = (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+};
 app.use('/videos', setCors, express.static(path.join(dataDir, 'videos'), { maxAge: '1d' }));
 app.use('/uploads/brand-media', setCors, express.static(path.join(dataDir, 'uploads', 'brand-media'), { maxAge: '1d' }));
 app.use('/uploads/creatives', setCors, express.static(path.join(dataDir, 'uploads', 'creatives'), { maxAge: '1d' }));
