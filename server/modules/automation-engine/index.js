@@ -22,7 +22,11 @@ module.exports = {
     router.use('/', require('./routes/settings'));
     router.use('/', require('./routes/activity-log'));
     router.use('/', require('./routes/insights'));
-    router.use('/marketplace', require('./routes/marketplace'));
+    try {
+      router.use('/marketplace', require('./routes/marketplace'));
+    } catch (err) {
+      console.error('[automation-engine] Failed to load marketplace route:', err);
+    }
     return router;
   },
 };
