@@ -1361,7 +1361,7 @@ function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(checked));
 }
 
-// ── Items completed programmatically by Claude (2026-03-01) ──────────
+// ── Items completed programmatically by Claude (2026-03-05) ──────────
 const DONE_BY_CLAUDE = [
   // Environment & Secrets
   "s0-i1",  // Require JWT_SECRET env var
@@ -1406,9 +1406,12 @@ const DONE_BY_CLAUDE = [
   "s4-i3",  // Add soft deletes (helper middleware)
 
   // Deployment & Hosting
+  "s6-i0",  // Production backend hosting — Railway is live and auto-deploying from GitHub
+  "s6-i1",  // VITE_API_URL — configured in .env.local pointing to Railway backend
   "s6-i3",  // Set up CI/CD pipeline (GitHub Actions)
   "s6-i4",  // Add ESLint + Prettier configuration
   "s6-i5",  // Expand .gitignore
+  "s6-i7",  // Full production build tested end-to-end — app is live on Vercel + Railway
   "s6-i8",  // Verify SPA fallback routing (app.get('*') serves index.html)
 
   // Frontend & Client
@@ -1457,6 +1460,10 @@ const DONE_BY_CLAUDE = [
   "s12-i4", // Payment receipt emails (wired up in Stripe webhook)
   "s12-i5", // Trial expiration reminders (daily cron job)
 
+  // Domain & SSL
+  "s5-i1",  // SSL/TLS — auto-provisioned by Vercel (HTTPS active)
+  "s5-i4",  // HTTPS enforcement — Vercel redirects HTTP → HTTPS automatically
+
   // Monitoring & Error Tracking
   "s13-i4", // Web Vitals tracking
 
@@ -1489,7 +1496,7 @@ const DECHECK = [
 ];
 
 // Auto-check completed items (one-time merge)
-const MERGE_KEY = "overload-checklist-claude-v6";
+const MERGE_KEY = "overload-checklist-claude-v7";
 if (!localStorage.getItem(MERGE_KEY)) {
   DONE_BY_CLAUDE.forEach(id => { checked[id] = true; });
   DECHECK.forEach(id => { delete checked[id]; });
