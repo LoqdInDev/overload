@@ -1,6 +1,7 @@
 const Stripe = require('stripe');
 const crypto = require('crypto');
 const { db } = require('../db/database');
+const { sendPaymentReceipt } = require('./email');
 
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY)
@@ -216,7 +217,7 @@ async function handleWebhookEvent(event) {
       if (invoice.subscription) {
         const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
         const sub = db.prepare(
-          'SELECT id FROM subscriptions WHERE stripe_subscription_id = ?'
+          'SELECT s.id, s.plan, u.email, u.display_name FROM subscriptions s JOIN users u ON u.id = s.user_id WHERE s.stripe_subscription_id = ?'
         ).get(subscription.id);
 
         if (sub) {
@@ -224,6 +225,11 @@ async function handleWebhookEvent(event) {
             UPDATE subscriptions SET status = 'active', current_period_end = ?, updated_at = datetime('now')
             WHERE stripe_subscription_id = ?
           `).run(new Date(subscription.current_period_end * 1000).toISOString(), subscription.id);
+
+          // Send payment receipt email
+          const amountPaid = (invoice.amount_paid / 100).toFixed(2);
+          const planName = PLANS[sub.plan]?.name || sub.plan;
+          sendPaymentReceipt(sub.email, sub.display_name, amountPaid, planName).catch(() => {});
         }
       }
       break;

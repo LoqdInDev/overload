@@ -1432,7 +1432,6 @@ const DONE_BY_CLAUDE = [
   // Performance
   "s9-i1",  // gzip/brotli compression
   "s9-i2",  // HTTP caching headers
-  "s9-i6",  // Minimize bundle size (audited)
 
   // Legal & Compliance
   "s10-i0", // Privacy Policy page
@@ -1455,11 +1454,10 @@ const DONE_BY_CLAUDE = [
   "s12-i1", // Welcome email on signup
   "s12-i2", // Email verification flow
   "s12-i3", // Password reset flow
-  "s12-i4", // Payment receipt emails (template)
-  "s12-i5", // Trial expiration reminder emails (template)
+  "s12-i4", // Payment receipt emails (wired up in Stripe webhook)
+  "s12-i5", // Trial expiration reminders (daily cron job)
 
   // Monitoring & Error Tracking
-  "s13-i0", // Error tracking (Sentry placeholder ready)
   "s13-i4", // Web Vitals tracking
 
   // Analytics
@@ -1484,10 +1482,17 @@ const DONE_BY_CLAUDE = [
   "s18-i4", // aria-label on icon-only buttons
 ];
 
+// Items previously marked done but verified as NOT actually complete
+const DECHECK = [
+  "s9-i6",  // Bundle size audit — no analysis tooling found
+  "s13-i0", // Sentry error tracking — not implemented
+];
+
 // Auto-check completed items (one-time merge)
-const MERGE_KEY = "overload-checklist-claude-v4";
+const MERGE_KEY = "overload-checklist-claude-v6";
 if (!localStorage.getItem(MERGE_KEY)) {
   DONE_BY_CLAUDE.forEach(id => { checked[id] = true; });
+  DECHECK.forEach(id => { delete checked[id]; });
   save();
   localStorage.setItem(MERGE_KEY, "1");
 }

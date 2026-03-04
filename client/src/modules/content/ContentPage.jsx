@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import { connectSSE, fetchJSON, deleteJSON, postJSON } from '../../lib/api';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
@@ -264,7 +264,53 @@ export default function ContentPage() {
 
   const currentType = CONTENT_TYPES.find(t => t.id === activeType);
   const templates = TEMPLATES[activeType] || [];
-  const wordCount = (result || streamText).split(/\s+/).filter(Boolean).length;
+  const text = result || streamText;
+  const wordCount = text.split(/\s+/).filter(Boolean).length;
+
+  // Content quality scoring (computed from generated text)
+  const quality = useMemo(() => {
+    if (!text || text.length < 50) return null;
+    const words = text.split(/\s+/).filter(Boolean);
+    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+    const avgWordsPerSentence = sentences.length ? words.length / sentences.length : 0;
+    const avgSentencesPerPara = paragraphs.length ? sentences.length / paragraphs.length : 0;
+    const hasHeaders = /^#{1,3}\s|^\*\*[^*]+\*\*/m.test(text);
+    const hasLists = /^[-*•]\s|^\d+\.\s/m.test(text);
+    const uniqueWords = new Set(words.map(w => w.toLowerCase().replace(/[^a-z]/g, '')));
+    const lexicalDiversity = words.length ? (uniqueWords.size / words.length) * 100 : 0;
+
+    // SEO: reward length, headers, structure, lists
+    const targetWords = parseInt(wordTarget) || 800;
+    const lengthRatio = Math.min(words.length / targetWords, 1.2);
+    let seo = Math.round(Math.min(lengthRatio * 55 + (hasHeaders ? 18 : 0) + (hasLists ? 12 : 0) + Math.min(paragraphs.length * 2, 15), 100));
+
+    // Readability: penalize very long/short sentences
+    let readability = 80;
+    if (avgWordsPerSentence > 25) readability -= Math.min((avgWordsPerSentence - 25) * 2, 30);
+    if (avgWordsPerSentence < 8) readability -= 10;
+    if (avgSentencesPerPara > 8) readability -= 10;
+    readability = Math.round(Math.max(Math.min(readability + (hasHeaders ? 8 : 0) + (hasLists ? 7 : 0), 100), 20));
+
+    // Engagement: variety, structure, call-to-action signals
+    const ctaWords = /\b(try|get|start|discover|learn|join|sign up|click|download|buy|free)\b/gi;
+    const ctaCount = (text.match(ctaWords) || []).length;
+    let engagement = Math.round(Math.min(lexicalDiversity * 1.1 + ctaCount * 3 + (hasHeaders ? 8 : 0) + (paragraphs.length > 2 ? 8 : 0), 100));
+
+    // Grade
+    const avg = (seo + readability + engagement) / 3;
+    const grade = avg >= 90 ? 'A+' : avg >= 80 ? 'A' : avg >= 70 ? 'B' : avg >= 60 ? 'C' : avg >= 50 ? 'D' : 'F';
+
+    // Suggestions
+    const tips = [];
+    if (!hasHeaders) tips.push('Add headings to improve structure');
+    if (!hasLists) tips.push('Add bullet points or lists');
+    if (words.length < targetWords * 0.6) tips.push('Content is shorter than target length');
+    if (avgWordsPerSentence > 25) tips.push('Shorten some sentences for readability');
+    if (ctaCount === 0) tips.push('Add a call-to-action');
+
+    return { seo, readability, engagement, grade, avg, tips };
+  }, [text, wordTarget]);
 
   return (
     <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
@@ -363,13 +409,55 @@ export default function ContentPage() {
                 </div>
                 <div className="flex justify-between text-xs">
                   <span className="text-gray-500">Characters</span>
-                  <span className="text-white font-mono font-bold">{(result || streamText).length}</span>
+                  <span className="text-white font-mono font-bold">{text.length}</span>
                 </div>
                 <div className="flex justify-between text-xs">
                   <span className="text-gray-500">Tone</span>
                   <span className="text-orange-400 font-semibold">{tone}</span>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Quality Score */}
+          {quality && result && (
+            <div className="panel rounded-2xl p-4 sm:p-6 animate-fade-up">
+              <p className="hud-label text-[11px] mb-4">QUALITY SCORE</p>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { label: 'SEO', value: quality.seo, color: quality.seo >= 70 ? '#4ade80' : quality.seo >= 50 ? '#fbbf24' : '#f87171' },
+                  { label: 'Readability', value: quality.readability, color: quality.readability >= 70 ? '#4ade80' : quality.readability >= 50 ? '#fbbf24' : '#f87171' },
+                  { label: 'Engage', value: quality.engagement, color: quality.engagement >= 70 ? '#4ade80' : quality.engagement >= 50 ? '#fbbf24' : '#f87171' },
+                  { label: 'Grade', value: quality.grade, color: quality.avg >= 70 ? '#4ade80' : quality.avg >= 50 ? '#fbbf24' : '#f87171', isGrade: true },
+                ].map(m => (
+                  <div key={m.label} className="text-center">
+                    <div className="relative w-full aspect-square max-w-[56px] mx-auto mb-1.5">
+                      <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+                        <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
+                        <circle cx="18" cy="18" r="15" fill="none" stroke={m.color} strokeWidth="3"
+                          strokeDasharray={`${(m.isGrade ? quality.avg : m.value) * 0.9425} 94.25`}
+                          strokeLinecap="round" className="transition-all duration-700" />
+                      </svg>
+                      <span className="absolute inset-0 flex items-center justify-center text-sm font-bold" style={{ color: m.color }}>
+                        {m.value}
+                      </span>
+                    </div>
+                    <p className="text-[9px] font-semibold text-gray-500 uppercase tracking-wider">{m.label}</p>
+                  </div>
+                ))}
+              </div>
+              {quality.tips.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-white/[0.04] space-y-1.5">
+                  {quality.tips.map((tip, i) => (
+                    <div key={i} className="flex items-start gap-2 text-[11px]">
+                      <svg className="w-3 h-3 text-amber-400/70 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                      </svg>
+                      <span className="text-gray-500">{tip}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -422,50 +510,67 @@ export default function ContentPage() {
         </div>
       )}
 
-      {/* Content Score */}
+      {/* AI Analysis & Repurpose */}
       {result && (
-        <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <span className="hud-label">Content Quality Score</span>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn-ghost" style={{ fontSize: 12, padding: '4px 12px' }}
+        <div className="panel rounded-2xl p-4 sm:p-6 mt-4 animate-fade-up">
+          <div className="flex items-center justify-between mb-3">
+            <p className="hud-label text-[11px]">AI DEEP ANALYSIS</p>
+            <div className="flex gap-2">
+              <button className="chip text-[10px]" style={{ color: '#38bdf8', borderColor: 'rgba(56,189,248,0.25)' }}
                 onClick={async () => {
                   try {
                     const score = await postJSON('/api/content/score', { content: result, content_type: activeType });
                     setContentScore(score);
                   } catch {}
                 }}>Analyze</button>
-              <button className="btn-ghost" style={{ fontSize: 12, padding: '4px 12px' }}
-                onClick={() => setShowRepurpose(!showRepurpose)}>Repurpose</button>
+              <button className="chip text-[10px]" style={{ color: '#a78bfa', borderColor: 'rgba(167,139,250,0.25)' }}
+                onClick={() => setShowRepurpose(!showRepurpose)}>
+                {showRepurpose ? 'Hide Repurpose' : 'Repurpose'}
+              </button>
             </div>
           </div>
           {contentScore && (
-            <div>
-              <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
-                {[['SEO', contentScore.seo], ['Readability', contentScore.readability], ['Engagement', contentScore.engagement]].map(([label, val]) => (
-                  <div key={label} style={{ flex: 1, textAlign: 'center' }}>
-                    <div style={{ fontSize: 28, fontWeight: 700, color: val >= 80 ? 'var(--success, #22c55e)' : val >= 60 ? 'var(--accent)' : 'var(--danger, #ef4444)' }}>{val}</div>
-                    <div className="hud-label">{label}</div>
+            <div className="grid grid-cols-4 gap-3">
+              {[
+                { label: 'SEO', value: contentScore.seo },
+                { label: 'Readability', value: contentScore.readability },
+                { label: 'Engagement', value: contentScore.engagement },
+                { label: 'Grade', value: contentScore.overall_grade, isGrade: true },
+              ].map(m => {
+                const numVal = m.isGrade ? 0 : m.value;
+                const color = m.isGrade ? '#38bdf8' : numVal >= 80 ? '#4ade80' : numVal >= 60 ? '#fbbf24' : '#f87171';
+                return (
+                  <div key={m.label} className="text-center">
+                    <div className="text-xl font-bold mb-0.5" style={{ color }}>{m.value}</div>
+                    <p className="text-[9px] font-semibold text-gray-500 uppercase tracking-wider">{m.label}</p>
                   </div>
-                ))}
-                <div style={{ flex: 1, textAlign: 'center' }}>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--accent)' }}>{contentScore.overall_grade}</div>
-                  <div className="hud-label">Grade</div>
+                );
+              })}
+              {contentScore.top_issue && (
+                <div className="col-span-4 mt-1">
+                  <div className="flex items-start gap-2 text-[11px]">
+                    <svg className="w-3 h-3 text-amber-400/70 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                    </svg>
+                    <span className="text-gray-500">{contentScore.top_issue}</span>
+                  </div>
                 </div>
-              </div>
-              {contentScore.top_issue && <div className="chip" style={{ fontSize: 12 }}>⚠ {contentScore.top_issue}</div>}
+              )}
             </div>
+          )}
+          {!contentScore && (
+            <p className="text-[11px] text-gray-600">Click Analyze for AI-powered content scoring</p>
           )}
         </div>
       )}
 
       {/* Repurpose Panel */}
       {showRepurpose && result && (
-        <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <span className="hud-label">Repurpose Content</span>
+        <div className="panel rounded-2xl p-4 sm:p-6 mt-4 animate-fade-up">
+          <div className="flex items-center justify-between mb-3">
+            <p className="hud-label text-[11px]">REPURPOSE CONTENT</p>
             {!repurposeLoading && (
-              <button className="btn-accent" style={{ fontSize: 12, padding: '4px 12px' }}
+              <button className="chip text-[10px]" style={{ color: '#f97316', borderColor: 'rgba(249,115,22,0.3)' }}
                 onClick={() => {
                   setRepurposed('');
                   setRepurposeLoading(true);
@@ -475,12 +580,17 @@ export default function ContentPage() {
                     onError: () => setRepurposeLoading(false),
                     onDone: () => setRepurposeLoading(false),
                   });
-                }}>Generate Repurposed Versions</button>
+                }}>Generate Versions</button>
             )}
           </div>
-          {repurposeLoading && <div style={{ color: 'var(--muted)', fontSize: 13 }}>Generating repurposed versions...</div>}
+          {repurposeLoading && (
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <span className="w-3 h-3 border-2 border-gray-600 border-t-orange-400 rounded-full animate-spin" />
+              Generating repurposed versions...
+            </div>
+          )}
           {repurposed && (
-            <div style={{ whiteSpace: 'pre-wrap', fontSize: 13, lineHeight: 1.7, color: 'var(--text)' }}>
+            <div className="bg-black/40 rounded-lg p-4 sm:p-6 max-h-[50vh] overflow-y-auto text-sm text-gray-300 whitespace-pre-wrap leading-relaxed">
               {repurposed}
             </div>
           )}

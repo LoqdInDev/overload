@@ -196,6 +196,33 @@ app.use(errorHandler);
 // Clean up expired refresh tokens every hour
 setInterval(cleanExpiredTokens, 60 * 60 * 1000);
 
+// Send trial expiration reminder emails (runs daily)
+const { sendTrialExpiring } = require('./services/email');
+function checkTrialExpirations() {
+  try {
+    const rows = db.prepare(`
+      SELECT s.user_id, s.trial_ends_at, u.email, u.display_name
+      FROM subscriptions s
+      JOIN users u ON u.id = s.user_id
+      WHERE s.status = 'trialing' AND s.trial_ends_at IS NOT NULL
+    `).all();
+
+    const now = Date.now();
+    for (const row of rows) {
+      const trialEnd = new Date(row.trial_ends_at).getTime();
+      const daysLeft = Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24));
+      // Send reminders at 3 days and 1 day before expiration
+      if (daysLeft === 3 || daysLeft === 1) {
+        sendTrialExpiring(row.email, row.display_name, daysLeft).catch(() => {});
+      }
+    }
+  } catch (err) {
+    logger.error('Trial expiration check failed', { message: err.message });
+  }
+}
+setInterval(checkTrialExpirations, 24 * 60 * 60 * 1000); // every 24 hours
+checkTrialExpirations(); // run once on startup
+
 // Start the automation rule engine
 const { startRuleEngine } = require('./services/ruleEngine');
 startRuleEngine();
