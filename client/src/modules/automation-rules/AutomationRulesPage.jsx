@@ -43,6 +43,30 @@ const DIFFICULTY_STYLES = {
   advanced: { bg: 'rgba(139,92,246,0.12)', color: '#8b5cf6', label: 'Advanced' },
 };
 
+// All marketplace recipes — defined client-side for instant rendering
+const RECIPES = [
+  { id: 'blog-social-blast', name: 'Blog → Social Blast', description: 'When a new blog post is published, automatically generate 5 social media posts and queue them for approval.', category: 'Content & Social', icon: '📝', modules: ['content', 'social'], trigger: { type: 'event', config: { event: 'content_published', content_type: 'blog' } }, action: { type: 'schedule_post', config: { format: 'social_posts', count: 5 } }, requires_approval: true, difficulty: 'starter', saves: '3 hrs/week', installs: 2847 },
+  { id: 'weekly-content-calendar', name: 'Weekly Content Calendar', description: 'Every Monday morning, generate a full content plan for the week based on your top SEO keywords and trends.', category: 'Content & Social', icon: '🗓️', modules: ['content', 'seo'], trigger: { type: 'schedule', config: { frequency: 'weekly', day: 'monday', time: '08:00' } }, action: { type: 'generate_content', config: { type: 'content_calendar', days: 7 } }, requires_approval: true, difficulty: 'starter', saves: '2 hrs/week', installs: 1923 },
+  { id: 'daily-content-brief', name: 'Daily Content Brief', description: 'Every morning, generate a content brief with fresh topic ideas and angles to keep your content team inspired.', category: 'Content & Social', icon: '✨', modules: ['content'], trigger: { type: 'schedule', config: { frequency: 'daily', time: '07:30' } }, action: { type: 'generate_content', config: { type: 'content_brief', topics: 3 } }, requires_approval: false, difficulty: 'starter', saves: '1 hr/day', installs: 1455 },
+  { id: 'auto-review-responder', name: 'Auto Review Responder', description: 'When a positive review arrives (4+ stars), generate a warm personalized thank-you response and queue for approval.', category: 'Reviews & CRM', icon: '⭐', modules: ['reviews'], trigger: { type: 'event', config: { event: 'new_review', condition: 'rating >= 4' } }, action: { type: 'respond_review', config: { tone: 'grateful', personalized: true } }, requires_approval: true, difficulty: 'starter', saves: '4 hrs/week', installs: 3241 },
+  { id: 'low-rating-escalation', name: 'Low Rating Alert & Response', description: 'When a review below 3 stars arrives, immediately draft an empathetic response and escalate to your support team.', category: 'Reviews & CRM', icon: '🚨', modules: ['reviews', 'customer-ai'], trigger: { type: 'event', config: { event: 'new_review', condition: 'rating < 3' } }, action: { type: 'respond_review', config: { tone: 'empathetic', escalate: true } }, requires_approval: true, difficulty: 'starter', saves: '2 hrs/week', installs: 2104 },
+  { id: 'new-lead-welcome', name: 'New Lead Welcome Sequence', description: 'When a new contact is added to CRM, generate a personalized welcome email and queue it for sending within the hour.', category: 'Reviews & CRM', icon: '🤝', modules: ['crm', 'email-sms'], trigger: { type: 'event', config: { event: 'new_contact', source: 'crm' } }, action: { type: 'send_campaign', config: { type: 'welcome_email', personalized: true } }, requires_approval: true, difficulty: 'intermediate', saves: '3 hrs/week', installs: 1876 },
+  { id: 'seo-content-briefs', name: 'Weekly SEO Content Briefs', description: 'Every week, generate detailed content briefs for your top keyword opportunities and save them to your content module.', category: 'SEO', icon: '🔍', modules: ['seo', 'content'], trigger: { type: 'schedule', config: { frequency: 'weekly', day: 'tuesday', time: '09:00' } }, action: { type: 'generate_content', config: { type: 'seo_brief', keywords: 5 } }, requires_approval: false, difficulty: 'intermediate', saves: '4 hrs/week', installs: 1632 },
+  { id: 'monthly-meta-audit', name: 'Monthly Meta Tag Audit', description: 'On the first of each month, audit all your page meta tags and generate a prioritized list of improvements.', category: 'SEO', icon: '🏷️', modules: ['seo'], trigger: { type: 'schedule', config: { frequency: 'monthly', day: '1', time: '08:00' } }, action: { type: 'update_meta', config: { scope: 'all_pages', generate_recommendations: true } }, requires_approval: true, difficulty: 'intermediate', saves: '3 hrs/month', installs: 987 },
+  { id: 'competitor-keyword-gap', name: 'Competitor Keyword Gap Report', description: 'Weekly analysis of keyword gaps between you and your top competitors with specific content suggestions to close them.', category: 'SEO', icon: '🎯', modules: ['seo'], trigger: { type: 'schedule', config: { frequency: 'weekly', day: 'wednesday', time: '10:00' } }, action: { type: 'optimize_keywords', config: { type: 'gap_analysis', generate_report: true } }, requires_approval: false, difficulty: 'advanced', saves: '5 hrs/week', installs: 743 },
+  { id: 'roas-guardian', name: 'ROAS Guardian', description: 'When your ROAS drops below 2.0, automatically flag low-performing ads and generate a budget reallocation plan.', category: 'Ads & Budget', icon: '🛡️', modules: ['ads', 'budget-optimizer'], trigger: { type: 'threshold', config: { metric: 'roas', operator: '<', value: 2.0 } }, action: { type: 'adjust_budget', config: { action: 'reallocate', protect_top_performers: true } }, requires_approval: true, difficulty: 'advanced', saves: '10 hrs/month', installs: 1289 },
+  { id: 'weekly-budget-rebalancer', name: 'Weekly Budget Rebalancer', description: 'Every Friday, analyze your ad spend efficiency across all channels and generate a smart budget reallocation suggestion.', category: 'Ads & Budget', icon: '⚖️', modules: ['budget-optimizer', 'ads'], trigger: { type: 'schedule', config: { frequency: 'weekly', day: 'friday', time: '16:00' } }, action: { type: 'adjust_budget', config: { type: 'rebalance', analysis_window: '7_days' } }, requires_approval: true, difficulty: 'intermediate', saves: '3 hrs/week', installs: 1104 },
+  { id: 'ad-performance-report', name: 'Weekly Ad Performance Report', description: 'Every Friday, generate a comprehensive ad performance report with insights and next week\'s recommendations.', category: 'Ads & Budget', icon: '📊', modules: ['ads'], trigger: { type: 'schedule', config: { frequency: 'weekly', day: 'friday', time: '17:00' } }, action: { type: 'generate_report', config: { type: 'ad_performance', period: '7_days' } }, requires_approval: false, difficulty: 'starter', saves: '2 hrs/week', installs: 2156 },
+  { id: 'reengagement-campaign', name: 'Re-engagement Campaign', description: 'When a subscriber goes 30 days without engagement, automatically trigger a personalized re-engagement email sequence.', category: 'Email', icon: '💌', modules: ['email-sms'], trigger: { type: 'event', config: { event: 'subscriber_inactive', days: 30 } }, action: { type: 'send_campaign', config: { type: 'reengagement', sequence_length: 3 } }, requires_approval: false, difficulty: 'intermediate', saves: '4 hrs/week', installs: 1897 },
+  { id: 'monthly-newsletter', name: 'Monthly Newsletter Generator', description: 'On the 1st of each month, generate a full newsletter draft using your best content from the past month.', category: 'Email', icon: '📧', modules: ['email-sms', 'content'], trigger: { type: 'schedule', config: { frequency: 'monthly', day: '1', time: '09:00' } }, action: { type: 'send_campaign', config: { type: 'newsletter', include_top_content: true } }, requires_approval: true, difficulty: 'starter', saves: '4 hrs/month', installs: 2543 },
+  { id: 'weekly-performance-report', name: 'Weekly Performance Report', description: 'Every Monday, generate a cross-module performance summary with highlights, concerns, and your top 3 priorities for the week.', category: 'Reports', icon: '📈', modules: ['reports'], trigger: { type: 'schedule', config: { frequency: 'weekly', day: 'monday', time: '08:00' } }, action: { type: 'generate_report', config: { type: 'cross_module_summary', modules: 'all' } }, requires_approval: false, difficulty: 'starter', saves: '2 hrs/week', installs: 3012 },
+  { id: 'goal-progress-update', name: 'Friday Goal Progress Update', description: 'Every Friday afternoon, check your goal tracker and generate a progress update highlighting wins and at-risk goals.', category: 'Reports', icon: '🏆', modules: ['goal-tracker'], trigger: { type: 'schedule', config: { frequency: 'weekly', day: 'friday', time: '15:00' } }, action: { type: 'generate_report', config: { type: 'goal_progress', highlight_risks: true } }, requires_approval: false, difficulty: 'starter', saves: '1 hr/week', installs: 1678 },
+  { id: 'kb-gap-filler', name: 'Knowledge Base Gap Filler', description: 'Monthly, automatically detect gaps in your knowledge base and generate draft articles for the most critical missing topics.', category: 'Knowledge Base', icon: '📚', modules: ['knowledge-base'], trigger: { type: 'schedule', config: { frequency: 'monthly', day: '15', time: '10:00' } }, action: { type: 'generate_content', config: { type: 'kb_articles', count: 3, priority: 'gaps' } }, requires_approval: true, difficulty: 'intermediate', saves: '5 hrs/month', installs: 892 },
+  { id: 'ticket-to-faq', name: 'Support Ticket → FAQ Article', description: 'When a support ticket is resolved, automatically suggest a FAQ article to prevent future tickets on the same topic.', category: 'Knowledge Base', icon: '💡', modules: ['customer-ai', 'knowledge-base'], trigger: { type: 'event', config: { event: 'ticket_closed', auto_suggest_kb: true } }, action: { type: 'generate_content', config: { type: 'faq_article', based_on: 'ticket' } }, requires_approval: true, difficulty: 'intermediate', saves: '3 hrs/week', installs: 1134 },
+  { id: 'influencer-outreach', name: 'Influencer Outreach Sequence', description: 'When a new influencer campaign starts, generate personalized outreach emails for each influencer and queue for review.', category: 'Growth', icon: '🌟', modules: ['influencers'], trigger: { type: 'event', config: { event: 'campaign_created', type: 'influencer' } }, action: { type: 'generate_content', config: { type: 'outreach_emails', personalized: true } }, requires_approval: true, difficulty: 'intermediate', saves: '6 hrs/campaign', installs: 765 },
+  { id: 'affiliate-monthly-report', name: 'Monthly Affiliate Report', description: 'On the last day of each month, generate a complete affiliate performance report with top performers and outstanding payouts.', category: 'Growth', icon: '🤑', modules: ['affiliates'], trigger: { type: 'schedule', config: { frequency: 'monthly', day: 'last', time: '10:00' } }, action: { type: 'generate_report', config: { type: 'affiliate_performance', include_payouts: true } }, requires_approval: false, difficulty: 'starter', saves: '3 hrs/month', installs: 634 },
+];
+
 export default function AutomationRulesPage() {
   usePageTitle('Automation Rules');
   const { dark } = useTheme();
@@ -61,19 +85,24 @@ export default function AutomationRulesPage() {
   const selectBg = dark ? 'rgba(255,255,255,0.04)' : '#ffffff';
   const selectBorder = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)';
 
+  // Always load all rules (unfiltered) so marketplace can compute installed status
   const loadRules = useCallback(async () => {
     setLoading(true);
     try {
-      const url = filterModule === 'all' ? '/api/automation/rules' : `/api/automation/rules?module=${filterModule}`;
-      const data = await fetchJSON(url);
+      const data = await fetchJSON('/api/automation/rules');
       setRules(Array.isArray(data) ? data : []);
     } catch {
-      setRules(FALLBACK_RULES.filter(r => filterModule === 'all' || r.module_id === filterModule));
+      setRules(FALLBACK_RULES);
     }
     setLoading(false);
-  }, [filterModule]);
+  }, []);
 
   useEffect(() => { loadRules(); }, [loadRules]);
+
+  // Filtered view for My Rules tab
+  const displayedRules = filterModule === 'all'
+    ? rules
+    : rules.filter(r => r.module_id === filterModule);
 
   async function toggleStatus(rule) {
     setTogglingId(rule.id);
@@ -102,7 +131,7 @@ export default function AutomationRulesPage() {
   }
 
   const grouped = {};
-  for (const rule of rules) {
+  for (const rule of displayedRules) {
     if (!grouped[rule.module_id]) grouped[rule.module_id] = [];
     grouped[rule.module_id].push(rule);
   }
@@ -118,7 +147,7 @@ export default function AutomationRulesPage() {
           </h1>
           <p className="text-sm mt-1" style={{ color: textSecondary }}>
             {activeTab === 'rules'
-              ? `${rules.length} rule${rules.length !== 1 ? 's' : ''} configured across your modules`
+              ? `${displayedRules.length} rule${displayedRules.length !== 1 ? 's' : ''} configured across your modules`
               : 'Install pre-built automation recipes with one click'}
           </p>
         </div>
@@ -145,7 +174,6 @@ export default function AutomationRulesPage() {
         {/* Rules Tab */}
         {activeTab === 'rules' ? (
           <>
-            {/* Action Bar */}
             <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
               <select
                 value={filterModule}
@@ -169,7 +197,7 @@ export default function AutomationRulesPage() {
                   <div key={i} className="h-24 rounded-2xl animate-pulse" style={{ background: cardBg, border: `1px solid ${cardBorder}` }} />
                 ))}
               </div>
-            ) : rules.length === 0 ? (
+            ) : displayedRules.length === 0 ? (
               <div className="text-center py-16 rounded-2xl" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
                 <div className="text-4xl mb-3">⚡</div>
                 <h2 className="text-sm font-semibold mb-1" style={{ color: textPrimary }}>No automation rules yet</h2>
@@ -262,7 +290,7 @@ export default function AutomationRulesPage() {
             )}
           </>
         ) : (
-          <MarketplaceTab dark={dark} onInstalled={loadRules} />
+          <MarketplaceTab dark={dark} rules={rules} onInstalled={loadRules} />
         )}
 
         {showCreate && (
@@ -273,13 +301,27 @@ export default function AutomationRulesPage() {
   );
 }
 
-function MarketplaceTab({ dark, onInstalled }) {
-  const [recipes, setRecipes] = useState([]);
-  const [loading, setLoading] = useState(true);
+// Compute which recipe IDs are installed from the rules list
+function getInstalledRecipeIds(rules) {
+  const ids = new Set();
+  for (const rule of rules) {
+    try {
+      const cfg = typeof rule.trigger_config === 'string'
+        ? JSON.parse(rule.trigger_config)
+        : rule.trigger_config;
+      if (cfg?.marketplace_recipe_id) ids.add(cfg.marketplace_recipe_id);
+    } catch {}
+  }
+  return ids;
+}
+
+function MarketplaceTab({ dark, rules, onInstalled }) {
   const [category, setCategory] = useState('All');
   const [search, setSearch] = useState('');
   const [actingId, setActingId] = useState(null);
   const [justInstalled, setJustInstalled] = useState(null);
+  // Local override map: recipeId → true/false for optimistic UI
+  const [localOverrides, setLocalOverrides] = useState({});
 
   const textPrimary = dark ? '#E8E4DE' : '#332F2B';
   const textSecondary = dark ? '#6B6660' : '#94908A';
@@ -288,65 +330,61 @@ function MarketplaceTab({ dark, onInstalled }) {
   const inputBg = dark ? 'rgba(255,255,255,0.04)' : '#ffffff';
   const inputBorder = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)';
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const data = await fetchJSON('/api/automation/marketplace/recipes');
-        setRecipes(Array.isArray(data) ? data : []);
-      } catch {
-        setRecipes([]);
-      }
-      setLoading(false);
-    }
-    load();
-  }, []);
+  const installedIds = getInstalledRecipeIds(rules);
+  const categories = ['All', ...new Set(RECIPES.map(r => r.category))];
 
-  const categories = ['All', ...new Set(recipes.map(r => r.category))];
-
-  const filtered = recipes.filter(r => {
+  const filtered = RECIPES.filter(r => {
     const matchesCat = category === 'All' || r.category === category;
     const matchesSearch = !search || r.name.toLowerCase().includes(search.toLowerCase()) || r.description.toLowerCase().includes(search.toLowerCase());
     return matchesCat && matchesSearch;
   });
 
+  function isInstalled(recipeId) {
+    if (recipeId in localOverrides) return localOverrides[recipeId];
+    return installedIds.has(recipeId);
+  }
+
   async function install(recipe) {
     setActingId(recipe.id);
+    setLocalOverrides(prev => ({ ...prev, [recipe.id]: true }));
     try {
       await postJSON(`/api/automation/marketplace/install/${recipe.id}`, {});
-      setRecipes(prev => prev.map(r => r.id === recipe.id ? { ...r, installed: true } : r));
       setJustInstalled(recipe.id);
       setTimeout(() => setJustInstalled(null), 3000);
       onInstalled?.();
-    } catch { /* already installed or error */ }
+    } catch {
+      // Revert optimistic update on error
+      setLocalOverrides(prev => ({ ...prev, [recipe.id]: false }));
+    }
     setActingId(null);
   }
 
   async function uninstall(recipe) {
     setActingId(recipe.id);
+    setLocalOverrides(prev => ({ ...prev, [recipe.id]: false }));
     try {
       await deleteJSON(`/api/automation/marketplace/uninstall/${recipe.id}`);
-      setRecipes(prev => prev.map(r => r.id === recipe.id ? { ...r, installed: false } : r));
       onInstalled?.();
-    } catch { /* silent */ }
+    } catch {
+      setLocalOverrides(prev => ({ ...prev, [recipe.id]: true }));
+    }
     setActingId(null);
   }
 
-  const installedCount = recipes.filter(r => r.installed).length;
+  const installedCount = RECIPES.filter(r => isInstalled(r.id)).length;
 
   return (
     <div>
       {/* Stats bar */}
-      {!loading && (
-        <div className="flex items-center gap-4 mb-5 text-[11px]" style={{ color: textSecondary }}>
-          <span><strong style={{ color: textPrimary }}>{recipes.length}</strong> recipes available</span>
-          {installedCount > 0 && (
-            <span className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-              <strong style={{ color: textPrimary }}>{installedCount}</strong> installed
-            </span>
-          )}
-        </div>
-      )}
+      <div className="flex items-center gap-4 mb-5 text-[11px]" style={{ color: textSecondary }}>
+        <span><strong style={{ color: textPrimary }}>{RECIPES.length}</strong> recipes available</span>
+        {installedCount > 0 && (
+          <span className="flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+            <strong style={{ color: textPrimary }}>{installedCount}</strong> installed
+          </span>
+        )}
+      </div>
 
       {/* Search */}
       <div className="relative mb-4">
@@ -383,14 +421,7 @@ function MarketplaceTab({ dark, onInstalled }) {
         })}
       </div>
 
-      {/* Loading skeletons */}
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="h-56 rounded-2xl animate-pulse" style={{ background: cardBg, border: `1px solid ${cardBorder}` }} />
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className="text-center py-16 rounded-2xl" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
           <div className="text-3xl mb-3">🔍</div>
           <p className="text-sm font-medium mb-1" style={{ color: textPrimary }}>No recipes found</p>
@@ -402,6 +433,7 @@ function MarketplaceTab({ dark, onInstalled }) {
             const catColor = CATEGORY_COLORS[recipe.category] || '#5E8E6E';
             const diff = DIFFICULTY_STYLES[recipe.difficulty] || DIFFICULTY_STYLES.starter;
             const isActing = actingId === recipe.id;
+            const installed = isInstalled(recipe.id);
             const wasJustInstalled = justInstalled === recipe.id;
 
             return (
@@ -410,20 +442,14 @@ function MarketplaceTab({ dark, onInstalled }) {
                 className="rounded-2xl flex flex-col overflow-hidden transition-all"
                 style={{
                   background: cardBg,
-                  border: `1px solid ${recipe.installed ? catColor + '40' : cardBorder}`,
-                  boxShadow: recipe.installed ? `0 0 0 1px ${catColor}20` : 'none',
+                  border: `1px solid ${installed ? catColor + '40' : cardBorder}`,
+                  boxShadow: installed ? `0 0 0 1px ${catColor}20` : 'none',
                 }}
               >
-                {/* Color accent bar */}
                 <div className="h-0.5" style={{ background: catColor }} />
-
                 <div className="p-4 flex flex-col flex-1">
-                  {/* Header */}
                   <div className="flex items-start gap-3 mb-3">
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-                      style={{ background: `${catColor}18` }}
-                    >
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: `${catColor}18` }}>
                       {recipe.icon}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -436,25 +462,18 @@ function MarketplaceTab({ dark, onInstalled }) {
                     </div>
                   </div>
 
-                  {/* Description */}
                   <p className="text-[12px] leading-relaxed mb-3 flex-1" style={{ color: textSecondary }}>
                     {recipe.description}
                   </p>
 
-                  {/* Module tags */}
                   <div className="flex gap-1.5 flex-wrap mb-3">
                     {(recipe.modules || []).map(mod => (
-                      <span
-                        key={mod}
-                        className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide"
-                        style={{ background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', color: textSecondary }}
-                      >
+                      <span key={mod} className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide" style={{ background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', color: textSecondary }}>
                         {mod}
                       </span>
                     ))}
                   </div>
 
-                  {/* Stats row */}
                   <div className="flex items-center gap-2 mb-4 flex-wrap">
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: diff.bg, color: diff.color }}>
                       {diff.label}
@@ -465,12 +484,11 @@ function MarketplaceTab({ dark, onInstalled }) {
                     </span>
                   </div>
 
-                  {/* Action button */}
                   {wasJustInstalled ? (
-                    <div className="w-full py-2 rounded-xl text-xs font-semibold text-center transition-all" style={{ background: 'rgba(34,197,94,0.12)', color: '#22c55e' }}>
-                      ✓ Installed! Go to My Rules to manage
+                    <div className="w-full py-2 rounded-xl text-xs font-semibold text-center" style={{ background: 'rgba(34,197,94,0.12)', color: '#22c55e' }}>
+                      ✓ Installed! View in My Rules
                     </div>
-                  ) : recipe.installed ? (
+                  ) : installed ? (
                     <button
                       onClick={() => uninstall(recipe)}
                       disabled={isActing}
@@ -489,11 +507,7 @@ function MarketplaceTab({ dark, onInstalled }) {
                       onClick={() => install(recipe)}
                       disabled={isActing}
                       className="w-full py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 hover:scale-[1.01]"
-                      style={{
-                        background: catColor,
-                        color: '#ffffff',
-                        opacity: isActing ? 0.6 : 1,
-                      }}
+                      style={{ background: catColor, color: '#ffffff', opacity: isActing ? 0.6 : 1 }}
                     >
                       {isActing ? 'Installing...' : '+ Install Recipe'}
                     </button>
@@ -673,9 +687,7 @@ function CreateRuleModal({ dark, onClose, onCreated }) {
             <button type="button" onClick={() => setForm(f => ({ ...f, requires_approval: !f.requires_approval }))}
               className="w-9 h-5 rounded-full transition-all relative"
               style={{ background: form.requires_approval ? '#D4A017' : (dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)') }}>
-              <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all" style={{
-                left: form.requires_approval ? '18px' : '2px',
-              }} />
+              <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all" style={{ left: form.requires_approval ? '18px' : '2px' }} />
             </button>
           </div>
           <p className="text-[10px]" style={{ color: textSecondary }}>
