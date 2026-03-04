@@ -22,6 +22,7 @@ module.exports = {
     router.use('/', require('./routes/settings'));
     router.use('/', require('./routes/activity-log'));
     router.use('/', require('./routes/insights'));
+    router.use('/marketplace', require('./routes/marketplace'));
     return router;
   },
 };

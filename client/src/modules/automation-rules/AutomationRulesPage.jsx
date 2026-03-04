@@ -26,9 +26,27 @@ const FALLBACK_RULES = [
   { id: 6, module_id: 'seo', name: 'Bi-weekly SEO Audit', trigger_type: 'schedule', trigger_config: { frequency: 'biweekly', day: 'Wednesday', time: '08:00' }, action_type: 'optimize_keywords', action_config: { depth: 'full' }, status: 'inactive', requires_approval: true, run_count: 3, last_triggered: new Date(Date.now() - 1209600000).toISOString(), created_at: new Date(Date.now() - 2592000000).toISOString() },
 ];
 
+const CATEGORY_COLORS = {
+  'Content & Social': '#3b82f6',
+  'Reviews & CRM': '#8b5cf6',
+  'SEO': '#5E8E6E',
+  'Ads & Budget': '#f59e0b',
+  'Email': '#ec4899',
+  'Reports': '#06b6d4',
+  'Knowledge Base': '#f97316',
+  'Growth': '#e11d48',
+};
+
+const DIFFICULTY_STYLES = {
+  starter: { bg: 'rgba(34,197,94,0.12)', color: '#22c55e', label: 'Starter' },
+  intermediate: { bg: 'rgba(245,158,11,0.12)', color: '#f59e0b', label: 'Intermediate' },
+  advanced: { bg: 'rgba(139,92,246,0.12)', color: '#8b5cf6', label: 'Advanced' },
+};
+
 export default function AutomationRulesPage() {
   usePageTitle('Automation Rules');
   const { dark } = useTheme();
+  const [activeTab, setActiveTab] = useState('rules');
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterModule, setFilterModule] = useState('all');
@@ -44,6 +62,7 @@ export default function AutomationRulesPage() {
   const selectBorder = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)';
 
   const loadRules = useCallback(async () => {
+    setLoading(true);
     try {
       const url = filterModule === 'all' ? '/api/automation/rules' : `/api/automation/rules?module=${filterModule}`;
       const data = await fetchJSON(url);
@@ -82,7 +101,6 @@ export default function AutomationRulesPage() {
     return `${Math.floor(hrs / 24)}d ago`;
   }
 
-  // Group by module
   const grouped = {};
   for (const rule of rules) {
     if (!grouped[rule.module_id]) grouped[rule.module_id] = [];
@@ -93,141 +111,399 @@ export default function AutomationRulesPage() {
     <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <div className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2" style={{ color: '#5E8E6E' }}>Automation Rules</div>
+        <div className="mb-6">
+          <div className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2" style={{ color: '#5E8E6E' }}>Automation</div>
           <h1 className="text-2xl sm:text-3xl font-bold" style={{ fontFamily: 'Fraunces, serif', color: textPrimary }}>
-            Automation Rules
+            {activeTab === 'rules' ? 'Automation Rules' : 'Recipe Marketplace'}
           </h1>
           <p className="text-sm mt-1" style={{ color: textSecondary }}>
-            {rules.length} rule{rules.length !== 1 ? 's' : ''} configured across your modules
+            {activeTab === 'rules'
+              ? `${rules.length} rule${rules.length !== 1 ? 's' : ''} configured across your modules`
+              : 'Install pre-built automation recipes with one click'}
           </p>
         </div>
 
-        {/* Action Bar */}
-        <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
-          <select
-            value={filterModule}
-            onChange={e => setFilterModule(e.target.value)}
-            className="px-3 py-2 rounded-lg text-xs"
-            style={{ background: selectBg, border: `1px solid ${selectBorder}`, color: textPrimary }}
-          >
-            <option value="all">All Modules</option>
-            {AUTOMATABLE.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-          </select>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:scale-105"
-            style={{ background: '#5E8E6E', color: '#ffffff' }}
-          >+ Create Rule</button>
+        {/* Tab Bar */}
+        <div className="flex gap-1 p-1 rounded-xl mb-6" style={{ background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', width: 'fit-content' }}>
+          {[
+            { id: 'rules', label: 'My Rules' },
+            { id: 'marketplace', label: '✦ Marketplace' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className="py-1.5 px-5 rounded-lg text-xs font-semibold transition-all"
+              style={{
+                background: activeTab === tab.id ? (dark ? 'rgba(255,255,255,0.1)' : '#ffffff') : 'transparent',
+                color: activeTab === tab.id ? textPrimary : textSecondary,
+                boxShadow: activeTab === tab.id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              }}
+            >{tab.label}</button>
+          ))}
         </div>
 
-        {/* Loading */}
-        {loading ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-24 rounded-2xl animate-pulse" style={{ background: cardBg, border: `1px solid ${cardBorder}` }} />
-            ))}
-          </div>
-        ) : rules.length === 0 ? (
-          <div className="text-center py-16 rounded-2xl" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
-            <svg className="w-12 h-12 mx-auto mb-3" fill="currentColor" viewBox="0 0 24 24" style={{ color: textSecondary, opacity: 0.3 }}>
-              <path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-            </svg>
-            <h2 className="text-sm font-semibold mb-1" style={{ color: textPrimary }}>No automation rules yet</h2>
-            <p className="text-xs" style={{ color: textSecondary }}>Create rules to automate repetitive tasks across your modules</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {Object.entries(grouped).map(([moduleId, moduleRules]) => {
-              const mod = MODULE_REGISTRY.find(m => m.id === moduleId);
-              return (
-                <div key={moduleId}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="w-2 h-2 rounded-full" style={{ background: mod?.color || '#94908A' }} />
-                    <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: mod?.color || textSecondary }}>
-                      {mod?.name || moduleId}
-                    </span>
-                    <span className="text-[10px]" style={{ color: textSecondary }}>({moduleRules.length})</span>
-                  </div>
-                  <div className="space-y-2">
-                    {moduleRules.map(rule => {
-                      const tc = TRIGGER_COLORS[rule.trigger_type] || TRIGGER_COLORS.schedule;
-                      const isExpanded = expandedId === rule.id;
-                      return (
-                        <div key={rule.id} className="rounded-xl overflow-hidden transition-all" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
-                          <div className="px-4 py-3 flex items-center gap-3 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : rule.id)}>
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded flex-shrink-0" style={{ background: tc.bg, color: tc.color }}>
-                              {rule.trigger_type}
-                            </span>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate" style={{ color: textPrimary }}>{rule.name}</p>
-                              <div className="flex items-center gap-3 mt-0.5">
-                                <span className="text-[10px]" style={{ color: textSecondary }}>{rule.run_count} runs</span>
-                                <span className="text-[10px]" style={{ color: textSecondary }}>Last: {timeAgo(rule.last_triggered)}</span>
-                                {rule.requires_approval && (
-                                  <span className="text-[10px] px-1 py-0.5 rounded" style={{ background: 'rgba(212,160,23,0.1)', color: '#D4A017' }}>needs approval</span>
-                                )}
+        {/* Rules Tab */}
+        {activeTab === 'rules' ? (
+          <>
+            {/* Action Bar */}
+            <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
+              <select
+                value={filterModule}
+                onChange={e => setFilterModule(e.target.value)}
+                className="px-3 py-2 rounded-lg text-xs"
+                style={{ background: selectBg, border: `1px solid ${selectBorder}`, color: textPrimary }}
+              >
+                <option value="all">All Modules</option>
+                {AUTOMATABLE.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+              <button
+                onClick={() => setShowCreate(true)}
+                className="px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:scale-105"
+                style={{ background: '#5E8E6E', color: '#ffffff' }}
+              >+ Create Rule</button>
+            </div>
+
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-24 rounded-2xl animate-pulse" style={{ background: cardBg, border: `1px solid ${cardBorder}` }} />
+                ))}
+              </div>
+            ) : rules.length === 0 ? (
+              <div className="text-center py-16 rounded-2xl" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
+                <div className="text-4xl mb-3">⚡</div>
+                <h2 className="text-sm font-semibold mb-1" style={{ color: textPrimary }}>No automation rules yet</h2>
+                <p className="text-xs mb-4" style={{ color: textSecondary }}>Create a custom rule or browse ready-made recipes</p>
+                <button
+                  onClick={() => setActiveTab('marketplace')}
+                  className="px-4 py-2 rounded-lg text-xs font-semibold"
+                  style={{ background: '#5E8E6E', color: '#ffffff' }}
+                >Browse Marketplace</button>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {Object.entries(grouped).map(([moduleId, moduleRules]) => {
+                  const mod = MODULE_REGISTRY.find(m => m.id === moduleId);
+                  return (
+                    <div key={moduleId}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="w-2 h-2 rounded-full" style={{ background: mod?.color || '#94908A' }} />
+                        <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: mod?.color || textSecondary }}>
+                          {mod?.name || moduleId}
+                        </span>
+                        <span className="text-[10px]" style={{ color: textSecondary }}>({moduleRules.length})</span>
+                      </div>
+                      <div className="space-y-2">
+                        {moduleRules.map(rule => {
+                          const tc = TRIGGER_COLORS[rule.trigger_type] || TRIGGER_COLORS.schedule;
+                          const isExpanded = expandedId === rule.id;
+                          return (
+                            <div key={rule.id} className="rounded-xl overflow-hidden transition-all" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
+                              <div className="px-4 py-3 flex items-center gap-3 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : rule.id)}>
+                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded flex-shrink-0" style={{ background: tc.bg, color: tc.color }}>
+                                  {rule.trigger_type}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate" style={{ color: textPrimary }}>{rule.name}</p>
+                                  <div className="flex items-center gap-3 mt-0.5">
+                                    <span className="text-[10px]" style={{ color: textSecondary }}>{rule.run_count} runs</span>
+                                    <span className="text-[10px]" style={{ color: textSecondary }}>Last: {timeAgo(rule.last_triggered)}</span>
+                                    {rule.requires_approval && (
+                                      <span className="text-[10px] px-1 py-0.5 rounded" style={{ background: 'rgba(212,160,23,0.1)', color: '#D4A017' }}>needs approval</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={e => { e.stopPropagation(); toggleStatus(rule); }}
+                                  disabled={togglingId === rule.id}
+                                  className="w-9 h-5 rounded-full transition-all flex-shrink-0 relative"
+                                  style={{ background: rule.status === 'active' ? '#22c55e' : (dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)') }}
+                                >
+                                  <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all" style={{ left: rule.status === 'active' ? '18px' : '2px' }} />
+                                </button>
+                                <button
+                                  onClick={e => { e.stopPropagation(); if (confirm('Delete this rule?')) deleteRule(rule.id); }}
+                                  className="p-1.5 rounded-lg transition-colors flex-shrink-0 hover:bg-red-500/10"
+                                  style={{ color: textSecondary }}
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                  </svg>
+                                </button>
                               </div>
-                            </div>
-                            {/* Status toggle */}
-                            <button
-                              onClick={e => { e.stopPropagation(); toggleStatus(rule); }}
-                              disabled={togglingId === rule.id}
-                              className="w-9 h-5 rounded-full transition-all flex-shrink-0 relative"
-                              style={{
-                                background: rule.status === 'active' ? '#22c55e' : (dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'),
-                              }}
-                            >
-                              <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all" style={{
-                                left: rule.status === 'active' ? '18px' : '2px',
-                              }} />
-                            </button>
-                            {/* Delete */}
-                            <button
-                              onClick={e => { e.stopPropagation(); if (confirm('Delete this rule?')) deleteRule(rule.id); }}
-                              className="p-1.5 rounded-lg transition-colors flex-shrink-0 hover:bg-red-500/10"
-                              style={{ color: textSecondary }}
-                            >
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                              </svg>
-                            </button>
-                          </div>
-                          {isExpanded && (
-                            <div className="px-4 pb-4 pt-1 space-y-2" style={{ borderTop: `1px solid ${cardBorder}` }}>
-                              {rule.trigger_config && (
-                                <div>
-                                  <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: textSecondary }}>Trigger Config</span>
-                                  <pre className="mt-1 text-[11px] p-2 rounded-lg overflow-auto max-h-32" style={{
-                                    background: dark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
-                                    color: textSecondary,
-                                  }}>{JSON.stringify(rule.trigger_config, null, 2)}</pre>
-                                </div>
-                              )}
-                              {rule.action_config && (
-                                <div>
-                                  <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: textSecondary }}>Action Config</span>
-                                  <pre className="mt-1 text-[11px] p-2 rounded-lg overflow-auto max-h-32" style={{
-                                    background: dark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
-                                    color: textSecondary,
-                                  }}>{JSON.stringify(rule.action_config, null, 2)}</pre>
+                              {isExpanded && (
+                                <div className="px-4 pb-4 pt-1 space-y-2" style={{ borderTop: `1px solid ${cardBorder}` }}>
+                                  {rule.trigger_config && (
+                                    <div>
+                                      <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: textSecondary }}>Trigger Config</span>
+                                      <pre className="mt-1 text-[11px] p-2 rounded-lg overflow-auto max-h-32" style={{ background: dark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)', color: textSecondary }}>
+                                        {JSON.stringify(rule.trigger_config, null, 2)}
+                                      </pre>
+                                    </div>
+                                  )}
+                                  {rule.action_config && (
+                                    <div>
+                                      <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: textSecondary }}>Action Config</span>
+                                      <pre className="mt-1 text-[11px] p-2 rounded-lg overflow-auto max-h-32" style={{ background: dark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)', color: textSecondary }}>
+                                        {JSON.stringify(rule.action_config, null, 2)}
+                                      </pre>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        ) : (
+          <MarketplaceTab dark={dark} onInstalled={loadRules} />
         )}
 
-        {/* Create Modal */}
-        {showCreate && <CreateRuleModal dark={dark} onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); loadRules(); }} />}
+        {showCreate && (
+          <CreateRuleModal dark={dark} onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); loadRules(); }} />
+        )}
       </div>
+    </div>
+  );
+}
+
+function MarketplaceTab({ dark, onInstalled }) {
+  const [recipes, setRecipes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [category, setCategory] = useState('All');
+  const [search, setSearch] = useState('');
+  const [actingId, setActingId] = useState(null);
+  const [justInstalled, setJustInstalled] = useState(null);
+
+  const textPrimary = dark ? '#E8E4DE' : '#332F2B';
+  const textSecondary = dark ? '#6B6660' : '#94908A';
+  const cardBg = dark ? 'rgba(255,255,255,0.02)' : '#ffffff';
+  const cardBorder = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)';
+  const inputBg = dark ? 'rgba(255,255,255,0.04)' : '#ffffff';
+  const inputBorder = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)';
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await fetchJSON('/api/automation/marketplace/recipes');
+        setRecipes(Array.isArray(data) ? data : []);
+      } catch {
+        setRecipes([]);
+      }
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  const categories = ['All', ...new Set(recipes.map(r => r.category))];
+
+  const filtered = recipes.filter(r => {
+    const matchesCat = category === 'All' || r.category === category;
+    const matchesSearch = !search || r.name.toLowerCase().includes(search.toLowerCase()) || r.description.toLowerCase().includes(search.toLowerCase());
+    return matchesCat && matchesSearch;
+  });
+
+  async function install(recipe) {
+    setActingId(recipe.id);
+    try {
+      await postJSON(`/api/automation/marketplace/install/${recipe.id}`, {});
+      setRecipes(prev => prev.map(r => r.id === recipe.id ? { ...r, installed: true } : r));
+      setJustInstalled(recipe.id);
+      setTimeout(() => setJustInstalled(null), 3000);
+      onInstalled?.();
+    } catch { /* already installed or error */ }
+    setActingId(null);
+  }
+
+  async function uninstall(recipe) {
+    setActingId(recipe.id);
+    try {
+      await deleteJSON(`/api/automation/marketplace/uninstall/${recipe.id}`);
+      setRecipes(prev => prev.map(r => r.id === recipe.id ? { ...r, installed: false } : r));
+      onInstalled?.();
+    } catch { /* silent */ }
+    setActingId(null);
+  }
+
+  const installedCount = recipes.filter(r => r.installed).length;
+
+  return (
+    <div>
+      {/* Stats bar */}
+      {!loading && (
+        <div className="flex items-center gap-4 mb-5 text-[11px]" style={{ color: textSecondary }}>
+          <span><strong style={{ color: textPrimary }}>{recipes.length}</strong> recipes available</span>
+          {installedCount > 0 && (
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+              <strong style={{ color: textPrimary }}>{installedCount}</strong> installed
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Search */}
+      <div className="relative mb-4">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{ color: textSecondary }}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+        </svg>
+        <input
+          type="text"
+          placeholder="Search recipes..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm"
+          style={{ background: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }}
+        />
+      </div>
+
+      {/* Category Pills */}
+      <div className="flex gap-2 flex-wrap mb-6">
+        {categories.map(cat => {
+          const color = cat === 'All' ? '#5E8E6E' : (CATEGORY_COLORS[cat] || '#5E8E6E');
+          const isActive = category === cat;
+          return (
+            <button
+              key={cat}
+              onClick={() => setCategory(cat)}
+              className="px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all"
+              style={{
+                background: isActive ? color : (dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'),
+                color: isActive ? '#ffffff' : textSecondary,
+                border: `1px solid ${isActive ? 'transparent' : (dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)')}`,
+              }}
+            >{cat}</button>
+          );
+        })}
+      </div>
+
+      {/* Loading skeletons */}
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="h-56 rounded-2xl animate-pulse" style={{ background: cardBg, border: `1px solid ${cardBorder}` }} />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-16 rounded-2xl" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
+          <div className="text-3xl mb-3">🔍</div>
+          <p className="text-sm font-medium mb-1" style={{ color: textPrimary }}>No recipes found</p>
+          <p className="text-xs" style={{ color: textSecondary }}>Try a different category or search term</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {filtered.map(recipe => {
+            const catColor = CATEGORY_COLORS[recipe.category] || '#5E8E6E';
+            const diff = DIFFICULTY_STYLES[recipe.difficulty] || DIFFICULTY_STYLES.starter;
+            const isActing = actingId === recipe.id;
+            const wasJustInstalled = justInstalled === recipe.id;
+
+            return (
+              <div
+                key={recipe.id}
+                className="rounded-2xl flex flex-col overflow-hidden transition-all"
+                style={{
+                  background: cardBg,
+                  border: `1px solid ${recipe.installed ? catColor + '40' : cardBorder}`,
+                  boxShadow: recipe.installed ? `0 0 0 1px ${catColor}20` : 'none',
+                }}
+              >
+                {/* Color accent bar */}
+                <div className="h-0.5" style={{ background: catColor }} />
+
+                <div className="p-4 flex flex-col flex-1">
+                  {/* Header */}
+                  <div className="flex items-start gap-3 mb-3">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+                      style={{ background: `${catColor}18` }}
+                    >
+                      {recipe.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold leading-snug" style={{ color: textPrimary }}>{recipe.name}</p>
+                      <p className="text-[10px] font-medium mt-0.5" style={{ color: catColor }}>{recipe.category}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-xs font-semibold" style={{ color: textSecondary }}>{(recipe.installs || 0).toLocaleString()}</p>
+                      <p className="text-[9px] uppercase tracking-wide" style={{ color: textSecondary }}>installs</p>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-[12px] leading-relaxed mb-3 flex-1" style={{ color: textSecondary }}>
+                    {recipe.description}
+                  </p>
+
+                  {/* Module tags */}
+                  <div className="flex gap-1.5 flex-wrap mb-3">
+                    {(recipe.modules || []).map(mod => (
+                      <span
+                        key={mod}
+                        className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide"
+                        style={{ background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', color: textSecondary }}
+                      >
+                        {mod}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Stats row */}
+                  <div className="flex items-center gap-2 mb-4 flex-wrap">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: diff.bg, color: diff.color }}>
+                      {diff.label}
+                    </span>
+                    <span className="text-[10px]" style={{ color: textSecondary }}>⚡ {recipe.saves}</span>
+                    <span className="ml-auto text-[10px]" style={{ color: textSecondary }}>
+                      {recipe.requires_approval ? '👁 Approval needed' : '🤖 Fully auto'}
+                    </span>
+                  </div>
+
+                  {/* Action button */}
+                  {wasJustInstalled ? (
+                    <div className="w-full py-2 rounded-xl text-xs font-semibold text-center transition-all" style={{ background: 'rgba(34,197,94,0.12)', color: '#22c55e' }}>
+                      ✓ Installed! Go to My Rules to manage
+                    </div>
+                  ) : recipe.installed ? (
+                    <button
+                      onClick={() => uninstall(recipe)}
+                      disabled={isActing}
+                      className="w-full py-2 rounded-xl text-xs font-semibold transition-all"
+                      style={{
+                        background: 'transparent',
+                        border: `1px solid ${dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+                        color: textSecondary,
+                        opacity: isActing ? 0.5 : 1,
+                      }}
+                    >
+                      {isActing ? 'Removing...' : '✓ Installed — Remove'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => install(recipe)}
+                      disabled={isActing}
+                      className="w-full py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 hover:scale-[1.01]"
+                      style={{
+                        background: catColor,
+                        color: '#ffffff',
+                        opacity: isActing ? 0.6 : 1,
+                      }}
+                    >
+                      {isActing ? 'Installing...' : '+ Install Recipe'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
