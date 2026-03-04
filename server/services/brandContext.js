@@ -47,6 +47,8 @@ function getBrandContext(workspaceId) {
       guidelines: profile.guidelines,
       wordsToUse: profile.words_to_use,
       wordsToAvoid: profile.words_to_avoid,
+      colors: parse(profile.colors),
+      fonts: parse(profile.fonts),
     };
     _cache.set(cacheKey, { data, time: now });
     return data;
@@ -81,6 +83,10 @@ function buildBrandSystemPrompt(brand) {
     brand.wordsToAvoid && `Words to Avoid: ${brand.wordsToAvoid}`,
     brand.competitors && Array.isArray(brand.competitors) && brand.competitors.length > 0
       && `Key Competitors (differentiate from): ${brand.competitors.join(', ')}`,
+    brand.colors && typeof brand.colors === 'object' && Object.keys(brand.colors).filter(k => brand.colors[k]).length > 0
+      && `Brand Colors: ${Object.entries(brand.colors).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`).join(', ')}`,
+    brand.fonts && typeof brand.fonts === 'object' && Object.keys(brand.fonts).filter(k => brand.fonts[k]).length > 0
+      && `Brand Fonts: ${Object.entries(brand.fonts).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`).join(', ')}`,
     '--- END BRAND CONTEXT ---',
   ];
 

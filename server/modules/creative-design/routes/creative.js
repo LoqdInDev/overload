@@ -2,7 +2,7 @@ const express = require('express');
 const { v4: uuid } = require('uuid');
 const { generateWithClaude, generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
-const { generateImages } = require('../../../services/gemini');
+const { generateImages, generateImage, dimensionToAspectRatio } = require('../../../services/gemini');
 const { db, logActivity } = require('../../../db/database');
 const { getQueries } = require('../db/queries');
 const { buildImagePromptOptimizer } = require('../prompts/imagePrompt');
@@ -24,7 +24,7 @@ router.get('/test-gemini', async (req, res) => {
 router.post('/generate', async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
-  const { type, prompt } = req.body;
+  const { type, prompt, style, palette, paletteColors, useBrand } = req.body;
 
   if (!type || !prompt) {
     return res.status(400).json({ error: 'type and prompt are required' });
@@ -49,7 +49,7 @@ router.post('/generate', async (req, res) => {
 
   try {
     // Step 1: Use Claude to optimize and create prompt variations
-    const optimizerPrompt = buildImagePromptOptimizer(type, cleanPrompt, quantity);
+    const optimizerPrompt = buildImagePromptOptimizer(type, cleanPrompt, quantity, { style, palette, paletteColors, workspaceId: wsId, useBrand });
     const { parsed } = await generateWithClaude(optimizerPrompt, { temperature: 0.8 });
 
     const projectId = uuid();
@@ -138,6 +138,102 @@ router.delete('/projects/:id', (req, res) => {
   q.deleteProject(req.params.id);
   logActivity('creative', 'delete', 'Deleted creative project', null, req.params.id, wsId);
   res.json({ success: true });
+});
+
+// POST /generate-stream — streams images one-by-one as they complete (fixes timeout)
+router.post('/generate-stream', async (req, res) => {
+  const wsId = req.workspace.id;
+  const q = getQueries(wsId);
+  const { type, prompt, style, palette, paletteColors, useBrand } = req.body;
+  if (!type || !prompt) return res.status(400).json({ error: 'type and prompt are required' });
+
+  const sse = setupSSE(res);
+
+  let cleanPrompt = prompt;
+  let dimension = null;
+  let quantity = 3;
+  const dimMatch = prompt.match(/\[Dimensions:\s*([^\]]+)\]/i);
+  const qtyMatch = prompt.match(/\[Quantity:\s*(\d+)\]/i);
+  if (dimMatch) { dimension = dimMatch[1].trim(); cleanPrompt = cleanPrompt.replace(dimMatch[0], '').trim(); }
+  if (qtyMatch) { quantity = Math.min(Math.max(parseInt(qtyMatch[1], 10) || 3, 1), 8); cleanPrompt = cleanPrompt.replace(qtyMatch[0], '').trim(); }
+
+  try {
+    const optimizerPrompt = buildImagePromptOptimizer(type, cleanPrompt, quantity, { style, palette, paletteColors, workspaceId: wsId, useBrand });
+    const { parsed } = await generateWithClaude(optimizerPrompt, { temperature: 0.8 });
+
+    const projectId = uuid();
+    const title = cleanPrompt.slice(0, 100);
+    q.createProject(projectId, type, title, cleanPrompt, JSON.stringify(parsed));
+
+    const ratio = dimension ? dimensionToAspectRatio(dimension) : '1:1';
+
+    // Immediately send prompts so client shows pending cards
+    sse.sendChunk(JSON.stringify({ step: 'prompts_ready', projectId, prompts: parsed.prompts || [] }));
+
+    // Generate all images in parallel — stream each result as it completes
+    await Promise.allSettled(
+      (parsed.prompts || []).map(async (p, i) => {
+        const imgId = uuid();
+        try {
+          const gen = await generateImage(p.prompt, ratio);
+          q.createImage(imgId, projectId, gen.url, p.alt, 'gemini', 'completed', JSON.stringify(p));
+          sse.sendChunk(JSON.stringify({
+            step: 'image', index: i,
+            image: { id: imgId, prompt: p.prompt, alt: p.alt, style_notes: p.style_notes, status: 'completed', url: gen.url, dataUrl: gen.dataUrl },
+          }));
+        } catch (err) {
+          q.createImage(imgId, projectId, null, p.alt, 'gemini', 'failed', JSON.stringify({ ...p, error: err.message }));
+          sse.sendChunk(JSON.stringify({
+            step: 'image', index: i,
+            image: { id: imgId, prompt: p.prompt, alt: p.alt, style_notes: p.style_notes, status: 'failed', url: null, error: err.message },
+          }));
+        }
+      })
+    );
+
+    logActivity('creative', 'generate', `Generated ${type} creative`, title, projectId, wsId);
+    sse.sendResult({ step: 'done', projectId });
+  } catch (err) {
+    sse.sendError(err);
+  }
+});
+
+// POST /regenerate — regenerate a single image from an existing prompt
+router.post('/regenerate', async (req, res) => {
+  const sse = setupSSE(res);
+  const { prompt, dimension } = req.body;
+  if (!prompt) return sse.sendError('prompt is required');
+  try {
+    const ratio = dimension ? dimensionToAspectRatio(dimension) : '1:1';
+    const gen = await generateImage(prompt, ratio);
+    sse.sendResult({ url: gen.url, dataUrl: gen.dataUrl, mimeType: gen.mimeType });
+  } catch (err) {
+    sse.sendError(err);
+  }
+});
+
+// POST /caption — generate social captions for a creative
+router.post('/caption', async (req, res) => {
+  const { prompt, alt, type } = req.body;
+  if (!prompt && !alt) return res.status(400).json({ error: 'prompt or alt required' });
+  const sse = setupSSE(res);
+  const captionPrompt = `Generate 3 social media captions for this ${type || 'ad creative'}.
+
+Image description: ${alt || prompt}
+Creative prompt: ${prompt || alt}
+
+Write 3 distinct caption variations:
+**Instagram** — engaging, 1-2 sentences + 5 relevant hashtags (max 150 chars before hashtags)
+**Twitter/X** — punchy, under 200 chars, no hashtags
+**LinkedIn** — professional tone, insight-driven, 1-2 sentences
+
+Format each with the platform name bolded. Be specific, compelling, and conversion-focused.`;
+  try {
+    await generateTextWithClaude(captionPrompt, { onChunk: (chunk) => sse.sendChunk(chunk) });
+    sse.sendResult({ done: true });
+  } catch (err) {
+    sse.sendError(err);
+  }
 });
 
 // POST /generate-brief — generate a creative brief

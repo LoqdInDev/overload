@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
 import { fetchJSON, postJSON, deleteJSON, connectSSE } from '../../lib/api';
+import { useBrand as useBrandContext } from '../../context/BrandContext';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -327,12 +328,14 @@ function ImageCard({ img, apiBase, onOpen, onRegenerate }) {
 
 export default function CreativePage() {
   usePageTitle('Creative & Design');
+  const { brand } = useBrandContext();
   const [activeType, setActiveType] = useState(null);
   const [prompt, setPrompt] = useState('');
   const [style, setStyle] = useState('minimal');
   const [dimension, setDimension] = useState(null);
   const [palette, setPalette] = useState('brand');
   const [quantity, setQuantity] = useState('4');
+  const [useBrandHub, setUseBrandHub] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [images, setImages] = useState([]);
   const [error, setError] = useState(null);
@@ -419,9 +422,17 @@ export default function CreativePage() {
     setShowInput(false);
     const selectedStyle = STYLES.find(s => s.id === style);
     const selectedDim = (DIMENSIONS[activeType] || []).find(d => d.id === dimension);
-    const fullPrompt = `[Dimensions: ${selectedDim?.id || 'Auto'}] [Quantity: ${quantity}]\n\n[Style: ${selectedStyle?.name}] [Palette: ${COLOR_PALETTES.find(p => p.id === palette)?.name}]\n\n${prompt}`;
+    const selectedPalette = COLOR_PALETTES.find(p => p.id === palette);
+    const fullPrompt = `[Dimensions: ${selectedDim?.id || 'Auto'}] [Quantity: ${quantity}]\n\n${prompt}`;
 
-    connectSSE('/api/creative/generate-stream', { type: activeType, prompt: fullPrompt }, {
+    connectSSE('/api/creative/generate-stream', {
+      type: activeType,
+      prompt: fullPrompt,
+      style: selectedStyle?.name,
+      palette: selectedPalette?.name,
+      paletteColors: selectedPalette?.colors,
+      useBrand: useBrandHub,
+    }, {
       onChunk: (text) => {
         try {
           const msg = JSON.parse(text);
@@ -897,18 +908,18 @@ export default function CreativePage() {
               {/* Color Palette (compact) */}
               <div className="panel rounded-2xl p-4 sm:p-5">
                 <p className="hud-label text-[11px] mb-2.5">COLOR PALETTE</p>
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="space-y-1">
                   {COLOR_PALETTES.map(p => (
                     <button key={p.id} onClick={() => setPalette(p.id)}
-                      className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border text-xs transition-all ${
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border text-xs transition-all ${
                         palette === p.id ? 'border-cyan-500/30 bg-cyan-500/[0.08] text-cyan-300' : 'border-indigo-500/8 bg-white/[0.01] text-gray-400 hover:text-gray-200'
                       }`}>
                       <div className="flex gap-0.5 flex-shrink-0">
                         {p.colors.map((c, i) => (
-                          <div key={i} className="w-2.5 h-2.5 rounded-full" style={{ background: c }} />
+                          <div key={i} className="w-3 h-3 rounded-full" style={{ background: c }} />
                         ))}
                       </div>
-                      <span className="font-semibold text-[10px] truncate">{p.name}</span>
+                      <span className="font-semibold text-[11px]">{p.name}</span>
                     </button>
                   ))}
                 </div>
@@ -926,6 +937,62 @@ export default function CreativePage() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Brand Hub */}
+              <div className="panel rounded-2xl p-4 sm:p-5" style={useBrandHub ? { borderColor: 'rgba(167,139,250,0.25)', background: 'rgba(167,139,250,0.04)' } : {}}>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="hud-label text-[11px]">BRAND HUB</p>
+                  <button
+                    onClick={() => setUseBrandHub(v => !v)}
+                    className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors flex-shrink-0"
+                    style={{ background: useBrandHub ? '#a78bfa' : 'rgba(255,255,255,0.1)' }}>
+                    <span className="inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform shadow-sm"
+                      style={{ transform: useBrandHub ? 'translateX(18px)' : 'translateX(2px)' }} />
+                  </button>
+                </div>
+
+                {!brand ? (
+                  <p className="text-[10px] text-gray-600 leading-relaxed">
+                    Set up your Brand Hub to pull colors, fonts &amp; identity into every generation.
+                  </p>
+                ) : useBrandHub ? (
+                  <div className="space-y-2">
+                    <p className="text-[10px] text-violet-300/80">Using brand settings for this generation</p>
+                    {brand.colors && typeof brand.colors === 'object' && Object.values(brand.colors).some(Boolean) && (
+                      <div>
+                        <p className="hud-label text-[9px] mb-1" style={{ color: '#a78bfa' }}>BRAND COLORS</p>
+                        <div className="flex gap-1 flex-wrap">
+                          {Object.entries(brand.colors).filter(([, v]) => v).map(([k, v]) => (
+                            <div key={k} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] text-gray-400"
+                              style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                              <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: v }} />
+                              <span>{v}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {brand.fonts && typeof brand.fonts === 'object' && Object.values(brand.fonts).some(Boolean) && (
+                      <div>
+                        <p className="hud-label text-[9px] mb-1" style={{ color: '#a78bfa' }}>BRAND FONTS</p>
+                        <div className="flex flex-wrap gap-1">
+                          {Object.entries(brand.fonts).filter(([, v]) => v).slice(0, 2).map(([k, v]) => (
+                            <span key={k} className="text-[9px] text-gray-500 px-1.5 py-0.5 rounded"
+                              style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                              {k}: {v}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <p className="text-[9px] text-gray-600">Color palette selection overridden by brand colors</p>
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-gray-600 leading-relaxed">
+                    Enable to use <span className="text-violet-400">{brand.brandName}</span>'s colors, fonts &amp; visual identity automatically.
+                  </p>
+                )}
               </div>
             </div>
           </div>
