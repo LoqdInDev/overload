@@ -11,6 +11,8 @@ function initDatabase() {
       content TEXT,
       sentiment TEXT,
       sentiment_score REAL,
+      response TEXT,
+      status TEXT DEFAULT 'new',
       metadata TEXT,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
@@ -63,6 +65,9 @@ function initDatabase() {
       created_at TEXT DEFAULT (datetime('now'))
     );
   `);
+
+  try { db.exec("ALTER TABLE rv_reviews ADD COLUMN response TEXT"); } catch {}
+  try { db.exec("ALTER TABLE rv_reviews ADD COLUMN status TEXT DEFAULT 'new'"); } catch {}
 }
 
 module.exports = { initDatabase };

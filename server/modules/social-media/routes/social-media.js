@@ -648,18 +648,15 @@ router.post('/best-times', async (req, res) => {
       `You are a social media timing expert. Provide optimal posting times.\nPlatform: ${platform || 'instagram'}\nIndustry: ${industry || 'general'}\nAudience: ${audience || 'general'}\n\nReturn ONLY valid JSON (no markdown):\n{"best_times":[{"day":"Tuesday","time":"9:00 AM EST","reason":"high engagement window","score":95},{"day":"Wednesday","time":"12:00 PM EST","reason":"lunch scroll peak","score":88},{"day":"Thursday","time":"6:00 PM EST","reason":"evening commute","score":85}],"avoid":["Saturday early morning","Sunday evening"],"tip":"One key platform-specific timing insight"}`,
       { temperature: 0.3 }
     );
-    const clean = text.replace(/```json\n?|\n?```/g, '').trim();
-    res.json(JSON.parse(clean));
-  } catch {
-    res.json({
-      best_times: [
-        { day: 'Tuesday', time: '9:00 AM', reason: 'Peak morning engagement', score: 92 },
-        { day: 'Wednesday', time: '12:00 PM', reason: 'Lunch scroll peak', score: 87 },
-        { day: 'Thursday', time: '6:00 PM', reason: 'Evening commute', score: 85 },
-      ],
-      avoid: ['Saturday early morning', 'Sunday evening'],
-      tip: `${platform || 'This platform'} sees highest engagement mid-week during commute hours.`,
-    });
+    const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
+    try { res.json(JSON.parse(cleaned)); }
+    catch {
+      const m = cleaned.match(/\{[\s\S]*\}/);
+      if (m) { try { res.json(JSON.parse(m[0])); } catch { res.status(500).json({ error: 'Failed to parse best times' }); } }
+      else res.status(500).json({ error: 'Failed to parse best times' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -686,7 +683,7 @@ Provide 3-4 tags per category. Make them real and relevant. Only return JSON.`);
     try { res.json(JSON.parse(cleaned)); }
     catch {
       const m = cleaned.match(/\{[\s\S]*\}/);
-      if (m) res.json(JSON.parse(m[0]));
+      if (m) { try { res.json(JSON.parse(m[0])); } catch { res.status(500).json({ error: 'Failed to parse hashtag recommendations' }); } }
       else res.status(500).json({ error: 'Failed to parse hashtag recommendations' });
     }
   } catch (err) {

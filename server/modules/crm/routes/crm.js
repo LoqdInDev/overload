@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { v4: uuidv4 } = require('uuid');
 const { db, logActivity } = require('../../../db/database');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
@@ -177,10 +178,12 @@ router.post('/contacts', (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { name, email, phone, company, title, status, score, tags, segment, source, notes } = req.body;
-    const result = db.prepare(
-      'INSERT INTO crm_contacts (name, email, phone, company, title, status, score, tags, segment, source, notes, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(name, email || null, phone || null, company || null, title || null, status || 'lead', score || 0, tags || null, segment || null, source || null, notes || null, wsId);
-    const contact = db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    if (!name) return res.status(400).json({ error: 'name is required' });
+    const id = uuidv4();
+    db.prepare(
+      'INSERT INTO crm_contacts (id, name, email, phone, company, title, status, score, tags, segment, source, notes, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(id, name, email || null, phone || null, company || null, title || null, status || 'lead', score || 0, tags || null, segment || null, source || null, notes || null, wsId);
+    const contact = db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ?').get(id, wsId);
     logActivity('crm', 'create', 'Added contact', name, null, wsId);
     res.status(201).json(contact);
   } catch (error) {
@@ -329,10 +332,12 @@ router.post('/deals', (req, res) => {
       return res.status(404).json({ error: 'Contact not found' });
     }
 
-    const result = db.prepare(
-      'INSERT INTO crm_deals (contact_id, name, value, stage, pipeline, probability, expected_close, notes, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(contact_id, name, value || 0, stage || 'lead', pipeline || 'default', probability || 0, expected_close || null, notes || null, wsId);
-    const deal = db.prepare('SELECT * FROM crm_deals WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    if (!name) return res.status(400).json({ error: 'name is required' });
+    const dealId = uuidv4();
+    db.prepare(
+      'INSERT INTO crm_deals (id, contact_id, name, value, stage, pipeline, probability, expected_close, notes, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(dealId, contact_id, name, value || 0, stage || 'lead', pipeline || 'default', probability || 0, expected_close || null, notes || null, wsId);
+    const deal = db.prepare('SELECT * FROM crm_deals WHERE id = ? AND workspace_id = ?').get(dealId, wsId);
     logActivity('crm', 'create', 'Created deal', name, null, wsId);
     res.status(201).json(deal);
   } catch (error) {
@@ -368,8 +373,8 @@ router.put('/deals/:id', (req, res) => {
       // Log stage changes within the same transaction
       if (stage && stage !== existing.stage) {
         db.prepare(
-          'INSERT INTO crm_activities (contact_id, deal_id, type, title, description, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
-        ).run(existing.contact_id, id, 'stage_change', `Deal moved to ${stage}`, `${existing.stage} -> ${stage}`, wsId);
+          'INSERT INTO crm_activities (id, contact_id, deal_id, type, title, description, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        ).run(uuidv4(), existing.contact_id, id, 'stage_change', `Deal moved to ${stage}`, `${existing.stage} -> ${stage}`, wsId);
       }
     });
     updateDeal();
@@ -425,10 +430,11 @@ router.post('/activities', (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { contact_id, deal_id, type, title, description } = req.body;
-    const result = db.prepare(
-      'INSERT INTO crm_activities (contact_id, deal_id, type, title, description, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(contact_id || null, deal_id || null, type, title, description || null, wsId);
-    const activity = db.prepare('SELECT * FROM crm_activities WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    const actId = uuidv4();
+    db.prepare(
+      'INSERT INTO crm_activities (id, contact_id, deal_id, type, title, description, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run(actId, contact_id || null, deal_id || null, type, title, description || null, wsId);
+    const activity = db.prepare('SELECT * FROM crm_activities WHERE id = ? AND workspace_id = ?').get(actId, wsId);
     res.status(201).json(activity);
   } catch (error) {
     res.status(500).json({ error: error.message });

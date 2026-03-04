@@ -12,7 +12,8 @@ function initDatabase() {
       winner_variant TEXT,
       start_date TEXT,
       end_date TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
@@ -30,6 +31,8 @@ function initDatabase() {
       FOREIGN KEY (test_id) REFERENCES abt_tests(id)
     )
   `);
+
+  try { db.exec('ALTER TABLE abt_tests ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP'); } catch {}
 }
 
 module.exports = { initDatabase };

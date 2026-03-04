@@ -6,7 +6,7 @@ function exportJSON(campaignData) {
 
 function exportMarkdown(campaignData) {
   const { campaign, generations } = campaignData;
-  const product = JSON.parse(campaign.product_data);
+  const product = campaign.product_data ? JSON.parse(campaign.product_data) : {};
   let md = '';
 
   md += `# Overload Campaign: ${campaign.product_name}\n\n`;
@@ -128,7 +128,7 @@ function exportMarkdown(campaignData) {
 
 function exportPDF(campaignData) {
   const { campaign, generations } = campaignData;
-  const product = JSON.parse(campaign.product_data);
+  const product = campaign.product_data ? JSON.parse(campaign.product_data) : {};
   const doc = new jsPDF({ putOnlyUsedFonts: true, compress: true });
 
   const pageWidth = doc.internal.pageSize.getWidth();

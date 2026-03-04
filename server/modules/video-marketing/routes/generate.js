@@ -28,8 +28,9 @@ router.post('/angles', async (req, res) => {
     });
 
     const genId = uuidv4();
-    q.createGeneration(genId, campaignId, 'angles', JSON.stringify(parsed), raw);
-    logActivity('video-marketing', 'generate', 'Generated ad angles', `${parsed.length} angles`, campaignId, wsId);
+    const angles = parsed || [];
+    q.createGeneration(genId, campaignId, 'angles', JSON.stringify(angles), raw);
+    logActivity('video-marketing', 'generate', 'Generated ad angles', `${angles.length} angles`, campaignId, wsId);
     sse.sendResult({ generationId: genId, data: parsed });
   } catch (error) {
     console.error('Angle generation error:', error);
@@ -55,9 +56,10 @@ router.post('/scripts', async (req, res) => {
     }
 
     const genId = uuidv4();
-    q.createGeneration(genId, campaignId, 'scripts', JSON.stringify(scripts), JSON.stringify(scripts));
-    logActivity('video-marketing', 'generate', 'Generated scripts', `${scripts.length} scripts`, campaignId, wsId);
-    sse.sendResult({ generationId: genId, data: scripts });
+    const safeScripts = scripts.map(s => s || {});
+    q.createGeneration(genId, campaignId, 'scripts', JSON.stringify(safeScripts), JSON.stringify(safeScripts));
+    logActivity('video-marketing', 'generate', 'Generated scripts', `${safeScripts.length} scripts`, campaignId, wsId);
+    sse.sendResult({ generationId: genId, data: safeScripts });
   } catch (error) {
     console.error('Script generation error:', error);
     sse.sendError(error);
@@ -79,8 +81,9 @@ router.post('/hooks', async (req, res) => {
     });
 
     const genId = uuidv4();
-    q.createGeneration(genId, campaignId, 'hooks', JSON.stringify(parsed), raw);
-    logActivity('video-marketing', 'generate', 'Generated hooks', `${parsed.length} hooks`, campaignId, wsId);
+    const hooks = parsed || [];
+    q.createGeneration(genId, campaignId, 'hooks', JSON.stringify(hooks), raw);
+    logActivity('video-marketing', 'generate', 'Generated hooks', `${hooks.length} hooks`, campaignId, wsId);
     sse.sendResult({ generationId: genId, data: parsed });
   } catch (error) {
     console.error('Hook generation error:', error);
@@ -107,8 +110,9 @@ router.post('/storyboard', async (req, res) => {
     }
 
     const genId = uuidv4();
-    q.createGeneration(genId, campaignId, 'storyboard', JSON.stringify(storyboards), JSON.stringify(storyboards));
-    logActivity('video-marketing', 'generate', 'Generated storyboards', `${storyboards.length} storyboards`, campaignId, wsId);
+    const safeBoards = storyboards.map(s => s || {});
+    q.createGeneration(genId, campaignId, 'storyboard', JSON.stringify(safeBoards), JSON.stringify(safeBoards));
+    logActivity('video-marketing', 'generate', 'Generated storyboards', `${safeBoards.length} storyboards`, campaignId, wsId);
     sse.sendResult({ generationId: genId, data: storyboards });
   } catch (error) {
     console.error('Storyboard generation error:', error);
@@ -131,8 +135,9 @@ router.post('/ugc', async (req, res) => {
     });
 
     const genId = uuidv4();
-    q.createGeneration(genId, campaignId, 'ugc', JSON.stringify(parsed), raw);
-    logActivity('video-marketing', 'generate', 'Generated UGC briefs', `${parsed.length} briefs`, campaignId, wsId);
+    const ugcBriefs = parsed || [];
+    q.createGeneration(genId, campaignId, 'ugc', JSON.stringify(ugcBriefs), raw);
+    logActivity('video-marketing', 'generate', 'Generated UGC briefs', `${ugcBriefs.length} briefs`, campaignId, wsId);
     sse.sendResult({ generationId: genId, data: parsed });
   } catch (error) {
     console.error('UGC generation error:', error);
@@ -155,8 +160,9 @@ router.post('/iterate', async (req, res) => {
     });
 
     const genId = uuidv4();
-    q.createGeneration(genId, campaignId, 'iteration', JSON.stringify(parsed), raw);
-    logActivity('video-marketing', 'generate', 'Iterated on winners', `${parsed.length} variations`, campaignId, wsId);
+    const iterations = parsed || [];
+    q.createGeneration(genId, campaignId, 'iteration', JSON.stringify(iterations), raw);
+    logActivity('video-marketing', 'generate', 'Iterated on winners', `${iterations.length} variations`, campaignId, wsId);
     sse.sendResult({ generationId: genId, data: parsed });
   } catch (error) {
     console.error('Iteration error:', error);

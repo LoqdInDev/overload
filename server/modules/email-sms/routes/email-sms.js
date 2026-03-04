@@ -346,10 +346,11 @@ router.get('/templates', (req, res) => {
 router.post('/templates', (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const { name, type, category, subject, content, variables } = req.body;
+    const { name, type, category, subject, content, body } = req.body;
+    if (!name || !type) return res.status(400).json({ error: 'name and type are required' });
     const result = db.prepare(
-      'INSERT INTO es_templates (name, type, category, subject, content, variables, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).run(name, type, category || null, subject || null, content || null, variables ? JSON.stringify(variables) : null, wsId);
+      'INSERT INTO es_templates (name, type, category, subject, body, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run(name, type, category || null, subject || null, body || content || null, wsId);
     const template = db.prepare('SELECT * FROM es_templates WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(template);
   } catch (error) {
