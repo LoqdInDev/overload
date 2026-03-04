@@ -130,6 +130,49 @@ export default function ContentPage() {
     setStreamText('');
   };
 
+  const text = result || streamText;
+  const wordCount = text.split(/\s+/).filter(Boolean).length;
+
+  // Content quality scoring (computed from generated text)
+  const quality = useMemo(() => {
+    if (!text || text.length < 50) return null;
+    const words = text.split(/\s+/).filter(Boolean);
+    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+    const avgWordsPerSentence = sentences.length ? words.length / sentences.length : 0;
+    const avgSentencesPerPara = paragraphs.length ? sentences.length / paragraphs.length : 0;
+    const hasHeaders = /^#{1,3}\s|^\*\*[^*]+\*\*/m.test(text);
+    const hasLists = /^[-*•]\s|^\d+\.\s/m.test(text);
+    const uniqueWords = new Set(words.map(w => w.toLowerCase().replace(/[^a-z]/g, '')));
+    const lexicalDiversity = words.length ? (uniqueWords.size / words.length) * 100 : 0;
+
+    const targetWords = parseInt(wordTarget) || 800;
+    const lengthRatio = Math.min(words.length / targetWords, 1.2);
+    let seo = Math.round(Math.min(lengthRatio * 55 + (hasHeaders ? 18 : 0) + (hasLists ? 12 : 0) + Math.min(paragraphs.length * 2, 15), 100));
+
+    let readability = 80;
+    if (avgWordsPerSentence > 25) readability -= Math.min((avgWordsPerSentence - 25) * 2, 30);
+    if (avgWordsPerSentence < 8) readability -= 10;
+    if (avgSentencesPerPara > 8) readability -= 10;
+    readability = Math.round(Math.max(Math.min(readability + (hasHeaders ? 8 : 0) + (hasLists ? 7 : 0), 100), 20));
+
+    const ctaWords = /\b(try|get|start|discover|learn|join|sign up|click|download|buy|free)\b/gi;
+    const ctaCount = (text.match(ctaWords) || []).length;
+    let engagement = Math.round(Math.min(lexicalDiversity * 1.1 + ctaCount * 3 + (hasHeaders ? 8 : 0) + (paragraphs.length > 2 ? 8 : 0), 100));
+
+    const avg = (seo + readability + engagement) / 3;
+    const grade = avg >= 90 ? 'A+' : avg >= 80 ? 'A' : avg >= 70 ? 'B' : avg >= 60 ? 'C' : avg >= 50 ? 'D' : 'F';
+
+    const tips = [];
+    if (!hasHeaders) tips.push('Add headings to improve structure');
+    if (!hasLists) tips.push('Add bullet points or lists');
+    if (words.length < targetWords * 0.6) tips.push('Content is shorter than target length');
+    if (avgWordsPerSentence > 25) tips.push('Shorten some sentences for readability');
+    if (ctaCount === 0) tips.push('Add a call-to-action');
+
+    return { seo, readability, engagement, grade, avg, tips };
+  }, [text, wordTarget]);
+
   if (!activeType) {
     return (
       <div className="p-4 sm:p-6 lg:p-12">
@@ -264,53 +307,6 @@ export default function ContentPage() {
 
   const currentType = CONTENT_TYPES.find(t => t.id === activeType);
   const templates = TEMPLATES[activeType] || [];
-  const text = result || streamText;
-  const wordCount = text.split(/\s+/).filter(Boolean).length;
-
-  // Content quality scoring (computed from generated text)
-  const quality = useMemo(() => {
-    if (!text || text.length < 50) return null;
-    const words = text.split(/\s+/).filter(Boolean);
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
-    const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0);
-    const avgWordsPerSentence = sentences.length ? words.length / sentences.length : 0;
-    const avgSentencesPerPara = paragraphs.length ? sentences.length / paragraphs.length : 0;
-    const hasHeaders = /^#{1,3}\s|^\*\*[^*]+\*\*/m.test(text);
-    const hasLists = /^[-*•]\s|^\d+\.\s/m.test(text);
-    const uniqueWords = new Set(words.map(w => w.toLowerCase().replace(/[^a-z]/g, '')));
-    const lexicalDiversity = words.length ? (uniqueWords.size / words.length) * 100 : 0;
-
-    // SEO: reward length, headers, structure, lists
-    const targetWords = parseInt(wordTarget) || 800;
-    const lengthRatio = Math.min(words.length / targetWords, 1.2);
-    let seo = Math.round(Math.min(lengthRatio * 55 + (hasHeaders ? 18 : 0) + (hasLists ? 12 : 0) + Math.min(paragraphs.length * 2, 15), 100));
-
-    // Readability: penalize very long/short sentences
-    let readability = 80;
-    if (avgWordsPerSentence > 25) readability -= Math.min((avgWordsPerSentence - 25) * 2, 30);
-    if (avgWordsPerSentence < 8) readability -= 10;
-    if (avgSentencesPerPara > 8) readability -= 10;
-    readability = Math.round(Math.max(Math.min(readability + (hasHeaders ? 8 : 0) + (hasLists ? 7 : 0), 100), 20));
-
-    // Engagement: variety, structure, call-to-action signals
-    const ctaWords = /\b(try|get|start|discover|learn|join|sign up|click|download|buy|free)\b/gi;
-    const ctaCount = (text.match(ctaWords) || []).length;
-    let engagement = Math.round(Math.min(lexicalDiversity * 1.1 + ctaCount * 3 + (hasHeaders ? 8 : 0) + (paragraphs.length > 2 ? 8 : 0), 100));
-
-    // Grade
-    const avg = (seo + readability + engagement) / 3;
-    const grade = avg >= 90 ? 'A+' : avg >= 80 ? 'A' : avg >= 70 ? 'B' : avg >= 60 ? 'C' : avg >= 50 ? 'D' : 'F';
-
-    // Suggestions
-    const tips = [];
-    if (!hasHeaders) tips.push('Add headings to improve structure');
-    if (!hasLists) tips.push('Add bullet points or lists');
-    if (words.length < targetWords * 0.6) tips.push('Content is shorter than target length');
-    if (avgWordsPerSentence > 25) tips.push('Shorten some sentences for readability');
-    if (ctaCount === 0) tips.push('Add a call-to-action');
-
-    return { seo, readability, engagement, grade, avg, tips };
-  }, [text, wordTarget]);
 
   return (
     <div className="p-4 sm:p-6 lg:p-12 animate-fade-in">
