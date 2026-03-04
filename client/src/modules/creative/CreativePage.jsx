@@ -338,6 +338,8 @@ export default function CreativePage() {
   const [palette, setPalette] = useState('brand');
   const [quantity, setQuantity] = useState('4');
   const [useBrandHub, setUseBrandHub] = useState(false);
+  const [referenceImage, setReferenceImage] = useState(null); // { dataUrl, base64, mimeType, name }
+  const fileInputRef = useRef(null);
   const [generating, setGenerating] = useState(false);
   const [images, setImages] = useState([]);
   const [error, setError] = useState(null);
@@ -416,8 +418,23 @@ export default function CreativePage() {
     });
   };
 
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Reset input so same file can be re-selected
+    e.target.value = '';
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target.result;
+      const base64 = dataUrl.split(',')[1];
+      setReferenceImage({ dataUrl, base64, mimeType: file.type, name: file.name });
+    };
+    reader.readAsDataURL(file);
+  };
+
   const generate = () => {
-    if (!prompt.trim() || !activeType) return;
+    if (!activeType) return;
+    if (!referenceImage && !prompt.trim()) return;
     setGenerating(true);
     setError(null);
     setImages([]);
@@ -425,6 +442,49 @@ export default function CreativePage() {
     const selectedStyle = STYLES.find(s => s.id === style);
     const selectedDim = (DIMENSIONS[activeType] || []).find(d => d.id === dimension);
     const selectedPalette = COLOR_PALETTES.find(p => p.id === palette);
+
+    if (referenceImage) {
+      // Variation mode — use reference image endpoint
+      connectSSE('/api/creative/generate-from-image-stream', {
+        type: activeType,
+        prompt: prompt.trim(),
+        imageData: referenceImage.base64,
+        imageMimeType: referenceImage.mimeType,
+        style: selectedStyle?.name,
+        palette: selectedPalette?.name,
+        paletteColors: selectedPalette?.colors,
+        useBrand: useBrandHub,
+        quantity,
+        dimension: selectedDim?.id,
+      }, {
+        onChunk: (text) => {
+          try {
+            const msg = JSON.parse(text);
+            if (msg.step === 'prompts_ready') {
+              setImages((msg.prompts || []).map((p, i) => ({
+                id: `pending-${i}`, prompt: p.prompt, alt: p.alt,
+                style_notes: p.style_notes, status: 'pending', url: null, dataUrl: null,
+              })));
+            } else if (msg.step === 'image') {
+              setImages(prev => {
+                const next = [...prev];
+                next[msg.index] = { ...next[msg.index], ...msg.image };
+                return next;
+              });
+            }
+          } catch { /* non-JSON chunks */ }
+        },
+        onResult: () => setGenerating(false),
+        onError: (err) => {
+          setError(err || 'Generation failed. Please try again.');
+          setGenerating(false);
+          setShowInput(true);
+        },
+        onDone: () => setGenerating(false),
+      });
+      return;
+    }
+
     const fullPrompt = `[Dimensions: ${selectedDim?.id || 'Auto'}] [Quantity: ${quantity}]\n\n${prompt}`;
 
     connectSSE('/api/creative/generate-stream', {
@@ -485,7 +545,7 @@ export default function CreativePage() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 stagger">
           {CREATIVE_TYPES.map(type => (
-            <button key={type.id} onClick={() => { setActiveType(type.id); setDimension(DIMENSIONS[type.id]?.[0]?.id || null); setActiveTab('generate'); setImages([]); setShowInput(true); }}
+            <button key={type.id} onClick={() => { setActiveType(type.id); setDimension(DIMENSIONS[type.id]?.[0]?.id || null); setActiveTab('generate'); setImages([]); setShowInput(true); setReferenceImage(null); }}
               className="panel-interactive rounded-2xl p-4 sm:p-7 text-center group">
               <div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center transition-all duration-300 group-hover:scale-110"
                 style={{ background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.12)' }}>
@@ -538,7 +598,7 @@ export default function CreativePage() {
       <ModuleWrapper moduleId="creative">
       {/* Header */}
       <div className="flex items-center gap-3 sm:gap-5 mb-6 sm:mb-8">
-        <button onClick={() => { setActiveType(null); setImages([]); setPrompt(''); setActiveTab('generate'); setShowInput(true); setError(null); }}
+        <button onClick={() => { setActiveType(null); setImages([]); setPrompt(''); setActiveTab('generate'); setShowInput(true); setError(null); setReferenceImage(null); }}
           className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white hover:border-indigo-500/25 transition-all">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
@@ -764,19 +824,63 @@ export default function CreativePage() {
                     </div>
                   </div>
 
+                  {/* Reference Image Upload */}
+                  <div className="panel rounded-2xl p-4 sm:p-5"
+                    style={referenceImage ? { borderColor: 'rgba(6,182,212,0.25)', background: 'rgba(6,182,212,0.04)' } : {}}>
+                    <p className="hud-label text-[11px] mb-2">REFERENCE IMAGE</p>
+                    {referenceImage ? (
+                      <div className="flex items-start gap-3">
+                        <div className="relative flex-shrink-0">
+                          <img src={referenceImage.dataUrl} alt="Reference"
+                            className="w-20 h-20 rounded-xl object-cover"
+                            style={{ border: '1px solid rgba(6,182,212,0.3)' }} />
+                          <button onClick={() => setReferenceImage(null)}
+                            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                            style={{ background: '#ef4444', border: '1px solid rgba(0,0,0,0.3)' }}>
+                            ×
+                          </button>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] text-cyan-300 font-medium mb-0.5">Variation mode active</p>
+                          <p className="text-[10px] text-gray-500 line-clamp-1">{referenceImage.name}</p>
+                          <p className="text-[10px] text-gray-600 mt-1 leading-relaxed">
+                            AI will generate {quantity} variations based on this image. Add instructions below (optional).
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <button onClick={() => fileInputRef.current?.click()}
+                        className="w-full flex flex-col items-center justify-center gap-2 py-5 rounded-xl border border-dashed transition-all text-center"
+                        style={{ borderColor: 'rgba(6,182,212,0.2)', background: 'rgba(6,182,212,0.02)' }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(6,182,212,0.4)'; e.currentTarget.style.background = 'rgba(6,182,212,0.06)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(6,182,212,0.2)'; e.currentTarget.style.background = 'rgba(6,182,212,0.02)'; }}>
+                        <svg className="w-5 h-5 text-cyan-500/60" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                        </svg>
+                        <div>
+                          <p className="text-[11px] text-gray-400 font-medium">Upload reference image</p>
+                          <p className="text-[10px] text-gray-600 mt-0.5">Generate variations of your existing design</p>
+                        </div>
+                      </button>
+                    )}
+                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                  </div>
+
                   {/* Brief */}
                   <div className="panel rounded-2xl p-4 sm:p-5">
-                    <p className="hud-label text-[11px] mb-2">CREATIVE BRIEF</p>
+                    <p className="hud-label text-[11px] mb-2">{referenceImage ? 'VARIATION INSTRUCTIONS (OPTIONAL)' : 'CREATIVE BRIEF'}</p>
                     <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={4}
-                      placeholder="Describe your visual in detail — subject, composition, mood, lighting, colors, text overlays..."
+                      placeholder={referenceImage
+                        ? 'Describe how you want to vary this image — color mood, style changes, composition tweaks...'
+                        : 'Describe your visual in detail — subject, composition, mood, lighting, colors, text overlays...'}
                       className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
                   </div>
 
                   {/* Generate */}
-                  <button onClick={generate} disabled={generating || !prompt.trim()}
+                  <button onClick={generate} disabled={generating || (!prompt.trim() && !referenceImage)}
                     className="btn-accent w-full py-3 rounded-lg font-bold text-sm tracking-wide"
-                    style={{ background: !prompt.trim() ? '#1e1e2e' : '#06b6d4', boxShadow: !prompt.trim() ? 'none' : '0 4px 20px -4px rgba(6,182,212,0.4)' }}>
-                    GENERATE {quantity} CREATIVES
+                    style={{ background: (!prompt.trim() && !referenceImage) ? '#1e1e2e' : '#06b6d4', boxShadow: (!prompt.trim() && !referenceImage) ? 'none' : '0 4px 20px -4px rgba(6,182,212,0.4)' }}>
+                    {referenceImage ? `GENERATE ${quantity} VARIATIONS` : `GENERATE ${quantity} CREATIVES`}
                   </button>
                 </div>
               )}
@@ -808,7 +912,11 @@ export default function CreativePage() {
                       </div>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-500">Creating {quantity} variations with {STYLES.find(s => s.id === style)?.name} style</p>
+                  <p className="text-xs text-gray-500">
+                    {referenceImage
+                      ? `Generating ${quantity} variations from your reference image`
+                      : `Creating ${quantity} variations with ${STYLES.find(s => s.id === style)?.name} style`}
+                  </p>
                 </div>
               )}
 

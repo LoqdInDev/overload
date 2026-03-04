@@ -113,4 +113,64 @@ async function generateImages(prompts, { aspectRatio, dimension } = {}) {
   });
 }
 
-module.exports = { generateImage, generateImages, dimensionToAspectRatio };
+/**
+ * Generate an image variation based on a reference image + text instruction.
+ * @param {string} promptText - Variation instruction / description
+ * @param {string} referenceBase64 - Base64-encoded reference image (no data URL prefix)
+ * @param {string} referenceMimeType - e.g. 'image/jpeg' or 'image/png'
+ * @param {string} [aspectRatio] - Gemini aspect ratio e.g. '1:1'
+ */
+async function generateImageFromReference(promptText, referenceBase64, referenceMimeType, aspectRatio = '1:1') {
+  if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY is not configured');
+
+  const body = {
+    contents: [{
+      parts: [
+        { inlineData: { data: referenceBase64, mimeType: referenceMimeType } },
+        { text: promptText },
+      ],
+    }],
+    generationConfig: {
+      responseModalities: ['TEXT', 'IMAGE'],
+    },
+  };
+
+  const res = await fetch(`${API_URL}?key=${GEMINI_API_KEY}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const msg = err.error?.message || `Gemini API error ${res.status}`;
+    console.error('[gemini] API error (reference):', res.status, msg);
+    throw new Error(msg);
+  }
+
+  const data = await res.json();
+  const parts = data.candidates?.[0]?.content?.parts || [];
+  const imagePart = parts.find(p => p.inlineData);
+
+  if (!imagePart) {
+    const textPart = parts.find(p => p.text);
+    if (textPart) throw new Error(`Gemini returned text instead of image: ${textPart.text?.slice(0, 120)}`);
+    throw new Error('No image returned from Gemini for reference variation');
+  }
+
+  const { data: base64, mimeType } = imagePart.inlineData;
+  const ext = mimeType === 'image/jpeg' ? 'jpg' : 'png';
+  const filename = `${crypto.randomUUID()}.${ext}`;
+  const filepath = path.join(uploadsDir, filename);
+
+  fs.writeFileSync(filepath, Buffer.from(base64, 'base64'));
+  console.log(`[gemini] Saved variation image: ${filename} (${mimeType})`);
+
+  return {
+    url: `/uploads/creatives/${filename}`,
+    dataUrl: `data:${mimeType};base64,${base64}`,
+    mimeType,
+  };
+}
+
+module.exports = { generateImage, generateImages, generateImageFromReference, dimensionToAspectRatio };

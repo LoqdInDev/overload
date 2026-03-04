@@ -2,7 +2,7 @@ const express = require('express');
 const { v4: uuid } = require('uuid');
 const { generateWithClaude, generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
-const { generateImages, generateImage, dimensionToAspectRatio } = require('../../../services/gemini');
+const { generateImages, generateImage, generateImageFromReference, dimensionToAspectRatio } = require('../../../services/gemini');
 const { db, logActivity } = require('../../../db/database');
 const { getQueries } = require('../db/queries');
 const { buildImagePromptOptimizer } = require('../prompts/imagePrompt');
@@ -231,6 +231,85 @@ Format each with the platform name bolded. Be specific, compelling, and conversi
   try {
     await generateTextWithClaude(captionPrompt, { onChunk: (chunk) => sse.sendChunk(chunk) });
     sse.sendResult({ done: true });
+  } catch (err) {
+    sse.sendError(err);
+  }
+});
+
+// POST /generate-from-image-stream — generate variations of an uploaded reference image
+router.post('/generate-from-image-stream', async (req, res) => {
+  const wsId = req.workspace.id;
+  const q = getQueries(wsId);
+  const { type, prompt, imageData, imageMimeType, style, palette, paletteColors, useBrand, quantity: rawQty, dimension: rawDim } = req.body;
+
+  if (!imageData || !imageMimeType) return res.status(400).json({ error: 'imageData and imageMimeType are required' });
+
+  const sse = setupSSE(res);
+
+  const quantity = Math.min(Math.max(parseInt(rawQty, 10) || 3, 1), 8);
+  const dimension = rawDim || null;
+  const ratio = dimension ? dimensionToAspectRatio(dimension) : '1:1';
+  const typeContext = {
+    'ad-creative': 'high-converting social media advertisement',
+    'product-photo': 'professional product photography',
+    'social-graphic': 'eye-catching social media graphic',
+    'banner': 'web banner or display advertisement',
+  }[type] || 'marketing visual';
+
+  // Build N variation angle descriptions
+  const VARIATION_ANGLES = [
+    'alternative color treatment — shift to a warmer palette and softer lighting while preserving the core composition',
+    'different lighting and atmosphere — dramatic studio lighting with deep shadows and high contrast',
+    'fresh composition and framing — reframe the subject from a different angle with a cleaner background',
+    'minimal and clean interpretation — strip back visual complexity, increase white space, focus on the hero element',
+    'bold and dynamic version — stronger typography treatment, more saturated colors, higher visual energy',
+    'lifestyle context — place the subject in an aspirational real-world environment',
+    'dark mode / night aesthetic — deep blacks, glowing accents, premium dark background treatment',
+    'flat graphic style — geometric shapes, simplified illustration, bold outlines',
+  ];
+
+  const styleInstruction = style ? `Visual style: ${style}.` : '';
+  const colorInstruction = palette && paletteColors?.length
+    ? `Color palette: ${palette} (${paletteColors.join(', ')}).`
+    : '';
+
+  const userContext = prompt?.trim() ? `\nAdditional instructions: ${prompt.trim()}` : '';
+
+  const variations = VARIATION_ANGLES.slice(0, quantity).map((angle, i) => ({
+    prompt: `Generate a variation of the reference image for use as a ${typeContext}. Variation approach: ${angle}. ${styleInstruction} ${colorInstruction}${userContext} Keep the core subject recognizable but apply a distinctly different visual treatment.`,
+    alt: `Variation ${i + 1} — ${angle.split('—')[0].trim()}`,
+    style_notes: angle.split('—')[0].trim(),
+  }));
+
+  try {
+    const projectId = uuid();
+    const title = (prompt?.trim() || 'Image variation').slice(0, 100);
+    q.createProject(projectId, type || 'ad-creative', title, prompt || '', JSON.stringify({ variations: true }));
+
+    sse.sendChunk(JSON.stringify({ step: 'prompts_ready', projectId, prompts: variations }));
+
+    await Promise.allSettled(
+      variations.map(async (v, i) => {
+        const imgId = uuid();
+        try {
+          const gen = await generateImageFromReference(v.prompt, imageData, imageMimeType, ratio);
+          q.createImage(imgId, projectId, gen.url, v.alt, 'gemini', 'completed', JSON.stringify(v));
+          sse.sendChunk(JSON.stringify({
+            step: 'image', index: i,
+            image: { id: imgId, prompt: v.prompt, alt: v.alt, style_notes: v.style_notes, status: 'completed', url: gen.url, dataUrl: gen.dataUrl },
+          }));
+        } catch (err) {
+          q.createImage(imgId, projectId, null, v.alt, 'gemini', 'failed', JSON.stringify({ ...v, error: err.message }));
+          sse.sendChunk(JSON.stringify({
+            step: 'image', index: i,
+            image: { id: imgId, prompt: v.prompt, alt: v.alt, style_notes: v.style_notes, status: 'failed', url: null, error: err.message },
+          }));
+        }
+      })
+    );
+
+    logActivity('creative', 'generate', `Generated ${type} variations from reference image`, title, projectId, wsId);
+    sse.sendResult({ step: 'done', projectId });
   } catch (err) {
     sse.sendError(err);
   }
