@@ -313,29 +313,29 @@ export default function ReferralLoyaltyPage() {
         <div className="animate-fade-in space-y-4 sm:space-y-6">
           {/* Points Economy Designer */}
           <div className="rounded-2xl overflow-hidden animate-fade-in mb-4" style={{ background: 'rgba(244,63,94,0.04)', border: '1px solid rgba(244,63,94,0.14)' }}>
-            <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid rgba(244,63,94,0.08)' }}>
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(244,63,94,0.12)' }}>
-                <svg className="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>
+            <div className="flex items-center gap-3 px-6 py-5" style={{ borderBottom: '1px solid rgba(244,63,94,0.08)' }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(244,63,94,0.12)' }}>
+                <svg className="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">Points Economy Designer</p>
-                <p className="text-xs text-gray-500">Design a balanced loyalty points system for your customers</p>
+                <p className="text-base font-semibold text-white">Points Economy Designer</p>
+                <p className="text-sm text-gray-500">Design a balanced loyalty points system for your customers</p>
               </div>
             </div>
-            <div className="p-5 space-y-3">
+            <div className="p-6 sm:p-8 space-y-5">
               <div>
-                <p className="hud-label text-[10px] mb-1.5">PRODUCT CATEGORY</p>
-                <input className="input w-full" placeholder="e.g. skincare, supplements" value={pointsInputs.product_category} onChange={e => setPointsInputs(p => ({ ...p, product_category: e.target.value }))} />
+                <p className="hud-label text-xs mb-2">PRODUCT CATEGORY</p>
+                <input className="input w-full px-4 py-3 text-sm rounded-xl" placeholder="e.g. skincare, supplements" value={pointsInputs.product_category} onChange={e => setPointsInputs(p => ({ ...p, product_category: e.target.value }))} />
               </div>
               <div>
-                <p className="hud-label text-[10px] mb-1.5">AVERAGE ORDER VALUE ($)</p>
-                <input className="input w-full" type="number" placeholder="e.g. 75" value={pointsInputs.avg_order_value} onChange={e => setPointsInputs(p => ({ ...p, avg_order_value: e.target.value }))} />
+                <p className="hud-label text-xs mb-2">AVERAGE ORDER VALUE ($)</p>
+                <input className="input w-full px-4 py-3 text-sm rounded-xl" type="number" placeholder="e.g. 75" value={pointsInputs.avg_order_value} onChange={e => setPointsInputs(p => ({ ...p, avg_order_value: e.target.value }))} />
               </div>
               <div>
-                <p className="hud-label text-[10px] mb-1.5">DESIRED REWARDS</p>
-                <input className="input w-full" placeholder="e.g. discounts, free shipping, early access" value={pointsInputs.desired_rewards} onChange={e => setPointsInputs(p => ({ ...p, desired_rewards: e.target.value }))} />
+                <p className="hud-label text-xs mb-2">DESIRED REWARDS</p>
+                <input className="input w-full px-4 py-3 text-sm rounded-xl" placeholder="e.g. discounts, free shipping, early access" value={pointsInputs.desired_rewards} onChange={e => setPointsInputs(p => ({ ...p, desired_rewards: e.target.value }))} />
               </div>
-              <button className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all"
+              <button className="w-full py-3.5 rounded-xl text-sm font-semibold transition-all"
                 style={{ background: 'rgba(244,63,94,0.12)', color: '#fb7185', border: '1px solid rgba(244,63,94,0.22)' }}
                 disabled={!pointsInputs.product_category || pointsLoading}
                 onClick={() => {
@@ -358,25 +358,25 @@ export default function ReferralLoyaltyPage() {
 
           {/* Viral Coefficient Calculator */}
           <div className="rounded-2xl overflow-hidden animate-fade-in" style={{ background: 'rgba(244,63,94,0.04)', border: '1px solid rgba(244,63,94,0.14)' }}>
-            <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid rgba(244,63,94,0.08)' }}>
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(244,63,94,0.12)' }}>
-                <svg className="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>
+            <div className="flex items-center gap-3 px-6 py-5" style={{ borderBottom: '1px solid rgba(244,63,94,0.08)' }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(244,63,94,0.12)' }}>
+                <svg className="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">Viral Coefficient (K-Factor)</p>
-                <p className="text-xs text-gray-500">Calculate how virally your product is spreading</p>
+                <p className="text-base font-semibold text-white">Viral Coefficient (K-Factor)</p>
+                <p className="text-sm text-gray-500">Calculate how virally your product is spreading</p>
               </div>
             </div>
-            <div className="p-5 space-y-3">
-              <div className="grid grid-cols-3 gap-3">
+            <div className="p-6 sm:p-8 space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[['Total Users', 'total_users', '1000'], ['Referred Users', 'referred_users', '150'], ['Avg Referrals/User', 'avg_referrals_per_user', '1.5']].map(([label, key, placeholder]) => (
                   <div key={key}>
-                    <p className="hud-label text-[10px] mb-1.5">{label.toUpperCase()}</p>
-                    <input className="input w-full" type="number" step="0.1" placeholder={placeholder} value={viralInputs[key]} onChange={e => setViralInputs(p => ({ ...p, [key]: e.target.value }))} />
+                    <p className="hud-label text-xs mb-2">{label.toUpperCase()}</p>
+                    <input className="input w-full px-4 py-3 text-sm rounded-xl" type="number" step="0.1" placeholder={placeholder} value={viralInputs[key]} onChange={e => setViralInputs(p => ({ ...p, [key]: e.target.value }))} />
                   </div>
                 ))}
               </div>
-              <button className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all"
+              <button className="w-full py-3.5 rounded-xl text-sm font-semibold transition-all"
                 style={{ background: 'rgba(244,63,94,0.12)', color: '#fb7185', border: '1px solid rgba(244,63,94,0.22)' }}
                 onClick={async () => {
                   try { const result = await postJSON('/api/referral-loyalty/calculate-viral-coefficient', viralInputs); setViralData(result); } catch {}
