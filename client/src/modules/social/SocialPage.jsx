@@ -75,16 +75,24 @@ function PlatformIcon({ id, size = 22, color = 'currentColor' }) {
   );
 }
 
+const PLATFORM_ICON_BG = {
+  twitter:   '#000000',
+  instagram: 'linear-gradient(135deg, #f9ce34 0%, #ee2a7b 50%, #6228d7 100%)',
+  facebook:  '#1877f2',
+  linkedin:  '#0a66c2',
+  tiktok:    '#010101',
+  youtube:   '#ff0000',
+  pinterest: '#e60023',
+};
+
 function platformIconBg(platform) {
-  if (platform.id === 'instagram') return { background: 'linear-gradient(135deg, #f9ce34 0%, #ee2a7b 50%, #6228d7 100%)', border: 'none' };
-  if (platform.id === 'tiktok') return { background: 'rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.10)' };
-  return { background: `${platform.color}18`, border: `1px solid ${platform.color}28` };
+  const bg = PLATFORM_ICON_BG[platform.id];
+  if (!bg) return { background: `${platform.color}18`, border: `1px solid ${platform.color}28` };
+  return { background: bg, border: 'none' };
 }
 
-function platformIconColor(platform) {
-  if (platform.id === 'instagram') return '#ffffff';
-  if (platform.id === 'tiktok') return '#111111';
-  return platform.color;
+function platformIconColor() {
+  return '#ffffff';
 }
 
 // ─── Post Preview Component ───────────────────────────────────────────────────
