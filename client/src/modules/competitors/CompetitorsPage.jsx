@@ -183,31 +183,41 @@ export default function CompetitorsPage() {
         )}
 
         {/* Quick Analyze */}
-        <div className="panel rounded-2xl p-5 mb-8">
-          <p className="hud-label text-[11px] mb-3" style={{ color: '#ef4444' }}>QUICK ANALYZE</p>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <input
-              value={competitorName}
-              onChange={e => setCompetitorName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && competitorName.trim() && openAnalyze(competitorName, competitorUrl)}
-              placeholder="Competitor name (e.g. Nike, Shopify...)"
-              className="flex-1 input-field rounded-xl px-4 py-3 text-sm"
-            />
-            <input
-              value={competitorUrl}
-              onChange={e => setCompetitorUrl(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && competitorName.trim() && openAnalyze(competitorName, competitorUrl)}
-              placeholder="Website URL (optional)"
-              className="w-full sm:w-56 input-field rounded-xl px-4 py-3 text-sm"
-            />
-            <button
-              onClick={() => competitorName.trim() && openAnalyze(competitorName, competitorUrl)}
-              disabled={!competitorName.trim()}
-              className="px-6 py-3 rounded-xl text-sm font-bold whitespace-nowrap transition-all"
-              style={{ background: competitorName.trim() ? '#ef4444' : 'rgba(239,68,68,0.1)', color: competitorName.trim() ? 'white' : '#6b7280' }}
-            >
-              Analyze →
-            </button>
+        <div className="rounded-2xl overflow-hidden mb-8" style={{ background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.15)' }}>
+          <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid rgba(239,68,68,0.08)' }}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(239,68,68,0.12)' }}>
+              <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white">Quick Analyze</p>
+              <p className="text-xs text-gray-500">Instantly research any competitor with AI</p>
+            </div>
+          </div>
+          <div className="p-5">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                value={competitorName}
+                onChange={e => setCompetitorName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && competitorName.trim() && openAnalyze(competitorName, competitorUrl)}
+                placeholder="Competitor name (e.g. Nike, Shopify...)"
+                className="flex-1 input-field rounded-xl px-4 py-3 text-sm"
+              />
+              <input
+                value={competitorUrl}
+                onChange={e => setCompetitorUrl(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && competitorName.trim() && openAnalyze(competitorName, competitorUrl)}
+                placeholder="Website URL (optional)"
+                className="w-full sm:w-56 input-field rounded-xl px-4 py-3 text-sm"
+              />
+              <button
+                onClick={() => competitorName.trim() && openAnalyze(competitorName, competitorUrl)}
+                disabled={!competitorName.trim()}
+                className="px-6 py-3 rounded-xl text-sm font-bold whitespace-nowrap transition-all"
+                style={{ background: competitorName.trim() ? 'rgba(239,68,68,0.85)' : 'rgba(239,68,68,0.1)', color: competitorName.trim() ? 'white' : 'rgba(239,68,68,0.35)', border: '1px solid rgba(239,68,68,0.2)', boxShadow: competitorName.trim() ? '0 4px 20px -4px rgba(239,68,68,0.4)' : 'none' }}
+              >
+                Analyze →
+              </button>
+            </div>
           </div>
         </div>
 
