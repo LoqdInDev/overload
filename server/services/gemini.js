@@ -31,6 +31,22 @@ function dimensionToAspectRatio(dimension) {
   return MAP[dimension] || '1:1';
 }
 
+// Build a strong dimension instruction prefix for the image prompt text
+// Gemini Flash's generateContent API does not accept aspectRatio in generationConfig,
+// so we must convey the ratio via text instruction.
+function buildDimensionInstruction(aspectRatio) {
+  const DESCRIPTIONS = {
+    '1:1':  'STRICT REQUIREMENT: Generate a perfectly SQUARE image (1:1 aspect ratio, equal width and height). Do NOT generate a wide or landscape image.',
+    '4:5':  'STRICT REQUIREMENT: Generate a PORTRAIT image (4:5 aspect ratio, slightly taller than wide, like a mobile phone screen).',
+    '9:16': 'STRICT REQUIREMENT: Generate a TALL VERTICAL image (9:16 aspect ratio, much taller than wide, full phone screen story/reel format).',
+    '16:9': 'STRICT REQUIREMENT: Generate a WIDE LANDSCAPE image (16:9 aspect ratio, much wider than tall, like a widescreen banner).',
+    '4:3':  'STRICT REQUIREMENT: Generate a LANDSCAPE image (4:3 aspect ratio, wider than tall).',
+    '3:4':  'STRICT REQUIREMENT: Generate a PORTRAIT image (3:4 aspect ratio, taller than wide).',
+    '4:1':  'STRICT REQUIREMENT: Generate an ULTRA-WIDE BANNER image (4:1 aspect ratio, very wide and short).',
+  };
+  return DESCRIPTIONS[aspectRatio] || '';
+}
+
 /**
  * Generate a single image using Gemini's image generation API.
  * Returns { url, dataUrl, mimeType } — dataUrl is a base64 data URL for immediate display.
@@ -40,8 +56,11 @@ async function generateImage(prompt, aspectRatio = '1:1') {
     throw new Error('GEMINI_API_KEY is not configured');
   }
 
+  const dimensionInstruction = buildDimensionInstruction(aspectRatio);
+  const fullPrompt = dimensionInstruction ? `${dimensionInstruction}\n\n${prompt}` : prompt;
+
   const body = {
-    contents: [{ parts: [{ text: prompt }] }],
+    contents: [{ parts: [{ text: fullPrompt }] }],
     generationConfig: {
       responseModalities: ['TEXT', 'IMAGE'],
     },
@@ -123,11 +142,14 @@ async function generateImages(prompts, { aspectRatio, dimension } = {}) {
 async function generateImageFromReference(promptText, referenceBase64, referenceMimeType, aspectRatio = '1:1') {
   if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY is not configured');
 
+  const dimensionInstruction = buildDimensionInstruction(aspectRatio);
+  const fullPromptText = dimensionInstruction ? `${dimensionInstruction}\n\n${promptText}` : promptText;
+
   const body = {
     contents: [{
       parts: [
         { inlineData: { data: referenceBase64, mimeType: referenceMimeType } },
-        { text: promptText },
+        { text: fullPromptText },
       ],
     }],
     generationConfig: {

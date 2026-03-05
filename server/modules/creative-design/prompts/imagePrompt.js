@@ -1,6 +1,6 @@
 const { getBrandContext, buildBrandSystemPrompt } = require('../../../services/brandContext');
 
-function buildImagePromptOptimizer(type, userPrompt, count = 3, { style, palette, paletteColors, workspaceId, useBrand } = {}) {
+function buildImagePromptOptimizer(type, userPrompt, count = 3, { style, palette, paletteColors, workspaceId, useBrand, dimension, aspectRatio } = {}) {
   const typeContext = {
     'ad-creative': 'high-converting social media advertisement image',
     'product-photo': 'professional product photography on a clean background',
@@ -32,6 +32,21 @@ function buildImagePromptOptimizer(type, userPrompt, count = 3, { style, palette
     ? `\nSTYLE REQUIREMENT — MANDATORY: Visual style is "${style}". Every prompt must explicitly describe composition, lighting, textures, and treatment that embody the "${style}" aesthetic.`
     : '';
 
+  // Dimension / aspect ratio requirement
+  const RATIO_DESCRIPTIONS = {
+    '1:1':  'square (equal width and height)',
+    '4:5':  'portrait (slightly taller than wide, like an Instagram post)',
+    '9:16': 'tall vertical (full-screen story/reel, much taller than wide)',
+    '16:9': 'wide landscape (widescreen banner, much wider than tall)',
+    '4:3':  'landscape (wider than tall)',
+    '3:4':  'portrait (taller than wide)',
+    '4:1':  'ultra-wide banner (very wide, very short)',
+  };
+  const ratioDesc = aspectRatio ? RATIO_DESCRIPTIONS[aspectRatio] || aspectRatio : null;
+  const dimensionInstruction = ratioDesc
+    ? `\nDIMENSION REQUIREMENT — MANDATORY: Every prompt must describe composition designed for a ${ratioDesc} format (${dimension || aspectRatio}). Explicitly mention that the composition should fill a ${ratioDesc} canvas. Describe subject placement and layout appropriate for this orientation.`
+    : '';
+
   // Brand typography hint
   let fontInstruction = '';
   if (useBrand && brand?.fonts && typeof brand.fonts === 'object') {
@@ -47,7 +62,7 @@ function buildImagePromptOptimizer(type, userPrompt, count = 3, { style, palette
   return `You are an expert AI image prompt engineer. Convert the user's description into optimized image generation prompts.
 
 TYPE: ${context}
-${styleInstruction}${colorInstruction}${fontInstruction}
+${styleInstruction}${dimensionInstruction}${colorInstruction}${fontInstruction}
 ${brandBlock}
 
 USER DESCRIPTION:

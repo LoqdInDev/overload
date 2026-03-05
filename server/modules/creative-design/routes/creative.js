@@ -161,14 +161,13 @@ router.post('/generate-stream', async (req, res) => {
   if (qtyMatch) { quantity = Math.min(Math.max(parseInt(qtyMatch[1], 10) || 3, 1), 8); cleanPrompt = cleanPrompt.replace(qtyMatch[0], '').trim(); }
 
   try {
-    const optimizerPrompt = buildImagePromptOptimizer(type, cleanPrompt, quantity, { style, palette, paletteColors, workspaceId: wsId, useBrand });
+    const ratio = dimension ? dimensionToAspectRatio(dimension) : '1:1';
+    const optimizerPrompt = buildImagePromptOptimizer(type, cleanPrompt, quantity, { style, palette, paletteColors, workspaceId: wsId, useBrand, dimension, aspectRatio: ratio });
     const { parsed } = await generateWithClaude(optimizerPrompt, { temperature: 0.8 });
 
     const projectId = uuid();
     const title = cleanPrompt.slice(0, 100);
     q.createProject(projectId, type, title, cleanPrompt, JSON.stringify(parsed));
-
-    const ratio = dimension ? dimensionToAspectRatio(dimension) : '1:1';
 
     // Immediately send prompts so client shows pending cards
     sse.sendChunk(JSON.stringify({ step: 'prompts_ready', projectId, prompts: parsed.prompts || [] }));
