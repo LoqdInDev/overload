@@ -170,19 +170,34 @@
    ═══════════════════════════════════════════ */
 @layer utilities {
   .stat-card {
-    box-shadow: inset 0 1px 0 rgba(0, 212, 255, 0.22), 0 0 0 0 transparent;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background: linear-gradient(160deg, rgba(0,212,255,0.07) 0%, rgba(8,10,18,0.55) 55%) !important;
+    border-top: 2px solid rgba(0, 212, 255, 0.28) !important;
+    border-left-color: rgba(0,212,255,0.06) !important;
+    border-right-color: rgba(0,212,255,0.06) !important;
+    border-bottom-color: rgba(0,212,255,0.04) !important;
+    box-shadow: 0 4px 24px -6px rgba(0,0,0,0.5), inset 0 1px 0 rgba(0,212,255,0.12);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-top-color 0.25s ease;
   }
   .stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: inset 0 1px 0 rgba(0, 212, 255, 0.35), 0 8px 24px -6px rgba(0, 212, 255, 0.12);
+    transform: translateY(-3px);
+    border-top-color: rgba(0, 212, 255, 0.55) !important;
+    box-shadow: 0 8px 32px -8px rgba(0,0,0,0.6), 0 0 24px -8px rgba(0,212,255,0.2), inset 0 1px 0 rgba(0,212,255,0.2);
   }
 }
+
 [data-theme="light"] .stat-card {
-  box-shadow: inset 0 1px 0 rgba(99, 102, 241, 0.35), 0 1px 3px rgba(0,0,0,0.05);
+  background: #ffffff !important;
+  border-top: 3px solid rgba(99,102,241,0.45) !important;
+  border-left-color: #e8eaf0 !important;
+  border-right-color: #e8eaf0 !important;
+  border-bottom-color: #e8eaf0 !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 1px 3px rgba(99,102,241,0.08) !important;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-top-color 0.25s ease;
 }
 [data-theme="light"] .stat-card:hover {
-  box-shadow: inset 0 1px 0 rgba(99, 102, 241, 0.45), 0 4px 16px rgba(99, 102, 241, 0.09), 0 1px 3px rgba(0,0,0,0.05);
+  transform: translateY(-3px);
+  border-top-color: rgba(99,102,241,0.75) !important;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.08), 0 4px 12px rgba(99,102,241,0.12) !important;
 }
 
 /* ═══════════════════════════════════════════
