@@ -6,27 +6,40 @@ import { fetchJSON, postJSON, deleteJSON, connectSSE } from '../../lib/api';
 const MODULE_COLOR = '#10b981';
 
 const PLATFORMS = [
-  {
-    id: 'google', name: 'Google Ads', color: '#4285f4',
-    sub: 'Search, Display, YouTube, Performance Max',
-    icon: 'M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z',
-  },
-  {
-    id: 'meta', name: 'Meta Ads', color: '#1877f2',
-    sub: 'Facebook, Instagram, Messenger, Audience Network',
-    icon: 'M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z',
-  },
-  {
-    id: 'tiktok', name: 'TikTok Ads', color: '#fe2c55',
-    sub: 'In-Feed, TopView, Spark Ads, Shop Ads',
-    icon: 'M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z',
-  },
-  {
-    id: 'linkedin', name: 'LinkedIn Ads', color: '#0a66c2',
-    sub: 'Sponsored Content, Lead Gen Forms, Conversation Ads',
-    icon: 'M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z',
-  },
+  { id: 'google',   name: 'Google Ads',   color: '#4285f4', sub: 'Search, Display, YouTube, Performance Max' },
+  { id: 'meta',     name: 'Meta Ads',     color: '#1877f2', sub: 'Facebook, Instagram, Messenger, Audience Network' },
+  { id: 'tiktok',   name: 'TikTok Ads',   color: '#fe2c55', sub: 'In-Feed, TopView, Spark Ads, Shop Ads' },
+  { id: 'linkedin', name: 'LinkedIn Ads', color: '#0a66c2', sub: 'Sponsored Content, Lead Gen Forms, Conversation Ads' },
 ];
+
+function AdPlatformIcon({ id, size = 22 }) {
+  if (id === 'google') return (
+    <svg width={size} height={size} viewBox="0 0 24 24">
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+    </svg>
+  );
+  const logos = {
+    meta:     'M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z',
+    tiktok:   'M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.5a8.24 8.24 0 004.83 1.56V6.6a4.85 4.85 0 01-1.06-.09z',
+    linkedin: 'M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z',
+  };
+  const colors = { meta: '#ffffff', tiktok: '#ffffff', linkedin: '#ffffff' };
+  const bgs = { meta: '#1877f2', tiktok: '#fe2c55', linkedin: '#0a66c2' };
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={colors[id] || '#fff'}>
+      <path d={logos[id] || ''} />
+    </svg>
+  );
+}
+
+function adIconBg(id) {
+  if (id === 'google') return { background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)' };
+  const bgs = { meta: '#1877f2', tiktok: '#fe2c55', linkedin: '#0a66c2' };
+  return { background: bgs[id] || '#6366f1', border: 'none' };
+}
 
 const OBJECTIVES = [
   { id: 'conversions', name: 'Conversions', desc: 'Drive purchases & sign-ups', icon: 'M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z' },
@@ -390,10 +403,8 @@ export default function AdsPage() {
         <div className="divide-y divide-indigo-500/[0.04]">
           {savedCampaigns.map(c => (
             <div key={c.id} className="group flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 sm:px-6 py-3 hover:bg-white/[0.01] transition-colors">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${PLATFORM_COLOR[c.platform] || '#6366f1'}15` }}>
-                <svg className="w-4 h-4" style={{ color: PLATFORM_COLOR[c.platform] || '#6366f1' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d={PLATFORMS.find(p => p.id === c.platform)?.icon || ''} />
-                </svg>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={adIconBg(c.platform)}>
+                <AdPlatformIcon id={c.platform} size={16} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-300 truncate">{c.name}</p>
@@ -442,10 +453,8 @@ export default function AdsPage() {
                     className="panel-interactive rounded-2xl p-5 sm:p-7 text-left group">
                     <div className="flex items-start gap-3 sm:gap-4">
                       <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-110"
-                        style={{ background: `${p.color}15`, border: `1px solid ${p.color}20` }}>
-                        <svg className="w-7 h-7" style={{ color: p.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d={p.icon} />
-                        </svg>
+                        style={adIconBg(p.id)}>
+                        <AdPlatformIcon id={p.id} size={28} />
                       </div>
                       <div className="pt-1">
                         <h2 className="text-base font-bold text-gray-200 group-hover:text-white transition-colors mb-1">{p.name}</h2>
@@ -509,10 +518,8 @@ export default function AdsPage() {
             </svg>
           </button>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${platform?.color}15`, border: `1px solid ${platform?.color}20` }}>
-              <svg className="w-5 h-5" style={{ color: platform?.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d={platform?.icon} />
-              </svg>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={adIconBg(platform?.id)}>
+              <AdPlatformIcon id={platform?.id} size={20} />
             </div>
             <div>
               <p className="hud-label text-[11px]" style={{ color: MODULE_COLOR }}>{platform?.name?.toUpperCase()} BUILDER</p>
@@ -854,10 +861,8 @@ export default function AdsPage() {
                           className="w-full flex items-center gap-2 px-4 py-3 rounded-xl border border-indigo-500/8 bg-white/[0.01] hover:border-indigo-500/20 text-gray-400 hover:text-gray-200 transition-all text-sm"
                           style={adaptResults[p.id] ? { borderColor: `${p.color}30`, background: `${p.color}08` } : {}}
                         >
-                          <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0" style={{ background: `${p.color}20` }}>
-                            <svg className="w-3.5 h-3.5" style={{ color: p.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d={p.icon} />
-                            </svg>
+                          <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0" style={adIconBg(p.id)}>
+                            <AdPlatformIcon id={p.id} size={13} />
                           </div>
                           <span className="font-semibold text-sm">{adaptLoading[p.id] ? 'Adapting...' : adaptResults[p.id] ? `${p.name} ✓` : `Adapt for ${p.name}`}</span>
                         </button>
