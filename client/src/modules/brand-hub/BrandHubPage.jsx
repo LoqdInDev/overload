@@ -125,9 +125,9 @@ export default function BrandHubPage() {
   const fileInputRef = useRef(null);
 
   /* ── Shared styling helpers ── */
-  const card = dark ? 'bg-white/[0.02] border border-white/[0.06]' : 'bg-white border border-[#e8e0d4]';
+  const card = dark ? 'bg-transparent border border-gray-200' : 'bg-white border border-[#e8e0d4]';
   const inputCls = dark
-    ? 'w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#C45D3E]/40 transition-colors'
+    ? 'w-full bg-white/[0.03] border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-200 placeholder-gray-400 focus:outline-none focus:border-[#C45D3E]/40 transition-colors'
     : 'w-full bg-white border border-[#e8e0d4] rounded-xl px-4 py-3 text-sm text-[#332F2B] placeholder-[#94908A] focus:outline-none focus:border-[#C45D3E]/40 transition-colors';
   const labelCls = `block text-[11px] font-semibold uppercase tracking-wider mb-1.5 ${dark ? 'text-gray-500' : 'text-[#94908A]'}`;
 
@@ -390,7 +390,7 @@ export default function BrandHubPage() {
         </div>
 
         {/* ── Tab Bar ── */}
-        <div className={`flex rounded-xl p-1 mb-6 sm:mb-8 ${dark ? 'bg-white/[0.02] border border-white/[0.06]' : 'bg-[#F5F0E8] border border-[#e8e0d4]'}`}>
+        <div className={`flex rounded-xl p-1 mb-6 sm:mb-8 ${dark ? 'bg-transparent border border-gray-200' : 'bg-[#F5F0E8] border border-[#e8e0d4]'}`}>
           {TABS.map(t => (
             <button
               key={t.id}
@@ -439,7 +439,7 @@ export default function BrandHubPage() {
                           className={`px-3 py-1.5 text-[11px] font-medium rounded-lg transition-all ${
                             profile.industry === ind.toLowerCase()
                               ? dark ? 'bg-[#C45D3E]/15 text-[#C45D3E] border border-[#C45D3E]/25' : 'bg-[#C45D3E]/8 text-[#C45D3E] border border-[#C45D3E]/20'
-                              : dark ? 'bg-white/[0.03] text-gray-500 border border-white/[0.06] hover:text-gray-300' : 'bg-[#F5F0E8] text-[#94908A] border border-[#e8e0d4] hover:text-[#332F2B]'
+                              : dark ? 'bg-white/[0.03] text-gray-500 border border-gray-200 hover:text-gray-300' : 'bg-[#F5F0E8] text-[#94908A] border border-[#e8e0d4] hover:text-[#332F2B]'
                           }`}>
                           {ind}
                         </button>
@@ -492,7 +492,7 @@ export default function BrandHubPage() {
                         className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all ${
                           profile.voice_tone === t.toLowerCase()
                             ? dark ? 'bg-[#C45D3E]/15 text-[#C45D3E] border border-[#C45D3E]/25 shadow-sm' : 'bg-[#C45D3E]/8 text-[#C45D3E] border border-[#C45D3E]/20 shadow-sm'
-                            : dark ? 'bg-white/[0.03] text-gray-500 border border-white/[0.06] hover:text-gray-300' : 'bg-[#F5F0E8] text-[#94908A] border border-[#e8e0d4] hover:text-[#332F2B]'
+                            : dark ? 'bg-white/[0.03] text-gray-500 border border-gray-200 hover:text-gray-300' : 'bg-[#F5F0E8] text-[#94908A] border border-[#e8e0d4] hover:text-[#332F2B]'
                         }`}>
                         {t}
                       </button>
@@ -970,7 +970,7 @@ export default function BrandHubPage() {
               onDrop={handleDrop}
             >
               <div className="text-center py-6 sm:py-10">
-                <div className={`mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-4 ${dark ? 'bg-white/[0.03] border border-white/[0.06]' : 'bg-[#F5F0E8] border border-[#e8e0d4]'}`}>
+                <div className={`mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-4 ${dark ? 'bg-white/[0.03] border border-gray-200' : 'bg-[#F5F0E8] border border-[#e8e0d4]'}`}>
                   <svg className={`w-7 h-7 ${dragOver ? 'text-[#C45D3E]' : dark ? 'text-gray-600' : 'text-[#94908A]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                   </svg>
@@ -1012,7 +1012,7 @@ export default function BrandHubPage() {
                   className={`px-3 py-1.5 text-[11px] font-semibold rounded-lg transition-all ${
                     mediaCategory === cat.id
                       ? dark ? 'bg-[#C45D3E]/15 text-[#C45D3E] border border-[#C45D3E]/25' : 'bg-[#C45D3E]/8 text-[#C45D3E] border border-[#C45D3E]/20'
-                      : dark ? 'bg-white/[0.03] text-gray-500 border border-white/[0.06] hover:text-gray-300' : 'bg-[#F5F0E8] text-[#94908A] border border-[#e8e0d4] hover:text-[#332F2B]'
+                      : dark ? 'bg-white/[0.03] text-gray-500 border border-gray-200 hover:text-gray-300' : 'bg-[#F5F0E8] text-[#94908A] border border-[#e8e0d4] hover:text-[#332F2B]'
                   }`}
                 >
                   {cat.label}

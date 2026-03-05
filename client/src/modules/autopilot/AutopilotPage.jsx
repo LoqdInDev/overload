@@ -295,7 +295,7 @@ export default function AutopilotPage() {
                   className={`rounded-xl p-4 text-left transition-all border ${
                     isSelected
                       ? 'bg-amber-500/10 border-amber-500/25'
-                      : 'bg-white/[0.02] border-indigo-500/[0.08] hover:border-indigo-500/15'
+                      : 'bg-transparent border-indigo-500/[0.08] hover:border-indigo-500/15'
                   }`}>
                   <div className="flex items-center gap-2 mb-1">
                     <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
@@ -332,7 +332,7 @@ export default function AutopilotPage() {
                 className={`rounded-xl p-4 sm:p-6 text-left transition-all border ${
                   riskLevel === level.id
                     ? 'bg-amber-500/10 border-amber-500/25'
-                    : 'bg-white/[0.02] border-indigo-500/[0.08] hover:border-indigo-500/15'
+                    : 'bg-transparent border-indigo-500/[0.08] hover:border-indigo-500/15'
                 }`}>
                 <div className="flex items-center gap-3 mb-2">
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
@@ -535,14 +535,14 @@ export default function AutopilotPage() {
                 placeholder="Business type (e.g. SaaS, E-commerce)"
                 value={strategyBusinessType}
                 onChange={e => setStrategyBusinessType(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none"
+                className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm text-gray-200 placeholder-gray-400 focus:outline-none"
               />
               <input
                 type="text"
                 placeholder="Main goal (e.g. Increase signups by 40%)"
                 value={strategyGoal}
                 onChange={e => setStrategyGoal(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none"
+                className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm text-gray-200 placeholder-gray-400 focus:outline-none"
               />
             </div>
             <button
@@ -563,7 +563,7 @@ export default function AutopilotPage() {
               {strategyLoading ? 'Generating Strategy...' : 'Generate 30-Day Strategy'}
             </button>
             {strategyOutput && (
-              <div className="mt-4 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+              <div className="mt-4 p-3 rounded-lg bg-transparent border border-gray-100">
                 <pre className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">{strategyOutput}{strategyLoading && <span className="inline-block w-1 h-3.5 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
               </div>
             )}

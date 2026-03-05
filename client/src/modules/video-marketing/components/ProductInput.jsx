@@ -57,7 +57,7 @@ export default function ProductInput({ onSubmit, welcome }) {
   };
 
   const inputClass = dark
-    ? 'w-full glass rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-violet-500/50 bg-transparent placeholder-gray-600'
+    ? 'w-full glass rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-violet-500/50 bg-transparent placeholder-gray-400'
     : 'w-full rounded-xl px-4 py-3 text-sm focus:outline-none bg-white border border-[#e8e0d4] text-[#332F2B] placeholder-[#94908A] focus:border-[#C45D3E]/30 transition-colors';
 
   const labelClass = dark ? 'text-gray-400' : 'text-[#94908A]';

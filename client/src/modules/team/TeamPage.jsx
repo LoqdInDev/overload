@@ -195,7 +195,7 @@ export default function TeamPage() {
                 </div>
               </div>
               {roleBriefs[member.id] && (
-                <div className="mt-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] animate-fade-in">
+                <div className="mt-3 p-3 rounded-xl bg-transparent border border-gray-100 animate-fade-in">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
                     {roleBriefs[member.id].kpis?.length > 0 && (
                       <div>

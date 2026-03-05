@@ -454,7 +454,7 @@ export default function AdsPage() {
                     </div>
                     <div className="mt-5 flex flex-wrap gap-1.5">
                       {(CAMPAIGN_TEMPLATES[p.id] || []).map(t => (
-                        <span key={t.name} className="text-[10px] px-2.5 py-1 rounded-full bg-white/[0.03] text-gray-500 border border-white/[0.04]">{t.name}</span>
+                        <span key={t.name} className="text-[10px] px-2.5 py-1 rounded-full bg-white/[0.03] text-gray-500 border border-gray-100">{t.name}</span>
                       ))}
                     </div>
                   </button>

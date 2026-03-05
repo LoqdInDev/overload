@@ -6,7 +6,7 @@ export default function CampaignHistory({ campaigns, activeCampaignId, onSelect,
   if (!campaigns.length) {
     return (
       <div className="relative flex-1 flex flex-col items-center justify-center p-6 text-center">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${dark ? 'bg-white/[0.04] border border-white/[0.06]' : 'bg-[#F5F0E8] border border-[#e8e0d4]'}`}>
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${dark ? 'bg-transparent border border-gray-200' : 'bg-[#F5F0E8] border border-[#e8e0d4]'}`}>
           <svg className={`w-5 h-5 ${dark ? 'text-gray-600' : 'text-[#94908A]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>

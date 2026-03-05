@@ -562,7 +562,7 @@ export default function ContentPage() {
               {/* Quality rings */}
               {displayScores && (
                 <>
-                  <div className="border-t border-white/[0.04] pt-3 mb-3">
+                  <div className="border-t border-gray-100 pt-3 mb-3">
                     <div className="flex items-center justify-between mb-3">
                       <p className="hud-label text-[10px]">
                         {contentScore ? 'AI QUALITY SCORE' : 'QUALITY SCORE'}

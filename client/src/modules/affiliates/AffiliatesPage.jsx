@@ -321,7 +321,7 @@ export default function AffiliatesPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[600px] text-xs">
                     <thead>
-                      <tr className="border-b border-white/[0.04]">
+                      <tr className="border-b border-gray-100">
                         {['AFFILIATE', 'AMOUNT', 'PERIOD', 'STATUS', 'CREATED', 'ACTIONS'].map(h => (
                           <th key={h} className="hud-label text-[10px] px-4 sm:px-6 py-3 text-left font-medium">{h}</th>
                         ))}

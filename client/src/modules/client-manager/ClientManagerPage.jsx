@@ -235,21 +235,21 @@ export default function ClientManagerPage() {
                 placeholder="Client name"
                 value={reportClientName}
                 onChange={e => setReportClientName(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none"
+                className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm text-gray-200 placeholder-gray-400 focus:outline-none"
               />
               <input
                 type="text"
                 placeholder="Reporting period (e.g. Last 30 days)"
                 value={reportPeriod}
                 onChange={e => setReportPeriod(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none"
+                className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm text-gray-200 placeholder-gray-400 focus:outline-none"
               />
               <input
                 type="text"
                 placeholder="Key metrics (e.g. CTR 3.2%, ROAS 4.5x)"
                 value={reportMetrics}
                 onChange={e => setReportMetrics(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none"
+                className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm text-gray-200 placeholder-gray-400 focus:outline-none"
               />
             </div>
             <button
@@ -274,7 +274,7 @@ export default function ClientManagerPage() {
               {reportLoading ? 'Generating Report...' : 'Generate Client Report'}
             </button>
             {reportOutput && (
-              <div className="mt-4 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+              <div className="mt-4 p-3 rounded-lg bg-transparent border border-gray-100">
                 <pre className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">{reportOutput}{reportLoading && <span className="inline-block w-1 h-3.5 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
               </div>
             )}

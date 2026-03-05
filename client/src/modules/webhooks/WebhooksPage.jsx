@@ -161,10 +161,10 @@ export default function WebhooksPage() {
         <div className="panel rounded-2xl p-4 sm:p-6">
           <p className="hud-label text-[11px] mb-3" style={{ color: '#f97316' }}>CREATE WEBHOOK</p>
           <form onSubmit={handleCreateWebhook} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input type="text" placeholder="Webhook name" value={newName} onChange={e => setNewName(e.target.value)} required className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-orange-500/30" />
-            <input type="url" placeholder="Endpoint URL" value={newUrl} onChange={e => setNewUrl(e.target.value)} required className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-orange-500/30" />
-            <input type="text" placeholder="Events (comma-separated)" value={newEvents} onChange={e => setNewEvents(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-orange-500/30" />
-            <input type="text" placeholder="Secret (optional)" value={newSecret} onChange={e => setNewSecret(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-orange-500/30" />
+            <input type="text" placeholder="Webhook name" value={newName} onChange={e => setNewName(e.target.value)} required className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm text-gray-200 placeholder-gray-400 focus:outline-none focus:border-orange-500/30" />
+            <input type="url" placeholder="Endpoint URL" value={newUrl} onChange={e => setNewUrl(e.target.value)} required className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm text-gray-200 placeholder-gray-400 focus:outline-none focus:border-orange-500/30" />
+            <input type="text" placeholder="Events (comma-separated)" value={newEvents} onChange={e => setNewEvents(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm text-gray-200 placeholder-gray-400 focus:outline-none focus:border-orange-500/30" />
+            <input type="text" placeholder="Secret (optional)" value={newSecret} onChange={e => setNewSecret(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm text-gray-200 placeholder-gray-400 focus:outline-none focus:border-orange-500/30" />
             <div className="sm:col-span-2">
               <button type="submit" disabled={creating} className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors" style={{ background: creating ? 'rgba(249,115,22,0.3)' : 'rgba(249,115,22,0.6)' }}>
                 {creating ? 'Creating...' : 'Create Webhook'}
@@ -202,7 +202,7 @@ export default function WebhooksPage() {
                   <button
                     onClick={() => loadDeliveryLog(w.id)}
                     disabled={loadingLogId === w.id}
-                    className="text-[10px] font-bold px-3 py-1 rounded-lg border border-white/[0.06] text-gray-400 hover:bg-white/[0.04] transition-colors disabled:opacity-50"
+                    className="text-[10px] font-bold px-3 py-1 rounded-lg border border-gray-200 text-gray-400 hover:bg-white/[0.04] transition-colors disabled:opacity-50"
                   >
                     {loadingLogId === w.id ? 'Loading...' : deliveryLog[w.id] ? 'Hide Log' : 'Delivery Log'}
                   </button>
@@ -219,7 +219,7 @@ export default function WebhooksPage() {
                   </div>
                 )}
                 {deliveryLog[w.id] && deliveryLog[w.id].length > 0 && (
-                  <div className="mt-2 rounded-lg overflow-hidden border border-white/[0.04]">
+                  <div className="mt-2 rounded-lg overflow-hidden border border-gray-100">
                     <div className="flex items-center gap-3 px-3 py-2 text-[10px] text-gray-500 font-semibold uppercase bg-white/[0.02]">
                       <span className="flex-1">Event</span><span className="w-16 text-right">Status</span><span className="w-16 text-right">When</span>
                     </div>

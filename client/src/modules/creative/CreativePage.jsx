@@ -308,7 +308,7 @@ function ImageCard({ img, apiBase, onOpen, onRegenerate }) {
       </div>
 
       {/* Footer: style notes + regenerate */}
-      <div className="px-3 py-2 border-t border-white/[0.04] flex items-center justify-between gap-2">
+      <div className="px-3 py-2 border-t border-gray-100 flex items-center justify-between gap-2">
         {img.style_notes
           ? <p className="text-[10px] text-gray-600 line-clamp-1 flex-1">{img.style_notes}</p>
           : <span className="flex-1" />
@@ -751,7 +751,7 @@ export default function CreativePage() {
                     )}
 
                     {/* Card footer */}
-                    <div className="p-3 border-t border-white/[0.04]">
+                    <div className="p-3 border-t border-gray-100">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 mb-0.5">

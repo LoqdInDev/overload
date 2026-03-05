@@ -149,10 +149,10 @@ export default function ApiManagerPage() {
         <div className="panel rounded-2xl p-4 sm:p-6">
           <p className="hud-label text-[11px] mb-3" style={{ color: '#0ea5e9' }}>+ ADD KEY</p>
           <form onSubmit={handleCreateKey} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input type="text" placeholder="Key name" value={newName} onChange={e => setNewName(e.target.value)} required className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-sky-500/30" />
-            <input type="text" placeholder="Key hash / token" value={newKeyHash} onChange={e => setNewKeyHash(e.target.value)} required className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-sky-500/30" />
-            <input type="text" placeholder="Permissions (comma-separated)" value={newPermissions} onChange={e => setNewPermissions(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-sky-500/30" />
-            <input type="number" placeholder="Rate limit (default 100)" value={newRateLimit} onChange={e => setNewRateLimit(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-sky-500/30" />
+            <input type="text" placeholder="Key name" value={newName} onChange={e => setNewName(e.target.value)} required className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm text-gray-200 placeholder-gray-400 focus:outline-none focus:border-sky-500/30" />
+            <input type="text" placeholder="Key hash / token" value={newKeyHash} onChange={e => setNewKeyHash(e.target.value)} required className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm text-gray-200 placeholder-gray-400 focus:outline-none focus:border-sky-500/30" />
+            <input type="text" placeholder="Permissions (comma-separated)" value={newPermissions} onChange={e => setNewPermissions(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm text-gray-200 placeholder-gray-400 focus:outline-none focus:border-sky-500/30" />
+            <input type="number" placeholder="Rate limit (default 100)" value={newRateLimit} onChange={e => setNewRateLimit(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm text-gray-200 placeholder-gray-400 focus:outline-none focus:border-sky-500/30" />
             <div className="sm:col-span-2">
               <button type="submit" disabled={creating} className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors" style={{ background: creating ? 'rgba(14,165,233,0.3)' : 'rgba(14,165,233,0.6)' }}>
                 {creating ? 'Creating...' : '+ Add Key'}
@@ -170,14 +170,14 @@ export default function ApiManagerPage() {
               placeholder="API name (e.g. Payments API)"
               value={docsApiName}
               onChange={e => setDocsApiName(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-sky-500/30"
+              className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm text-gray-200 placeholder-gray-400 focus:outline-none focus:border-sky-500/30"
             />
             <input
               type="text"
               placeholder="Base URL (e.g. https://api.example.com)"
               value={docsBaseUrl}
               onChange={e => setDocsBaseUrl(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-sky-500/30"
+              className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm text-gray-200 placeholder-gray-400 focus:outline-none focus:border-sky-500/30"
             />
           </div>
           <button
@@ -198,7 +198,7 @@ export default function ApiManagerPage() {
             {docsLoading ? 'Generating...' : 'Generate Docs'}
           </button>
           {docsOutput && (
-            <div className="mt-4 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+            <div className="mt-4 p-3 rounded-lg bg-transparent border border-gray-100">
               <pre className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">{docsOutput}{docsLoading && <span className="inline-block w-1 h-3.5 bg-sky-400 ml-0.5 animate-pulse" />}</pre>
             </div>
           )}

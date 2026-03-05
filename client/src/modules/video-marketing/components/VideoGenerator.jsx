@@ -304,7 +304,7 @@ export default function VideoGenerator({ storyboards, campaignId, productProfile
                   value={getPromptForScene(scene)}
                   onChange={(e) => setEditPrompts((prev) => ({ ...prev, [scene._key]: e.target.value }))}
                   rows={3}
-                  className="w-full glass rounded-xl px-3 py-2.5 text-xs text-gray-300 focus:outline-none focus:border-violet-500/50 resize-none bg-transparent placeholder-gray-600 leading-relaxed"
+                  className="w-full glass rounded-xl px-3 py-2.5 text-xs text-gray-300 focus:outline-none focus:border-violet-500/50 resize-none bg-transparent placeholder-gray-400 leading-relaxed"
                 />
               </div>
 

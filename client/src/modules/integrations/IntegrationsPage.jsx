@@ -617,7 +617,7 @@ export default function IntegrationsPage() {
       {/* Shopify Shop Modal */}
       {shopModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => { setShopModal(false); setConnectingId(null); }}>
-          <div className="bg-[#0c0c14] border border-white/[0.06] rounded-2xl p-5 sm:p-8 w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-[#0c0c14] border border-gray-200 rounded-2xl p-5 sm:p-8 w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-white mb-1">Connect Shopify</h2>
             <p className="text-sm text-gray-500 mb-5">Enter your Shopify store subdomain to continue.</p>
 
@@ -628,15 +628,15 @@ export default function IntegrationsPage() {
                 value={shopName}
                 onChange={e => setShopName(e.target.value)}
                 placeholder="your-store"
-                className="flex-1 px-4 py-3 rounded-l-xl bg-white/[0.04] border border-white/[0.08] border-r-0 text-base text-gray-200 placeholder-gray-600 focus:outline-none focus:border-indigo-500/30 transition-colors"
+                className="flex-1 px-4 py-3 rounded-l-xl bg-transparent border border-gray-200 border-r-0 text-base text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500/30 transition-colors"
                 onKeyDown={e => e.key === 'Enter' && submitShop()}
               />
-              <span className="px-4 py-3 rounded-r-xl bg-white/[0.02] border border-white/[0.08] text-sm text-gray-500">.myshopify.com</span>
+              <span className="px-4 py-3 rounded-r-xl bg-transparent border border-gray-200 text-sm text-gray-500">.myshopify.com</span>
             </div>
 
             <div className="flex gap-3 mt-5">
               <button onClick={() => { setShopModal(false); setConnectingId(null); }}
-                className="flex-1 px-5 py-3 rounded-xl border border-white/[0.08] text-base text-gray-400 hover:bg-white/[0.04] transition-colors">
+                className="flex-1 px-5 py-3 rounded-xl border border-gray-200 text-base text-gray-400 hover:bg-white/[0.04] transition-colors">
                 Cancel
               </button>
               <button onClick={submitShop}

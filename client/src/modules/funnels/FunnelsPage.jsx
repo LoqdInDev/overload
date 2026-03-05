@@ -390,7 +390,7 @@ export default function FunnelsPage() {
                   <svg className="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={f.icon} /></svg>
                 </div>
                 <p className="text-xs font-bold text-gray-300 group-hover:text-white transition-colors mb-2">{f.name}</p>
-                <div className="flex gap-1 flex-wrap">{f.stages.map((s, i) => (<span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.03] text-gray-600 border border-white/[0.04]">{s}</span>))}</div>
+                <div className="flex gap-1 flex-wrap">{f.stages.map((s, i) => (<span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.03] text-gray-600 border border-gray-100">{s}</span>))}</div>
               </button>
             ))}
           </div>

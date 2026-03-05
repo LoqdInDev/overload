@@ -268,13 +268,13 @@ export default function KnowledgeBasePage() {
                   placeholder="Article title..."
                   value={form.title}
                   onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))}
-                  className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/40"
+                  className="w-full bg-transparent border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-blue-500/40"
                 />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <select
                     value={form.category}
                     onChange={(e) => setForm(f => ({ ...f, category: e.target.value }))}
-                    className="bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2.5 text-sm text-gray-300 focus:outline-none focus:border-blue-500/40"
+                    className="bg-transparent border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-300 focus:outline-none focus:border-blue-500/40"
                   >
                     <option value="">No category</option>
                     {categories.map(c => (
@@ -284,7 +284,7 @@ export default function KnowledgeBasePage() {
                   <select
                     value={form.status}
                     onChange={(e) => setForm(f => ({ ...f, status: e.target.value }))}
-                    className="bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2.5 text-sm text-gray-300 focus:outline-none focus:border-blue-500/40"
+                    className="bg-transparent border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-300 focus:outline-none focus:border-blue-500/40"
                   >
                     <option value="draft">Draft</option>
                     <option value="published">Published</option>
@@ -296,7 +296,7 @@ export default function KnowledgeBasePage() {
                   value={form.content}
                   onChange={(e) => setForm(f => ({ ...f, content: e.target.value }))}
                   rows={12}
-                  className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2.5 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-blue-500/40 resize-y font-mono leading-relaxed"
+                  className="w-full bg-transparent border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-300 placeholder-gray-400 focus:outline-none focus:border-blue-500/40 resize-y font-mono leading-relaxed"
                 />
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-gray-600">{form.content.length} characters</p>
@@ -329,7 +329,7 @@ export default function KnowledgeBasePage() {
                   <select
                     value={aiFormat}
                     onChange={(e) => setAiFormat(e.target.value)}
-                    className="bg-white/[0.04] border border-white/[0.08] rounded-md px-2 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-blue-500/40"
+                    className="bg-transparent border border-gray-200 rounded-md px-2 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-blue-500/40"
                   >
                     {AI_FORMATS.map(f => (
                       <option key={f.id} value={f.id}>{f.name}</option>
@@ -353,7 +353,7 @@ export default function KnowledgeBasePage() {
                 )}
               </div>
               {(generating || aiOutput) && (
-                <div className="mt-3 pt-3 border-t border-white/[0.04]">
+                <div className="mt-3 pt-3 border-t border-gray-100">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <div className={`w-1.5 h-1.5 rounded-full ${generating ? 'animate-pulse' : ''}`} style={{ background: generating ? MODULE_COLOR : '#4ade80' }} />
@@ -413,7 +413,7 @@ export default function KnowledgeBasePage() {
                 placeholder="Search articles..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg pl-9 pr-10 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/40"
+                className="w-full bg-transparent border border-gray-200 rounded-lg pl-9 pr-10 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-blue-500/40"
               />
               {searchQuery && (
                 <button
@@ -474,7 +474,7 @@ export default function KnowledgeBasePage() {
                     <div className="text-xs text-gray-500">Coverage &middot; Top missing: <strong className="text-gray-300">{gapData.top_missing}</strong></div>
                   </div>
                   {gapData.gaps?.slice(0, 5).map((gap, i) => (
-                    <div key={i} className="flex items-start justify-between gap-2 p-2 mb-1.5 rounded-lg border border-white/[0.04] hover:border-white/[0.08] transition-colors cursor-pointer">
+                    <div key={i} className="flex items-start justify-between gap-2 p-2 mb-1.5 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors cursor-pointer">
                       <div className="flex-1 min-w-0">
                         <div className="text-xs font-medium text-gray-300">{gap.suggested_title}</div>
                         <div className="text-[10px] text-gray-600 mt-0.5">{gap.reason}</div>
@@ -490,7 +490,7 @@ export default function KnowledgeBasePage() {
           {/* Search results */}
           {!editing && searchResults !== null && searchQuery.length >= 2 && (
             <div className="panel rounded-2xl overflow-hidden animate-fade-in">
-              <div className="px-4 sm:px-6 py-3 border-b border-white/[0.04]">
+              <div className="px-4 sm:px-6 py-3 border-b border-gray-100">
                 <p className="text-xs text-gray-500">{searchResults.length} result{searchResults.length !== 1 ? 's' : ''} for <strong className="text-gray-300">"{searchQuery}"</strong></p>
               </div>
               {searchResults.length === 0 ? (
@@ -606,7 +606,7 @@ export default function KnowledgeBasePage() {
                 value={newCatName}
                 onChange={(e) => setNewCatName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && addCategory()}
-                className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/40"
+                className="flex-1 bg-transparent border border-gray-200 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-blue-500/40"
               />
               <button
                 onClick={addCategory}
@@ -672,7 +672,7 @@ export default function KnowledgeBasePage() {
                   value={aiTopic}
                   onChange={(e) => setAiTopic(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && aiTopic.trim() && generateContent(aiTopic, aiFormat)}
-                  className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/40"
+                  className="w-full bg-transparent border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-blue-500/40"
                 />
               </div>
 
@@ -684,7 +684,7 @@ export default function KnowledgeBasePage() {
                     <button
                       key={f.id}
                       onClick={() => setAiFormat(f.id)}
-                      className={`rounded-lg p-3 text-left transition-all border ${aiFormat === f.id ? 'bg-blue-500/10 border-blue-500/30' : 'bg-white/[0.02] border-white/[0.06] hover:border-white/[0.12]'}`}
+                      className={`rounded-lg p-3 text-left transition-all border ${aiFormat === f.id ? 'bg-blue-500/10 border-blue-500/30' : 'bg-transparent border-gray-200 hover:border-white/[0.12]'}`}
                     >
                       <div className="flex items-center gap-2">
                         <svg className="w-4 h-4 flex-shrink-0" style={{ color: aiFormat === f.id ? MODULE_COLOR : '#6b7280' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>

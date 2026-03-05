@@ -533,7 +533,7 @@ export default function EcommerceHubPage() {
                       <div className="flex items-center gap-3">
                         <p className="text-sm font-semibold text-gray-300">{o.order_number || `#${o.id}`}</p>
                         {(o.platform || o.store_name) && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/[0.03] text-gray-500 border border-white/[0.04]">{o.store_name || o.platform}</span>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/[0.03] text-gray-500 border border-gray-100">{o.store_name || o.platform}</span>
                         )}
                       </div>
                       <p className="text-xs text-gray-500 mt-0.5">{o.customer || '—'} &middot; {formatDate(o.created_at)}</p>

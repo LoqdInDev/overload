@@ -58,7 +58,7 @@ const CONTENT_TYPES = ['Blog Post', 'YouTube Script', 'Product Description', 'Ne
 function PostPreview({ platform, content, dark }) {
   const p = SOCIAL_PLATFORMS.find(x => x.id === platform);
   const text = content?.slice(0, charLimits[platform] || 500) || '';
-  const cls = dark ? 'bg-[#0f0f1a] border-white/[0.08] text-gray-200' : 'bg-white border-gray-200 text-gray-900';
+  const cls = dark ? 'bg-[#0f0f1a] border-gray-200 text-gray-200' : 'bg-white border-gray-200 text-gray-900';
 
   if (platform === 'twitter') return (
     <div className={`rounded-2xl border p-4 max-w-sm ${cls}`}>
@@ -733,7 +733,7 @@ export default function SocialPage() {
                   {bestTimes.best_times?.map((t, i) => {
                     const colors = ['#4ade80', '#f59e0b', '#3b82f6'];
                     return (
-                      <div key={i} className={`rounded-xl p-3 ${dark ? 'bg-white/[0.03] border border-white/[0.06]' : 'bg-gray-50 border border-gray-200'}`}>
+                      <div key={i} className={`rounded-xl p-3 ${dark ? 'bg-white/[0.03] border border-gray-200' : 'bg-gray-50 border border-gray-200'}`}>
                         <div className="flex items-center gap-1.5 mb-1">
                           <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: `${colors[i]}20`, color: colors[i] }}>#{i + 1}</span>
                           <span className="text-[10px] font-bold" style={{ color: colors[i] }}>Score: {t.score}</span>
