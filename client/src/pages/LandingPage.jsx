@@ -418,7 +418,10 @@ export default function LandingPage() {
                 onMouseLeave={e => e.target.style.color = 'var(--lp-muted)'}
                 onClick={e => {
                   e.preventDefault();
-                  document.getElementById(l.toLowerCase())?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  const el = document.getElementById(l.toLowerCase());
+                  if (!el) return;
+                  const y = el.getBoundingClientRect().top + window.scrollY - 80;
+                  window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
                 }}
               >{l}</a>
             ))}
