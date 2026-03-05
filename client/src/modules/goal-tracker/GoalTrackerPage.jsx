@@ -194,31 +194,68 @@ export default function GoalTrackerPage() {
       {tab === 'goals' && (
         <div className="animate-fade-in space-y-4">
           {showAddGoal && (
-            <div className="panel rounded-2xl p-4 space-y-3">
-              <div className="mb-4">
-                <p className="hud-label text-[10px] mb-2">QUICK TEMPLATES</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {GOAL_TEMPLATES.map(t => (
-                    <button
-                      key={t.metric}
-                      type="button"
-                      className="chip text-[10px]"
-                      onClick={() => {
-                        setNewGoal(prev => ({ ...prev, name: t.name, metric: t.metric, target_value: t.target_value, notes: t.notes }));
-                      }}
-                    >{t.name}</button>
-                  ))}
+            <div className="panel rounded-2xl overflow-hidden">
+              {/* Header */}
+              <div className="px-5 py-4 border-b border-white/[0.04]" style={{ background: `${MODULE_COLOR}0d` }}>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${MODULE_COLOR}20` }}>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: MODULE_COLOR }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-gray-200">New Goal</p>
+                    <p className="text-[10px] text-gray-500">Fill in the details or pick a quick template below</p>
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <input value={newGoal.name} onChange={e => setNewGoal({ ...newGoal, name: e.target.value })} placeholder="Goal name" className="input-field rounded px-3 py-2 text-xs" />
-                <input value={newGoal.metric} onChange={e => setNewGoal({ ...newGoal, metric: e.target.value })} placeholder="Metric (e.g. $, users, %)" className="input-field rounded px-3 py-2 text-xs" />
-                <input value={newGoal.deadline} onChange={e => setNewGoal({ ...newGoal, deadline: e.target.value })} placeholder="Deadline (YYYY-MM-DD)" type="date" className="input-field rounded px-3 py-2 text-xs" />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <input value={newGoal.current_value} onChange={e => setNewGoal({ ...newGoal, current_value: e.target.value })} placeholder="Current value" type="number" className="input-field rounded px-3 py-2 text-xs" />
-                <input value={newGoal.target_value} onChange={e => setNewGoal({ ...newGoal, target_value: e.target.value })} placeholder="Target value" type="number" className="input-field rounded px-3 py-2 text-xs" />
-                <button onClick={addGoal} className="btn-accent py-2 rounded text-[10px]" style={{ background: MODULE_COLOR }}>Create Goal</button>
+
+              <div className="p-5 space-y-5">
+                {/* Quick Templates */}
+                <div>
+                  <p className="hud-label text-[10px] mb-2.5">QUICK TEMPLATES</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {GOAL_TEMPLATES.map(t => (
+                      <button
+                        key={t.metric}
+                        type="button"
+                        className="chip text-[10px] transition-all"
+                        style={newGoal.metric === t.metric ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}50`, color: MODULE_COLOR } : {}}
+                        onClick={() => setNewGoal(prev => ({ ...prev, name: t.name, metric: t.metric, target_value: t.target_value, notes: t.notes }))}
+                      >{t.name}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Form fields */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="hud-label text-[10px] block mb-1.5">GOAL NAME</label>
+                    <input value={newGoal.name} onChange={e => setNewGoal({ ...newGoal, name: e.target.value })} placeholder="e.g. Reach 1K followers" className="input-field w-full rounded-lg px-3.5 py-2.5 text-xs" />
+                  </div>
+                  <div>
+                    <label className="hud-label text-[10px] block mb-1.5">METRIC</label>
+                    <input value={newGoal.metric} onChange={e => setNewGoal({ ...newGoal, metric: e.target.value })} placeholder="e.g. followers, $, leads" className="input-field w-full rounded-lg px-3.5 py-2.5 text-xs" />
+                  </div>
+                  <div>
+                    <label className="hud-label text-[10px] block mb-1.5">DEADLINE</label>
+                    <input value={newGoal.deadline} onChange={e => setNewGoal({ ...newGoal, deadline: e.target.value })} type="date" className="input-field w-full rounded-lg px-3.5 py-2.5 text-xs" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                  <div>
+                    <label className="hud-label text-[10px] block mb-1.5">CURRENT VALUE</label>
+                    <input value={newGoal.current_value} onChange={e => setNewGoal({ ...newGoal, current_value: e.target.value })} placeholder="0" type="number" className="input-field w-full rounded-lg px-3.5 py-2.5 text-xs" />
+                  </div>
+                  <div>
+                    <label className="hud-label text-[10px] block mb-1.5">TARGET VALUE</label>
+                    <input value={newGoal.target_value} onChange={e => setNewGoal({ ...newGoal, target_value: e.target.value })} placeholder="100" type="number" className="input-field w-full rounded-lg px-3.5 py-2.5 text-xs" />
+                  </div>
+                  <button onClick={addGoal} className="w-full py-2.5 rounded-lg text-xs font-bold text-white tracking-wide transition-opacity hover:opacity-90" style={{ background: MODULE_COLOR }}>
+                    CREATE GOAL
+                  </button>
+                </div>
               </div>
             </div>
           )}
