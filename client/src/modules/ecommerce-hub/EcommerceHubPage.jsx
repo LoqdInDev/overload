@@ -232,9 +232,9 @@ export default function EcommerceHubPage() {
           <div className="panel rounded-2xl p-4 sm:p-6">
             <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>ADD STORE</p>
             <form onSubmit={handleCreateStore} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <input type="text" placeholder="Store name" value={newStoreName} onChange={e => setNewStoreName(e.target.value)} required className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
-              <input type="text" placeholder="Platform (e.g. Shopify)" value={newStorePlatform} onChange={e => setNewStorePlatform(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
-              <input type="url" placeholder="Store URL (optional)" value={newStoreUrl} onChange={e => setNewStoreUrl(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
+              <input type="text" placeholder="Store name" value={newStoreName} onChange={e => setNewStoreName(e.target.value)} required className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm placeholder-gray-400 focus:outline-none focus:border-violet-400/60" />
+              <input type="text" placeholder="Platform (e.g. Shopify)" value={newStorePlatform} onChange={e => setNewStorePlatform(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm placeholder-gray-400 focus:outline-none focus:border-violet-400/60" />
+              <input type="url" placeholder="Store URL (optional)" value={newStoreUrl} onChange={e => setNewStoreUrl(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm placeholder-gray-400 focus:outline-none focus:border-violet-400/60" />
               <div className="sm:col-span-3">
                 <button type="submit" disabled={creatingStore} className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors" style={{ background: creatingStore ? 'rgba(139,92,246,0.3)' : 'rgba(139,92,246,0.6)' }}>
                   {creatingStore ? 'Adding...' : 'Add Store'}
@@ -302,11 +302,11 @@ export default function EcommerceHubPage() {
           <div className="panel rounded-2xl p-4 sm:p-6">
             <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>ADD PRODUCT</p>
             <form onSubmit={handleCreateProduct} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-              <input type="text" placeholder="Product name" value={newProductName} onChange={e => setNewProductName(e.target.value)} required className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
-              <input type="text" placeholder="SKU" value={newProductSku} onChange={e => setNewProductSku(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
-              <input type="number" step="0.01" placeholder="Price" value={newProductPrice} onChange={e => setNewProductPrice(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
-              <input type="number" placeholder="Stock qty" value={newProductStock} onChange={e => setNewProductStock(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
-              <select value={newProductStoreId} onChange={e => setNewProductStoreId(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 focus:outline-none focus:border-violet-500/30">
+              <input type="text" placeholder="Product name" value={newProductName} onChange={e => setNewProductName(e.target.value)} required className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm placeholder-gray-400 focus:outline-none focus:border-violet-400/60" />
+              <input type="text" placeholder="SKU" value={newProductSku} onChange={e => setNewProductSku(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm placeholder-gray-400 focus:outline-none focus:border-violet-400/60" />
+              <input type="number" step="0.01" placeholder="Price" value={newProductPrice} onChange={e => setNewProductPrice(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm placeholder-gray-400 focus:outline-none focus:border-violet-400/60" />
+              <input type="number" placeholder="Stock qty" value={newProductStock} onChange={e => setNewProductStock(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm placeholder-gray-400 focus:outline-none focus:border-violet-400/60" />
+              <select value={newProductStoreId} onChange={e => setNewProductStoreId(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm focus:outline-none focus:border-violet-400/60">
                 <option value="">No store</option>
                 {stores.map(s => <option key={s.id} value={s.id}>{s.store_name}</option>)}
               </select>
@@ -322,10 +322,10 @@ export default function EcommerceHubPage() {
           <div className="panel rounded-2xl p-4 sm:p-6 animate-fade-in">
             <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>INVENTORY FORECASTER</p>
             <div className="grid grid-cols-2 gap-3 mb-3">
-              <input className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" placeholder="Product name" value={inventoryInputs.product_name} onChange={e => setInventoryInputs(p => ({ ...p, product_name: e.target.value }))} />
-              <input className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" type="number" placeholder="Current stock qty" value={inventoryInputs.current_stock} onChange={e => setInventoryInputs(p => ({ ...p, current_stock: e.target.value }))} />
-              <input className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" type="number" placeholder="Avg daily sales" value={inventoryInputs.avg_daily_sales} onChange={e => setInventoryInputs(p => ({ ...p, avg_daily_sales: e.target.value }))} />
-              <input className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" type="number" placeholder="Lead time (days)" value={inventoryInputs.lead_time_days} onChange={e => setInventoryInputs(p => ({ ...p, lead_time_days: e.target.value }))} />
+              <input className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm placeholder-gray-400 focus:outline-none focus:border-violet-400/60" placeholder="Product name" value={inventoryInputs.product_name} onChange={e => setInventoryInputs(p => ({ ...p, product_name: e.target.value }))} />
+              <input className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm placeholder-gray-400 focus:outline-none focus:border-violet-400/60" type="number" placeholder="Current stock qty" value={inventoryInputs.current_stock} onChange={e => setInventoryInputs(p => ({ ...p, current_stock: e.target.value }))} />
+              <input className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm placeholder-gray-400 focus:outline-none focus:border-violet-400/60" type="number" placeholder="Avg daily sales" value={inventoryInputs.avg_daily_sales} onChange={e => setInventoryInputs(p => ({ ...p, avg_daily_sales: e.target.value }))} />
+              <input className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm placeholder-gray-400 focus:outline-none focus:border-violet-400/60" type="number" placeholder="Lead time (days)" value={inventoryInputs.lead_time_days} onChange={e => setInventoryInputs(p => ({ ...p, lead_time_days: e.target.value }))} />
             </div>
             <button className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors" style={{ background: 'rgba(139,92,246,0.6)' }} onClick={async () => {
               try { const result = await postJSON('/api/ecommerce-hub/forecast-inventory', inventoryInputs); setInventoryForecast(result); } catch {}
@@ -406,21 +406,21 @@ export default function EcommerceHubPage() {
           <div className="panel rounded-2xl p-4 sm:p-6">
             <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>ADD ORDER</p>
             <form onSubmit={handleCreateOrder} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              <input type="text" placeholder="Order number" value={newOrderNumber} onChange={e => setNewOrderNumber(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
-              <input type="text" placeholder="Customer name" value={newOrderCustomer} onChange={e => setNewOrderCustomer(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
-              <input type="number" step="0.01" placeholder="Total ($)" value={newOrderTotal} onChange={e => setNewOrderTotal(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
-              <select value={newOrderStatus} onChange={e => setNewOrderStatus(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 focus:outline-none focus:border-violet-500/30">
+              <input type="text" placeholder="Order number" value={newOrderNumber} onChange={e => setNewOrderNumber(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm placeholder-gray-400 focus:outline-none focus:border-violet-400/60" />
+              <input type="text" placeholder="Customer name" value={newOrderCustomer} onChange={e => setNewOrderCustomer(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm placeholder-gray-400 focus:outline-none focus:border-violet-400/60" />
+              <input type="number" step="0.01" placeholder="Total ($)" value={newOrderTotal} onChange={e => setNewOrderTotal(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm placeholder-gray-400 focus:outline-none focus:border-violet-400/60" />
+              <select value={newOrderStatus} onChange={e => setNewOrderStatus(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm focus:outline-none focus:border-violet-400/60">
                 <option value="pending">Pending</option>
                 <option value="processing">Processing</option>
                 <option value="shipped">Shipped</option>
                 <option value="fulfilled">Fulfilled</option>
                 <option value="refunded">Refunded</option>
               </select>
-              <select value={newOrderStoreId} onChange={e => setNewOrderStoreId(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 focus:outline-none focus:border-violet-500/30">
+              <select value={newOrderStoreId} onChange={e => setNewOrderStoreId(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm focus:outline-none focus:border-violet-400/60">
                 <option value="">No store</option>
                 {stores.map(s => <option key={s.id} value={s.id}>{s.store_name}</option>)}
               </select>
-              <input type="text" placeholder="Platform (optional)" value={newOrderPlatform} onChange={e => setNewOrderPlatform(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-500/30" />
+              <input type="text" placeholder="Platform (optional)" value={newOrderPlatform} onChange={e => setNewOrderPlatform(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm placeholder-gray-400 focus:outline-none focus:border-violet-400/60" />
               <div className="sm:col-span-2 lg:col-span-3">
                 <button type="submit" disabled={creatingOrder} className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors" style={{ background: creatingOrder ? 'rgba(139,92,246,0.3)' : 'rgba(139,92,246,0.6)' }}>
                   {creatingOrder ? 'Adding...' : 'Add Order'}
