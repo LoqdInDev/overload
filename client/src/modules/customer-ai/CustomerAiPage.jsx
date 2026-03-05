@@ -585,34 +585,55 @@ export default function CustomerAiPage() {
       {tab === 'tickets' && (
         <div className="animate-fade-in space-y-4">
           {/* Churn Risk Predictor */}
-          <div className="panel rounded-2xl p-4 sm:p-6 animate-fade-in">
-            <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>CHURN RISK PREDICTOR</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-              {[['Customer Name', 'customer_name', 'text', 'e.g. John Smith'], ['Days Since Purchase', 'days_since_purchase', 'number', '30'], ['Purchases/Month', 'purchase_frequency', 'number', '2'], ['Email Open Rate %', 'email_open_rate', 'number', '25'], ['Support Tickets', 'support_tickets', 'number', '0']].map(([label, key, type, placeholder]) => (
-                <div key={key}>
-                  <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">{label}</div>
-                  <input className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-sky-500/30" type={type} placeholder={placeholder} value={churnInputs[key]} onChange={e => setChurnInputs(p => ({ ...p, [key]: e.target.value }))} />
-                </div>
-              ))}
+          <div className="rounded-2xl overflow-hidden animate-fade-in" style={{ background: 'rgba(14,165,233,0.04)', border: '1px solid rgba(14,165,233,0.15)' }}>
+            <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid rgba(14,165,233,0.08)' }}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(14,165,233,0.12)' }}>
+                <svg className="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-800">Churn Risk Predictor</p>
+                <p className="text-xs text-gray-400">Predict the likelihood a customer will churn and get intervention tips</p>
+              </div>
             </div>
-            <button className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors" style={{ background: 'rgba(14,165,233,0.6)' }} onClick={async () => {
-              try { const result = await postJSON('/api/customer-intelligence/predict-churn', churnInputs); setChurnResult(result); } catch {}
-            }}>Predict Churn Risk</button>
-            {churnResult && (
-              <div className="mt-4">
-                <div className="flex items-center gap-4 mb-3">
-                  <div className="text-5xl font-extrabold" style={{ color: churnResult.risk_tier === 'critical' ? '#ef4444' : churnResult.risk_tier === 'high' ? '#f97316' : churnResult.risk_tier === 'medium' ? '#f59e0b' : '#22c55e' }}>{churnResult.churn_risk_score}</div>
-                  <div>
-                    <div className="text-[9px] font-bold px-2 py-0.5 rounded-full border mb-1 uppercase inline-block" style={{ borderColor: churnResult.risk_tier === 'critical' ? '#ef4444' : '#f97316', color: churnResult.risk_tier === 'critical' ? '#ef4444' : '#f97316' }}>{churnResult.risk_tier} RISK</div>
-                    <div className="text-xs text-gray-500">Last purchase: {churnResult.days_since_purchase} days ago</div>
+            <div className="p-5 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[['Customer Name', 'customer_name', 'text', 'e.g. John Smith'], ['Days Since Purchase', 'days_since_purchase', 'number', '30'], ['Purchases/Month', 'purchase_frequency', 'number', '2'], ['Email Open Rate %', 'email_open_rate', 'number', '25'], ['Support Tickets', 'support_tickets', 'number', '0']].map(([label, key, type, placeholder]) => (
+                  <div key={key}>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">{label}</p>
+                    <input className="w-full px-4 py-2.5 rounded-xl bg-transparent border border-gray-200 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-sky-400/60 transition-colors" type={type} placeholder={placeholder} value={churnInputs[key]} onChange={e => setChurnInputs(p => ({ ...p, [key]: e.target.value }))} />
                   </div>
-                </div>
-                <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Intervention Strategy</div>
-                {churnResult.intervention_strategy?.map((action, i) => (
-                  <div key={i} className="text-sm py-1.5 border-b border-white/[0.04] text-gray-300">{i + 1}. {action}</div>
                 ))}
               </div>
-            )}
+              <button className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all"
+                style={{ background: 'rgba(14,165,233,0.75)', boxShadow: '0 4px 20px -4px rgba(14,165,233,0.35)' }}
+                onClick={async () => {
+                  try { const result = await postJSON('/api/customer-intelligence/predict-churn', churnInputs); setChurnResult(result); } catch {}
+                }}>Predict Churn Risk</button>
+              {churnResult && (
+                <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(14,165,233,0.1)' }}>
+                  <div className="flex items-center gap-4">
+                    <div className="text-5xl font-extrabold" style={{ color: churnResult.risk_tier === 'critical' ? '#ef4444' : churnResult.risk_tier === 'high' ? '#f97316' : churnResult.risk_tier === 'medium' ? '#f59e0b' : '#22c55e' }}>{churnResult.churn_risk_score}</div>
+                    <div>
+                      <div className="text-[9px] font-bold px-2 py-0.5 rounded-full border mb-1 uppercase inline-block" style={{ borderColor: churnResult.risk_tier === 'critical' ? '#ef4444' : '#f97316', color: churnResult.risk_tier === 'critical' ? '#ef4444' : '#f97316' }}>{churnResult.risk_tier} RISK</div>
+                      <div className="text-xs text-gray-500">Last purchase: {churnResult.days_since_purchase} days ago</div>
+                    </div>
+                  </div>
+                  {churnResult.intervention_strategy?.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Intervention Strategy</p>
+                      <div className="space-y-1.5">
+                        {churnResult.intervention_strategy.map((action, i) => (
+                          <div key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                            <span className="text-sky-400 font-semibold flex-shrink-0">{i + 1}.</span>
+                            <span>{action}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Header row */}
