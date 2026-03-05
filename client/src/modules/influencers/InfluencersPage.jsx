@@ -120,7 +120,7 @@ export default function InfluencersPage() {
     <div className="p-4 sm:p-6 lg:p-12">
       <ModuleWrapper moduleId="influencers">
       <div className="mb-6 sm:mb-8 animate-fade-in"><p className="hud-label text-[11px] mb-2" style={{ color: '#ec4899' }}>INFLUENCER FINDER</p><h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Influencer Marketing Hub</h1><p className="text-base text-gray-500">Discover, outreach, and manage influencer campaigns with AI</p></div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 stagger">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 stagger">
         {TOOLS.map(t => (
           <button key={t.id} onClick={() => setActiveTool(t.id)} className="panel-interactive rounded-2xl p-4 sm:p-7 text-center group">
             <div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center" style={{ background: 'rgba(236,72,153,0.1)', border: '1px solid rgba(236,72,153,0.12)' }}>
