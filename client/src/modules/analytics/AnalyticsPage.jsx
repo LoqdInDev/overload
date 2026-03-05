@@ -368,15 +368,15 @@ export default function AnalyticsPage() {
             <div className="grid gap-3" style={{ gridTemplateColumns: '2fr 1fr 1fr' }}>
               <div>
                 <p className="hud-label text-[10px] mb-1.5">METRIC NAME</p>
-                <input className="input w-full" placeholder="e.g. Conversion Rate" value={anomalyInputs.metric_name} onChange={e => setAnomalyInputs(p => ({ ...p, metric_name: e.target.value }))} />
+                <input className="input w-full px-4 py-3 text-sm" placeholder="e.g. Conversion Rate" value={anomalyInputs.metric_name} onChange={e => setAnomalyInputs(p => ({ ...p, metric_name: e.target.value }))} />
               </div>
               <div>
                 <p className="hud-label text-[10px] mb-1.5">CURRENT VALUE</p>
-                <input className="input w-full" type="number" placeholder="e.g. 2.1" value={anomalyInputs.current_value} onChange={e => setAnomalyInputs(p => ({ ...p, current_value: e.target.value }))} />
+                <input className="input w-full px-4 py-3 text-sm" type="number" placeholder="e.g. 2.1" value={anomalyInputs.current_value} onChange={e => setAnomalyInputs(p => ({ ...p, current_value: e.target.value }))} />
               </div>
               <div>
                 <p className="hud-label text-[10px] mb-1.5">HISTORICAL AVG</p>
-                <input className="input w-full" type="number" placeholder="e.g. 3.5" value={anomalyInputs.historical_average} onChange={e => setAnomalyInputs(p => ({ ...p, historical_average: e.target.value }))} />
+                <input className="input w-full px-4 py-3 text-sm" type="number" placeholder="e.g. 3.5" value={anomalyInputs.historical_average} onChange={e => setAnomalyInputs(p => ({ ...p, historical_average: e.target.value }))} />
               </div>
             </div>
             <button className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all"
