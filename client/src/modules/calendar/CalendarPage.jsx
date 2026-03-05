@@ -283,47 +283,147 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        <div className="space-y-4 sm:space-y-6">
+        <div className="space-y-4">
           {selectedDay && (
-            <div className="panel rounded-2xl p-4 sm:p-6 animate-fade-in">
-              <div className="flex items-center justify-between mb-3"><p className="hud-label text-[11px]" style={{ color: '#0ea5e9' }}>{MONTHS[month]} {selectedDay}</p><button onClick={() => setShowAddForm(!showAddForm)} className="chip text-[10px]">+ Add</button></div>
+            <div className="rounded-2xl overflow-hidden animate-fade-in" style={{ border: '1px solid rgba(14,165,233,0.18)', background: 'rgba(14,165,233,0.03)' }}>
+              {/* Day header */}
+              <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid rgba(14,165,233,0.1)' }}>
+                <div>
+                  <p className="text-[10px] font-bold tracking-widest" style={{ color: '#38bdf8' }}>{MONTHS[month].toUpperCase()}</p>
+                  <p className="text-2xl font-bold leading-none mt-0.5">{selectedDay}</p>
+                </div>
+                <button
+                  onClick={() => setShowAddForm(!showAddForm)}
+                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl transition-all"
+                  style={{ background: showAddForm ? 'rgba(14,165,233,0.2)' : 'rgba(14,165,233,0.1)', color: '#38bdf8', border: '1px solid rgba(14,165,233,0.2)' }}>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                  Add
+                </button>
+              </div>
+
+              {/* Add form */}
               {showAddForm && (
-                <div className="space-y-3 mb-3 p-3 rounded-lg bg-black/30">
-                  <input value={newEvent.title} onChange={e => setNewEvent({ ...newEvent, title: e.target.value })} placeholder="Event title" className="w-full input-field rounded px-3 py-2 text-xs" />
-                  <div className="flex gap-1 flex-wrap">{EVENT_TYPES.map(t => (<button key={t.id} onClick={() => setNewEvent({ ...newEvent, type: t.id })} className="text-[9px] px-2 py-0.5 rounded-full border" style={newEvent.type === t.id ? { background: `${t.color}20`, borderColor: `${t.color}40`, color: t.color } : { borderColor: 'rgba(99,102,241,0.1)', color: '#6b7280' }}>{t.name}</button>))}</div>
+                <div className="px-5 py-4 space-y-3" style={{ borderBottom: '1px solid rgba(14,165,233,0.08)' }}>
+                  <input
+                    value={newEvent.title}
+                    onChange={e => setNewEvent({ ...newEvent, title: e.target.value })}
+                    onKeyDown={e => e.key === 'Enter' && addEvent()}
+                    placeholder="Event title…"
+                    className="w-full input-field rounded-xl px-3.5 py-2.5 text-sm"
+                  />
                   <div>
-                    <p className="text-[9px] text-gray-500 mb-1.5">Recurrence</p>
-                    <div className="flex gap-1 flex-wrap">{RECURRENCE_OPTIONS.map(r => (<button key={r.id || 'once'} onClick={() => setNewEvent({ ...newEvent, recurrence: r.id })} className="text-[9px] px-2 py-0.5 rounded-full border" style={newEvent.recurrence === r.id ? { background: 'rgba(14,165,233,0.15)', borderColor: 'rgba(14,165,233,0.3)', color: '#38bdf8' } : { borderColor: 'rgba(99,102,241,0.1)', color: '#6b7280' }}>{r.name}</button>))}</div>
+                    <p className="text-[10px] font-semibold text-gray-400 mb-2">TYPE</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {EVENT_TYPES.map(t => (
+                        <button key={t.id} onClick={() => setNewEvent({ ...newEvent, type: t.id })}
+                          className="text-[11px] px-2.5 py-1 rounded-full font-medium transition-all"
+                          style={newEvent.type === t.id
+                            ? { background: `${t.color}22`, borderColor: `${t.color}50`, color: t.color, border: `1px solid ${t.color}50` }
+                            : { border: '1px solid rgba(148,163,184,0.15)', color: '#94a3b8' }}>
+                          {t.name}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <button onClick={addEvent} className="btn-accent w-full py-1.5 rounded text-[10px]" style={{ background: '#0ea5e9' }}>Add Event</button>
+                  <div>
+                    <p className="text-[10px] font-semibold text-gray-400 mb-2">RECURRENCE</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {RECURRENCE_OPTIONS.map(r => (
+                        <button key={r.id || 'once'} onClick={() => setNewEvent({ ...newEvent, recurrence: r.id })}
+                          className="text-[11px] px-2.5 py-1 rounded-full font-medium transition-all"
+                          style={newEvent.recurrence === r.id
+                            ? { background: 'rgba(14,165,233,0.15)', color: '#38bdf8', border: '1px solid rgba(14,165,233,0.3)' }
+                            : { border: '1px solid rgba(148,163,184,0.15)', color: '#94a3b8' }}>
+                          {r.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <button onClick={addEvent} disabled={!newEvent.title.trim()}
+                    className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
+                    style={{ background: '#0ea5e9', color: '#fff' }}>
+                    Save Event
+                  </button>
                 </div>
               )}
-              <div className="space-y-1.5">
-                {dayEvents(selectedDay).length === 0 ? <p className="text-xs text-gray-600">No events</p> : dayEvents(selectedDay).map(e => {
-                  const type = EVENT_TYPES.find(t => t.id === e.module_id || t.id === e.type);
-                  return (
-                    <div key={e.id} className="group flex items-center gap-2 py-1.5">
-                      <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: type?.color || e.color || '#3b82f6' }} />
-                      <span className="text-sm text-gray-300 truncate flex-1">{e.title}</span>
-                      <RecurrenceBadge recurrence={e.recurrence} />
-                      <button onClick={() => removeEvent(e.id)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 transition-all text-xs" title="Delete event">&times;</button>
-                    </div>
-                  );
-                })}
+
+              {/* Events list */}
+              <div className="px-5 py-3">
+                {dayEvents(selectedDay).length === 0 ? (
+                  <div className="py-5 text-center">
+                    <svg className="w-8 h-8 mx-auto mb-2 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5" /></svg>
+                    <p className="text-xs text-gray-400">No events this day</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {dayEvents(selectedDay).map(e => {
+                      const type = EVENT_TYPES.find(t => t.id === e.module_id || t.id === e.type);
+                      const color = type?.color || e.color || '#3b82f6';
+                      return (
+                        <div key={e.id} className="group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-black/[0.03]">
+                          <div className="w-1 h-8 rounded-full flex-shrink-0" style={{ background: color }} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{e.title}</p>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <span className="text-[10px] font-medium" style={{ color }}>{type?.name || 'Event'}</span>
+                              <RecurrenceBadge recurrence={e.recurrence} />
+                            </div>
+                          </div>
+                          <button onClick={() => removeEvent(e.id)}
+                            className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-full flex items-center justify-center transition-all hover:bg-red-500/10 text-gray-400 hover:text-red-400">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           )}
 
-          <div className="panel rounded-2xl p-4 sm:p-6">
-            <p className="hud-label text-[11px] mb-3">UPCOMING</p>
-            <div className="space-y-3">{events.filter(e => { const d = new Date(e.date); return isCurrentMonth ? d.getDate() >= today : true; }).sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 6).map(e => { const type = EVENT_TYPES.find(t => t.id === e.module_id || t.id === e.type); return (
-              <div key={e.id} className="flex items-center gap-2">
-                <span className="text-xs text-gray-600 font-mono w-6">{new Date(e.date).getDate()}</span>
-                <div className="w-1.5 h-1.5 rounded-full" style={{ background: type?.color || e.color || '#3b82f6' }} />
-                <span className="text-xs text-gray-400 truncate flex-1">{e.title}</span>
-                <RecurrenceBadge recurrence={e.recurrence} />
-              </div>
-            ); })}</div>
+          {/* Upcoming */}
+          <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(148,163,184,0.12)' }}>
+            <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(148,163,184,0.08)' }}>
+              <p className="text-[11px] font-bold tracking-widest text-gray-400">UPCOMING</p>
+            </div>
+            <div className="px-4 py-3">
+              {(() => {
+                const upcoming = events
+                  .filter(e => { const d = new Date(e.date); return isCurrentMonth ? d.getDate() >= today : true; })
+                  .sort((a, b) => new Date(a.date) - new Date(b.date))
+                  .slice(0, 6);
+                if (!upcoming.length) return (
+                  <div className="py-5 text-center">
+                    <p className="text-xs text-gray-400">No upcoming events</p>
+                  </div>
+                );
+                return (
+                  <div className="space-y-1">
+                    {upcoming.map(e => {
+                      const type = EVENT_TYPES.find(t => t.id === e.module_id || t.id === e.type);
+                      const color = type?.color || e.color || '#3b82f6';
+                      const d = new Date(e.date);
+                      const dayName = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
+                      return (
+                        <div key={e.id} className="flex items-center gap-3 px-2 py-2.5 rounded-xl transition-all hover:bg-black/[0.02]">
+                          <div className="w-8 text-center flex-shrink-0">
+                            <p className="text-[9px] font-semibold text-gray-400 uppercase">{dayName}</p>
+                            <p className="text-sm font-bold" style={{ color }}>{d.getDate()}</p>
+                          </div>
+                          <div className="w-px h-7 rounded-full" style={{ background: `${color}50` }} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium truncate">{e.title}</p>
+                            <p className="text-[10px] text-gray-400">{type?.name}</p>
+                          </div>
+                          <RecurrenceBadge recurrence={e.recurrence} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
           </div>
         </div>
       </div>
