@@ -237,20 +237,47 @@ export default function TeamPage() {
       {tab === 'invites' && (
         <div className="animate-fade-in space-y-4 sm:space-y-6">
           {/* Invite Form */}
-          <div className="panel rounded-2xl p-4 sm:p-6">
-            <p className="hud-label text-[11px] mb-5" style={{ color: MODULE_COLOR }}>SEND INVITE</p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@example.com"
-                className="flex-1 bg-white/[0.03] border border-indigo-500/[0.08] rounded-xl px-4 py-3 text-sm sm:text-base text-gray-200 focus:outline-none focus:border-indigo-500/30" />
-              <select value={inviteRole} onChange={e => setInviteRole(e.target.value)}
-                className="bg-white/[0.03] border border-indigo-500/[0.08] rounded-xl px-4 py-3 text-sm sm:text-base text-gray-200 focus:outline-none focus:border-indigo-500/30 appearance-none w-full sm:w-32">
-                <option value="admin">Admin</option>
-                <option value="editor">Editor</option>
-                <option value="viewer">Viewer</option>
-              </select>
-              <button onClick={handleSendInvite} className="px-5 py-3 rounded-xl text-sm sm:text-base font-bold tracking-wide transition-all whitespace-nowrap"
-                style={{ background: MODULE_COLOR, boxShadow: `0 4px 20px -4px ${MODULE_COLOR}66` }}>
-                Send Invite
+          <div className="panel rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-white/[0.04]" style={{ background: `${MODULE_COLOR}0d` }}>
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${MODULE_COLOR}20` }}>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} style={{ color: MODULE_COLOR }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-200">Send Invite</p>
+                  <p className="text-[10px] text-gray-500">Invite a team member by email</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="hud-label text-[10px] block mb-1.5">EMAIL ADDRESS</label>
+                  <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@example.com"
+                    className="input-field w-full rounded-lg px-3.5 py-2.5 text-sm" />
+                </div>
+                <div>
+                  <label className="hud-label text-[10px] block mb-1.5">ROLE</label>
+                  <select value={inviteRole} onChange={e => setInviteRole(e.target.value)}
+                    className="input-field w-full rounded-lg px-3.5 py-2.5 text-sm appearance-none cursor-pointer">
+                    <option value="admin">Admin</option>
+                    <option value="editor">Editor</option>
+                    <option value="viewer">Viewer</option>
+                  </select>
+                </div>
+              </div>
+              <button
+                onClick={handleSendInvite}
+                disabled={!inviteEmail.trim()}
+                className="w-full py-2.5 rounded-lg text-xs font-bold text-white tracking-wide transition-opacity hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+                style={{ background: MODULE_COLOR }}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                </svg>
+                SEND INVITE
               </button>
             </div>
           </div>
