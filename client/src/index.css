@@ -53,7 +53,6 @@
     font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     background: var(--bg-deep);
-    overflow-x: hidden;
   }
 
   ::selection {
