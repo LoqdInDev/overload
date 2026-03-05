@@ -262,10 +262,20 @@ export default function ProductFeedsPage() {
       {tab === 'ai-optimize' && (
         <div className="space-y-4 sm:space-y-6 animate-fade-in">
           {/* Feed Health Audit */}
-          <div className="panel animate-fade-in">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <span className="hud-label">Feed Health Audit</span>
-              <button className="btn-accent" style={{ fontSize: 12, padding: '4px 12px' }} disabled={auditLoading}
+          <div className="rounded-2xl overflow-hidden animate-fade-in" style={{ background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.14)' }}>
+            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: feedAudit ? '1px solid rgba(99,102,241,0.08)' : 'none' }}>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(99,102,241,0.12)' }}>
+                  <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white">Feed Health Audit</p>
+                  <p className="text-xs text-gray-500">AI-powered analysis of your product feed quality</p>
+                </div>
+              </div>
+              <button className="px-4 py-2 rounded-xl text-xs font-semibold transition-all"
+                style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.22)' }}
+                disabled={auditLoading}
                 onClick={async () => {
                   setAuditLoading(true);
                   try {
@@ -276,42 +286,46 @@ export default function ProductFeedsPage() {
                     setFeedAudit(result);
                   } catch {}
                   setAuditLoading(false);
-                }}>{auditLoading ? 'Auditing...' : 'Run Feed Audit'}</button>
+                }}>{auditLoading ? 'Auditing...' : 'Run Audit'}</button>
             </div>
             {feedAudit && (
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 36, fontWeight: 800, color: feedAudit.health_score >= 80 ? '#22c55e' : feedAudit.health_score >= 60 ? 'var(--accent)' : '#ef4444' }}>{feedAudit.health_score}</div>
-                    <div className="hud-label">Health Score</div>
+              <div className="p-5 space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="text-center">
+                    <div className="text-4xl font-black" style={{ color: feedAudit.health_score >= 80 ? '#22c55e' : feedAudit.health_score >= 60 ? '#818cf8' : '#ef4444' }}>{feedAudit.health_score}</div>
+                    <p className="hud-label text-[10px]">HEALTH SCORE</p>
                   </div>
                   {feedAudit.estimated_reach_improvement && (
-                    <div className="chip" style={{ color: '#22c55e', borderColor: '#22c55e' }}>
+                    <div className="chip" style={{ color: '#22c55e', borderColor: 'rgba(34,197,94,0.3)' }}>
                       {feedAudit.estimated_reach_improvement}
                     </div>
                   )}
                 </div>
                 {feedAudit.checks?.length > 0 && (
-                  <div style={{ marginBottom: 12 }}>
-                    <div className="hud-label" style={{ marginBottom: 8 }}>Checks</div>
-                    {feedAudit.checks.map((check, i) => (
-                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '6px 0', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
-                        <span style={{ fontSize: 14 }}>{check.status === 'pass' ? '✅' : check.status === 'warning' ? '⚠️' : '❌'}</span>
-                        <div style={{ flex: 1 }}>
-                          <span style={{ fontWeight: 500 }}>{check.name}</span>
-                          {check.issue && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 2 }}>{check.issue}</div>}
-                          {check.fix && check.status !== 'pass' && <div style={{ fontSize: 11, color: '#22c55e', marginTop: 2 }}>Fix: {check.fix}</div>}
+                  <div>
+                    <p className="hud-label text-[10px] mb-2">CHECKS</p>
+                    <div className="space-y-1.5">
+                      {feedAudit.checks.map((check, i) => (
+                        <div key={i} className="flex items-start gap-3 py-2 px-3 rounded-lg text-sm" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                          <span>{check.status === 'pass' ? '✅' : check.status === 'warning' ? '⚠️' : '❌'}</span>
+                          <div className="flex-1">
+                            <span className="font-medium text-gray-200">{check.name}</span>
+                            {check.issue && <p className="text-xs text-red-400 mt-0.5">{check.issue}</p>}
+                            {check.fix && check.status !== 'pass' && <p className="text-xs text-emerald-400 mt-0.5">Fix: {check.fix}</p>}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
                 {feedAudit.critical_fixes?.length > 0 && (
                   <div>
-                    <div className="hud-label" style={{ marginBottom: 6 }}>Critical Fixes</div>
-                    {feedAudit.critical_fixes.map((fix, i) => (
-                      <div key={i} style={{ fontSize: 13, padding: '3px 0', color: '#ef4444' }}>• {fix}</div>
-                    ))}
+                    <p className="hud-label text-[10px] mb-2">CRITICAL FIXES</p>
+                    <div className="space-y-1">
+                      {feedAudit.critical_fixes.map((fix, i) => (
+                        <p key={i} className="text-xs text-red-400">• {fix}</p>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

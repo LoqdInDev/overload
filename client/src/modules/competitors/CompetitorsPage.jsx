@@ -480,39 +480,58 @@ export default function CompetitorsPage() {
           )}
 
           {/* ── Content Gap Panel ── */}
-          <div className="panel rounded-2xl p-5 animate-fade-in">
-            <p className="hud-label text-[11px] mb-3" style={{ color: '#fbbf24' }}>CONTENT GAP ANALYSIS</p>
-            <div style={{ display: 'grid', gap: 10, marginBottom: 12 }}>
-              <input className="input-field rounded-xl px-4 py-3 text-sm w-full"
-                placeholder="Competitor name or domain"
-                value={gapCompetitor}
-                onChange={e => setGapCompetitor(e.target.value)}
-                defaultValue={competitorName}
-              />
-              <input className="input-field rounded-xl px-4 py-3 text-sm w-full"
-                placeholder="Your current content topics (comma-separated)"
-                value={gapTopics}
-                onChange={e => setGapTopics(e.target.value)}
-              />
+          <div className="rounded-2xl overflow-hidden animate-fade-in" style={{ background: 'rgba(251,191,36,0.04)', border: '1px solid rgba(251,191,36,0.15)' }}>
+            <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid rgba(251,191,36,0.08)' }}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(251,191,36,0.12)' }}>
+                <svg className="w-4 h-4" fill="none" stroke="#fbbf24" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Content Gap Analysis</p>
+                <p className="text-xs text-gray-500">Discover content opportunities your competitor covers that you don't</p>
+              </div>
             </div>
-            <button
-              className="chip text-[10px]"
-              style={{ color: '#fbbf24', borderColor: 'rgba(251,191,36,0.3)' }}
-              disabled={(!gapCompetitor && !competitorName) || gapLoading}
-              onClick={() => {
-                setGapOutput('');
-                setGapLoading(true);
-                connectSSE('/api/competitors/content-gap',
-                  { competitor_name: gapCompetitor || competitorName, your_topics: gapTopics.split(',').map(t => t.trim()).filter(Boolean) },
-                  {
-                    onChunk: (text) => setGapOutput(prev => prev + text),
-                    onResult: () => setGapLoading(false),
-                    onError: () => setGapLoading(false),
-                    onDone: () => setGapLoading(false),
-                  }
-                );
-              }}>{gapLoading ? 'Analyzing...' : 'Analyze Content Gap'}</button>
-            {gapOutput && <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans leading-relaxed mt-4">{gapOutput}{gapLoading && <span className="inline-block w-1.5 h-4 bg-yellow-400 ml-0.5 animate-pulse rounded-sm" />}</pre>}
+            <div className="p-5 space-y-3">
+              <div>
+                <p className="hud-label text-[10px] mb-1.5">COMPETITOR NAME OR DOMAIN</p>
+                <input className="input-field rounded-xl px-4 py-2.5 text-sm w-full"
+                  placeholder="e.g. competitor.com"
+                  value={gapCompetitor}
+                  onChange={e => setGapCompetitor(e.target.value)}
+                  defaultValue={competitorName}
+                />
+              </div>
+              <div>
+                <p className="hud-label text-[10px] mb-1.5">YOUR CURRENT CONTENT TOPICS</p>
+                <input className="input-field rounded-xl px-4 py-2.5 text-sm w-full"
+                  placeholder="e.g. email marketing, SEO, social media (comma-separated)"
+                  value={gapTopics}
+                  onChange={e => setGapTopics(e.target.value)}
+                />
+              </div>
+              <button
+                className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all"
+                style={{ background: 'rgba(251,191,36,0.12)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.22)' }}
+                disabled={(!gapCompetitor && !competitorName) || gapLoading}
+                onClick={() => {
+                  setGapOutput('');
+                  setGapLoading(true);
+                  connectSSE('/api/competitors/content-gap',
+                    { competitor_name: gapCompetitor || competitorName, your_topics: gapTopics.split(',').map(t => t.trim()).filter(Boolean) },
+                    {
+                      onChunk: (text) => setGapOutput(prev => prev + text),
+                      onResult: () => setGapLoading(false),
+                      onError: () => setGapLoading(false),
+                      onDone: () => setGapLoading(false),
+                    }
+                  );
+                }}>{gapLoading ? 'Analyzing...' : 'Analyze Content Gap'}</button>
+              {gapOutput && (
+                <div className="rounded-xl p-4 text-sm text-gray-300 leading-relaxed whitespace-pre-wrap" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                  {gapOutput}
+                  {gapLoading && <span className="inline-block w-1.5 h-4 bg-yellow-400 ml-0.5 animate-pulse rounded-sm" />}
+                </div>
+              )}
+            </div>
           </div>
 
         </div>

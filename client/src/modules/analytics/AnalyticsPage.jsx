@@ -316,10 +316,20 @@ export default function AnalyticsPage() {
         </div>
 
         {/* AI Analytics Insights */}
-        <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <span className="hud-label">AI Analytics Insights</span>
-            <button className="btn-accent" style={{ fontSize: 12, padding: '4px 12px' }} disabled={insightsLoading}
+        <div className="rounded-2xl overflow-hidden mt-4 animate-fade-in" style={{ background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.14)' }}>
+          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: aiInsights ? '1px solid rgba(99,102,241,0.08)' : 'none' }}>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(99,102,241,0.12)' }}>
+                <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">AI Analytics Insights</p>
+                <p className="text-xs text-gray-500">AI-generated analysis of your performance data</p>
+              </div>
+            </div>
+            <button className="px-4 py-2 rounded-xl text-xs font-semibold transition-all"
+              style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.22)' }}
+              disabled={insightsLoading}
               onClick={() => {
                 setAiInsights('');
                 setInsightsLoading(true);
@@ -333,36 +343,57 @@ export default function AnalyticsPage() {
                     onDone: () => setInsightsLoading(false),
                   }
                 );
-              }}>{insightsLoading ? 'Analyzing...' : 'Generate AI Insights'}</button>
+              }}>{insightsLoading ? 'Analyzing...' : 'Generate Insights'}</button>
           </div>
           {aiInsights && (
-            <div style={{ whiteSpace: 'pre-wrap', fontSize: 14, lineHeight: 1.8, color: 'var(--text)' }}>
+            <div className="px-5 py-4 text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">
               {aiInsights}
+              {insightsLoading && <span className="inline-block w-1.5 h-4 bg-indigo-400 ml-0.5 animate-pulse rounded-sm" />}
             </div>
           )}
         </div>
 
         {/* Anomaly Detector */}
-        <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
-          <div className="hud-label" style={{ marginBottom: 12 }}>Anomaly Detector</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 10, marginBottom: 10 }}>
-            <input className="input" placeholder="Metric name (e.g. Conversion Rate)" value={anomalyInputs.metric_name} onChange={e => setAnomalyInputs(p => ({ ...p, metric_name: e.target.value }))} />
-            <input className="input" type="number" placeholder="Current value" value={anomalyInputs.current_value} onChange={e => setAnomalyInputs(p => ({ ...p, current_value: e.target.value }))} />
-            <input className="input" type="number" placeholder="Avg (historical)" value={anomalyInputs.historical_average} onChange={e => setAnomalyInputs(p => ({ ...p, historical_average: e.target.value }))} />
+        <div className="rounded-2xl overflow-hidden mt-4 animate-fade-in" style={{ background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.14)' }}>
+          <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid rgba(99,102,241,0.08)' }}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(99,102,241,0.12)' }}>
+              <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white">Anomaly Detector</p>
+              <p className="text-xs text-gray-500">Spot unusual metric changes before they become problems</p>
+            </div>
           </div>
-          <button className="btn-ghost" style={{ fontSize: 12, padding: '4px 12px' }}
-            onClick={async () => {
-              try { const result = await postJSON('/api/analytics/detect-anomaly', anomalyInputs); setAnomalyResult(result); } catch {}
-            }}>Check Anomaly</button>
-          {anomalyResult && (
-            <div style={{ marginTop: 10, display: 'flex', gap: 10, alignItems: 'center' }}>
-              <span style={{ fontSize: 20 }}>{anomalyResult.is_anomaly ? (anomalyResult.severity === 'high' ? '🚨' : '⚠️') : '✅'}</span>
+          <div className="p-5 space-y-3">
+            <div className="grid gap-3" style={{ gridTemplateColumns: '2fr 1fr 1fr' }}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 500 }}>{anomalyResult.explanation}</div>
-                {anomalyResult.recommended_action && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>→ {anomalyResult.recommended_action}</div>}
+                <p className="hud-label text-[10px] mb-1.5">METRIC NAME</p>
+                <input className="input w-full" placeholder="e.g. Conversion Rate" value={anomalyInputs.metric_name} onChange={e => setAnomalyInputs(p => ({ ...p, metric_name: e.target.value }))} />
+              </div>
+              <div>
+                <p className="hud-label text-[10px] mb-1.5">CURRENT VALUE</p>
+                <input className="input w-full" type="number" placeholder="e.g. 2.1" value={anomalyInputs.current_value} onChange={e => setAnomalyInputs(p => ({ ...p, current_value: e.target.value }))} />
+              </div>
+              <div>
+                <p className="hud-label text-[10px] mb-1.5">HISTORICAL AVG</p>
+                <input className="input w-full" type="number" placeholder="e.g. 3.5" value={anomalyInputs.historical_average} onChange={e => setAnomalyInputs(p => ({ ...p, historical_average: e.target.value }))} />
               </div>
             </div>
-          )}
+            <button className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all"
+              style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.22)' }}
+              onClick={async () => {
+                try { const result = await postJSON('/api/analytics/detect-anomaly', anomalyInputs); setAnomalyResult(result); } catch {}
+              }}>Check Anomaly</button>
+            {anomalyResult && (
+              <div className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                <span className="text-xl">{anomalyResult.is_anomaly ? (anomalyResult.severity === 'high' ? '🚨' : '⚠️') : '✅'}</span>
+                <div>
+                  <p className="text-sm font-medium text-gray-200">{anomalyResult.explanation}</p>
+                  {anomalyResult.recommended_action && <p className="text-xs text-gray-500 mt-1">→ {anomalyResult.recommended_action}</p>}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <AIInsightsPanel moduleId="analytics" />

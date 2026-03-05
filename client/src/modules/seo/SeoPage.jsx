@@ -204,33 +204,48 @@ export default function SeoPage() {
           )}
         </div>
       )}
-      <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
-        <div className="hud-label" style={{ marginBottom: 12 }}>Keyword Gap Analysis</div>
-        <div style={{ display: 'grid', gap: 10, marginBottom: 12 }}>
-          <div>
-            <div className="hud-label" style={{ marginBottom: 4 }}>Your Current Keywords</div>
-            <input className="input-field rounded-xl px-4 py-3 w-full" placeholder="e.g. digital marketing, email campaigns, social media" value={gapYourKeywords} onChange={e => setGapYourKeywords(e.target.value)} />
+      <div className="rounded-2xl overflow-hidden mt-4 animate-fade-in" style={{ background: 'rgba(20,184,166,0.04)', border: '1px solid rgba(20,184,166,0.14)' }}>
+        <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid rgba(20,184,166,0.08)' }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(20,184,166,0.12)' }}>
+            <svg className="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" /></svg>
           </div>
           <div>
-            <div className="hud-label" style={{ marginBottom: 4 }}>Competitor Domain</div>
-            <input className="input-field rounded-xl px-4 py-3 w-full" placeholder="e.g. competitor.com" value={gapCompetitor} onChange={e => setGapCompetitor(e.target.value)} />
+            <p className="text-sm font-semibold text-white">Keyword Gap Analysis</p>
+            <p className="text-xs text-gray-500">Find keywords your competitors rank for that you don't</p>
           </div>
         </div>
-        <button className="btn-accent px-4 py-2 rounded-lg text-sm" disabled={!gapCompetitor || gapLoading}
-          onClick={() => {
-            setGapOutput('');
-            setGapLoading(true);
-            connectSSE('/api/seo/keyword-gap',
-              { your_keywords: gapYourKeywords.split(',').map(k => k.trim()).filter(Boolean), competitor_domain: gapCompetitor },
-              {
-                onChunk: (text) => setGapOutput(prev => prev + text),
-                onResult: () => setGapLoading(false),
-                onError: () => setGapLoading(false),
-                onDone: () => setGapLoading(false),
-              }
-            );
-          }}>{gapLoading ? 'Analyzing...' : 'Analyze Keyword Gap'}</button>
-        {gapOutput && <div style={{ marginTop: 16, whiteSpace: 'pre-wrap', fontSize: 13, lineHeight: 1.8 }} className="text-gray-300">{gapOutput}</div>}
+        <div className="p-5 space-y-3">
+          <div>
+            <p className="hud-label text-[10px] mb-1.5">YOUR CURRENT KEYWORDS</p>
+            <input className="input-field rounded-xl px-4 py-2.5 w-full text-sm" placeholder="e.g. digital marketing, email campaigns, social media" value={gapYourKeywords} onChange={e => setGapYourKeywords(e.target.value)} />
+          </div>
+          <div>
+            <p className="hud-label text-[10px] mb-1.5">COMPETITOR DOMAIN</p>
+            <input className="input-field rounded-xl px-4 py-2.5 w-full text-sm" placeholder="e.g. competitor.com" value={gapCompetitor} onChange={e => setGapCompetitor(e.target.value)} />
+          </div>
+          <button className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all"
+            style={{ background: 'rgba(20,184,166,0.12)', color: gapCompetitor ? '#2dd4bf' : 'rgba(45,212,191,0.35)', border: '1px solid rgba(20,184,166,0.2)' }}
+            disabled={!gapCompetitor || gapLoading}
+            onClick={() => {
+              setGapOutput('');
+              setGapLoading(true);
+              connectSSE('/api/seo/keyword-gap',
+                { your_keywords: gapYourKeywords.split(',').map(k => k.trim()).filter(Boolean), competitor_domain: gapCompetitor },
+                {
+                  onChunk: (text) => setGapOutput(prev => prev + text),
+                  onResult: () => setGapLoading(false),
+                  onError: () => setGapLoading(false),
+                  onDone: () => setGapLoading(false),
+                }
+              );
+            }}>{gapLoading ? 'Analyzing...' : 'Analyze Keyword Gap'}</button>
+          {gapOutput && (
+            <div className="rounded-xl p-4 text-sm text-gray-300 leading-relaxed whitespace-pre-wrap" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.04)' }}>
+              {gapOutput}
+              {gapLoading && <span className="inline-block w-1.5 h-4 bg-teal-400 ml-0.5 animate-pulse rounded-sm" />}
+            </div>
+          )}
+        </div>
       </div>
       </ModuleWrapper>
     </div>

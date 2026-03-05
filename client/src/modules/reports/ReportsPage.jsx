@@ -108,51 +108,64 @@ export default function ReportsPage() {
           </div>
         )}
       </div>
-      <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
-        <div className="hud-label" style={{ marginBottom: 12 }}>AI Executive Summary Generator</div>
-        <div style={{ marginBottom: 10 }}>
-          <div className="hud-label" style={{ marginBottom: 6 }}>Reporting Period</div>
-          <input className="input-field rounded-xl px-4 py-3 text-sm w-full" value={summaryPeriod} onChange={e => setSummaryPeriod(e.target.value)} placeholder="e.g. March 2026" />
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <div className="hud-label" style={{ marginBottom: 6 }}>Key Metrics</div>
-          {summaryMetrics.map((m, i) => (
-            <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
-              <input className="input-field rounded px-3 py-2 text-xs" placeholder="Metric name" value={m.name} style={{ flex: 2 }}
-                onChange={e => setSummaryMetrics(prev => prev.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
-              <input className="input-field rounded px-3 py-2 text-xs" placeholder="Value" value={m.value} style={{ flex: 1 }}
-                onChange={e => setSummaryMetrics(prev => prev.map((x, j) => j === i ? { ...x, value: e.target.value } : x))} />
-              {summaryMetrics.length > 1 && (
-                <button className="chip text-[10px]" style={{ padding: '0 10px' }} onClick={() => setSummaryMetrics(prev => prev.filter((_, j) => j !== i))}>×</button>
-              )}
-            </div>
-          ))}
-          <button className="chip text-[10px]" style={{ marginTop: 4 }} onClick={() => setSummaryMetrics(prev => [...prev, { name: '', value: '' }])}>+ Add Metric</button>
-        </div>
-        <button className="btn-accent px-4 py-2 rounded-lg text-sm" style={{ background: '#f43f5e', boxShadow: '0 4px 20px -4px rgba(244,63,94,0.4)' }}
-          disabled={summaryLoading || !summaryMetrics.some(m => m.name)}
-          onClick={() => {
-            setSummaryOutput('');
-            setSummaryLoading(true);
-            connectSSE('/api/reports/generate-executive-summary', {
-              period: summaryPeriod,
-              metrics: summaryMetrics.filter(m => m.name),
-              report_name: selectedReport?.name || 'Marketing Report'
-            },
-              {
-                onChunk: (text) => setSummaryOutput(prev => prev + text),
-                onResult: () => setSummaryLoading(false),
-                onError: () => setSummaryLoading(false),
-                onDone: () => setSummaryLoading(false),
-              }
-            );
-          }}>{summaryLoading ? 'Generating...' : 'Generate Executive Summary'}</button>
-        {summaryOutput && (
-          <div style={{ marginTop: 20, whiteSpace: 'pre-wrap', fontSize: 14, lineHeight: 1.8, padding: 16, background: 'rgba(255,255,255,0.02)', borderRadius: 8 }} className="text-gray-300">
-            {summaryOutput}
-            {summaryLoading && <span className="inline-block w-1.5 h-4 bg-rose-400 ml-0.5 animate-pulse" />}
+      <div className="rounded-2xl overflow-hidden mt-4 animate-fade-in" style={{ background: 'rgba(244,63,94,0.04)', border: '1px solid rgba(244,63,94,0.14)' }}>
+        <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid rgba(244,63,94,0.08)' }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(244,63,94,0.12)' }}>
+            <svg className="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
           </div>
-        )}
+          <div>
+            <p className="text-sm font-semibold text-white">AI Executive Summary Generator</p>
+            <p className="text-xs text-gray-500">Turn your metrics into a polished executive summary</p>
+          </div>
+        </div>
+        <div className="p-5 space-y-4">
+          <div>
+            <p className="hud-label text-[10px] mb-1.5">REPORTING PERIOD</p>
+            <input className="input-field rounded-xl px-4 py-2.5 text-sm w-full" value={summaryPeriod} onChange={e => setSummaryPeriod(e.target.value)} placeholder="e.g. March 2026" />
+          </div>
+          <div>
+            <p className="hud-label text-[10px] mb-2">KEY METRICS</p>
+            <div className="space-y-2">
+              {summaryMetrics.map((m, i) => (
+                <div key={i} className="flex gap-2">
+                  <input className="input-field rounded-lg px-3 py-2 text-xs flex-[2]" placeholder="Metric name" value={m.name}
+                    onChange={e => setSummaryMetrics(prev => prev.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
+                  <input className="input-field rounded-lg px-3 py-2 text-xs flex-1" placeholder="Value" value={m.value}
+                    onChange={e => setSummaryMetrics(prev => prev.map((x, j) => j === i ? { ...x, value: e.target.value } : x))} />
+                  {summaryMetrics.length > 1 && (
+                    <button className="chip text-[10px] px-2.5" onClick={() => setSummaryMetrics(prev => prev.filter((_, j) => j !== i))}>×</button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <button className="chip text-[10px] mt-2" onClick={() => setSummaryMetrics(prev => [...prev, { name: '', value: '' }])}>+ Add Metric</button>
+          </div>
+          <button className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all"
+            style={{ background: 'rgba(244,63,94,0.15)', color: '#fb7185', border: '1px solid rgba(244,63,94,0.25)', boxShadow: '0 4px 20px -4px rgba(244,63,94,0.15)' }}
+            disabled={summaryLoading || !summaryMetrics.some(m => m.name)}
+            onClick={() => {
+              setSummaryOutput('');
+              setSummaryLoading(true);
+              connectSSE('/api/reports/generate-executive-summary', {
+                period: summaryPeriod,
+                metrics: summaryMetrics.filter(m => m.name),
+                report_name: selectedReport?.name || 'Marketing Report'
+              },
+                {
+                  onChunk: (text) => setSummaryOutput(prev => prev + text),
+                  onResult: () => setSummaryLoading(false),
+                  onError: () => setSummaryLoading(false),
+                  onDone: () => setSummaryLoading(false),
+                }
+              );
+            }}>{summaryLoading ? 'Generating...' : 'Generate Executive Summary'}</button>
+          {summaryOutput && (
+            <div className="rounded-xl p-4 text-sm text-gray-300 leading-relaxed whitespace-pre-wrap" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.04)' }}>
+              {summaryOutput}
+              {summaryLoading && <span className="inline-block w-1.5 h-4 bg-rose-400 ml-0.5 animate-pulse rounded-sm" />}
+            </div>
+          )}
+        </div>
       </div>
       </ModuleWrapper>
     </div>

@@ -363,46 +363,61 @@ export default function AffiliatesPage() {
 
       {tab === 'ai-tools' && (
         <div className="space-y-4 sm:space-y-6 animate-fade-in">
-          <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
-            <div className="hud-label" style={{ marginBottom: 12 }}>Commission Structure Optimizer</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
-              {[['Current Rate %', 'current_rate', '10'], ['Product Margin %', 'product_margin', '40'], ['Avg Order Value $', 'avg_order_value', '50']].map(([label, key, placeholder]) => (
-                <div key={key}>
-                  <div className="hud-label" style={{ marginBottom: 4 }}>{label}</div>
-                  <input className="input" type="number" placeholder={placeholder} value={commInputs[key]} onChange={e => setCommInputs(prev => ({ ...prev, [key]: e.target.value }))} />
-                </div>
-              ))}
+          <div className="rounded-2xl overflow-hidden animate-fade-in mt-4" style={{ background: 'rgba(16,185,129,0.04)', border: '1px solid rgba(16,185,129,0.14)' }}>
+            <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid rgba(16,185,129,0.08)' }}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(16,185,129,0.12)' }}>
+                <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              </div>
               <div>
-                <div className="hud-label" style={{ marginBottom: 4 }}>Industry</div>
-                <select className="input" value={commInputs.industry} onChange={e => setCommInputs(prev => ({ ...prev, industry: e.target.value }))}>
-                  {['E-commerce', 'SaaS', 'Digital Products', 'Physical Products', 'Services'].map(i => <option key={i}>{i}</option>)}
-                </select>
+                <p className="text-sm font-semibold text-white">Commission Structure Optimizer</p>
+                <p className="text-xs text-gray-500">AI-designed tiered commission rates for your affiliate program</p>
               </div>
             </div>
-            <button className="btn-accent" onClick={async () => {
-              try { const result = await postJSON('/api/affiliates/optimize-commission', commInputs); setCommissionData(result); } catch {}
-            }}>Optimize Commission</button>
-            {commissionData && (
-              <div style={{ marginTop: 16 }}>
-                <div className="chip" style={{ marginBottom: 12 }}>Recommended Base Rate: <strong>{commissionData.recommended_base_rate}</strong></div>
-                <div className="hud-label" style={{ marginBottom: 8 }}>Tier Structure</div>
-                <div style={{ display: 'grid', gap: 8 }}>
-                  {commissionData.tier_structure?.map((tier, i) => (
-                    <div key={i} className="panel" style={{ padding: 12 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                        <span style={{ fontWeight: 600 }}>{['Bronze', 'Silver', 'Gold'][i] === tier.tier ? ['🥉', '🥈', '🥇'][i] : ''} {tier.tier}</span>
-                        <span className="chip" style={{ fontSize: 11 }}>{tier.commission} commission</span>
-                      </div>
-                      <div style={{ fontSize: 12, color: 'var(--muted)' }}>{tier.threshold}</div>
-                      <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
-                        {tier.perks?.map((perk, j) => <span key={j} className="chip" style={{ fontSize: 10 }}>{perk}</span>)}
-                      </div>
-                    </div>
-                  ))}
+            <div className="p-5">
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                {[['Current Rate %', 'current_rate', '10'], ['Product Margin %', 'product_margin', '40'], ['Avg Order Value $', 'avg_order_value', '50']].map(([label, key, placeholder]) => (
+                  <div key={key}>
+                    <p className="hud-label text-[10px] mb-1.5">{label.toUpperCase()}</p>
+                    <input className="input w-full" type="number" placeholder={placeholder} value={commInputs[key]} onChange={e => setCommInputs(prev => ({ ...prev, [key]: e.target.value }))} />
+                  </div>
+                ))}
+                <div>
+                  <p className="hud-label text-[10px] mb-1.5">INDUSTRY</p>
+                  <select className="input w-full" value={commInputs.industry} onChange={e => setCommInputs(prev => ({ ...prev, industry: e.target.value }))}>
+                    {['E-commerce', 'SaaS', 'Digital Products', 'Physical Products', 'Services'].map(i => <option key={i}>{i}</option>)}
+                  </select>
                 </div>
-                {commissionData.rationale && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>{commissionData.rationale}</div>}
               </div>
-            )}
+              <button className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all"
+                style={{ background: 'rgba(16,185,129,0.12)', color: '#34d399', border: '1px solid rgba(16,185,129,0.22)' }}
+                onClick={async () => {
+                  try { const result = await postJSON('/api/affiliates/optimize-commission', commInputs); setCommissionData(result); } catch {}
+                }}>Optimize Commission</button>
+              {commissionData && (
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)' }}>
+                    <span className="text-emerald-400 font-semibold">Recommended Base Rate:</span>
+                    <strong className="text-white">{commissionData.recommended_base_rate}</strong>
+                  </div>
+                  <p className="hud-label text-[10px]">TIER STRUCTURE</p>
+                  <div className="space-y-2">
+                    {commissionData.tier_structure?.map((tier, i) => (
+                      <div key={i} className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm font-semibold text-white">{['🥉', '🥈', '🥇'][i]} {tier.tier}</span>
+                          <span className="chip text-[10px]">{tier.commission} commission</span>
+                        </div>
+                        <div className="text-xs text-gray-500 mb-1.5">{tier.threshold}</div>
+                        <div className="flex gap-1.5 flex-wrap">
+                          {tier.perks?.map((perk, j) => <span key={j} className="chip text-[10px]">{perk}</span>)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {commissionData.rationale && <p className="text-xs text-gray-500 leading-relaxed">{commissionData.rationale}</p>}
+                </div>
+              )}
+            </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {AI_TEMPLATES.map(t => (
