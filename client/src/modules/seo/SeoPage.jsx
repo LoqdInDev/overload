@@ -158,7 +158,7 @@ export default function SeoPage() {
       </div>
       <div className="mt-10">
         <div className="flex items-center gap-3 sm:gap-5 mb-4"><p className="hud-label text-[11px]">QUICK START</p><div className="flex-1 hud-line" /></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 stagger">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3 stagger">
           {Object.entries(TEMPLATES).flatMap(([tool, tmpls]) => tmpls.slice(0, 1).map(t => (
             <button key={`${tool}-${t.name}`} onClick={() => { setActiveTool(tool); setPrompt(t.prompt); }} className="panel-interactive rounded-lg p-4 sm:p-6 text-left group">
               <p className="hud-label text-[11px] mb-1" style={{ color: '#14b8a6' }}>{TOOLS.find(x => x.id === tool)?.name}</p>
