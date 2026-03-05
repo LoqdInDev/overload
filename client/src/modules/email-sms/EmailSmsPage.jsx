@@ -335,7 +335,7 @@ export default function EmailSmsPage() {
             <p className="hud-label text-[11px]">POPULAR TEMPLATES</p>
             <div className="flex-1 hud-line" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 stagger">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3 stagger">
             {Object.entries(TEMPLATES).flatMap(([type, tmpls]) =>
               tmpls.slice(0, 1).map(t => {
                 const ct = EMAIL_TYPES.find(c => c.id === type);
