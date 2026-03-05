@@ -227,18 +227,19 @@
   color: #94a3b8;
 }
 
-/* Dark panels — boost dim description text so it's legible on near-black backgrounds */
-.panel .text-gray-500, .panel-interactive .text-gray-500 { color: #8fa3b8; }
-.panel .text-gray-600, .panel-interactive .text-gray-600 { color: #7b8fa3; }
-.panel .text-gray-700, .panel-interactive .text-gray-700 { color: #6b7f93; }
-
-/* Light mode resets — restore natural values inside white panels */
-[data-theme="light"] .panel .text-gray-500,
-[data-theme="light"] .panel-interactive .text-gray-500 { color: #6b7280; }
-[data-theme="light"] .panel .text-gray-600,
-[data-theme="light"] .panel-interactive .text-gray-600 { color: #4b5563; }
-[data-theme="light"] .panel .text-gray-700,
-[data-theme="light"] .panel-interactive .text-gray-700 { color: #374151; }
+/* ═══════════════════════════════════════════
+   DARK MODE — remap light-mode Tailwind grays so text/borders are
+   readable on the near-black app-shell background.
+   Scoped to [data-theme="dark"] so the landing page is untouched.
+   ═══════════════════════════════════════════ */
+[data-theme="dark"] .text-gray-800 { color: #e2e8f0 !important; }
+[data-theme="dark"] .text-gray-700 { color: #cbd5e1 !important; }
+[data-theme="dark"] .text-gray-600 { color: #94a3b8 !important; }
+[data-theme="dark"] .text-gray-500 { color: #7b8fa3 !important; }
+[data-theme="dark"] .border-gray-200 { border-color: rgba(255,255,255,0.08) !important; }
+[data-theme="dark"] .border-gray-300 { border-color: rgba(255,255,255,0.1) !important; }
+[data-theme="dark"] input.text-gray-700,
+[data-theme="dark"] textarea.text-gray-700 { color: #e2e8f0 !important; }
 
 /* Light mode — hud elements */
 [data-theme="light"] .hud-dot {
