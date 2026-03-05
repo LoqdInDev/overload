@@ -229,17 +229,34 @@ export default function EcommerceHubPage() {
       {tab === 'stores' && (
         <div className="animate-fade-in space-y-4">
           {/* Create Store Form */}
-          <div className="panel rounded-2xl p-4 sm:p-6">
-            <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>ADD STORE</p>
-            <form onSubmit={handleCreateStore} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <input type="text" placeholder="Store name" value={newStoreName} onChange={e => setNewStoreName(e.target.value)} required className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm placeholder-gray-400 focus:outline-none focus:border-violet-400/60" />
-              <input type="text" placeholder="Platform (e.g. Shopify)" value={newStorePlatform} onChange={e => setNewStorePlatform(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm placeholder-gray-400 focus:outline-none focus:border-violet-400/60" />
-              <input type="url" placeholder="Store URL (optional)" value={newStoreUrl} onChange={e => setNewStoreUrl(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm placeholder-gray-400 focus:outline-none focus:border-violet-400/60" />
-              <div className="sm:col-span-3">
-                <button type="submit" disabled={creatingStore} className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors" style={{ background: creatingStore ? 'rgba(139,92,246,0.3)' : 'rgba(139,92,246,0.6)' }}>
-                  {creatingStore ? 'Adding...' : 'Add Store'}
-                </button>
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(139,92,246,0.04)', border: '1px solid rgba(139,92,246,0.15)' }}>
+            <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid rgba(139,92,246,0.08)' }}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(139,92,246,0.12)' }}>
+                <svg className="w-4 h-4 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z" /></svg>
               </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-800">Add Store</p>
+                <p className="text-xs text-gray-400">Connect a new store to track orders, products, and revenue</p>
+              </div>
+            </div>
+            <form onSubmit={handleCreateStore} className="p-5 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase mb-1.5">Store Name</p>
+                  <input type="text" placeholder="e.g. My Shopify Store" value={newStoreName} onChange={e => setNewStoreName(e.target.value)} required className="w-full px-4 py-2.5 rounded-xl bg-transparent border border-gray-200 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-violet-400/60 transition-colors" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase mb-1.5">Platform</p>
+                  <input type="text" placeholder="e.g. Shopify, WooCommerce" value={newStorePlatform} onChange={e => setNewStorePlatform(e.target.value)} className="w-full px-4 py-2.5 rounded-xl bg-transparent border border-gray-200 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-violet-400/60 transition-colors" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase mb-1.5">Store URL <span className="normal-case font-normal">(optional)</span></p>
+                  <input type="url" placeholder="https://yourstore.com" value={newStoreUrl} onChange={e => setNewStoreUrl(e.target.value)} className="w-full px-4 py-2.5 rounded-xl bg-transparent border border-gray-200 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-violet-400/60 transition-colors" />
+                </div>
+              </div>
+              <button type="submit" disabled={creatingStore} className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-all" style={{ background: creatingStore ? 'rgba(139,92,246,0.3)' : 'rgba(139,92,246,0.75)', boxShadow: creatingStore ? 'none' : '0 4px 20px -4px rgba(139,92,246,0.4)' }}>
+                {creatingStore ? 'Adding...' : 'Add Store'}
+              </button>
             </form>
           </div>
 
