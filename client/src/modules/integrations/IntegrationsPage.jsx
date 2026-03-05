@@ -260,9 +260,9 @@ export default function IntegrationsPage() {
           { l: 'TOTAL', v: String(providers.length) },
           { l: 'ERRORS', v: String(errorCount) },
         ].map((s, i) => (
-          <div key={i} className="panel rounded-2xl p-4 sm:p-6">
-            <p className="hud-label text-[11px] mb-1">{s.l}</p>
-            <p className="text-xl sm:text-2xl font-bold text-white font-mono">{s.v}</p>
+          <div key={i} className="panel stat-card rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[10px] mb-2">{s.l}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-white font-mono tabular-nums leading-none">{s.v}</p>
           </div>
         ))}
       </div>

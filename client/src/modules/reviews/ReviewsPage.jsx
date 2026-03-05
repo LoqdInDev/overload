@@ -75,7 +75,7 @@ export default function ReviewsPage() {
       <div className="mb-6 sm:mb-8 animate-fade-in"><p className="hud-label text-[11px] mb-2" style={{ color: '#eab308' }}>REVIEWS & REPUTATION</p><h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Reputation Management</h1><p className="text-base text-gray-500">AI-powered review responses, sentiment analysis, and reputation tools</p></div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
         {[{ l: 'AVG RATING', v: loadingStats ? '—' : stats?.avgRating?.toFixed(1) ?? '—', c: '#eab308' }, { l: 'TOTAL REVIEWS', v: loadingStats ? '—' : stats?.total?.toLocaleString() ?? '—', c: '#3b82f6' }, { l: 'RESPONSE RATE', v: loadingStats ? '—' : stats?.pending != null && stats?.total ? `${Math.round(((stats.total - stats.pending) / stats.total) * 100)}%` : '—', c: '#22c55e' }, { l: 'SENTIMENT', v: loadingStats ? '—' : stats?.bySentiment?.positive != null ? `+${stats.bySentiment.positive}` : '—', c: '#a855f7' }].map((s, i) => (
-          <div key={i} className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-1">{s.l}</p><p className="text-xl sm:text-2xl font-bold font-mono" style={{ color: s.c }}>{s.v}</p></div>
+          <div key={i} className="panel stat-card rounded-2xl p-4 sm:p-6"><p className="hud-label text-[10px] mb-2">{s.l}</p><p className="text-2xl sm:text-3xl font-bold font-mono tabular-nums leading-none" style={{ color: s.c }}>{s.v}</p></div>
         ))}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 stagger">

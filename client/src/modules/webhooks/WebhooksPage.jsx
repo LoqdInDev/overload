@@ -151,7 +151,7 @@ export default function WebhooksPage() {
     <div className="p-4 sm:p-6 lg:p-12">
       <div className="mb-6 sm:mb-8 animate-fade-in"><p className="hud-label text-[11px] mb-2" style={{ color: '#f97316' }}>WEBHOOKS</p><h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Webhooks</h1><p className="text-base text-gray-500">Manage event hooks, monitor deliveries, and track performance</p></div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
-        {[{ l: 'ACTIVE HOOKS', v: String(activeHooks) }, { l: 'TOTAL DELIVERIES', v: String(totalLogs) }, { l: 'SUCCESS RATE', v: successRate }, { l: 'AVG LATENCY', v: avgLatency }].map((s, i) => (<div key={i} className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-1">{s.l}</p><p className="text-xl sm:text-2xl font-bold text-white font-mono">{s.v}</p></div>))}
+        {[{ l: 'ACTIVE HOOKS', v: String(activeHooks) }, { l: 'TOTAL DELIVERIES', v: String(totalLogs) }, { l: 'SUCCESS RATE', v: successRate }, { l: 'AVG LATENCY', v: avgLatency }].map((s, i) => (<div key={i} className="panel stat-card rounded-2xl p-4 sm:p-6"><p className="hud-label text-[10px] mb-2">{s.l}</p><p className="text-2xl sm:text-3xl font-bold text-white font-mono tabular-nums leading-none">{s.v}</p></div>))}
       </div>
       <div className="flex flex-wrap gap-1 mb-6">
         {['webhooks', 'logs', 'ai-tools'].map(t => (<button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: 'rgba(249,115,22,0.15)', borderColor: 'rgba(249,115,22,0.3)', color: '#fb923c' } : {}}>{t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1)}</button>))}

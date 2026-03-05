@@ -125,10 +125,10 @@ export default function TeamPage() {
           { label: 'PENDING INVITES', value: String(inviteCount), sub: invites.filter(i => i.status === 'expired').length > 0 ? `${invites.filter(i => i.status === 'expired').length} expired` : 'None expired' },
           { label: 'ROLES', value: String(rolesCount), sub: [...new Set(members.map(m => m.role))].map(r => r.charAt(0).toUpperCase() + r.slice(1)).join(', ') || 'None' },
         ].map((s, i) => (
-          <div key={i} className="panel rounded-2xl p-4 sm:p-6">
-            <p className="hud-label text-[11px] mb-1">{s.label}</p>
-            <p className="text-xl sm:text-2xl font-bold text-white font-mono">{s.value}</p>
-            <p className="text-xs text-gray-500 mt-1">{s.sub}</p>
+          <div key={i} className="panel stat-card rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[10px] mb-2">{s.label}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-white font-mono tabular-nums leading-none">{s.value}</p>
+            <p className="text-xs text-gray-500 mt-2">{s.sub}</p>
           </div>
         ))}
       </div>

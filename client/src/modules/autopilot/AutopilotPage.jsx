@@ -431,10 +431,10 @@ export default function AutopilotPage() {
           { label: 'SUCCESS RATE', value: stats.successRate != null ? `${stats.successRate}%` : '—', sub: `${stats.totalActions ?? 0} total actions` },
           { label: 'ACTIVE RULES', value: stats.activeRules ?? '—', sub: 'Automation rules running' },
         ].map((s, i) => (
-          <div key={i} className="panel rounded-2xl p-4 sm:p-6">
-            <p className="hud-label text-[11px] mb-1">{s.label}</p>
-            <p className="text-xl sm:text-2xl font-bold text-white font-mono">{s.value}</p>
-            <p className="text-xs text-gray-500 mt-1">{s.sub}</p>
+          <div key={i} className="panel stat-card rounded-2xl p-4 sm:p-6">
+            <p className="hud-label text-[10px] mb-2">{s.label}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-white font-mono tabular-nums leading-none">{s.value}</p>
+            <p className="text-xs text-gray-500 mt-2">{s.sub}</p>
           </div>
         ))}
       </div>

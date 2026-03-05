@@ -163,7 +163,7 @@ export default function AffiliatesPage() {
           { l: 'TOTAL REVENUE', v: loading ? '—' : totalRevenue >= 1000 ? `$${(totalRevenue / 1000).toFixed(1)}K` : `$${totalRevenue}` },
           { l: 'CONV. RATE', v: loading ? '—' : `${avgConvRate}%` },
           { l: 'ACTIVE PROGRAMS', v: loading ? '—' : activePrograms.toString() },
-        ].map((s, i) => (<div key={i} className="panel rounded-2xl p-4 sm:p-6"><p className="hud-label text-[11px] mb-1">{s.l}</p><p className="text-xl sm:text-2xl font-bold text-white font-mono">{s.v}</p></div>))}
+        ].map((s, i) => (<div key={i} className="panel stat-card rounded-2xl p-4 sm:p-6"><p className="hud-label text-[10px] mb-2">{s.l}</p><p className="text-2xl sm:text-3xl font-bold text-white font-mono tabular-nums leading-none">{s.v}</p></div>))}
       </div>
       <div className="flex flex-wrap gap-1 mb-6">
         {['programs', 'affiliates', 'payouts', 'ai-tools'].map(t => (<button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: 'rgba(34,197,94,0.15)', borderColor: 'rgba(34,197,94,0.3)', color: '#4ade80' } : {}}>{t === 'ai-tools' ? 'AI Tools' : t.charAt(0).toUpperCase() + t.slice(1)}</button>))}
