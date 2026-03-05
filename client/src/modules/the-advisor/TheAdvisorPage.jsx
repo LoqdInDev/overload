@@ -105,46 +105,73 @@ export default function TheAdvisorPage() {
       </div>
 
       {/* Priority Action Plan */}
-      <div className="panel rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 animate-fade-in">
-        <p className="hud-label text-[11px] mb-3" style={{ color: MODULE_COLOR }}>PRIORITY ACTION PLAN</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-          <input
-            type="text"
-            placeholder="Business stage (e.g. Early-stage startup)"
-            value={businessStage}
-            onChange={e => setBusinessStage(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm text-gray-200 placeholder-gray-400 focus:outline-none"
-          />
-          <input
-            type="text"
-            placeholder="Primary goal (e.g. Double monthly revenue)"
-            value={primaryGoal}
-            onChange={e => setPrimaryGoal(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg bg-transparent border border-gray-200 text-sm text-gray-200 placeholder-gray-400 focus:outline-none"
-          />
-        </div>
-        <button
-          disabled={priorityLoading || !primaryGoal.trim()}
-          onClick={() => {
-            setPriorityLoading(true);
-            setPriorityOutput('');
-            connectSSE('/api/the-advisor/prioritize-actions', { business_stage: businessStage, primary_goal: primaryGoal }, {
-              onChunk: (text) => setPriorityOutput(p => p + text),
-              onResult: (data) => { setPriorityOutput(data.content); setPriorityLoading(false); },
-              onError: () => setPriorityLoading(false),
-              onDone: () => setPriorityLoading(false),
-            });
-          }}
-          className="btn-accent px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
-          style={{ background: priorityLoading ? 'rgba(212,160,23,0.3)' : MODULE_COLOR }}
-        >
-          {priorityLoading ? 'Generating Plan...' : 'Generate Priority Plan'}
-        </button>
-        {priorityOutput && (
-          <div className="mt-4 p-3 rounded-lg bg-transparent border border-gray-100">
-            <pre className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">{priorityOutput}{priorityLoading && <span className="inline-block w-1 h-3.5 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
+      <div className="panel rounded-2xl overflow-hidden mb-6 sm:mb-8 animate-fade-in">
+        {/* Header */}
+        <div className="px-5 py-4 border-b border-white/[0.04]" style={{ background: `${MODULE_COLOR}0d` }}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${MODULE_COLOR}20` }}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} style={{ color: MODULE_COLOR }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-gray-200">Priority Action Plan</p>
+              <p className="text-[10px] text-gray-500">AI-ranked actions tailored to your stage and goal</p>
+            </div>
           </div>
-        )}
+        </div>
+        <div className="p-5 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="hud-label text-[10px] block mb-1.5">BUSINESS STAGE</label>
+              <input
+                type="text"
+                placeholder="e.g. Early-stage startup"
+                value={businessStage}
+                onChange={e => setBusinessStage(e.target.value)}
+                className="input-field w-full rounded-lg px-3.5 py-2.5 text-sm"
+              />
+            </div>
+            <div>
+              <label className="hud-label text-[10px] block mb-1.5">PRIMARY GOAL</label>
+              <input
+                type="text"
+                placeholder="e.g. Double monthly revenue"
+                value={primaryGoal}
+                onChange={e => setPrimaryGoal(e.target.value)}
+                className="input-field w-full rounded-lg px-3.5 py-2.5 text-sm"
+              />
+            </div>
+          </div>
+          <button
+            disabled={priorityLoading || !primaryGoal.trim()}
+            onClick={() => {
+              setPriorityLoading(true);
+              setPriorityOutput('');
+              connectSSE('/api/the-advisor/prioritize-actions', { business_stage: businessStage, primary_goal: primaryGoal }, {
+                onChunk: (text) => setPriorityOutput(p => p + text),
+                onResult: (data) => { setPriorityOutput(data.content); setPriorityLoading(false); },
+                onError: () => setPriorityLoading(false),
+                onDone: () => setPriorityLoading(false),
+              });
+            }}
+            className="w-full py-2.5 rounded-lg text-xs font-bold text-white tracking-wide transition-opacity hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-50"
+            style={{ background: priorityLoading ? `${MODULE_COLOR}60` : MODULE_COLOR }}
+          >
+            {priorityLoading ? <><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />GENERATING PLAN...</> : 'GENERATE PRIORITY PLAN'}
+          </button>
+          {priorityOutput && (
+            <div className="animate-fade-up">
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-2 h-2 rounded-full ${priorityLoading ? 'animate-pulse' : 'bg-emerald-400'}`} style={priorityLoading ? { background: MODULE_COLOR } : {}} />
+                <span className="hud-label text-[11px]" style={{ color: priorityLoading ? MODULE_COLOR : '#4ade80' }}>{priorityLoading ? 'GENERATING...' : 'COMPLETE'}</span>
+              </div>
+              <div className="rounded-xl p-4" style={{ background: `${MODULE_COLOR}08`, border: `1px solid ${MODULE_COLOR}18` }}>
+                <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{priorityOutput}{priorityLoading && <span className="inline-block w-1 h-3.5 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}</pre>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* AI Generated Briefing Output */}
