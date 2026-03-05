@@ -171,35 +171,47 @@ export default function AudienceBuilderPage() {
       )}
 
       {tab === 'lookalike' && (
-        <div className="animate-fade-in">
-          <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
-            <div className="hud-label" style={{ marginBottom: 12 }}>AI Lookalike Audience Builder</div>
-            <div style={{ marginBottom: 12 }}>
-              <div className="hud-label" style={{ marginBottom: 6 }}>Describe Your Best Customers</div>
-              <textarea className="input-field rounded-xl px-4 py-3 text-sm w-full" style={{ minHeight: 80, resize: 'vertical' }}
-                placeholder="e.g. Women 28-45, interested in fitness and wellness, shop online 2-3x/month, health-conscious, follow fitness influencers, household income $60K+"
-                value={seedDescription} onChange={e => setSeedDescription(e.target.value)} />
-            </div>
-            <button className="btn-accent px-4 py-2 rounded-lg text-sm" style={{ background: '#8b5cf6' }} disabled={!seedDescription || lookalikeLoading}
-              onClick={() => {
-                setLookalikeOutput('');
-                setLookalikeLoading(true);
-                connectSSE('/api/audience-builder/build-lookalike',
-                  { seed_description: seedDescription },
-                  {
-                    onChunk: (text) => setLookalikeOutput(prev => prev + text),
-                    onResult: () => setLookalikeLoading(false),
-                    onError: () => setLookalikeLoading(false),
-                    onDone: () => setLookalikeLoading(false),
-                  }
-                );
-              }}>{lookalikeLoading ? 'Building Audience...' : 'Build Lookalike Audience'}</button>
-            {lookalikeOutput && (
-              <div style={{ marginTop: 16, whiteSpace: 'pre-wrap', fontSize: 13, lineHeight: 1.8 }} className="text-gray-300">
-                {lookalikeOutput}
-                {lookalikeLoading && <span className="inline-block w-1.5 h-4 bg-violet-400 ml-0.5 animate-pulse rounded-sm" />}
+        <div className="animate-fade-in mt-4">
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(139,92,246,0.04)', border: '1px solid rgba(139,92,246,0.15)' }}>
+            <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid rgba(139,92,246,0.08)' }}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(139,92,246,0.12)' }}>
+                <svg className="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" /></svg>
               </div>
-            )}
+              <div>
+                <p className="text-sm font-semibold text-white">AI Lookalike Audience Builder</p>
+                <p className="text-xs text-gray-500">Describe your best customers and AI will build a matching audience profile</p>
+              </div>
+            </div>
+            <div className="p-5 space-y-3">
+              <div>
+                <p className="hud-label text-[10px] mb-1.5">DESCRIBE YOUR BEST CUSTOMERS</p>
+                <textarea className="input-field rounded-xl px-4 py-3 text-sm w-full" style={{ minHeight: 100, resize: 'vertical' }}
+                  placeholder="e.g. Women 28-45, interested in fitness and wellness, shop online 2-3x/month, health-conscious, follow fitness influencers, household income $60K+"
+                  value={seedDescription} onChange={e => setSeedDescription(e.target.value)} />
+              </div>
+              <button className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all"
+                style={{ background: 'rgba(139,92,246,0.15)', color: seedDescription ? '#c4b5fd' : 'rgba(196,181,253,0.35)', border: '1px solid rgba(139,92,246,0.25)' }}
+                disabled={!seedDescription || lookalikeLoading}
+                onClick={() => {
+                  setLookalikeOutput('');
+                  setLookalikeLoading(true);
+                  connectSSE('/api/audience-builder/build-lookalike',
+                    { seed_description: seedDescription },
+                    {
+                      onChunk: (text) => setLookalikeOutput(prev => prev + text),
+                      onResult: () => setLookalikeLoading(false),
+                      onError: () => setLookalikeLoading(false),
+                      onDone: () => setLookalikeLoading(false),
+                    }
+                  );
+                }}>{lookalikeLoading ? 'Building Audience...' : 'Build Lookalike Audience'}</button>
+              {lookalikeOutput && (
+                <div className="rounded-xl p-4 text-sm text-gray-300 leading-relaxed whitespace-pre-wrap" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                  {lookalikeOutput}
+                  {lookalikeLoading && <span className="inline-block w-1.5 h-4 bg-violet-400 ml-0.5 animate-pulse rounded-sm" />}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
