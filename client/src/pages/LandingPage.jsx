@@ -413,9 +413,13 @@ export default function LandingPage() {
             {['Platform', 'Modules', 'Pricing'].map(l => (
               <a key={l} href={`#${l.toLowerCase()}`}
                 className="text-[13px] font-medium transition-colors duration-200"
-                style={{ color: 'var(--lp-muted)' }}
+                style={{ color: 'var(--lp-muted)', cursor: 'pointer' }}
                 onMouseEnter={e => e.target.style.color = 'var(--lp-ink)'}
                 onMouseLeave={e => e.target.style.color = 'var(--lp-muted)'}
+                onClick={e => {
+                  e.preventDefault();
+                  document.getElementById(l.toLowerCase())?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
               >{l}</a>
             ))}
           </div>

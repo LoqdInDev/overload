@@ -53,6 +53,7 @@
     font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     background: var(--bg-deep);
+    overflow-x: hidden;
   }
 
   ::selection {
@@ -752,6 +753,7 @@
 .lp-card-stack {
   perspective: 1800px;
   padding: 0 16px;
+  overflow-x: hidden;
 }
 @media (min-width: 768px) {
   .lp-card-stack { padding: 0 24px; }

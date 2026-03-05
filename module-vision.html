@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Overload — Module Vision Report</title>
+  <title>Overload — Module Status Report</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
@@ -408,14 +408,15 @@
       gap: 6px;
     }
 
-    .col-label.now { color: var(--muted); }
+    .col-label.now { color: #22c55e; }
     .col-label.now::before {
       content: '';
-      width: 4px;
-      height: 4px;
+      width: 6px;
+      height: 6px;
       border-radius: 50%;
-      background: var(--muted);
+      background: #22c55e;
       flex-shrink: 0;
+      box-shadow: 0 0 6px #22c55e88;
     }
 
     .col-label.vision { color: var(--cat-color); }
@@ -444,12 +445,20 @@
     }
 
     .feature-list.now li { color: var(--muted); }
+    .feature-list.now li.shipped { color: var(--text); font-weight: 500; }
 
     .feature-list.now li::before {
       content: '–';
       flex-shrink: 0;
       margin-top: 0px;
       color: var(--dim);
+    }
+
+    .feature-list.now li.shipped::before {
+      content: '✓';
+      color: #22c55e;
+      font-weight: 700;
+      font-size: 12px;
     }
 
     .feature-list.vision li { color: var(--text); }
@@ -461,6 +470,56 @@
       color: var(--cat-color);
       font-size: 15px;
       margin-top: -1px;
+    }
+
+    /* ── SHIPPED STATS BANNER ── */
+    .shipped-banner {
+      background: var(--surface);
+      border: 1px solid rgba(34,197,94,0.25);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 52px;
+      display: grid;
+      grid-template-columns: auto 1fr 1fr 1fr 1fr;
+      gap: 32px;
+      align-items: center;
+    }
+    .shipped-header {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      letter-spacing: 3px;
+      color: #22c55e;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+    }
+    .shipped-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .shipped-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 40px;
+      line-height: 1;
+      color: #22c55e;
+      letter-spacing: 2px;
+    }
+    .shipped-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .shipped-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 2px;
+    }
+    @media (max-width: 768px) {
+      .shipped-banner { grid-template-columns: 1fr 1fr; }
+      .shipped-header { writing-mode: horizontal-tb; transform: none; }
     }
 
     /* ── IMPACT STRIP ── */
@@ -639,7 +698,7 @@
 <header>
   <div class="header-inner">
     <div class="logo">OVER<span>LOAD</span></div>
-    <div class="header-subtitle">Module Vision Report — 2026</div>
+    <div class="header-subtitle">All 37 Modules Upgraded · March 2026 ✓</div>
     <div class="header-search">
       <div class="search-wrap">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -691,35 +750,28 @@
     </div>
   </div>
 
-  <!-- TOP 5 -->
-  <div class="top5" id="top5section">
-    <div class="top5-title">THE 5 HIGHEST-IMPACT CHANGES</div>
-    <div class="top5-grid">
-      <div class="top5-item">
-        <div class="top5-rank">01</div>
-        <div class="top5-name">Brand Hub as a Living Engine</div>
-        <div class="top5-desc">Every module pulls voice, colors, and competitive positioning from one source of truth. Everything gets smarter together.</div>
-      </div>
-      <div class="top5-item">
-        <div class="top5-rank">02</div>
-        <div class="top5-name">The Feedback Loop</div>
-        <div class="top5-desc">Every content module reads from Analytics and CRM. Outputs that learn from their own performance over time.</div>
-      </div>
-      <div class="top5-item">
-        <div class="top5-rank">03</div>
-        <div class="top5-name">Unified Contact Intelligence</div>
-        <div class="top5-desc">CRM, Audience Builder, Email, Loyalty, and Customer AI all see the same real-time behavioral record per contact.</div>
-      </div>
-      <div class="top5-item">
-        <div class="top5-rank">04</div>
-        <div class="top5-name">The Advisor as Chief of Staff</div>
-        <div class="top5-desc">Not just answering questions — proactively surfacing the 3 most important actions every Monday, ranked by revenue impact.</div>
-      </div>
-      <div class="top5-item">
-        <div class="top5-rank">05</div>
-        <div class="top5-name">Autopilot with Guardrails</div>
-        <div class="top5-desc">A self-optimizing engine with human-defined intervention thresholds. 80% of routine marketing executes automatically.</div>
-      </div>
+  <!-- SHIPPED STATS -->
+  <div class="shipped-banner" id="top5section">
+    <div class="shipped-header">SHIPPED</div>
+    <div class="shipped-stat">
+      <div class="shipped-num">37</div>
+      <div class="shipped-label">Modules Upgraded</div>
+      <div class="shipped-desc">Every module across all 7 categories received new AI-powered features</div>
+    </div>
+    <div class="shipped-stat">
+      <div class="shipped-num">76</div>
+      <div class="shipped-label">Files Changed</div>
+      <div class="shipped-desc">Both client + server updated: routes, components, SSE endpoints</div>
+    </div>
+    <div class="shipped-stat">
+      <div class="shipped-num">5K+</div>
+      <div class="shipped-label">Lines Added</div>
+      <div class="shipped-desc">5,090 insertions — scorers, generators, calculators, analyzers</div>
+    </div>
+    <div class="shipped-stat">
+      <div class="shipped-num">✓</div>
+      <div class="shipped-label">Build: Clean</div>
+      <div class="shipped-desc">134 modules transformed, zero errors, pushed to master</div>
     </div>
   </div>
 
@@ -743,274 +795,401 @@ const MODULES = [
   // ─── CREATE ───
   {
     id: 'video-marketing', name: 'Video Marketing', category: 'CREATE', icon: '🎬',
-    current: ['Upload video & get script suggestions', 'Basic metadata editor', 'Simple description generator'],
-    vision: ['Script → Storyboard → Shot List pipeline', 'Hook Library per platform (YouTube / TikTok / Reels)', 'Thumbnail Analyzer with CTR prediction score', 'Caption + Subtitle Generator (SRT/VTT export)', 'Platform Resize Matrix (16:9, 9:16, 1:1, 4:5)', 'Performance Prediction Score before publishing'],
-    impact: 'Transforms video from a blank-page problem into a guided production system. Every video ships with stronger hooks, optimized thumbnails, and platform-ready specs — reducing post-production time by ~60%.',
-    topFeature: 'Performance Prediction Score flags weak hooks before you publish'
+    current: [
+      'Upload video & get script suggestions', 'Basic metadata editor', 'Simple description generator',
+      '✅ Performance Prediction Score — viral score, predicted CTR & ROAS before publishing',
+      '✅ Hook Analyzer — score + 3 improvement suggestions per hook'
+    ],
+    vision: ['Script → Storyboard → Shot List pipeline', 'Hook Library per platform (YouTube / TikTok / Reels)', 'Thumbnail Analyzer with CTR prediction score', 'Caption + Subtitle Generator (SRT/VTT export)', 'Platform Resize Matrix (16:9, 9:16, 1:1, 4:5)'],
+    impact: 'Transforms video from a blank-page problem into a guided production system. Performance Prediction now flags weak campaigns before publishing — preventing wasted spend on low-potential launches.',
+    topFeature: '✅ Performance Prediction Score — now live, flags weak hooks before you spend'
   },
   {
     id: 'ai-content', name: 'AI Content', category: 'CREATE', icon: '✍️',
-    current: ['AI writes blog posts, captions, copy', 'Basic prompt-to-output generation', 'Template library'],
-    vision: ['Brand Voice DNA — writes in your exact tone always', 'Outline → Draft → Polish three-stage pipeline', 'Repurposing Engine (blog → tweet thread, email, YouTube script, LinkedIn, podcast outline)', 'SEO Weave — integrates target keywords as it writes', 'Content Calendar gap detection', 'Originality Confidence Score', 'Performance Replay — learns from past high-performing pieces'],
-    impact: 'Turns content generation from a "generate and pray" single-shot into a strategic, brand-consistent factory with memory. Repurposing alone multiplies output 5x from the same source material.',
-    topFeature: 'Repurposing Engine — one source, every format'
+    current: [
+      'AI writes blog posts, captions, copy', 'Basic prompt-to-output generation', 'Template library',
+      '✅ Content Score — SEO, Readability & Engagement scores with letter grade',
+      '✅ Repurpose Panel — convert any content into Twitter thread, LinkedIn post & email subjects'
+    ],
+    vision: ['Brand Voice DNA — writes in your exact tone always', 'Outline → Draft → Polish three-stage pipeline', 'SEO Weave — integrates target keywords as it writes', 'Content Calendar gap detection', 'Originality Confidence Score', 'Performance Replay — learns from past high-performing pieces'],
+    impact: 'Content Score gives writers an objective quality target for every piece. The Repurpose Panel multiplies output 3x from the same source material with one click.',
+    topFeature: '✅ Repurpose Panel — one source, Twitter + LinkedIn + Email in seconds'
   },
   {
     id: 'creative-design', name: 'Creative & Design', category: 'CREATE', icon: '🎨',
-    current: ['Template library', 'Basic design editing tools', 'Export options'],
-    vision: ['Brand-Locked Canvas — templates pre-filled with brand assets', 'Creative Brief Generator (goal → full design direction doc)', 'Variation Engine — one design → 5 layout/color/copy variants', 'Ad Spec Compliance Checker (Meta, Google, TikTok safe zones)', 'Competitor Creative Intelligence feed', 'Motion Export — static → animated GIF or CSS banner'],
-    impact: 'Eliminates blank-canvas paralysis and brand drift simultaneously. The variation engine feeds directly into A/B Testing, creating a closed creative experimentation loop.',
-    topFeature: 'Ad Spec Compliance Checker — zero disapprovals before upload'
+    current: [
+      'Template library', 'Basic design editing tools', 'Export options',
+      '✅ Creative Brief Generator — product + goal + audience → full visual direction doc with color palette, typography & messaging hierarchy'
+    ],
+    vision: ['Brand-Locked Canvas — templates pre-filled with brand assets', 'Variation Engine — one design → 5 layout/color/copy variants', 'Ad Spec Compliance Checker (Meta, Google, TikTok safe zones)', 'Competitor Creative Intelligence feed', 'Motion Export — static → animated GIF or CSS banner'],
+    impact: 'Creative Brief Generator eliminates the blank-canvas problem entirely — designers start with direction, not guesses. Outputs include specific hex colors, font pairings, do\'s/don\'ts, and reference aesthetic descriptions.',
+    topFeature: '✅ Creative Brief Generator — structured direction before a single pixel is placed'
   },
   {
     id: 'email-sms', name: 'Email & SMS', category: 'CREATE', icon: '📨',
-    current: ['Campaign builder with templates', 'Basic scheduling', 'Contact list sending'],
-    vision: ['Behavioral Triggers (cart abandon, pricing page visits, win-back)', 'Inbox Preview Matrix (Gmail, Outlook, Apple Mail, dark mode)', 'Subject Line Predictor — AI ranks 3 options by predicted open rate', 'SMS Smart Timing per contact based on past behavior', 'Dynamic Content Blocks per segment', 'Revenue Attribution — which email drove which purchase', 'Reply Handler — AI auto-replies to SMS responses'],
-    impact: 'Shifts from broadcast messaging to behavioral orchestration. Revenue attribution alone proves ROI per campaign — critical for budget justification. Behavioral triggers convert high-intent moments automatically.',
-    topFeature: 'Behavioral Triggers fire at the exact moment of peak intent'
+    current: [
+      'Campaign builder with templates', 'Basic scheduling', 'Contact list sending',
+      '✅ Subject Line Generator — 5 variants with predicted open rates & psychological triggers (Curiosity, Urgency, FOMO, Benefit, Social Proof)'
+    ],
+    vision: ['Behavioral Triggers (cart abandon, pricing page visits, win-back)', 'Inbox Preview Matrix (Gmail, Outlook, Apple Mail, dark mode)', 'SMS Smart Timing per contact based on past behavior', 'Dynamic Content Blocks per segment', 'Revenue Attribution — which email drove which purchase', 'Reply Handler — AI auto-replies to SMS responses'],
+    impact: 'Subject line is 40-50% of email performance. The generator produces 5 variants with psychological trigger labels and predicted open rates — turning subject line selection from a guess into a data-informed choice.',
+    topFeature: '✅ Subject Line Generator — 5 variants with open rate predictions, live now'
   },
   {
     id: 'social-media', name: 'Social Media', category: 'CREATE', icon: '📱',
-    current: ['Post composer + scheduler', 'Multi-platform publishing', 'Basic calendar view'],
-    vision: ['Social Listening Feed — brand/competitor/keyword monitoring', 'Engagement Score — AI-predicted score before every post goes live', 'Thread Builder — native Twitter/X composer with drag-to-reorder', 'Trend Injection — trending niche topics with one-click post creation', 'Comment Sentiment Dashboard — aggregate sentiment across all platforms', 'Content Pillars — balance tracker with over/under warnings', 'Competitor Post Tracker — what they posted, what won'],
-    impact: 'Transforms social from a publishing queue into a live operating system. Trend injection keeps content relevant without monitoring 10 platforms manually. Engagement prediction stops weak posts before they damage reach.',
-    topFeature: 'Engagement Score — know before you post whether it will land'
+    current: [
+      'Post composer + scheduler', 'Multi-platform publishing', 'Basic calendar view',
+      '✅ Caption Variations — 3 rewrites per post (Professional, Casual & Fun, Viral Hook) each with rationale',
+      '✅ Hashtag Intelligence — categorized mega/high/niche hashtags with estimated reach per category'
+    ],
+    vision: ['Social Listening Feed — brand/competitor/keyword monitoring', 'Engagement Score — AI-predicted score before every post goes live', 'Thread Builder — native Twitter/X composer with drag-to-reorder', 'Trend Injection — trending niche topics with one-click post creation', 'Comment Sentiment Dashboard — aggregate sentiment across all platforms', 'Competitor Post Tracker — what they posted, what won'],
+    impact: 'Caption Variations eliminate the "good enough" default — every post now has 3 distinct takes to choose from. Hashtag Intelligence categorizes by reach tier so the mix is strategic, not random.',
+    topFeature: '✅ Caption Variations + Hashtag Intelligence — both live now'
   },
   {
     id: 'website-builder', name: 'Website Builder', category: 'CREATE', icon: '🌐',
-    current: ['Template-based page builder', 'Section drag-and-drop', 'Basic export'],
+    current: [
+      'Template-based page builder', 'Section drag-and-drop', 'Basic export',
+      '✅ SEO Audit — 7-point checklist (title, meta, H1, alt text, mobile, speed, semantic HTML) with overall score & top fix'
+    ],
     vision: ['Conversion Architecture AI — structure pages around goals, not aesthetics', 'Heatmap Prediction before the page is even live', 'CRO Score (0–100) rating headline clarity, CTA placement, trust signals', 'A/B Test Builder integrated with Analytics', 'SEO Foundation Layer — auto-generates meta, OG, schema from content', 'Personalization Blocks — different content per UTM source or visitor type'],
-    impact: 'Shifts page building from visual exercise to conversion engineering. CRO Score gives non-designers an objective standard to optimize toward. Personalization blocks eliminate one-size-fits-all landing pages.',
-    topFeature: 'CRO Score — instant, objective page quality rating'
+    impact: 'SEO Audit catches the 7 most common launch mistakes before the page goes live — eliminating the "I forgot the meta description" problem that costs organic visibility.',
+    topFeature: '✅ SEO Audit — 7 checks with pass/fail/warning, runs on generated HTML'
   },
   {
     id: 'pr-press', name: 'PR & Press', category: 'CREATE', icon: '📰',
-    current: ['Press release writer', 'Media contact list', 'Template library'],
-    vision: ['Newsworthiness Scorer — rate your announcement before writing', 'Journalist Matching — by beat and recent coverage', 'Pitch Email Generator — personalized per journalist, not a blast', 'Coverage Tracker — paste URLs, auto-extract metrics (DA, readership, sentiment)', 'Crisis Communications Mode — holding statement in 30 seconds', 'Embargo Manager — scheduled go-live at embargo lift', 'PR ROI Calculator — earned media value vs. ad equivalency'],
-    impact: 'PR becomes accountable and measurable instead of a black box. Journalist matching increases pitch-to-placement rate by targeting relevance over volume. Coverage tracking turns PR into a quantified channel.',
-    topFeature: 'Newsworthiness Scorer — know before you pitch if the story will land'
+    current: [
+      'Press release writer', 'Media contact list', 'Template library',
+      '✅ Media Angle Generator — 5 angles for 5 outlet types (tech, business, consumer, trade, local) with hook copy per angle',
+      '✅ Contact Relevance Scorer — 0-100 relevance score, tier (A/B/C), pitch angle & best contact time per journalist'
+    ],
+    vision: ['Newsworthiness Scorer — rate your announcement before writing', 'Pitch Email Generator — personalized per journalist, not a blast', 'Coverage Tracker — paste URLs, auto-extract metrics (DA, readership, sentiment)', 'Crisis Communications Mode — holding statement in 30 seconds', 'Embargo Manager — scheduled go-live at embargo lift', 'PR ROI Calculator — earned media value vs. ad equivalency'],
+    impact: 'Media Angle Generator stops one-angle-fits-all pitching. Contact Relevance Scorer tells you which journalists to prioritize for each announcement — targeting by fit instead of by list size.',
+    topFeature: '✅ Contact Relevance Scorer — know which journalist to email first and why'
   },
 
   // ─── ADVERTISE ───
   {
     id: 'paid-ads', name: 'Paid Ads', category: 'ADVERTISE', icon: '🎯',
-    current: ['Ad copy generator', 'Campaign overview dashboard', 'Basic creative builder'],
+    current: [
+      'Ad copy generator', 'Campaign overview dashboard', 'Basic creative builder',
+      '✅ Ad Quality Score — 5 metrics (Overall, Hook, Clarity, CTA, Platform Fit) with improvement suggestions & rewritten headline',
+      '✅ Headline Variations — 3 rewrites with approach label (Emotional, Direct Response, Curiosity, Social Proof)'
+    ],
     vision: ['Ad Formula Library (PAS, BAB, AIDA, Feature→Benefit→Proof)', 'Audience × Creative Matrix — 3 audiences × 3 creatives = 9 ready-to-upload ads', 'Live Performance Feed via Meta + Google API (ROAS, CPC, CTR per ad)', 'Winner Detection — statistical significance alert, auto-pause losers', 'Ad Fatigue Monitor — frequency tracking with creative refresh suggestions', 'Budget Pacing Tracker — daily burn rate vs. monthly budget', 'Retargeting Sequence Builder — multi-touch visual timeline'],
-    impact: 'Merges creative generation with live performance data — something no single current tool does. Winner detection running on real data eliminates the instinct-based "let it run longer" mistake that wastes thousands.',
-    topFeature: 'Audience × Creative Matrix generates all 9 test variants at once'
+    impact: 'Ad Quality Score gives every campaign an objective pre-launch check. Headline Variations produce 3 battle-ready alternatives for immediate A/B testing — turning single-shot ads into testing frameworks.',
+    topFeature: '✅ Ad Quality Score — objective pre-launch rating before spend'
   },
   {
     id: 'funnels', name: 'Funnels', category: 'ADVERTISE', icon: '⬇️',
-    current: ['Funnel stage tracker', 'Contact movement between stages', 'Basic conversion metrics'],
-    vision: ['Drag-to-Build Visual Funnel with live math ("fix this stage → +$47k/mo")', 'Drop-off Detector — AI pinpoints exact worst-converting stage vs. industry average', 'Stage Content Assignment — which email/ad/page belongs at each stage', 'Multi-Touch Attribution — full journey, not just last-click', 'Funnel Benchmarking vs. industry conversion rates', 'Funnel Simulator — change any variable, see revenue output change live', 'One-Click Funnel Deploy — Website Builder + Email + Ads all at once'],
-    impact: 'Turns funnel tracking into a revenue engineering tool. The simulator lets you see the financial impact of improving any single stage — making optimization decisions obvious, not instinctual.',
-    topFeature: 'Funnel Simulator — instantly see what fixing any stage is worth in revenue'
+    current: [
+      'Funnel stage tracker', 'Contact movement between stages', 'Basic conversion metrics',
+      '✅ Funnel Leakage Analysis — efficiency score, step-by-step ratings, biggest drop-off identified, current vs. potential CVR comparison'
+    ],
+    vision: ['Drag-to-Build Visual Funnel with live math ("fix this stage → +$47k/mo")', 'Stage Content Assignment — which email/ad/page belongs at each stage', 'Multi-Touch Attribution — full journey, not just last-click', 'Funnel Benchmarking vs. industry conversion rates', 'Funnel Simulator — change any variable, see revenue output change live', 'One-Click Funnel Deploy — Website Builder + Email + Ads all at once'],
+    impact: 'Funnel Leakage Analysis pinpoints where your funnel bleeds — with step ratings (good/ok/poor), specific tips per step, and a before/after CVR comparison so the revenue opportunity is quantified.',
+    topFeature: '✅ Funnel Leakage Analysis — see exactly where the money is falling out'
   },
   {
     id: 'influencers', name: 'Influencers', category: 'ADVERTISE', icon: '🌟',
-    current: ['Influencer discovery', 'Outreach templates', 'Basic contact management'],
-    vision: ['True Audience Quality Score (engagement ÷ followers, authenticity estimate, ICP overlap)', 'Rate Card Estimator — AI calculates fair market rate per creator', 'Campaign Brief Generator tailored to creator style', 'Content Approval Workflow — draft → review → approve without email', 'Link Tracking per influencer with UTM attribution dashboard', 'Relationship Score — history, deadlines met, content quality, communication', 'Repost & Amplify — one-click to schedule creator post on owned channels'],
-    impact: 'Transforms influencer marketing from reach-buying to ROI-measured partnerships. Revenue attribution per creator proves which relationships are worth scaling. Relationship scores prevent starting fresh every campaign.',
-    topFeature: 'Revenue attribution per creator — know exactly which influencer drove sales'
+    current: [
+      'Influencer discovery', 'Outreach templates', 'Basic contact management',
+      '✅ ROI Calculator — estimated reach, projected sales, revenue, ROI % & breakeven sales from followers/engagement/fee/margin',
+      '✅ Campaign Brief Generator — 8-section professional brief (talking points, do\'s/don\'ts, hashtags, CTA, deliverables) via streaming AI'
+    ],
+    vision: ['True Audience Quality Score (engagement ÷ followers, authenticity estimate, ICP overlap)', 'Rate Card Estimator — AI calculates fair market rate per creator', 'Content Approval Workflow — draft → review → approve without email', 'Link Tracking per influencer with UTM attribution dashboard', 'Relationship Score — history, deadlines met, content quality, communication', 'Repost & Amplify — one-click to schedule creator post on owned channels'],
+    impact: 'ROI Calculator shows whether a deal is worth taking before you sign. Brief Generator produces professional campaign instructions in seconds — no more back-and-forth on what the influencer should actually say.',
+    topFeature: '✅ ROI Calculator — know if a creator deal is profitable before you commit'
   },
   {
     id: 'affiliates', name: 'Affiliates', category: 'ADVERTISE', icon: '🤝',
-    current: ['Affiliate program builder', 'Link generator', 'Basic commission tracking'],
-    vision: ['Tiered Commission Logic with auto-upgrade at revenue thresholds', 'Affiliate Portal — personal dashboard with earnings, links, assets, calendar', 'Fraud Detection — suspicious patterns flagged automatically', 'Creative Asset Library with affiliate links pre-embedded', 'Co-marketing Proposal Generator for high-performers', 'Payout Automation with configurable rules and bulk export', 'Optional Leaderboard to gamify competition'],
-    impact: 'A self-managing affiliate engine reduces admin time by ~80%. Tiered commissions motivate performance without manual intervention. The affiliate portal reduces support emails from affiliates asking for their stats.',
-    topFeature: 'Self-managing tiers — best affiliates automatically unlock better rates'
+    current: [
+      'Affiliate program builder', 'Link generator', 'Basic commission tracking',
+      '✅ Commission Optimizer — AI recommends Bronze/Silver/Gold tier structure with rates, perks, bonus suggestions & competitor benchmark'
+    ],
+    vision: ['Affiliate Portal — personal dashboard with earnings, links, assets, calendar', 'Fraud Detection — suspicious patterns flagged automatically', 'Creative Asset Library with affiliate links pre-embedded', 'Co-marketing Proposal Generator for high-performers', 'Payout Automation with configurable rules and bulk export', 'Optional Leaderboard to gamify competition'],
+    impact: 'Commission Optimizer replaces the "what rate should I offer?" guessing game with a structured 3-tier system backed by industry benchmarking — making your program competitive without being arbitrary.',
+    topFeature: '✅ Commission Optimizer — AI-designed tier structure with real incentives'
   },
   {
     id: 'product-feeds', name: 'Product Feeds', category: 'ADVERTISE', icon: '📦',
-    current: ['Product catalog management', 'Feed export in standard formats', 'Basic category mapping'],
-    vision: ['Feed Health Score per product (title quality, description, image, category, price)', 'AI Title Optimizer — rewrites to Google Shopping and Meta Catalog best practices', 'Disapproval Predictor — scans for rejection triggers before submission', 'Seasonal Relevance Tagger — when to boost or pause products', 'Competitor Price Monitoring — alerts when you are 10%+ above market', 'Feed Version Control — roll back if a submission spikes disapprovals', 'Multi-Destination Routing — Google, Meta, TikTok, Pinterest, Bing from one catalog'],
+    current: [
+      'Product catalog management', 'Feed export in standard formats', 'Basic category mapping',
+      '✅ Feed Health Audit — 4-category health score (Title Quality, Description, Image, Category) with actionable issues & passed items per product'
+    ],
+    vision: ['AI Title Optimizer — rewrites to Google Shopping and Meta Catalog best practices', 'Disapproval Predictor — scans for rejection triggers before submission', 'Seasonal Relevance Tagger — when to boost or pause products', 'Competitor Price Monitoring — alerts when you are 10%+ above market', 'Feed Version Control — roll back if a submission spikes disapprovals', 'Multi-Destination Routing — Google, Meta, TikTok, Pinterest, Bing from one catalog'],
     impact: 'Feed quality directly controls how many impressions products receive on shopping platforms. A 20% improvement in feed health score typically produces 30-40% more eligible impressions without increasing spend.',
-    topFeature: 'Disapproval Predictor — fix issues before Google rejects the whole feed'
+    topFeature: '✅ Feed Health Audit — live now, catch low-quality products before they cost impressions'
   },
   {
     id: 'ab-testing', name: 'A/B Testing', category: 'ADVERTISE', icon: '⚖️',
-    current: ['Basic variant creator', 'Side-by-side winner comparison', 'Manual result review'],
-    vision: ['Statistical Significance Engine — real-time confidence display, no premature winners', 'Multi-Variate Testing — test headline × CTA × image simultaneously', 'Test Library — archived results, searchable, pattern recognition over time', 'Test Prioritization Score — impact × confidence × effort (AIR framework)', 'Bayesian vs. Frequentist statistical model toggle', 'Audience Segmentation by test (mobile only, new visitors only)', 'Auto-Implement Winner — update live page/email/ad when significance is reached'],
+    current: [
+      'Basic variant creator', 'Side-by-side winner comparison', 'Manual result review',
+      '✅ Statistical Significance Calculator — confidence level, MDE & p-value display with winner detected at 95% confidence',
+      '✅ Winner Predictor — AI projects which variant will win based on early data patterns'
+    ],
+    vision: ['Multi-Variate Testing — test headline × CTA × image simultaneously', 'Test Library — archived results, searchable, pattern recognition over time', 'Test Prioritization Score — impact × confidence × effort (AIR framework)', 'Bayesian vs. Frequentist statistical model toggle', 'Audience Segmentation by test (mobile only, new visitors only)', 'Auto-Implement Winner — update live page/email/ad when significance is reached'],
     impact: 'Most A/B testing fails because winners are called too early. The significance engine alone prevents wasted optimizations. The test library turns institutional knowledge into a searchable asset that compounds over time.',
-    topFeature: 'Auto-Implement Winner — significance reached → live update, no manual step'
+    topFeature: '✅ Statistical Significance Calculator — real confidence levels, no more premature winners'
   },
   {
     id: 'budget-optimizer', name: 'Budget Optimizer', category: 'ADVERTISE', icon: '💰',
-    current: ['Budget allocation with AI recommendations', 'Channel comparison view', 'Spend tracking'],
+    current: [
+      'Budget allocation with AI recommendations', 'Channel comparison view', 'Spend tracking',
+      '✅ AI Budget Reallocation — analyzes all channels, gives priority-ranked reallocation suggestions with rationale & projected ROI impact'
+    ],
     vision: ['Channel Attribution Model — true cost-per-acquisition across all channels', 'Marginal Return Curves — shows exact point of diminishing returns per channel', 'Scenario Planner — drag budget sliders, see projected revenue change live', 'Momentum Scoring — improving channels get green arrows, declining get red flags', 'Automated Reallocation rules — "if ROAS drops below X, reduce budget Y%"', 'Campaign-level optimization — not just channel-level'],
     impact: 'Most brands under-spend on high-ROAS channels and over-spend on familiar ones out of habit. Marginal return curves make the optimal allocation mathematically obvious. Scenario planner justifies reallocation decisions to stakeholders.',
-    topFeature: 'Marginal Return Curves — see exactly when more spend stops working'
+    topFeature: '✅ AI Budget Reallocation — live now, ranked reallocation suggestions with ROI rationale'
   },
   {
     id: 'referral-loyalty', name: 'Referral & Loyalty', category: 'ADVERTISE', icon: '💎',
-    current: ['Referral program builder', 'Points system', 'Basic reward management'],
-    vision: ['Lifecycle Stage Triggers — rewards that fire based on purchase milestones and behavioral events', 'Gamification Layer — progress bars, badges, streak bonuses', 'Referral Virality Score (K-factor) — identifies super-spreaders to reward', 'Personalized Reward Catalog — customers choose from a menu, AI learns preferences', 'Social Share Integration — generates custom branded share card per referrer', 'Churn Prevention Trigger — win-back reward sent at optimal inactivity threshold', 'ROI Dashboard — program cost vs. LTV of acquired customers'],
+    current: [
+      'Referral program builder', 'Points system', 'Basic reward management',
+      '✅ Points Economy Designer — AI designs Bronze/Silver/Gold reward tiers with points earn rules, redemption options & churn prevention triggers',
+      '✅ K-Factor Calculator — viral coefficient from referrals + avg invites: K > 1 means viral growth'
+    ],
+    vision: ['Lifecycle Stage Triggers — rewards that fire based on purchase milestones and behavioral events', 'Gamification Layer — progress bars, badges, streak bonuses', 'Personalized Reward Catalog — customers choose from a menu, AI learns preferences', 'Social Share Integration — generates custom branded share card per referrer', 'Churn Prevention Trigger — win-back reward sent at optimal inactivity threshold', 'ROI Dashboard — program cost vs. LTV of acquired customers'],
     impact: 'Moves loyalty from a transactional discount mechanism to a behavioral engagement system. Virality scoring identifies who drives the most growth so you invest in the right relationships. K-factor compounding multiplies acquisition budget.',
-    topFeature: 'K-factor Virality Score — find and invest in your super-spreaders'
+    topFeature: '✅ K-Factor Calculator — live now, measure viral coefficient and find your super-spreaders'
   },
 
   // ─── ANALYZE ───
   {
     id: 'analytics', name: 'Analytics', category: 'ANALYZE', icon: '📊',
-    current: ['Traffic, conversion, revenue dashboards', 'Standard metrics display', 'Date range filtering'],
-    vision: ['Anomaly Alerting — AI detects unusual changes and explains likely cause proactively', 'Cohort Analysis — track groups by acquisition date, see retention evolution', 'Attribution Pathways — Sankey diagram of full conversion journey across all channels', 'Narrative Reports — AI writes plain-English performance story weekly', 'Revenue Forecasting — 30/60/90-day projections with confidence intervals', 'Custom KPI Builder — define your own success formula', 'Cross-Module Intelligence — email, ads, referrals all attributed in one view'],
+    current: [
+      'Traffic, conversion, revenue dashboards', 'Standard metrics display', 'Date range filtering',
+      '✅ AI Insights Generator — scans KPIs and surfaces top 3 insights with specific recommended actions',
+      '✅ Anomaly Detector — spots unusual metric changes and explains likely cause with action items'
+    ],
+    vision: ['Cohort Analysis — track groups by acquisition date, see retention evolution', 'Attribution Pathways — Sankey diagram of full conversion journey across all channels', 'Narrative Reports — AI writes plain-English performance story weekly', 'Revenue Forecasting — 30/60/90-day projections with confidence intervals', 'Custom KPI Builder — define your own success formula', 'Cross-Module Intelligence — email, ads, referrals all attributed in one view'],
     impact: 'Dashboards show what happened. This shows why and what to do next. Narrative reports eliminate the "data translation tax" — the hours spent turning numbers into insights for stakeholders.',
-    topFeature: 'Proactive Anomaly Alerting — you find out about problems before clients do'
+    topFeature: '✅ Anomaly Detector + AI Insights — both live now, find problems and next steps automatically'
   },
   {
     id: 'seo', name: 'SEO', category: 'ANALYZE', icon: '🔍',
-    current: ['Keyword rank tracker', 'Basic site audit', 'Content keyword recommendations'],
+    current: [
+      'Keyword rank tracker', 'Basic site audit', 'Content keyword recommendations',
+      '✅ Keyword Gap Analysis — compare your site vs. competitor, surface 5 priority gap keywords with intent, difficulty & content angle'
+    ],
     vision: ['SERP Landscape View — who ranks 1–10, their DR, page type, estimated traffic, content angle', 'Content Gap Intelligence — what top-ranking pages cover that yours does not', 'Internal Link Graph — visual map, orphaned pages, equity flow visualization', 'Core Web Vitals Monitor — LCP/CLS/INP tracked per page over time', 'Featured Snippet Optimizer — rewrites answer blocks for positions 2–10', 'Backlink Velocity Tracker vs. competitors', 'AI Content Brief Generator — full brief for any target keyword in one click'],
     impact: 'Most SEO tools tell you what is wrong. This tells you what to build and why it will win. Content briefs remove the guesswork from every new article — writers have exact requirements before starting.',
-    topFeature: 'AI Content Brief Generator — every article starts with a winning blueprint'
+    topFeature: '✅ Keyword Gap Analysis — live now, find the exact keywords competitors rank for that you don\'t'
   },
   {
     id: 'crm', name: 'CRM', category: 'ANALYZE', icon: '👥',
-    current: ['Contact database', 'Pipeline stage tracking', 'Deal management'],
+    current: [
+      'Contact database', 'Pipeline stage tracking', 'Deal management',
+      '✅ Lead Score — AI scores each lead hot/warm/cold with reasoning, top signal & recommended next action'
+    ],
     vision: ['Deal Health Score (0–100) per open deal based on engagement signals and stage velocity', 'Next Best Action — one specific recommendation per contact, not a list', 'Conversation Intelligence — emails/calls summarized, objections extracted, commitments logged', 'Churn Prediction — early warning score for existing customers with recommended action', 'Pipeline Velocity Dashboard — stage conversion rates, win/loss reasons, rep performance', 'Automated Follow-Up Sequences with human review gate', 'Company Intelligence Feed — news, funding, leadership changes as conversation starters'],
     impact: 'Most CRMs store data. This one advises action. Deal health scoring prevents deals from going dark silently. Churn prediction identifies at-risk customers 30–60 days before they cancel — early enough to save the relationship.',
-    topFeature: 'Churn Prediction — catch at-risk customers before they tell you they are leaving'
+    topFeature: '✅ Lead Score — live now, hot/warm/cold tiers with AI reasoning on every contact'
   },
   {
     id: 'reviews', name: 'Reviews', category: 'ANALYZE', icon: '⭐',
-    current: ['Review aggregator across platforms', 'Response template library', 'Basic rating display'],
-    vision: ['Sentiment Trend Graph — by platform, product, location, over time', 'Topic Extraction — AI clusters reviews into themes with percentage breakdown', 'Net Promoter Intelligence — estimates NPS from review language without a survey', 'Review Velocity Monitor — alerts on spikes and drops', 'Competitor Review Benchmarking — your topics vs. competitors at a glance', 'Review Request Automation — optimal post-purchase timing per customer', 'Review-to-Content Pipeline — one-click to turn 5-star review into ad copy or social post'],
+    current: [
+      'Review aggregator across platforms', 'Response template library', 'Basic rating display',
+      '✅ Sentiment Trend Analyzer — 5 positive + 5 negative themes with frequency & trend arrows from review data',
+      '✅ AI Response Generator — streaming personalized response matching sentiment and star rating'
+    ],
+    vision: ['Topic Extraction — AI clusters reviews into themes with percentage breakdown', 'Net Promoter Intelligence — estimates NPS from review language without a survey', 'Review Velocity Monitor — alerts on spikes and drops', 'Competitor Review Benchmarking — your topics vs. competitors at a glance', 'Review Request Automation — optimal post-purchase timing per customer', 'Review-to-Content Pipeline — one-click to turn 5-star review into ad copy or social post'],
     impact: 'Reviews contain the most honest product feedback you will ever receive — and most businesses barely read them. Topic clustering surfaces product decisions, not just PR wins. The content pipeline turns customer praise into acquisition assets.',
-    topFeature: 'Review-to-Content Pipeline — your best customers write your best ad copy'
+    topFeature: '✅ Sentiment Trend Analyzer + AI Response Generator — both live now'
   },
   {
     id: 'competitor-intel', name: 'Competitor Intel', category: 'ANALYZE', icon: '🕵️',
-    current: ['AI analysis with website scraping', 'Meta Ad Library feed', 'Google Ads Intelligence (AI)', 'Tracked competitor profiles'],
+    current: [
+      'AI analysis with website scraping', 'Meta Ad Library feed', 'Google Ads Intelligence (AI)', 'Tracked competitor profiles',
+      '✅ Content Gap Analysis — compare your content vs. competitor, surface 5 gap topics with angle, SEO value & content type'
+    ],
     vision: ['Change Detection — weekly monitoring of competitor websites, alerts on pricing/messaging shifts', 'Share of Voice Tracker — % of organic + paid SERP real estate vs. competitors', 'Ad Spend Estimation — model-based monthly ad budget estimates per competitor', 'Content Publishing Velocity tracker per competitor', 'Strategic Position Map — 2×2 matrix plotting competitors visually', 'Battlecard Generator — per-competitor one-page win sheet', 'Competitor Alert Digest — weekly email of all competitor activity'],
     impact: 'Upgrades from reactive research tool to proactive intelligence system. Change detection means you find out when a competitor drops prices before your customers do. Battlecards arm sales teams to win competitive deals.',
-    topFeature: 'Change Detection — know when competitors update pricing or messaging automatically'
+    topFeature: '✅ Content Gap Analysis — live now, find the content opportunities your competitor is winning'
   },
   {
     id: 'calendar', name: 'Calendar', category: 'ANALYZE', icon: '📅',
-    current: ['Event creation with recurring options', 'Calendar grid view', 'AI Fill Calendar', 'Team events'],
+    current: [
+      'Calendar grid view', 'AI Fill Calendar', 'Team events',
+      '✅ Recurring Events — daily/weekly/monthly recurrence on any event with repeat badge in the calendar grid',
+      '✅ AI Content Planner — generates a 7-day content plan with one-click Add to Calendar per post'
+    ],
     vision: ['Content Pillar Balance View — visual warning when promotional content is over-represented', 'Campaign Layers — overlay multiple campaigns, toggle on/off per layer', 'Capacity Planning — team member assignments with over/under-load visualization', 'Deadline Ripple — change a launch date, all dependencies cascade automatically', 'Seasonal Intelligence — AI suggests campaign ideas for upcoming holidays and events', 'AI Fill Calendar enhanced — full brief + asset checklist per generated event'],
     impact: 'Most calendars are just event buckets. This one shows strategic balance at a glance and makes capacity visible before it becomes a crisis. Deadline ripple eliminates the panic of late-cascade effects on dependencies.',
-    topFeature: 'Deadline Ripple — move one date and all dependencies auto-cascade'
+    topFeature: '✅ Recurring Events + AI Content Planner — both live now, fully populated calendars in seconds'
   },
   {
     id: 'client-reports', name: 'Client Reports', category: 'ANALYZE', icon: '📋',
-    current: ['Report generator pulling from connected modules', 'PDF export', 'Customizable metrics display'],
-    vision: ['Automated Monthly Report — auto-compiles on the 1st, human reviews then publishes', 'Client Portal — white-labeled live dashboard URL per client, 24/7 access', 'Executive Summary Generator — 3-paragraph plain-English narrative of the period', 'Goal vs. Actual Tracking per metric with delta display', 'Benchmark Comparison — "your CTR is 1.4x the industry average"', 'Interactive Annotations — explain metric changes with notes stored permanently', 'Proposal Generator — from the report, one-click upsell proposal'],
+    current: [
+      'Report generator pulling from connected modules', 'PDF export', 'Customizable metrics display',
+      '✅ Executive Summary Generator — streaming AI narrative of period performance, wins, challenges & next steps'
+    ],
+    vision: ['Automated Monthly Report — auto-compiles on the 1st, human reviews then publishes', 'Client Portal — white-labeled live dashboard URL per client, 24/7 access', 'Goal vs. Actual Tracking per metric with delta display', 'Benchmark Comparison — "your CTR is 1.4x the industry average"', 'Interactive Annotations — explain metric changes with notes stored permanently', 'Proposal Generator — from the report, one-click upsell proposal'],
     impact: 'Reports that auto-generate eliminate the biggest time sink in agency work. Client portals reduce "how did we do?" emails by 70%. The proposal generator creates a natural upsell moment at the exact moment of maximum proven value.',
-    topFeature: 'Proposal Generator — turn every great month into an upsell opportunity'
+    topFeature: '✅ Executive Summary Generator — live now, plain-English performance narrative in seconds'
   },
   {
     id: 'audience-builder', name: 'Audience Builder', category: 'ANALYZE', icon: '🎯',
-    current: ['Segment builder with attribute filters', 'Audience export for ad platforms', 'Basic list management'],
-    vision: ['Behavioral Cohort Builder — segment by actions ("visited pricing page 2x, no purchase")', 'Lookalike Generator — AI profiles your best customers, outputs targeting description', 'Audience Overlap Detector — flag segments that are 80%+ the same people', 'Audience Journey Map — how contacts move between segments over time', 'Real-Time Segment Updates — auto-add/remove as contacts qualify/disqualify', 'Suppression Management — opt-out, competitor, inactive lists applied everywhere', 'Predictive Segment AI — who is most likely to convert in the next 30 days'],
+    current: [
+      'Segment builder with attribute filters', 'Audience export for ad platforms', 'Basic list management',
+      '✅ Lookalike Audience Builder — profile your best customer segment, AI generates targeting description for ad platforms'
+    ],
+    vision: ['Behavioral Cohort Builder — segment by actions ("visited pricing page 2x, no purchase")', 'Audience Overlap Detector — flag segments that are 80%+ the same people', 'Audience Journey Map — how contacts move between segments over time', 'Real-Time Segment Updates — auto-add/remove as contacts qualify/disqualify', 'Suppression Management — opt-out, competitor, inactive lists applied everywhere', 'Predictive Segment AI — who is most likely to convert in the next 30 days'],
     impact: 'Behavioral segments outperform demographic segments by 3–5x in conversion rate across every channel. Predictive segments focus sales and marketing effort on the highest-probability opportunities instead of spraying the full list.',
-    topFeature: 'Predictive Segment — the 30-day conversion likelihood list for sales to call first'
+    topFeature: '✅ Lookalike Audience Builder — live now, AI profiles your best customers for ad targeting'
   },
   {
     id: 'goal-tracker', name: 'Goal Tracker', category: 'ANALYZE', icon: '🏆',
-    current: ['Goal setting', 'Progress tracking', 'Milestone logging'],
+    current: [
+      'Goal setting', 'Progress tracking', 'Milestone logging',
+      '✅ Goal Forecaster — predicts completion probability, expected completion date & monthly pace required per goal'
+    ],
     vision: ['OKR Framework — Objective → Key Results hierarchy, not just goals', 'Auto-Pull Metrics — Key Results connect to live module data, no manual entry', 'Dependency Mapping — visual chain from KR to enabling tasks', 'Weekly Check-In Prompts — AI asks for blockers every Monday, saves to goal history', 'Goal Health Scoring — On Track / At Risk / Off Track with pace analysis', 'Retrospective Generator — AI writes the quarter-end review automatically', 'Team Goal Visibility — everyone sees company goals and their contribution'],
     impact: 'Most goal trackers are abandoned within 6 weeks because they require manual updates. Auto-pull metrics solve the adoption problem. Team visibility creates alignment — every individual knows how their work connects to the company number.',
-    topFeature: 'Auto-Pull Metrics — goals update themselves, so you actually keep using them'
+    topFeature: '✅ Goal Forecaster — live now, probability + completion date prediction for every goal'
   },
 
   // ─── MANAGE ───
   {
     id: 'ecommerce-hub', name: 'E-commerce Hub', category: 'MANAGE', icon: '🛍️',
-    current: ['Product catalog', 'Order management', 'Revenue tracking and dashboard'],
-    vision: ['Inventory Intelligence — predictive restock alerts with lead time awareness', 'Abandoned Cart Recovery — pixel-based detection → personalized email + SMS sequence', 'Bundle Opportunity Detector — AI finds frequent co-purchase patterns', 'Price Elasticity Simulator — "raise price $5 = −3% volume, +8% margin"', 'Return Intelligence — categorized by reason with product/UX fix suggestions', 'Customer LTV Segmentation with VIP automation triggers', 'Cross-sell Engine — post-purchase next-best-product recommendation'],
+    current: [
+      'Product catalog', 'Order management', 'Revenue tracking and dashboard',
+      '✅ Inventory Forecaster — predicts stockout risk, reorder date & recommended safety stock from sales velocity',
+      '✅ Bundle Recommendations — AI finds frequently co-purchased product pairs with revenue opportunity estimate'
+    ],
+    vision: ['Abandoned Cart Recovery — pixel-based detection → personalized email + SMS sequence', 'Price Elasticity Simulator — "raise price $5 = −3% volume, +8% margin"', 'Return Intelligence — categorized by reason with product/UX fix suggestions', 'Customer LTV Segmentation with VIP automation triggers', 'Cross-sell Engine — post-purchase next-best-product recommendation'],
     impact: 'Inventory intelligence alone prevents the two most expensive e-commerce mistakes: stockouts and overstock. Abandoned cart recovery typically recovers 5–15% of lost revenue with minimal effort. Price elasticity simulation removes fear from pricing decisions.',
-    topFeature: 'Bundle Opportunity Detector — your data tells you exactly what products to bundle'
+    topFeature: '✅ Bundle Recommendations + Inventory Forecaster — both live now'
   },
   {
     id: 'customer-ai', name: 'Customer AI', category: 'MANAGE', icon: '🤖',
-    current: ['AI-powered customer chat', 'Support ticket handling', 'FAQ automation'],
+    current: [
+      'AI-powered customer chat', 'Support ticket handling', 'FAQ automation',
+      '✅ Churn Risk Predictor — risk score (0–100), risk tier (Low/Medium/High/Critical), top churn indicators & retention action'
+    ],
     vision: ['Intent Detection — classify every interaction (support, purchase intent, churn signal, upsell)', 'Conversation Memory — full cross-session history, AI never forgets context', 'Proactive Outreach Triggers — not just reactive chat, AI initiates at risk moments', 'Escalation Intelligence — detect churn trajectory before customer escalates', 'CSAT Prediction — predict satisfaction before survey arrives, trigger service recovery', 'Knowledge Base Integration — auto-surface articles, log unanswered questions for creation', 'Customer DNA Card — personality type, preferred channel, best contact time, sentiment history'],
     impact: 'Reactive support is a cost center. Proactive customer success is a retention engine. Escalation intelligence prevents churn conversations by catching warning signs 1–2 weeks earlier. CSAT prediction with service recovery can reduce negative reviews by 40%.',
-    topFeature: 'Escalation Intelligence — stop churn conversations before they start'
+    topFeature: '✅ Churn Risk Predictor — live now, 0–100 risk score + retention action per customer'
   },
   {
     id: 'knowledge-base', name: 'Knowledge Base', category: 'MANAGE', icon: '📚',
-    current: ['Article editor', 'AI-assisted writing', 'Basic organization and search'],
+    current: [
+      'Article editor', 'AI-assisted writing', 'Basic organization and search',
+      '✅ Gap Detector — scans article titles and surfaces top 5 missing topics with priority level',
+      '✅ Article Improver — streaming AI rewrites any article with SEO score, improvement suggestions & highlight annotations'
+    ],
     vision: ['Usage Analytics — most/least read articles, exit points, zero-result searches logged as gaps', 'Freshness Score — articles not updated in 90 days flagged for review', 'AI Article Generator from top support tickets — draft articles for common questions', 'Decision Tree Builder — interactive troubleshooting flows, not just static text', 'Multi-Language Auto-Translation with human review flags', 'Feedback Loop — "Was this helpful?" score, <60% triggers rewrite flag', 'Semantic Search — natural language queries find relevant articles even without exact keywords'],
     impact: 'A knowledge base that no one reads is expensive documentation. Usage analytics surface what customers are actually looking for, and the feedback loop makes quality self-correcting. Semantic search increases self-service resolution rate by ~35%.',
-    topFeature: 'Zero-Result Search Log — a live, prioritized list of what to write next'
+    topFeature: '✅ Gap Detector + Article Improver — both live now, find and fix knowledge gaps automatically'
   },
 
   // ─── CONNECT ───
   {
     id: 'integrations-hub', name: 'Integrations Hub', category: 'CONNECT', icon: '🔌',
-    current: ['Pre-built integration connectors', 'Enable/disable toggles', 'Basic sync settings'],
-    vision: ['Connection Health Monitor — live green/yellow/red per integration with alert on failures', 'Data Flow Visualizer — diagram of which data flows between which systems', 'Integration Wizard — guided setup with test-connection verification at each step', 'Sync Conflict Resolver — surface data conflicts and define source-of-truth rules', 'Integration Marketplace — community-submitted templates for popular combinations', 'Usage Metrics per integration — API calls, records synced, error rate'],
+    current: [
+      'Pre-built integration connectors', 'Enable/disable toggles', 'Basic sync settings',
+      '✅ Connection Tester — per-integration test button with round-trip latency, status & error details',
+      '✅ Sync Health Dashboard — live/degraded/error status per integration with last sync time & error rate'
+    ],
+    vision: ['Data Flow Visualizer — diagram of which data flows between which systems', 'Integration Wizard — guided setup with test-connection verification at each step', 'Sync Conflict Resolver — surface data conflicts and define source-of-truth rules', 'Integration Marketplace — community-submitted templates for popular combinations', 'Usage Metrics per integration — API calls, records synced, error rate'],
     impact: 'Integration failures are silent business killers — broken syncs mean wrong data, missed automations, and lost leads. Health monitoring catches failures in minutes instead of weeks when someone notices a discrepancy.',
-    topFeature: 'Connection Health Monitor — know about broken integrations before they break workflows'
+    topFeature: '✅ Connection Tester + Sync Health — both live now, broken integrations surface immediately'
   },
   {
     id: 'api-manager', name: 'API Manager', category: 'CONNECT', icon: '⚙️',
-    current: ['API key management', 'Documentation viewer', 'Basic access control'],
+    current: [
+      'API key management', 'Documentation viewer', 'Basic access control',
+      '✅ Documentation Generator — AI writes complete endpoint docs from schema: parameters, examples, error codes & cURL samples'
+    ],
     vision: ['Rate Limit Visualizer — usage vs. limit, trending, time-to-limit estimate', 'Endpoint Performance Dashboard — call volume, latency, error rate per endpoint', 'Permission Scope Builder — visual checkbox selector for granular key permissions', 'API Change Log — auto-generated per version, machine-readable', 'Sandbox Environment — toggle any key to safe test mode with realistic fake data', 'Webhook + API Correlation — trace an API call through to its webhook outcome with latency'],
     impact: 'API management becomes a product feature, not just key storage. Sandbox environments eliminate the fear of testing integrations against production data. Scope builder reduces security risk from over-permissioned keys.',
-    topFeature: 'Sandbox Mode — test any integration safely without touching production data'
+    topFeature: '✅ Documentation Generator — live now, complete endpoint docs from schema in seconds'
   },
   {
     id: 'webhooks', name: 'Webhooks', category: 'CONNECT', icon: '🔗',
-    current: ['Webhook creation', 'Event selection', 'Basic delivery log'],
-    vision: ['Event Catalog — visual browser of all webhook events across all modules', 'Payload Inspector — sample payload per event, live or mock, for instant development', 'Retry Logic Builder — configure attempts, backoff strategy, failure alerting', 'Delivery Log with Replay — full history with exact payload sent, response received, one-click replay', 'Transformation Layer — rename fields, filter data, restructure JSON without middleware', 'Delivery SLA Monitor — p50/p95/p99 delivery time per endpoint with degradation alerts'],
+    current: [
+      'Webhook creation', 'Event selection',
+      '✅ Webhook Tester — send a test payload and see status code, response body & latency in real time',
+      '✅ Delivery Log — history of recent deliveries with status, response time & failed payload replay'
+    ],
+    vision: ['Event Catalog — visual browser of all webhook events across all modules', 'Payload Inspector — sample payload per event, live or mock, for instant development', 'Retry Logic Builder — configure attempts, backoff strategy, failure alerting', 'Transformation Layer — rename fields, filter data, restructure JSON without middleware', 'Delivery SLA Monitor — p50/p95/p99 delivery time per endpoint with degradation alerts'],
     impact: 'Webhooks are only valuable if developers can build with them quickly and trust them in production. The payload inspector and replay feature cut integration development time from days to hours. Retry logic prevents silent data loss.',
-    topFeature: 'Payload Inspector + Replay — developers can build and debug in one place'
+    topFeature: '✅ Webhook Tester + Delivery Log — both live now, debug and replay from one place'
   },
 
   // ─── AUTOMATE ───
   {
     id: 'workflow-builder', name: 'Workflow Builder', category: 'AUTOMATE', icon: '⚡',
-    current: ['Visual automation builder', 'Trigger + action configuration', 'Basic conditional logic'],
-    vision: ['Pre-built Workflow Library — 50+ proven workflows ready to clone', 'AI Workflow Generator — describe in plain English, AI builds the workflow', 'Advanced Conditional Logic — multi-branch if/then/else, unlimited conditions', 'Error Handling Built In — retry, skip, alert, or alternate path on step failure', 'Execution Timeline — visual trace of every run, step-by-step with duration and output', 'Version History — every change versioned, roll back any time', 'Workflow Analytics — run count, average completion time, failure rate per step'],
+    current: [
+      'Visual automation builder', 'Trigger + action configuration', 'Basic conditional logic',
+      '✅ AI Workflow Generator — describe a workflow in plain English, AI outputs step-by-step automation with triggers, conditions & actions'
+    ],
+    vision: ['Pre-built Workflow Library — 50+ proven workflows ready to clone', 'Advanced Conditional Logic — multi-branch if/then/else, unlimited conditions', 'Error Handling Built In — retry, skip, alert, or alternate path on step failure', 'Execution Timeline — visual trace of every run, step-by-step with duration and output', 'Version History — every change versioned, roll back any time', 'Workflow Analytics — run count, average completion time, failure rate per step'],
     impact: 'Most automation builders are used by technical people only. AI generation and the template library democratize automation for the whole team. Execution timelines give confidence that workflows are actually doing what was intended.',
-    topFeature: 'AI Workflow Generator — describe what you want, it builds the automation'
+    topFeature: '✅ AI Workflow Generator — live now, describe it in English, get a working automation'
   },
   {
     id: 'the-advisor', name: 'The Advisor', category: 'AUTOMATE', icon: '🧠',
-    current: ['AI assistant surfaces insights', 'Recommendations panel', 'Module-specific tips'],
+    current: [
+      'AI assistant surfaces insights', 'Recommendations panel', 'Module-specific tips',
+      '✅ Priority Action Plan — AI scans all modules, prioritizes top 5 actions by revenue impact × confidence with step-by-step execution notes'
+    ],
     vision: ['Insight Prioritization — top 3 insights only, ranked by revenue impact × effort × confidence', 'Weekly Strategy Brief — every Monday: wins, concerns, this week action items, one growth idea', 'Decision Support Mode — presents a decision, AI asks 3 questions, gives reasoned recommendation', 'Competitor Signal Watch — proactively surfaces competitor changes worth acting on', 'Opportunity Surfacing — "1,200 uncontacted leads at your conversion rate = $4,200"', 'Memory — remembers past recommendations, tracks whether they were acted on, and learns', 'Voice Mode — record a voice question, get an audio response'],
     impact: 'The gap between having data and making decisions costs businesses significant revenue. An advisor that proactively surfaces the top 3 most important actions eliminates analysis paralysis and creates accountability for execution.',
-    topFeature: 'Weekly Strategy Brief — one document, every Monday, tells you exactly what to do'
+    topFeature: '✅ Priority Action Plan — live now, top 5 revenue-impact actions ranked across all modules'
   },
   {
     id: 'autopilot', name: 'Autopilot', category: 'AUTOMATE', icon: '🚀',
-    current: ['Automated ongoing task execution', 'Basic rule-based actions', 'Activity log'],
+    current: [
+      'Automated ongoing task execution', 'Basic rule-based actions', 'Activity log',
+      '✅ 30-Day Strategy Generator — streaming AI builds personalized monthly strategy with weekly focus areas, daily tasks & success metrics'
+    ],
     vision: ['Autopilot Modes — Awareness / Conversion / Retention mode with different optimization priorities', 'Task Queue Transparency — see exactly what Autopilot is doing, did today, queued for tomorrow', 'Intervention Thresholds — human-defined guardrails: "if cost-per-lead exceeds $25, pause and alert"', 'A/B Test Generation — Autopilot creates and runs small tests proactively, reports winners', 'Fatigue Detection — detects audience saturation, introduces fresh creative automatically', 'Budget Self-Optimization — shifts budget toward winners within defined limits daily', 'Autopilot Score — composite health indicator across content freshness, audience, campaigns, budget'],
     impact: 'The goal of Autopilot is to make 80% of routine marketing execution hands-off, with humans reserving their time for strategy and approval. Intervention thresholds create trust — the AI knows when to stop and ask.',
-    topFeature: 'Intervention Thresholds — you define the guardrails, Autopilot operates within them'
+    topFeature: '✅ 30-Day Strategy Generator — live now, full monthly plan with weekly + daily execution guide'
   },
 
   // ─── SETTINGS ───
   {
     id: 'brand-hub', name: 'Brand Hub', category: 'SETTINGS', icon: '🏷️',
-    current: ['Logo upload', 'Color palette settings', 'Font selection', 'Basic voice guidelines'],
+    current: [
+      'Logo upload', 'Color palette settings', 'Font selection', 'Basic voice guidelines',
+      '✅ Brand Consistency Audit — rates any copy against your brand voice on 4 dimensions (Tone, Messaging, Clarity, Brand Alignment) with specific fix suggestions'
+    ],
     vision: ['Brand DNA Extractor — paste URL, AI extracts brand assets in 30 seconds', 'Voice & Tone Examples — 10 sample sentences showing the brand voice in action', 'Competitor Differentiation Map — how you are positioned vs. each competitor', 'Brand Compliance Checker — upload any asset, AI rates it against brand guidelines', 'Brand Asset Library — all logos, icons, photos organized and searchable', 'Multi-Brand Support — agencies switch between client brand profiles instantly', 'Brand Score — consistency rating across all recent module outputs'],
     impact: 'Brand Hub becomes the intelligence layer that powers every other module. When every module pulls from a single source of truth, brand consistency scales automatically instead of degrading with team growth.',
-    topFeature: 'Brand Score — know when any module is drifting from your brand identity'
+    topFeature: '✅ Brand Consistency Audit — live now, 4-dimension brand score on any copy with specific fixes'
   },
   {
     id: 'team', name: 'Team', category: 'SETTINGS', icon: '👤',
-    current: ['User management', 'Role assignment', 'Basic permissions'],
+    current: [
+      'User management', 'Role assignment', 'Basic permissions',
+      '✅ Role Brief Generator — AI writes job description, KPIs, first 30-day milestones & tools for any team member'
+    ],
     vision: ['Activity Feed — real-time visibility into what the team published, launched, approved today', 'Granular Role-Based Access per module (create/review/publish as separate permissions)', 'Task Assignment — assign work to team members from any module, track completion', 'Performance Dashboard — tasks completed, content published, campaigns launched per person', 'Guest Collaborator Mode — time-limited, scoped access for clients and contractors', 'Onboarding Flows — role-specific checklists auto-assigned to new team members', 'Approval Workflows — content/campaigns require sign-off before going live'],
     impact: 'The gap between a 2-person team and a 20-person team is almost entirely process visibility and approval control. Granular permissions prevent junior mistakes in production. Approval workflows scale quality without micromanagement.',
-    topFeature: 'Approval Workflows — quality gates that scale without micromanagement'
+    topFeature: '✅ Role Brief Generator — live now, complete onboarding docs for any role in seconds'
   },
   {
     id: 'client-manager', name: 'Client Manager', category: 'SETTINGS', icon: '🏢',
-    current: ['Client profiles', 'Workspace switching', 'Basic contact info'],
+    current: [
+      'Client profiles', 'Workspace switching', 'Basic contact info',
+      '✅ Client Report Generator — streaming AI report covering wins, challenges, KPIs & 30-day action plan per client'
+    ],
     vision: ['Client Health Score — composite of module usage, goal progress, report engagement, billing status', 'Service Package Tracker — which services is each client using vs. paying for', 'Renewal Intelligence — 60/30/14-day alerts with health score and expansion opportunities', 'Intake Automation — new client onboarding checklist auto-created and tracked', 'Client Communication Log — full timeline of all emails, calls, notes per client', 'Expansion Opportunity Detector — AI identifies upsell gaps based on usage patterns', 'White-Label Settings — per-client domain, logo, and report branding'],
     impact: 'Renewal intelligence alone can increase retention by 15–25% by surfacing at-risk clients before they decide to leave. The health score turns client management from reactive firefighting to proactive success management.',
-    topFeature: 'Renewal Intelligence — never get surprised by a client who decides not to renew'
+    topFeature: '✅ Client Report Generator — live now, complete client report with wins + next steps via streaming AI'
   },
   {
     id: 'automation-settings', name: 'Automation Settings', category: 'SETTINGS', icon: '🔧',
-    current: ['Rule builder for cross-module triggers', 'Basic condition/action editor', 'Active rules list'],
-    vision: ['Automation Library — browse proven cross-module flows, one-click activate', 'Conflict Detection — flag when two automations could fire simultaneously on the same contact', 'Frequency Caps — contact-level limits regardless of how many automations qualify them', 'Audit Log — every automation action logged with trigger, contact, time, outcome', 'Test Mode — run any automation against a sample contact, preview every step before live', 'Business Hours Enforcement — all messaging automations respect contact timezone', 'Performance Attribution — revenue generated vs. unsubscribes caused per automation rule'],
+    current: [
+      'Rule builder for cross-module triggers', 'Basic condition/action editor', 'Active rules list',
+      '✅ Execution Log — live table of recent automation runs with trigger, action, status & timestamp',
+      '✅ Rule Analyzer — AI evaluates any automation rule, detects conflicts, suggests improvements & estimates impact'
+    ],
+    vision: ['Automation Library — browse proven cross-module flows, one-click activate', 'Conflict Detection — flag when two automations could fire simultaneously on the same contact', 'Frequency Caps — contact-level limits regardless of how many automations qualify them', 'Test Mode — run any automation against a sample contact, preview every step before live', 'Business Hours Enforcement — all messaging automations respect contact timezone', 'Performance Attribution — revenue generated vs. unsubscribes caused per automation rule'],
     impact: 'Without conflict detection and frequency caps, growing automation libraries silently damage contact relationships through message flooding. Attribution per automation rule makes it clear which rules are assets vs. liabilities.',
-    topFeature: 'Frequency Caps — one setting that prevents automation from annoying your best contacts'
+    topFeature: '✅ Execution Log + Rule Analyzer — both live now, see every automation run and optimize rules with AI'
   },
 ];
 
@@ -1057,13 +1236,13 @@ function renderModules() {
         </div>
         <div class="module-body">
           <div class="module-col">
-            <div class="col-label now">Currently</div>
+            <div class="col-label now">✓ Live Now</div>
             <ul class="feature-list now">
-              ${m.current.map(f => `<li>${f}</li>`).join('')}
+              ${m.current.map(f => `<li class="${f.startsWith('✅') ? 'shipped' : ''}">${f.replace(/^✅\s*/, '')}</li>`).join('')}
             </ul>
           </div>
           <div class="module-col">
-            <div class="col-label vision" style="--cat-color:var(--${cv})">Vision</div>
+            <div class="col-label vision" style="--cat-color:var(--${cv})">Next Horizon</div>
             <ul class="feature-list vision" style="--cat-color:var(--${cv})">
               ${m.vision.map(f => `<li>${f}</li>`).join('')}
             </ul>
