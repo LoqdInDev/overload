@@ -366,6 +366,7 @@ export default function LandingPage() {
   const [demoToast, setDemoToast] = useState(false);
   const progressRef = useRef(null);
   const [activeSteps, setActiveSteps] = useState(new Set());
+  const [activeNav, setActiveNav] = useState(null);
   usePageTitle('All-in-One AI Marketing Platform');
   useCardScroll(progressRef);
 
@@ -373,6 +374,21 @@ export default function LandingPage() {
     const h = () => setScrolled(window.scrollY > 30);
     window.addEventListener('scroll', h, { passive: true });
     return () => window.removeEventListener('scroll', h);
+  }, []);
+
+  // Track active nav section via scroll
+  useEffect(() => {
+    const sections = ['platform', 'modules', 'pricing'];
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) setActiveNav(e.target.id);
+      });
+    }, { threshold: 0.25 });
+    sections.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
   }, []);
 
   // Journey step scroll observer
@@ -409,22 +425,38 @@ export default function LandingPage() {
             <img src="/logo.png" alt="Overload" style={{ width: 40, height: 40, borderRadius: 8 }} />
             <span className="lp-serif" style={{ fontSize: 18, color: 'var(--lp-ink)' }}>Overload</span>
           </div>
-          <div className="hidden md:flex items-center gap-10">
-            {['Platform', 'Modules', 'Pricing'].map(l => (
-              <a key={l} href={`#${l.toLowerCase()}`}
-                className="text-[13px] font-medium transition-colors duration-200"
-                style={{ color: 'var(--lp-muted)', cursor: 'pointer' }}
-                onMouseEnter={e => e.target.style.color = 'var(--lp-ink)'}
-                onMouseLeave={e => e.target.style.color = 'var(--lp-muted)'}
-                onClick={e => {
-                  e.preventDefault();
-                  const el = document.getElementById(l.toLowerCase());
-                  if (!el) return;
-                  const y = el.getBoundingClientRect().top + window.scrollY - 80;
-                  window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
-                }}
-              >{l}</a>
-            ))}
+          <div className="hidden md:flex items-center" style={{
+            background: 'rgba(44,40,37,0.07)',
+            borderRadius: 999,
+            padding: '4px',
+            gap: 2,
+          }}>
+            {['Platform', 'Modules', 'Pricing'].map(l => {
+              const isActive = activeNav === l.toLowerCase();
+              return (
+                <a key={l} href={`#${l.toLowerCase()}`}
+                  className="text-[13px] font-medium transition-all duration-200"
+                  style={{
+                    color: isActive ? 'var(--lp-ink)' : 'var(--lp-muted)',
+                    cursor: 'pointer',
+                    padding: '6px 16px',
+                    borderRadius: 999,
+                    background: isActive ? '#ffffff' : 'transparent',
+                    boxShadow: isActive ? '0 1px 4px rgba(44,40,37,0.12)' : 'none',
+                    fontWeight: isActive ? 600 : 500,
+                    whiteSpace: 'nowrap',
+                  }}
+                  onClick={e => {
+                    e.preventDefault();
+                    setActiveNav(l.toLowerCase());
+                    const el = document.getElementById(l.toLowerCase());
+                    if (!el) return;
+                    const y = el.getBoundingClientRect().top + window.scrollY - 80;
+                    window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+                  }}
+                >{l}</a>
+              );
+            })}
           </div>
           <div className="flex items-center gap-5">
             <button onClick={go} className="text-[13px] font-medium hidden sm:block" style={{ color: 'var(--lp-muted)' }}
