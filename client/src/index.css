@@ -227,6 +227,19 @@
   color: #94a3b8;
 }
 
+/* Dark panels — boost dim description text so it's legible on near-black backgrounds */
+.panel .text-gray-500, .panel-interactive .text-gray-500 { color: #8fa3b8; }
+.panel .text-gray-600, .panel-interactive .text-gray-600 { color: #7b8fa3; }
+.panel .text-gray-700, .panel-interactive .text-gray-700 { color: #6b7f93; }
+
+/* Light mode resets — restore natural values inside white panels */
+[data-theme="light"] .panel .text-gray-500,
+[data-theme="light"] .panel-interactive .text-gray-500 { color: #6b7280; }
+[data-theme="light"] .panel .text-gray-600,
+[data-theme="light"] .panel-interactive .text-gray-600 { color: #4b5563; }
+[data-theme="light"] .panel .text-gray-700,
+[data-theme="light"] .panel-interactive .text-gray-700 { color: #374151; }
+
 /* Light mode — hud elements */
 [data-theme="light"] .hud-dot {
   box-shadow: none;
@@ -484,18 +497,8 @@
 }
 
 /* ═══════════════════════════════════════════
-   DARK MODE — boost dim text so it's readable
-   ═══════════════════════════════════════════ */
-:not([data-theme="light"]) .text-gray-600 { color: #7b8fa3 !important; }
-:not([data-theme="light"]) .text-gray-700 { color: #6b7f93 !important; }
-:not([data-theme="light"]) .placeholder-gray-600::placeholder { color: rgba(148,163,184,0.45) !important; }
-:not([data-theme="light"]) .placeholder-gray-700::placeholder { color: rgba(148,163,184,0.4) !important; }
-
-/* ═══════════════════════════════════════════
    LIGHT MODE — placeholder & disabled fixes
    ═══════════════════════════════════════════ */
-[data-theme="light"] .text-gray-600 { color: #4b5563 !important; }
-[data-theme="light"] .text-gray-700 { color: #374151 !important; }
 [data-theme="light"] .placeholder-gray-600::placeholder { color: #94a3b8 !important; }
 [data-theme="light"] .placeholder-gray-700::placeholder { color: #94a3b8 !important; }
 [data-theme="light"] .disabled\:from-gray-800:disabled { --tw-gradient-from: #e5e7eb !important; }
