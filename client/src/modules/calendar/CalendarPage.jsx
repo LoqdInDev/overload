@@ -129,58 +129,126 @@ export default function CalendarPage() {
 
       <div className="flex flex-wrap gap-3 mb-6">{EVENT_TYPES.map(t => (<div key={t.id} className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full" style={{ background: t.color }} /><span className="text-xs text-gray-500">{t.name}</span></div>))}</div>
 
-      <div className="panel animate-fade-in" style={{ marginBottom: 20 }}>
-        <div className="hud-label" style={{ marginBottom: 12 }}>AI Content Planner</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
-          <input className="input-field rounded-xl px-4 py-3 text-sm" placeholder="Month (e.g. March 2026)" value={planMonth} onChange={e => setPlanMonth(e.target.value)} />
-          <input className="input-field rounded-xl px-4 py-3 text-sm" placeholder="Business type" value={planBusinessType} onChange={e => setPlanBusinessType(e.target.value)} />
-          <input className="input-field rounded-xl px-4 py-3 text-sm" placeholder="Main goal" value={planGoal} onChange={e => setPlanGoal(e.target.value)} />
-        </div>
-        <button className="chip text-[10px]" style={{ background: 'rgba(14,165,233,0.15)', borderColor: 'rgba(14,165,233,0.3)', color: '#38bdf8' }} disabled={planLoading}
-          onClick={async () => {
-            setPlanLoading(true);
-            try {
-              const result = await postJSON('/api/calendar/suggest-content-plan', { month: planMonth, business_type: planBusinessType, goal: planGoal });
-              setContentPlan(result);
-            } catch {}
-            setPlanLoading(false);
-          }}>{planLoading ? 'Generating Plan...' : 'Generate Content Plan'}</button>
-        {contentPlan && (
-          <div style={{ marginTop: 16 }}>
-            {contentPlan.theme && <div className="chip" style={{ marginBottom: 12 }}>Monthly Theme: {contentPlan.theme}</div>}
-            {contentPlan.plan?.map((week, wi) => (
-              <div key={wi} style={{ marginBottom: 16 }}>
-                <div className="hud-label" style={{ marginBottom: 8 }}>Week {week.week}</div>
-                <div style={{ display: 'grid', gap: 6 }}>
-                  {week.posts?.map((post, pi) => (
-                    <div key={pi} className="panel-interactive" style={{ padding: 10, display: 'flex', gap: 12, alignItems: 'center' }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', gap: 6, marginBottom: 4 }}>
-                          <span className="chip" style={{ fontSize: 10 }}>{post.platform}</span>
-                          <span className="chip" style={{ fontSize: 10 }}>{post.content_type}</span>
-                        </div>
-                        <div style={{ fontSize: 13, fontWeight: 500 }} className="text-gray-300">{post.topic}</div>
-                        <div style={{ fontSize: 11, color: '#6b7280' }}>{post.day}</div>
-                      </div>
-                      <button className="chip text-[10px] flex-shrink-0" style={{ color: '#38bdf8', borderColor: 'rgba(14,165,233,0.3)' }}
-                        onClick={async () => {
-                          try {
-                            const created = await postJSON('/api/calendar/events', {
-                              title: post.topic,
-                              module_id: post.content_type?.toLowerCase() || 'content',
-                              date: new Date().toISOString().slice(0, 10),
-                              notes: post.hook || ''
-                            });
-                            setEvents(e => [...e, created]);
-                          } catch {}
-                        }}>Add to Calendar</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+      {/* ── AI Content Planner ── */}
+      <div className="rounded-2xl overflow-hidden mb-6 animate-fade-in" style={{ background: 'rgba(14,165,233,0.04)', border: '1px solid rgba(14,165,233,0.14)' }}>
+        {/* Header */}
+        <div className="flex items-center gap-4 px-6 py-5" style={{ borderBottom: '1px solid rgba(14,165,233,0.08)' }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(14,165,233,0.14)' }}>
+            <svg className="w-5 h-5" style={{ color: '#38bdf8' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
+            </svg>
           </div>
-        )}
+          <div>
+            <p className="text-base font-semibold">AI Content Planner</p>
+            <p className="text-sm text-gray-500">Generate a full month of platform-specific content ideas</p>
+          </div>
+        </div>
+
+        {/* Form */}
+        <div className="p-6 sm:p-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-5">
+            <div>
+              <p className="hud-label text-xs mb-2">MONTH</p>
+              <input className="input-field w-full rounded-xl px-4 py-3 text-sm" placeholder="e.g. March 2026" value={planMonth} onChange={e => setPlanMonth(e.target.value)} />
+            </div>
+            <div>
+              <p className="hud-label text-xs mb-2">BUSINESS TYPE</p>
+              <input className="input-field w-full rounded-xl px-4 py-3 text-sm" placeholder="e.g. E-commerce, SaaS" value={planBusinessType} onChange={e => setPlanBusinessType(e.target.value)} />
+            </div>
+            <div>
+              <p className="hud-label text-xs mb-2">MAIN GOAL</p>
+              <input className="input-field w-full rounded-xl px-4 py-3 text-sm" placeholder="e.g. Brand awareness" value={planGoal} onChange={e => setPlanGoal(e.target.value)} />
+            </div>
+          </div>
+          <button className="w-full py-3.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2"
+            style={{ background: 'rgba(14,165,233,0.12)', color: '#38bdf8', border: '1px solid rgba(14,165,233,0.25)' }}
+            disabled={planLoading}
+            onClick={async () => {
+              setPlanLoading(true);
+              setContentPlan(null);
+              try {
+                const result = await postJSON('/api/calendar/suggest-content-plan', { month: planMonth, business_type: planBusinessType, goal: planGoal });
+                setContentPlan(result);
+              } catch {}
+              setPlanLoading(false);
+            }}>
+            {planLoading ? (
+              <><span className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(56,189,248,0.25)', borderTopColor: '#38bdf8' }} />Generating Plan...</>
+            ) : (
+              <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 3l14 9-14 9V3z" /></svg>Generate Content Plan</>
+            )}
+          </button>
+
+          {contentPlan && (
+            <div className="mt-6 space-y-5 animate-fade-in">
+              {contentPlan.theme && (
+                <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.15)' }}>
+                  <svg className="w-4 h-4 flex-shrink-0" style={{ color: '#38bdf8' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
+                  <div><p className="text-[10px] font-bold tracking-wider" style={{ color: '#38bdf8' }}>MONTHLY THEME</p><p className="text-sm font-medium">{contentPlan.theme}</p></div>
+                </div>
+              )}
+              {contentPlan.plan?.map((week, wi) => {
+                const PLATFORM_COLORS = { Instagram: '#ee2a7b', Twitter: '#000000', LinkedIn: '#0a66c2', Facebook: '#1877f2', TikTok: '#010101' };
+                const TYPE_COLORS = { Educational: '#8b5cf6', Promotional: '#f97316', Entertainment: '#10b981', UGC: '#f59e0b', 'Behind-the-Scenes': '#6366f1' };
+                return (
+                  <div key={wi}>
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-[11px] font-bold tracking-wider" style={{ color: '#38bdf8' }}>WEEK {week.week}</span>
+                      <div className="flex-1 h-px" style={{ background: 'rgba(14,165,233,0.15)' }} />
+                    </div>
+                    <div className="space-y-2">
+                      {week.posts?.map((post, pi) => {
+                        const pColor = PLATFORM_COLORS[post.platform] || '#64748b';
+                        const tColor = TYPE_COLORS[post.content_type] || '#64748b';
+                        return (
+                          <div key={pi} className="group flex items-start gap-3 p-4 rounded-xl transition-all hover:bg-black/[0.02]" style={{ border: '1px solid rgba(14,165,233,0.08)' }}>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full text-white" style={{ background: pColor }}>{post.platform}</span>
+                                <span className="text-[10px] font-medium px-2.5 py-0.5 rounded-full" style={{ background: `${tColor}18`, color: tColor, border: `1px solid ${tColor}28` }}>{post.content_type}</span>
+                                <span className="text-[10px] text-gray-400">{post.day}</span>
+                              </div>
+                              <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{post.topic}</p>
+                              {post.hook && <p className="text-xs text-gray-400 mt-1 italic">"{post.hook}"</p>}
+                            </div>
+                            <button
+                              className="flex-shrink-0 opacity-0 group-hover:opacity-100 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all whitespace-nowrap"
+                              style={{ background: 'rgba(14,165,233,0.12)', color: '#38bdf8', border: '1px solid rgba(14,165,233,0.2)' }}
+                              onClick={async () => {
+                                const monthParts = planMonth.match(/(\w+)\s+(\d{4})/);
+                                let date = new Date().toISOString().slice(0, 10);
+                                if (monthParts) {
+                                  const mIdx = MONTHS.indexOf(monthParts[1]);
+                                  const yr = parseInt(monthParts[2]);
+                                  if (mIdx >= 0) {
+                                    const dayNum = Math.min((week.week - 1) * 7 + pi + 1, 28);
+                                    date = `${yr}-${String(mIdx + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+                                  }
+                                }
+                                try {
+                                  const type = EVENT_TYPES.find(t => t.name.toLowerCase() === (post.content_type || '').toLowerCase()) || EVENT_TYPES[1];
+                                  const created = await postJSON('/api/calendar/events', {
+                                    title: post.topic, module_id: type.id, date, color: type.color, description: post.hook || '',
+                                  });
+                                  setEvents(ev => [...ev, created]);
+                                } catch {}
+                              }}>+ Add</button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+              {contentPlan.notes && (
+                <div className="px-4 py-3 rounded-xl text-xs text-gray-500" style={{ background: 'rgba(14,165,233,0.04)', border: '1px solid rgba(14,165,233,0.1)' }}>
+                  <p className="font-bold tracking-wider text-[10px] mb-1.5" style={{ color: '#38bdf8' }}>STRATEGIC NOTES</p>
+                  <p className="leading-relaxed">{contentPlan.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
