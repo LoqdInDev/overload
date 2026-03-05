@@ -82,10 +82,20 @@ export default function ReviewsPage() {
         {TOOLS.map(t => (<button key={t.id} onClick={() => setActiveTool(t.id)} className="panel-interactive rounded-2xl p-4 sm:p-7 text-center group"><div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center" style={{ background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.12)' }}><svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={t.icon} /></svg></div><p className="text-sm font-bold text-gray-300 group-hover:text-white transition-colors">{t.name}</p></button>))}
       </div>
       {/* Sentiment Analysis */}
-      <div className="panel animate-fade-in" style={{ marginBottom: 16, marginTop: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <span className="hud-label">Sentiment Trend Analysis</span>
-          <button className="btn-accent" style={{ fontSize: 12, padding: '4px 12px' }} disabled={sentimentLoading}
+      <div className="rounded-2xl overflow-hidden animate-fade-in my-4" style={{ background: 'rgba(234,179,8,0.04)', border: '1px solid rgba(234,179,8,0.15)' }}>
+        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: sentimentData ? '1px solid rgba(234,179,8,0.08)' : 'none' }}>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(234,179,8,0.12)' }}>
+              <svg className="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white">Sentiment Trend Analysis</p>
+              <p className="text-xs text-gray-500">AI breakdown of review sentiment across your business</p>
+            </div>
+          </div>
+          <button className="px-4 py-2 rounded-xl text-xs font-semibold transition-all"
+            style={{ background: 'rgba(234,179,8,0.12)', color: '#facc15', border: '1px solid rgba(234,179,8,0.22)' }}
+            disabled={sentimentLoading}
             onClick={async () => {
               setSentimentLoading(true);
               try {
@@ -99,32 +109,32 @@ export default function ReviewsPage() {
             }}>{sentimentLoading ? 'Analyzing...' : 'Analyze Sentiment'}</button>
         </div>
         {sentimentData && (
-          <div>
-            <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
-              {[['Positive', sentimentData.positive_percent, '#22c55e'], ['Neutral', sentimentData.neutral_percent, '#6b7280'], ['Negative', sentimentData.negative_percent, '#ef4444']].map(([label, val, color]) => (
-                <div key={label} style={{ textAlign: 'center', flex: 1, padding: 10, background: 'rgba(255,255,255,0.02)', borderRadius: 6 }}>
-                  <div style={{ fontSize: 22, fontWeight: 700, color }}>{val}%</div>
-                  <div className="hud-label">{label}</div>
+          <div className="p-5 space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              {[['Positive', sentimentData.positive_percent, '#22c55e', 'rgba(34,197,94,0.08)', 'rgba(34,197,94,0.15)'], ['Neutral', sentimentData.neutral_percent, '#94a3b8', 'rgba(148,163,184,0.08)', 'rgba(148,163,184,0.15)'], ['Negative', sentimentData.negative_percent, '#ef4444', 'rgba(239,68,68,0.08)', 'rgba(239,68,68,0.15)']].map(([label, val, color, bg, border]) => (
+                <div key={label} className="rounded-xl p-3 text-center" style={{ background: bg, border: `1px solid ${border}` }}>
+                  <div className="text-2xl font-black mb-0.5" style={{ color }}>{val}%</div>
+                  <p className="hud-label text-[10px]">{label.toUpperCase()}</p>
                 </div>
               ))}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <span className="chip" style={{ fontSize: 11 }}>Trend: {sentimentData.trajectory}</span>
-              {sentimentData.alert && <span className="chip" style={{ fontSize: 11, borderColor: '#ef4444', color: '#ef4444' }}>⚠ {sentimentData.alert}</span>}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="chip text-xs">Trend: {sentimentData.trajectory}</span>
+              {sentimentData.alert && <span className="chip text-xs" style={{ borderColor: 'rgba(239,68,68,0.4)', color: '#ef4444' }}>⚠ {sentimentData.alert}</span>}
             </div>
             {sentimentData.trending_topics?.length > 0 && (
               <div>
-                <div className="hud-label" style={{ marginBottom: 6 }}>Trending Topics</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                <p className="hud-label text-[10px] mb-2">TRENDING TOPICS</p>
+                <div className="flex flex-wrap gap-1.5">
                   {sentimentData.trending_topics.map((t, i) => (
-                    <span key={i} className="chip" style={{ fontSize: 11, borderColor: t.sentiment === 'positive' ? '#22c55e' : t.sentiment === 'negative' ? '#ef4444' : undefined }}>
-                      {t.topic} ({t.mention_count}x)
+                    <span key={i} className="chip text-xs" style={{ borderColor: t.sentiment === 'positive' ? 'rgba(34,197,94,0.35)' : t.sentiment === 'negative' ? 'rgba(239,68,68,0.35)' : undefined, color: t.sentiment === 'positive' ? '#4ade80' : t.sentiment === 'negative' ? '#f87171' : undefined }}>
+                      {t.topic} <span className="opacity-50">({t.mention_count}x)</span>
                     </span>
                   ))}
                 </div>
               </div>
             )}
-            {sentimentData.summary && <div style={{ fontSize: 12, color: '#6b7280', marginTop: 8 }}>{sentimentData.summary}</div>}
+            {sentimentData.summary && <p className="text-xs text-gray-500 leading-relaxed">{sentimentData.summary}</p>}
           </div>
         )}
       </div>
