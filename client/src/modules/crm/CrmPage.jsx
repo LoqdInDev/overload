@@ -150,53 +150,122 @@ export default function CrmPage() {
       </div>
 
       {tab === 'pipeline' && (
-        <div className="animate-fade-in">
-          <div className="flex justify-end mb-3">
-            <button onClick={() => setShowAddDeal(!showAddDeal)} className="chip text-[10px]" style={{ background: 'rgba(99,102,241,0.15)', borderColor: 'rgba(99,102,241,0.3)', color: '#818cf8' }}>+ Add Deal</button>
-          </div>
-          {showAddDeal && (
-            <div className="panel rounded-2xl p-4 mb-4 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                <input value={newDeal.name} onChange={e => setNewDeal({ ...newDeal, name: e.target.value })} placeholder="Deal name" className="input-field rounded px-3 py-2 text-xs" />
-                <input value={newDeal.value} onChange={e => setNewDeal({ ...newDeal, value: e.target.value })} placeholder="Value ($)" type="number" className="input-field rounded px-3 py-2 text-xs" />
-                <select value={newDeal.stage} onChange={e => setNewDeal({ ...newDeal, stage: e.target.value })} className="input-field rounded px-3 py-2 text-xs">
-                  {PIPELINE_STAGES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
-                <select value={newDeal.contact_id} onChange={e => setNewDeal({ ...newDeal, contact_id: e.target.value })} className="input-field rounded px-3 py-2 text-xs">
-                  <option value="">Select contact</option>
-                  {contacts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
-              <button onClick={addDeal} className="btn-accent px-4 py-1.5 rounded text-[10px]" style={{ background: '#6366f1' }}>Create Deal</button>
-            </div>
-          )}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="animate-fade-in space-y-5">
+
+          {/* Summary bar */}
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
             {PIPELINE_STAGES.map(stage => {
               const stageDeals = deals.filter(d => d.stage === stage.id);
               const total = stageDeals.reduce((a, b) => a + (b.value || 0), 0);
               return (
-                <div key={stage.id} className="space-y-3">
-                  <div className="flex items-center justify-between px-1">
-                    <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full" style={{ background: stage.color }} /><span className="text-[10px] font-bold text-gray-400">{stage.name}</span></div>
-                    <span className="text-[9px] text-gray-600 font-mono">{stageDeals.length}</span>
-                  </div>
-                  <div className="text-[9px] text-gray-600 px-1 font-mono">${(total / 1000).toFixed(1)}K</div>
-                  <div className="space-y-1.5">
-                    {stageDeals.map(deal => (
-                      <div key={deal.id} className="group panel rounded-lg p-3 cursor-pointer hover:border-indigo-500/20 transition-all">
-                        <p className="text-[11px] font-semibold text-gray-300 truncate">{deal.name}</p>
-                        <p className="text-[10px] text-gray-500 mt-0.5">{deal.contact_name || '—'}</p>
-                        <div className="flex items-center justify-between mt-1">
-                          <p className="text-xs font-bold" style={{ color: stage.color }}>${(deal.value || 0).toLocaleString()}</p>
-                          <button onClick={(e) => { e.stopPropagation(); removeDeal(deal.id); }} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 text-xs transition-all">&times;</button>
-                        </div>
-                      </div>
-                    ))}
-                    {stageDeals.length === 0 && <div className="text-[10px] text-gray-700 text-center py-4">No deals</div>}
-                  </div>
+                <div key={stage.id} className="rounded-xl px-4 py-3 text-center" style={{ background: `${stage.color}0d`, border: `1px solid ${stage.color}22` }}>
+                  <p className="text-[10px] font-bold tracking-wide mb-1" style={{ color: stage.color }}>{stage.name.toUpperCase()}</p>
+                  <p className="text-base font-bold">{stageDeals.length}</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">{total > 0 ? `$${(total / 1000).toFixed(1)}K` : '—'}</p>
                 </div>
               );
             })}
+          </div>
+
+          {/* Add Deal form */}
+          <div className="flex justify-end">
+            <button onClick={() => setShowAddDeal(!showAddDeal)}
+              className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl transition-all"
+              style={{ background: showAddDeal ? 'rgba(99,102,241,0.2)' : 'rgba(99,102,241,0.1)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.25)' }}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+              Add Deal
+            </button>
+          </div>
+
+          {showAddDeal && (
+            <div className="rounded-2xl p-5 sm:p-6 space-y-4" style={{ border: '1px solid rgba(99,102,241,0.2)', background: 'rgba(99,102,241,0.04)' }}>
+              <p className="text-sm font-semibold">New Deal</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 tracking-wider mb-2">DEAL NAME</p>
+                  <input value={newDeal.name} onChange={e => setNewDeal({ ...newDeal, name: e.target.value })} placeholder="e.g. Acme Corp Renewal" className="input-field w-full rounded-xl px-4 py-3 text-sm" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 tracking-wider mb-2">VALUE ($)</p>
+                  <input value={newDeal.value} onChange={e => setNewDeal({ ...newDeal, value: e.target.value })} placeholder="e.g. 5000" type="number" className="input-field w-full rounded-xl px-4 py-3 text-sm" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 tracking-wider mb-2">STAGE</p>
+                  <select value={newDeal.stage} onChange={e => setNewDeal({ ...newDeal, stage: e.target.value })} className="input-field w-full rounded-xl px-4 py-3 text-sm">
+                    {PIPELINE_STAGES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 tracking-wider mb-2">CONTACT</p>
+                  <select value={newDeal.contact_id} onChange={e => setNewDeal({ ...newDeal, contact_id: e.target.value })} className="input-field w-full rounded-xl px-4 py-3 text-sm">
+                    <option value="">Select contact</option>
+                    {contacts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={addDeal} disabled={!newDeal.name.trim()}
+                  className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
+                  style={{ background: '#6366f1', color: '#fff' }}>Create Deal</button>
+                <button onClick={() => setShowAddDeal(false)}
+                  className="px-4 py-2.5 rounded-xl text-sm font-medium text-gray-400 transition-all hover:text-gray-200">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Kanban board */}
+          <div className="overflow-x-auto pb-2">
+            <div className="grid grid-cols-6 gap-3 min-w-[900px]">
+              {PIPELINE_STAGES.map(stage => {
+                const stageDeals = deals.filter(d => d.stage === stage.id);
+                const total = stageDeals.reduce((a, b) => a + (b.value || 0), 0);
+                return (
+                  <div key={stage.id} className="flex flex-col min-h-[200px]">
+                    {/* Column header */}
+                    <div className="rounded-xl px-3 py-3 mb-3" style={{ background: `${stage.color}0d`, borderTop: `3px solid ${stage.color}`, border: `1px solid ${stage.color}20`, borderTopWidth: 3 }}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold" style={{ color: stage.color }}>{stage.name}</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${stage.color}22`, color: stage.color }}>{stageDeals.length}</span>
+                      </div>
+                      {total > 0 && <p className="text-xs font-semibold mt-1 text-gray-500">${total.toLocaleString()}</p>}
+                    </div>
+
+                    {/* Deal cards */}
+                    <div className="space-y-2 flex-1">
+                      {stageDeals.map(deal => (
+                        <div key={deal.id} className="group rounded-xl p-3.5 transition-all cursor-pointer hover:-translate-y-0.5"
+                          style={{ background: 'rgba(255,255,255,0.6)', border: `1px solid rgba(0,0,0,0.07)`, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                          <div className="flex items-start justify-between gap-1 mb-1.5">
+                            <p className="text-xs font-semibold leading-tight truncate">{deal.name}</p>
+                            <button onClick={(e) => { e.stopPropagation(); removeDeal(deal.id); }}
+                              className="opacity-0 group-hover:opacity-100 w-4 h-4 flex items-center justify-center rounded-full text-gray-400 hover:text-red-400 hover:bg-red-50 transition-all flex-shrink-0 mt-0.5">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                          </div>
+                          {deal.contact_name && <p className="text-[10px] text-gray-400 mb-2 truncate">{deal.contact_name}</p>}
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold" style={{ color: stage.color }}>${(deal.value || 0).toLocaleString()}</span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium" style={{ background: `${stage.color}15`, color: stage.color }}>{stage.name}</span>
+                          </div>
+                        </div>
+                      ))}
+
+                      {stageDeals.length === 0 && (
+                        <div className="rounded-xl border-2 border-dashed py-8 text-center transition-all"
+                          style={{ borderColor: `${stage.color}20` }}>
+                          <div className="w-6 h-6 rounded-full mx-auto mb-2 flex items-center justify-center" style={{ background: `${stage.color}15` }}>
+                            <svg className="w-3.5 h-3.5" style={{ color: stage.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                          </div>
+                          <p className="text-[10px] text-gray-400">No deals</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
