@@ -161,7 +161,7 @@
     outline: none;
   }
   .input-field::placeholder {
-    color: #2a2f42;
+    color: rgba(148, 163, 184, 0.45);
   }
 }
 
@@ -484,8 +484,18 @@
 }
 
 /* ═══════════════════════════════════════════
+   DARK MODE — boost dim text so it's readable
+   ═══════════════════════════════════════════ */
+:not([data-theme="light"]) .text-gray-600 { color: #7b8fa3 !important; }
+:not([data-theme="light"]) .text-gray-700 { color: #6b7f93 !important; }
+:not([data-theme="light"]) .placeholder-gray-600::placeholder { color: rgba(148,163,184,0.45) !important; }
+:not([data-theme="light"]) .placeholder-gray-700::placeholder { color: rgba(148,163,184,0.4) !important; }
+
+/* ═══════════════════════════════════════════
    LIGHT MODE — placeholder & disabled fixes
    ═══════════════════════════════════════════ */
+[data-theme="light"] .text-gray-600 { color: #4b5563 !important; }
+[data-theme="light"] .text-gray-700 { color: #374151 !important; }
 [data-theme="light"] .placeholder-gray-600::placeholder { color: #94a3b8 !important; }
 [data-theme="light"] .placeholder-gray-700::placeholder { color: #94a3b8 !important; }
 [data-theme="light"] .disabled\:from-gray-800:disabled { --tw-gradient-from: #e5e7eb !important; }
