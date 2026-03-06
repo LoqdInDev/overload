@@ -78,7 +78,7 @@ export default function ReviewsPage() {
           <div key={i} className="panel stat-card rounded-2xl p-4 sm:p-6"><p className="hud-label text-[10px] mb-2">{s.l}</p><p className="text-2xl sm:text-3xl font-bold font-mono tabular-nums leading-none" style={{ color: s.c }}>{s.v}</p></div>
         ))}
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 stagger">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-5 stagger">
         {TOOLS.map(t => (<button key={t.id} onClick={() => setActiveTool(t.id)} className="panel-interactive rounded-2xl p-4 sm:p-7 text-center group"><div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center" style={{ background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.12)' }}><svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={t.icon} /></svg></div><p className="text-sm font-bold text-gray-300 group-hover:text-white transition-colors">{t.name}</p></button>))}
       </div>
       {/* Sentiment Analysis */}
