@@ -404,7 +404,7 @@ export default function LandingPage() {
         });
         return next.size !== prev.size ? next : prev;
       });
-    }, { threshold: 0.4 });
+    }, { threshold: 0.65 });
     nodes.forEach(n => observer.observe(n));
     return () => observer.disconnect();
   }, []);
