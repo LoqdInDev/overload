@@ -33,7 +33,6 @@ const MODULE_CATEGORY_MAP = {
   'competitors': 'analytics',
   'crm': 'analytics',
   'funnels': 'planning',
-  'website-builder': 'planning',
   'integrations': 'connect',
   'api-manager': 'connect',
   'webhooks': 'connect',

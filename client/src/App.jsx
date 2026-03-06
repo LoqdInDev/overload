@@ -42,7 +42,6 @@ const ReviewsPage = lazy(() => import('./modules/reviews/ReviewsPage'));
 const CompetitorsPage = lazy(() => import('./modules/competitors/CompetitorsPage'));
 const AffiliatesPage = lazy(() => import('./modules/affiliates/AffiliatesPage'));
 const CalendarPage = lazy(() => import('./modules/calendar/CalendarPage'));
-const WebsiteBuilderPage = lazy(() => import('./modules/website-builder/WebsiteBuilderPage'));
 const ProductFeedsPage = lazy(() => import('./modules/product-feeds/ProductFeedsPage'));
 const ReportsPage = lazy(() => import('./modules/reports/ReportsPage'));
 const AbTestingPage = lazy(() => import('./modules/ab-testing/AbTestingPage'));
@@ -448,7 +447,6 @@ export default function App() {
                     <Route path="/affiliates/*" element={<M component={AffiliatesPage} name="Affiliates" />} />
                     <Route path="/brand-strategy/*" element={<Navigate to="/brand-hub" replace />} />
                     <Route path="/calendar/*" element={<M component={CalendarPage} name="Calendar" />} />
-                    <Route path="/website-builder/*" element={<M component={WebsiteBuilderPage} name="Website Builder" />} />
                     <Route path="/chatbot/*" element={<Navigate to="/customer-ai" replace />} />
                     <Route path="/product-feeds/*" element={<M component={ProductFeedsPage} name="Product Feeds" />} />
                     <Route path="/reports/*" element={<M component={ReportsPage} name="Reports" />} />

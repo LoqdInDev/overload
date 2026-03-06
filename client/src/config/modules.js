@@ -51,15 +51,6 @@ export const MODULE_REGISTRY = [
     automatable: true,
   },
   {
-    id: 'website-builder',
-    name: 'Website Builder',
-    description: 'AI-generated landing pages, templates, responsive designs, and SEO-optimized web content',
-    path: '/website-builder',
-    icon: 'M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5',
-    color: '#d946ef',
-    category: 'create',
-  },
-  {
     id: 'pr-press',
     name: 'PR & Press',
     description: 'AI-generated press releases, media pitches, journalist outreach, and PR campaign management',

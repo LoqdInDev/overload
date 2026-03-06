@@ -63,7 +63,7 @@ export default function ClientManagerPage() {
   const clientStatusColor = (s) => s === 'active' ? '#22c55e' : s === 'paused' ? '#f59e0b' : '#ef4444';
   const projectStatusColor = (s) => s === 'active' ? '#3b82f6' : s === 'completed' ? '#22c55e' : '#f59e0b';
   const moduleTagColor = (m) => {
-    const colors = { Ads: '#10b981', Content: '#f97316', Social: '#ec4899', SEO: '#8b5cf6', Email: '#3b82f6', 'Website Builder': '#06b6d4', CRM: '#6366f1', Calendar: '#f59e0b', PR: '#be185d', Analytics: '#14b8a6', Reports: '#64748b', Workflows: '#a855f7' };
+    const colors = { Ads: '#10b981', Content: '#f97316', Social: '#ec4899', SEO: '#8b5cf6', Email: '#3b82f6', CRM: '#6366f1', Calendar: '#f59e0b', PR: '#be185d', Analytics: '#14b8a6', Reports: '#64748b', Workflows: '#a855f7' };
     return colors[m] || MODULE_COLOR;
   };
 
