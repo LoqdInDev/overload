@@ -398,92 +398,124 @@ export default function CompetitorsPage() {
             <div className="space-y-4">
 
               {/* Meta Live Ads */}
-              <div className="panel rounded-2xl p-5">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <p className="hud-label text-[11px]" style={{ color: '#ef4444' }}>LIVE META ADS</p>
-                    <p className="text-xs text-gray-600 mt-0.5">Facebook &amp; Instagram ads running now</p>
+              <div className="panel rounded-2xl overflow-hidden">
+                <div className="px-5 py-4 flex items-center justify-between gap-3 border-b border-white/[0.04]" style={{ background: 'rgba(239,68,68,0.05)' }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.18)' }}>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="#f87171" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-gray-200">Live Meta Ads</p>
+                      <p className="text-[10px] text-gray-500 mt-0.5">Facebook &amp; Instagram ads running now</p>
+                    </div>
                   </div>
                   <button
                     onClick={fetchLiveAds}
                     disabled={loadingAds}
-                    className="chip text-[10px] flex-shrink-0"
-                    style={{ color: '#f87171', borderColor: 'rgba(239,68,68,0.3)' }}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[11px] font-bold transition-all flex-shrink-0"
+                    style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)', color: '#f87171' }}
                   >
                     {loadingAds ? (
-                      <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 border border-gray-600 border-t-red-400 rounded-full animate-spin" />Fetching</span>
-                    ) : '⚡ Fetch Ads'}
+                      <><span className="w-2.5 h-2.5 border border-red-400/40 border-t-red-400 rounded-full animate-spin" />Fetching</>
+                    ) : (
+                      <><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>Fetch Ads</>
+                    )}
                   </button>
                 </div>
 
-                {adsError && (
-                  <div className="rounded-lg px-4 py-3 text-xs text-red-400" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
-                    {adsError}
-                  </div>
-                )}
-                {!adsError && !liveAds && !loadingAds && (
-                  <p className="text-xs text-gray-600 text-center py-3">Click "Fetch Ads" to pull live Meta ads for {competitorName}</p>
-                )}
-                {liveAds?.length === 0 && (
-                  <p className="text-xs text-gray-500 text-center py-3">No active Meta ads found for "{competitorName}"</p>
-                )}
-                {liveAds?.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                    {liveAds.slice(0, 10).map(ad => {
-                      const body = (ad.ad_creative_bodies || [])[0] || '';
-                      const headline = (ad.ad_creative_link_titles || [])[0] || '';
-                      const desc = (ad.ad_creative_link_descriptions || [])[0] || '';
-                      const platforms = ad.publisher_platforms || [];
-                      const startDate = ad.ad_delivery_start_time?.slice(0, 10);
-                      const stopDate = ad.ad_delivery_stop_time?.slice(0, 10);
-                      return (
-                        <div key={ad.id} className="rounded-xl p-3.5 space-y-1.5" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(99,102,241,0.08)' }}>
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-[11px] font-bold text-gray-300 truncate">{ad.page_name || ad.funding_entity || 'Unknown page'}</p>
-                            <div className="flex gap-0.5 text-xs flex-shrink-0">{platforms.map(p => <span key={p} title={p}>{PLATFORM_ICONS[p] || '📢'}</span>)}</div>
+                <div className="p-5">
+                  {adsError && (
+                    <div className="rounded-xl px-4 py-3 text-xs text-red-400" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
+                      {adsError}
+                    </div>
+                  )}
+                  {!adsError && !liveAds && !loadingAds && (
+                    <div className="flex flex-col items-center justify-center py-6 gap-2">
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.12)' }}>
+                        <svg className="w-4 h-4 text-red-400/50" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      </div>
+                      <p className="text-xs text-gray-600">Pull live Meta ads for <span className="text-gray-400">{competitorName}</span></p>
+                    </div>
+                  )}
+                  {liveAds?.length === 0 && (
+                    <p className="text-xs text-gray-500 text-center py-4">No active Meta ads found for "{competitorName}"</p>
+                  )}
+                  {liveAds?.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {liveAds.slice(0, 10).map(ad => {
+                        const body = (ad.ad_creative_bodies || [])[0] || '';
+                        const headline = (ad.ad_creative_link_titles || [])[0] || '';
+                        const desc = (ad.ad_creative_link_descriptions || [])[0] || '';
+                        const platforms = ad.publisher_platforms || [];
+                        const startDate = ad.ad_delivery_start_time?.slice(0, 10);
+                        const stopDate = ad.ad_delivery_stop_time?.slice(0, 10);
+                        return (
+                          <div key={ad.id} className="rounded-xl p-3.5 space-y-1.5" style={{ background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.1)' }}>
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-[11px] font-bold text-gray-300 truncate">{ad.page_name || ad.funding_entity || 'Unknown page'}</p>
+                              <div className="flex gap-0.5 text-xs flex-shrink-0">{platforms.map(p => <span key={p} title={p}>{PLATFORM_ICONS[p] || '📢'}</span>)}</div>
+                            </div>
+                            {headline && <p className="text-xs font-semibold text-white">{headline}</p>}
+                            {body && <p className="text-[11px] text-gray-400 line-clamp-3">{body}</p>}
+                            {desc && <p className="text-[11px] text-gray-500 italic">{desc}</p>}
+                            <p className="text-[10px] text-gray-600 pt-0.5">
+                              {startDate && `Started ${startDate}`}
+                              {stopDate ? ` · Ended ${stopDate}` : startDate ? ' · Still running' : ''}
+                            </p>
                           </div>
-                          {headline && <p className="text-xs font-semibold text-white">{headline}</p>}
-                          {body && <p className="text-[11px] text-gray-400 line-clamp-3">{body}</p>}
-                          {desc && <p className="text-[11px] text-gray-500 italic">{desc}</p>}
-                          <p className="text-[10px] text-gray-600 pt-0.5">
-                            {startDate && `Started ${startDate}`}
-                            {stopDate ? ` · Ended ${stopDate}` : startDate ? ' · Still running' : ''}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Google Ads Intelligence */}
-              <div className="panel rounded-2xl p-5">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <p className="hud-label text-[11px]" style={{ color: '#60a5fa' }}>GOOGLE ADS INTELLIGENCE</p>
-                    <p className="text-xs text-gray-600 mt-0.5">AI-powered analysis of their Google Ads strategy</p>
+              <div className="panel rounded-2xl overflow-hidden">
+                <div className="px-5 py-4 flex items-center justify-between gap-3 border-b border-white/[0.04]" style={{ background: 'rgba(96,165,250,0.05)' }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.18)' }}>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="#60a5fa" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-gray-200">Google Ads Intelligence</p>
+                      <p className="text-[10px] text-gray-500 mt-0.5">AI-powered analysis of their Google Ads strategy</p>
+                    </div>
                   </div>
                   <button
                     onClick={fetchGoogleAdsIntel}
                     disabled={loadingGoogleAds}
-                    className="chip text-[10px] flex-shrink-0"
-                    style={{ color: '#60a5fa', borderColor: 'rgba(96,165,250,0.3)' }}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[11px] font-bold transition-all flex-shrink-0"
+                    style={{ background: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.25)', color: '#60a5fa' }}
                   >
                     {loadingGoogleAds ? (
-                      <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 border border-gray-600 border-t-blue-400 rounded-full animate-spin" />Analyzing</span>
-                    ) : '🔍 Analyze'}
+                      <><span className="w-2.5 h-2.5 border border-blue-400/40 border-t-blue-400 rounded-full animate-spin" />Analyzing</>
+                    ) : (
+                      <><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>Analyze</>
+                    )}
                   </button>
                 </div>
 
-                {!googleAdsOutput && !loadingGoogleAds && (
-                  <p className="text-xs text-gray-600 text-center py-3">Click "Analyze" to get Google Ads intelligence — keywords, copy angles, bidding strategy &amp; more</p>
-                )}
-                {googleAdsOutput && (
-                  <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">
-                    {googleAdsOutput}
-                    {loadingGoogleAds && <span className="inline-block w-1.5 h-4 bg-blue-400 ml-0.5 animate-pulse rounded-sm" />}
-                  </pre>
-                )}
+                <div className="p-5">
+                  {!googleAdsOutput && !loadingGoogleAds && (
+                    <div className="flex flex-col items-center justify-center py-6 gap-2">
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(96,165,250,0.07)', border: '1px solid rgba(96,165,250,0.12)' }}>
+                        <svg className="w-4 h-4 text-blue-400/50" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+                      </div>
+                      <p className="text-xs text-gray-600">Keywords, copy angles, bidding strategy &amp; more</p>
+                    </div>
+                  )}
+                  {googleAdsOutput && (
+                    <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">
+                      {googleAdsOutput}
+                      {loadingGoogleAds && <span className="inline-block w-1.5 h-4 bg-blue-400 ml-0.5 animate-pulse rounded-sm" />}
+                    </pre>
+                  )}
+                </div>
               </div>
 
             </div>
