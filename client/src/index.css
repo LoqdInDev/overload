@@ -84,6 +84,7 @@
     border: 1px solid rgba(0, 212, 255, 0.08);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
+    border-radius: 1.25rem;
     position: relative;
   }
   .panel::before,
@@ -114,6 +115,7 @@
     background: rgba(8, 10, 18, 0.55);
     border: 1px solid rgba(0, 212, 255, 0.06);
     backdrop-filter: blur(16px);
+    border-radius: 1.25rem;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
     position: relative;
