@@ -571,7 +571,49 @@ export default function LandingPage() {
       {/* ═══════ CARD STACK ═══════ */}
       <div className="lp-card-stack">
 
-        {/* ── CARD 1: Stats ── */}
+        {/* ── CARD 1: Integrations ── DARK */}
+        <section data-scroll-card="left">
+          <div className="lp-section-card lp-sc-dark">
+            <div className="max-w-5xl mx-auto text-center">
+              <div className="lp-card-tab">Integrations</div>
+              <h2 className="lp-serif" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', lineHeight: 1.12, letterSpacing: '-0.02em', marginBottom: 56 }}>
+                <span style={{ color: '#fff' }}>Works with the platforms</span><br />
+                <span style={{ color: 'rgba(255,255,255,0.35)' }}>you already use</span>
+              </h2>
+
+              <div style={{ width: 80, height: 80, borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 48px', boxShadow: '0 16px 48px rgba(196,93,62,0.25)', overflow: 'hidden' }}>
+                <img src="/logo.png" alt="Overload" loading="lazy" style={{ width: 80, height: 80 }} />
+              </div>
+
+              <style>{`
+                @keyframes marquee-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+                @keyframes marquee-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+              `}</style>
+              <div className="max-w-4xl mx-auto space-y-4 overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)' }}>
+                {[
+                  { items: INTEGRATIONS.slice(0, 6), direction: 'left', speed: '25s' },
+                  { items: INTEGRATIONS.slice(6, 12), direction: 'right', speed: '30s' },
+                  { items: INTEGRATIONS.slice(12, 18), direction: 'left', speed: '22s' },
+                ].map((row, ri) => (
+                  <div key={ri} className="flex" style={{ animation: `marquee-${row.direction} ${row.speed} linear infinite`, width: 'max-content' }}>
+                    {[...row.items, ...row.items].map((int, i) => (
+                      <div key={i} className="flex flex-col items-center gap-2.5 py-5 px-2 rounded-2xl mx-2 flex-shrink-0 transition-all duration-300 cursor-default"
+                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', width: 120 }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.transform = 'translateY(-3px)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.transform = ''; }}
+                      >
+                        <img src={`/brands/${int.slug}.svg`} alt={int.name} loading="lazy" style={{ width: 28, height: 28 }} />
+                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}>{int.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── CARD 2: Stats ── */}
         <section data-scroll-card="left">
           <div className="lp-section-card lp-sc-light" style={{ overflow: 'hidden' }}>
             {/* Decorative background elements */}
@@ -938,48 +980,6 @@ export default function LandingPage() {
                     <div style={{ flex: 1, height: 1, background: 'linear-gradient(270deg, rgba(196,93,62,0.3), transparent)' }} />
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── CARD 5: Integrations ── DARK */}
-        <section data-scroll-card="left">
-          <div className="lp-section-card lp-sc-dark">
-            <div className="max-w-5xl mx-auto text-center">
-              <div className="lp-card-tab">Integrations</div>
-              <h2 className="lp-serif" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', lineHeight: 1.12, letterSpacing: '-0.02em', marginBottom: 56 }}>
-                <span style={{ color: '#fff' }}>Works with the platforms</span><br />
-                <span style={{ color: 'rgba(255,255,255,0.35)' }}>you already use</span>
-              </h2>
-
-              <div style={{ width: 80, height: 80, borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 48px', boxShadow: '0 16px 48px rgba(196,93,62,0.25)', overflow: 'hidden' }}>
-                <img src="/logo.png" alt="Overload" loading="lazy" style={{ width: 80, height: 80 }} />
-              </div>
-
-              <style>{`
-                @keyframes marquee-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-                @keyframes marquee-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }
-              `}</style>
-              <div className="max-w-4xl mx-auto space-y-4 overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)' }}>
-                {[
-                  { items: INTEGRATIONS.slice(0, 6), direction: 'left', speed: '25s' },
-                  { items: INTEGRATIONS.slice(6, 12), direction: 'right', speed: '30s' },
-                  { items: INTEGRATIONS.slice(12, 18), direction: 'left', speed: '22s' },
-                ].map((row, ri) => (
-                  <div key={ri} className="flex" style={{ animation: `marquee-${row.direction} ${row.speed} linear infinite`, width: 'max-content' }}>
-                    {[...row.items, ...row.items].map((int, i) => (
-                      <div key={i} className="flex flex-col items-center gap-2.5 py-5 px-2 rounded-2xl mx-2 flex-shrink-0 transition-all duration-300 cursor-default"
-                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', width: 120 }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.transform = 'translateY(-3px)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.transform = ''; }}
-                      >
-                        <img src={`/brands/${int.slug}.svg`} alt={int.name} loading="lazy" style={{ width: 28, height: 28 }} />
-                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}>{int.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                ))}
               </div>
             </div>
           </div>
