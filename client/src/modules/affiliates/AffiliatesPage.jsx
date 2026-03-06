@@ -373,26 +373,45 @@ export default function AffiliatesPage() {
                 <p className="text-xs text-gray-500">AI-designed tiered commission rates for your affiliate program</p>
               </div>
             </div>
-            <div className="p-5">
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                {[['Current Rate %', 'current_rate', '10'], ['Product Margin %', 'product_margin', '40'], ['Avg Order Value $', 'avg_order_value', '50']].map(([label, key, placeholder]) => (
+            <div className="p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: 'Current Rate', unit: '%', key: 'current_rate', placeholder: '10' },
+                  { label: 'Product Margin', unit: '%', key: 'product_margin', placeholder: '40' },
+                  { label: 'Avg Order Value', unit: '$', key: 'avg_order_value', placeholder: '50' },
+                ].map(({ label, unit, key, placeholder }) => (
                   <div key={key}>
-                    <p className="hud-label text-[10px] mb-1.5">{label.toUpperCase()}</p>
-                    <input className="input w-full" type="number" placeholder={placeholder} value={commInputs[key]} onChange={e => setCommInputs(prev => ({ ...prev, [key]: e.target.value }))} />
+                    <label className="hud-label text-[10px] block mb-1.5">{label.toUpperCase()}</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold pointer-events-none" style={{ color: 'rgba(16,185,129,0.6)' }}>{unit}</span>
+                      <input
+                        className="input-field w-full rounded-xl pl-7 pr-3 py-2.5 text-sm"
+                        type="number" placeholder={placeholder}
+                        value={commInputs[key]}
+                        onChange={e => setCommInputs(prev => ({ ...prev, [key]: e.target.value }))}
+                      />
+                    </div>
                   </div>
                 ))}
                 <div>
-                  <p className="hud-label text-[10px] mb-1.5">INDUSTRY</p>
-                  <select className="input w-full" value={commInputs.industry} onChange={e => setCommInputs(prev => ({ ...prev, industry: e.target.value }))}>
+                  <label className="hud-label text-[10px] block mb-1.5">INDUSTRY</label>
+                  <select
+                    className="input-field w-full rounded-xl px-3 py-2.5 text-sm appearance-none cursor-pointer"
+                    value={commInputs.industry}
+                    onChange={e => setCommInputs(prev => ({ ...prev, industry: e.target.value }))}>
                     {['E-commerce', 'SaaS', 'Digital Products', 'Physical Products', 'Services'].map(i => <option key={i}>{i}</option>)}
                   </select>
                 </div>
               </div>
-              <button className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all"
-                style={{ background: 'rgba(16,185,129,0.12)', color: '#34d399', border: '1px solid rgba(16,185,129,0.22)' }}
+              <button
+                className="w-full py-2.5 rounded-xl text-sm font-bold tracking-wide transition-all flex items-center justify-center gap-2"
+                style={{ background: 'rgba(16,185,129,0.12)', color: '#34d399', border: '1px solid rgba(16,185,129,0.25)' }}
                 onClick={async () => {
                   try { const result = await postJSON('/api/affiliates/optimize-commission', commInputs); setCommissionData(result); } catch {}
-                }}>Optimize Commission</button>
+                }}>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
+                Optimize Commission
+              </button>
               {commissionData && (
                 <div className="mt-4 space-y-3">
                   <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)' }}>
