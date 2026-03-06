@@ -1155,138 +1155,194 @@ export default function CreativePage() {
             </div>
 
             {/* Right: Settings */}
-            <div className="space-y-4">
-              {/* Brand Hub — first so always visible */}
-              <div className="panel rounded-2xl p-4 sm:p-5" style={useBrandHub ? { borderColor: 'rgba(167,139,250,0.25)', background: 'rgba(167,139,250,0.04)' } : {}}>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="hud-label text-[11px]">BRAND HUB</p>
-                  <button
-                    onClick={() => setUseBrandHub(v => !v)}
-                    className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors flex-shrink-0"
-                    style={{ background: useBrandHub ? '#a78bfa' : 'rgba(255,255,255,0.1)' }}>
-                    <span className="inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform shadow-sm"
-                      style={{ transform: useBrandHub ? 'translateX(18px)' : 'translateX(2px)' }} />
-                  </button>
-                </div>
+            <div className="space-y-3">
 
-                {!brand ? (
-                  <p className="text-[10px] text-gray-600 leading-relaxed">
-                    Set up your Brand Hub to pull colors, fonts &amp; identity into every generation.
-                  </p>
-                ) : useBrandHub ? (
-                  <div className="space-y-2">
-                    <p className="text-[10px] text-violet-300/80">Using brand settings for this generation</p>
-                    {brand.colors && typeof brand.colors === 'object' && Object.values(brand.colors).some(Boolean) && (
-                      <div>
-                        <p className="hud-label text-[9px] mb-1" style={{ color: '#a78bfa' }}>BRAND COLORS</p>
-                        <div className="flex gap-1 flex-wrap">
-                          {Object.entries(brand.colors).filter(([, v]) => v).map(([k, v]) => (
-                            <div key={k} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] text-gray-400"
-                              style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                              <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: v }} />
-                              <span>{v}</span>
-                            </div>
-                          ))}
-                        </div>
+              {/* Brand Hub */}
+              <div className="panel rounded-2xl overflow-hidden" style={useBrandHub ? { borderColor: 'rgba(167,139,250,0.3)' } : {}}>
+                <div className="px-4 py-3 border-b border-white/[0.04]" style={{ background: useBrandHub ? 'rgba(167,139,250,0.07)' : 'rgba(167,139,250,0.03)' }}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.2)' }}>
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ color: '#a78bfa' }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                        </svg>
                       </div>
-                    )}
-                    {brand.fonts && typeof brand.fonts === 'object' && Object.values(brand.fonts).some(Boolean) && (
-                      <div>
-                        <p className="hud-label text-[9px] mb-1" style={{ color: '#a78bfa' }}>BRAND FONTS</p>
-                        <div className="flex flex-wrap gap-1">
-                          {Object.entries(brand.fonts).filter(([, v]) => v).slice(0, 2).map(([k, v]) => (
-                            <span key={k} className="text-[9px] text-gray-500 px-1.5 py-0.5 rounded"
-                              style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                              {k}: {v}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    <p className="text-[9px] text-gray-600">Overrides color palette selection</p>
+                      <p className="text-xs font-semibold text-gray-200">Brand Hub</p>
+                    </div>
+                    <button onClick={() => setUseBrandHub(v => !v)}
+                      className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors flex-shrink-0"
+                      style={{ background: useBrandHub ? '#a78bfa' : 'rgba(255,255,255,0.1)' }}>
+                      <span className="inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform shadow-sm"
+                        style={{ transform: useBrandHub ? 'translateX(18px)' : 'translateX(2px)' }} />
+                    </button>
                   </div>
-                ) : (
-                  <p className="text-[10px] text-gray-600 leading-relaxed">
-                    Enable to use <span className="text-violet-400">{brand.brandName}</span>'s colors &amp; visual identity.
-                  </p>
-                )}
+                </div>
+                <div className="px-4 py-3">
+                  {!brand ? (
+                    <p className="text-[11px] text-gray-500 leading-relaxed">Set up your Brand Hub to pull colors, fonts &amp; identity into every generation.</p>
+                  ) : useBrandHub ? (
+                    <div className="space-y-2.5">
+                      <p className="text-[11px] text-violet-300/80">Using brand settings for this generation</p>
+                      {brand.colors && typeof brand.colors === 'object' && Object.values(brand.colors).some(Boolean) && (
+                        <div>
+                          <p className="hud-label text-[9px] mb-1.5" style={{ color: '#a78bfa' }}>BRAND COLORS</p>
+                          <div className="flex gap-1 flex-wrap">
+                            {Object.entries(brand.colors).filter(([, v]) => v).map(([k, v]) => (
+                              <div key={k} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] text-gray-400"
+                                style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: v }} />
+                                <span>{v}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {brand.fonts && typeof brand.fonts === 'object' && Object.values(brand.fonts).some(Boolean) && (
+                        <div>
+                          <p className="hud-label text-[9px] mb-1" style={{ color: '#a78bfa' }}>BRAND FONTS</p>
+                          <div className="flex flex-wrap gap-1">
+                            {Object.entries(brand.fonts).filter(([, v]) => v).slice(0, 2).map(([k, v]) => (
+                              <span key={k} className="text-[9px] text-gray-500 px-1.5 py-0.5 rounded"
+                                style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                                {k}: {v}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-gray-500 leading-relaxed">Enable to use <span className="text-violet-400">{brand.brandName}</span>'s colors &amp; visual identity.</p>
+                  )}
+                </div>
               </div>
 
-              {/* Style */}
-              <div className="panel rounded-2xl p-4 sm:p-5">
-                <p className="hud-label text-[11px] mb-2.5">VISUAL STYLE</p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {STYLES.map(s => (
-                    <button key={s.id} onClick={() => setStyle(s.id)}
-                      className={`chip text-[10px] justify-center ${style === s.id ? 'active' : ''}`}
-                      style={style === s.id ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                      {s.name}
-                    </button>
-                  ))}
+              {/* Visual Style */}
+              <div className="panel rounded-2xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-white/[0.04]" style={{ background: 'rgba(6,182,212,0.03)' }}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1 h-3.5 rounded-full" style={{ background: '#06b6d4' }} />
+                    <p className="hud-label text-[10px]" style={{ color: '#06b6d4' }}>VISUAL STYLE</p>
+                  </div>
+                </div>
+                <div className="p-3">
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {STYLES.map(s => (
+                      <button key={s.id} onClick={() => setStyle(s.id)}
+                        className="relative px-3 py-2.5 rounded-xl border text-[11px] font-medium transition-all text-left"
+                        style={style === s.id
+                          ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.4)', color: '#22d3ee' }
+                          : { background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)', color: '#6b7280' }}>
+                        {style === s.id && (
+                          <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full" style={{ background: '#06b6d4' }} />
+                        )}
+                        {s.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
               {/* Dimensions */}
-              <div className="panel rounded-2xl p-4 sm:p-5">
-                <p className="hud-label text-[11px] mb-2.5">DIMENSIONS</p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {dims.map(d => (
-                    <button key={d.id} onClick={() => setDimension(d.id)}
-                      className={`chip text-[10px] flex-col items-center py-2 ${dimension === d.id ? 'active' : ''}`}
-                      style={dimension === d.id ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                      <span className="font-bold">{d.label}</span>
-                      <span className="text-[9px] opacity-60">{d.desc}</span>
-                    </button>
-                  ))}
+              <div className="panel rounded-2xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-white/[0.04]" style={{ background: 'rgba(6,182,212,0.03)' }}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1 h-3.5 rounded-full" style={{ background: '#06b6d4' }} />
+                    <p className="hud-label text-[10px]" style={{ color: '#06b6d4' }}>DIMENSIONS</p>
+                  </div>
+                </div>
+                <div className="p-3">
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {dims.map(d => {
+                      const [dw, dh] = d.id.split('x').map(Number);
+                      const ratio = dw / dh;
+                      const bw = Math.round(Math.min(18, 18 * (ratio >= 1 ? 1 : ratio)));
+                      const bh = Math.round(Math.min(18, 18 * (ratio < 1 ? 1 : 1 / ratio)));
+                      const active = dimension === d.id;
+                      return (
+                        <button key={d.id} onClick={() => setDimension(d.id)}
+                          className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all"
+                          style={active
+                            ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.4)' }
+                            : { background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
+                          <div className="flex-shrink-0 flex items-center justify-center" style={{ width: 22, height: 22 }}>
+                            <div className="rounded-sm border-2 transition-all"
+                              style={{ width: bw, height: bh, borderColor: active ? '#22d3ee' : '#374151', background: active ? 'rgba(6,182,212,0.15)' : 'transparent' }} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[11px] font-bold leading-none truncate" style={{ color: active ? '#22d3ee' : '#9ca3af' }}>{d.label}</p>
+                            <p className="text-[9px] mt-0.5 truncate" style={{ color: active ? 'rgba(34,211,238,0.55)' : '#4b5563' }}>{d.desc}</p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
-              {/* Color Palette (compact) */}
-              <div className="panel rounded-2xl p-4 sm:p-5">
-                <p className="hud-label text-[11px] mb-2.5">COLOR PALETTE</p>
-                <div className="space-y-1">
-                  {/* Image Colors — only available when a reference image is loaded */}
+              {/* Color Palette */}
+              <div className="panel rounded-2xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-white/[0.04]" style={{ background: 'rgba(6,182,212,0.03)' }}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1 h-3.5 rounded-full" style={{ background: '#06b6d4' }} />
+                    <p className="hud-label text-[10px]" style={{ color: '#06b6d4' }}>COLOR PALETTE</p>
+                  </div>
+                </div>
+                <div className="p-2.5 space-y-1">
                   {referenceImage && imageColors.length > 0 && (
                     <button onClick={() => setPalette('image-colors')}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border text-xs transition-all ${
-                        palette === 'image-colors' ? 'border-cyan-500/30 bg-cyan-500/[0.08] text-cyan-300' : 'border-indigo-500/8 bg-white/[0.01] text-gray-400 hover:text-gray-200'
-                      }`}>
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all"
+                      style={palette === 'image-colors'
+                        ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.4)' }
+                        : { background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
                       <div className="flex gap-0.5 flex-shrink-0">
                         {imageColors.slice(0, 5).map((c, i) => (
-                          <div key={i} className="w-3 h-3 rounded-full" style={{ background: c }} />
+                          <div key={i} className="w-4 h-4 rounded-full border border-black/20" style={{ background: c }} />
                         ))}
                       </div>
-                      <span className="font-semibold text-[11px]">Image Colors</span>
+                      <span className="text-[11px] font-semibold" style={{ color: palette === 'image-colors' ? '#22d3ee' : '#9ca3af' }}>Image Colors</span>
                       <span className="ml-auto text-[9px] opacity-50">from upload</span>
                     </button>
                   )}
                   {COLOR_PALETTES.map(p => (
                     <button key={p.id} onClick={() => setPalette(p.id)}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border text-xs transition-all ${
-                        palette === p.id ? 'border-cyan-500/30 bg-cyan-500/[0.08] text-cyan-300' : 'border-indigo-500/8 bg-white/[0.01] text-gray-400 hover:text-gray-200'
-                      }`}>
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all"
+                      style={palette === p.id
+                        ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.4)' }
+                        : { background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
                       <div className="flex gap-0.5 flex-shrink-0">
                         {p.colors.map((c, i) => (
-                          <div key={i} className="w-3 h-3 rounded-full" style={{ background: c }} />
+                          <div key={i} className="w-4 h-4 rounded-full border border-black/20" style={{ background: c }} />
                         ))}
                       </div>
-                      <span className="font-semibold text-[11px]">{p.name}</span>
+                      <span className="text-[11px] font-semibold" style={{ color: palette === p.id ? '#22d3ee' : '#9ca3af' }}>{p.name}</span>
+                      {palette === p.id && <span className="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#06b6d4' }} />}
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Quantity */}
-              <div className="panel rounded-2xl p-4 sm:p-5">
-                <p className="hud-label text-[11px] mb-2.5">QUANTITY</p>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {['2', '4', '6'].map(q => (
-                    <button key={q} onClick={() => setQuantity(q)}
-                      className={`chip text-[10px] justify-center ${quantity === q ? 'active' : ''}`}
-                      style={quantity === q ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                      {q} imgs
-                    </button>
-                  ))}
+              <div className="panel rounded-2xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-white/[0.04]" style={{ background: 'rgba(6,182,212,0.03)' }}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1 h-3.5 rounded-full" style={{ background: '#06b6d4' }} />
+                    <p className="hud-label text-[10px]" style={{ color: '#06b6d4' }}>QUANTITY</p>
+                  </div>
+                </div>
+                <div className="p-3">
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {[{ v: '2', label: '2' }, { v: '4', label: '4' }, { v: '6', label: '6' }].map(q => (
+                      <button key={q.v} onClick={() => setQuantity(q.v)}
+                        className="flex flex-col items-center justify-center py-3 rounded-xl border transition-all"
+                        style={quantity === q.v
+                          ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.4)' }
+                          : { background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
+                        <span className="text-lg font-bold leading-none" style={{ color: quantity === q.v ? '#22d3ee' : '#9ca3af' }}>{q.label}</span>
+                        <span className="text-[9px] mt-1" style={{ color: quantity === q.v ? 'rgba(34,211,238,0.55)' : '#4b5563' }}>imgs</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
