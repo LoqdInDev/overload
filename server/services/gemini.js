@@ -14,19 +14,38 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 // Map dimension strings like "1080x1920" to Gemini aspect ratio strings
 function dimensionToAspectRatio(dimension) {
   const MAP = {
+    // Square
     '1080x1080': '1:1',
     '1500x1500': '1:1',
     '2000x2000': '1:1',
+    // Portrait 4:5
     '1080x1350': '4:5',
     '800x1000':  '4:5',
-    '1200x628':  '16:9',
-    '1200x630':  '16:9',
-    '1920x600':  '16:9',
-    '1500x500':  '4:1',
+    '864x1080':  '4:5',
+    // Portrait 2:3
+    '1000x1500': '3:4',
+    // Tall portrait 9:16
     '1080x1920': '9:16',
-    '728x90':    '16:9',
-    '300x250':   '4:3',
     '160x600':   '9:16',
+    // Landscape 16:9
+    '1280x720':  '16:9',
+    '1600x900':  '16:9',
+    '1200x628':  '16:9',
+    '1200x627':  '16:9',
+    '1200x630':  '16:9',
+    '1080x608':  '16:9',
+    '970x600':   '16:9',
+    // Landscape 4:3
+    '300x250':   '4:3',
+    // Ultra-wide / banner
+    '1920x600':  '4:1',
+    '1500x500':  '4:1',
+    '1584x396':  '4:1',
+    '1440x400':  '4:1',
+    '970x250':   '4:1',
+    '600x200':   '4:1',
+    '728x90':    '4:1',
+    '320x50':    '4:1',
   };
   return MAP[dimension] || '1:1';
 }
@@ -36,13 +55,13 @@ function dimensionToAspectRatio(dimension) {
 // so we must convey the ratio via text instruction.
 function buildDimensionInstruction(aspectRatio) {
   const DESCRIPTIONS = {
-    '1:1':  'STRICT REQUIREMENT: Generate a perfectly SQUARE image (1:1 aspect ratio, equal width and height). Do NOT generate a wide or landscape image.',
-    '4:5':  'STRICT REQUIREMENT: Generate a PORTRAIT image (4:5 aspect ratio, slightly taller than wide, like a mobile phone screen).',
-    '9:16': 'STRICT REQUIREMENT: Generate a TALL VERTICAL image (9:16 aspect ratio, much taller than wide, full phone screen story/reel format).',
-    '16:9': 'STRICT REQUIREMENT: Generate a WIDE LANDSCAPE image (16:9 aspect ratio, much wider than tall, like a widescreen banner).',
-    '4:3':  'STRICT REQUIREMENT: Generate a LANDSCAPE image (4:3 aspect ratio, wider than tall).',
-    '3:4':  'STRICT REQUIREMENT: Generate a PORTRAIT image (3:4 aspect ratio, taller than wide).',
-    '4:1':  'STRICT REQUIREMENT: Generate an ULTRA-WIDE BANNER image (4:1 aspect ratio, very wide and short).',
+    '1:1':  'CRITICAL OUTPUT REQUIREMENT — aspect ratio 1:1 (SQUARE). The canvas must be perfectly square with equal width and height. Do NOT produce a landscape or portrait image.',
+    '4:5':  'CRITICAL OUTPUT REQUIREMENT — aspect ratio 4:5 (PORTRAIT). The canvas must be taller than wide (width × 1.25 = height), like an Instagram feed portrait post. Do NOT produce a square or landscape image.',
+    '3:4':  'CRITICAL OUTPUT REQUIREMENT — aspect ratio 3:4 (PORTRAIT). The canvas must be taller than wide (width × 1.33 = height), like a Pinterest pin. Do NOT produce a square or landscape image.',
+    '9:16': 'CRITICAL OUTPUT REQUIREMENT — aspect ratio 9:16 (TALL VERTICAL). The canvas must be much taller than wide, like a smartphone screen story or reel. Do NOT produce a square or landscape image.',
+    '16:9': 'CRITICAL OUTPUT REQUIREMENT — aspect ratio 16:9 (WIDESCREEN LANDSCAPE). The canvas must be much wider than tall, like a YouTube thumbnail or widescreen video frame. Width is approximately 1.78× the height. Do NOT produce a square or portrait image.',
+    '4:3':  'CRITICAL OUTPUT REQUIREMENT — aspect ratio 4:3 (LANDSCAPE). The canvas must be wider than tall (width × 0.75 = height). Do NOT produce a square or portrait image.',
+    '4:1':  'CRITICAL OUTPUT REQUIREMENT — aspect ratio 4:1 (ULTRA-WIDE BANNER). The canvas must be extremely wide and very short, like a horizontal website banner or leaderboard ad. Width is 4× the height. Do NOT produce a square or portrait image.',
   };
   return DESCRIPTIONS[aspectRatio] || '';
 }
