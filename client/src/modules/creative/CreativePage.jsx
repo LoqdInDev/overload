@@ -1017,67 +1017,95 @@ export default function CreativePage() {
                 </div>
               )}
 
-              <div className="space-y-4">
-                <div>
-                  <p className="hud-label text-[10px] mb-2">PRODUCT / BRAND</p>
-                  <input className="w-full input-field rounded-xl px-4 py-3 text-sm"
-                    value={briefProduct} onChange={e => setBriefProduct(e.target.value)}
-                    placeholder={brand?.brand_name && briefUseBrand ? `e.g. ${brand.brand_name} Summer Collection` : 'e.g. Premium Skincare Serum'} />
-                </div>
-                <div>
-                  <p className="hud-label text-[10px] mb-2">CAMPAIGN GOAL</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {['Brand Awareness', 'Product Launch', 'Conversion', 'Retargeting', 'Seasonal Campaign'].map(g => (
-                      <button key={g} onClick={() => setBriefGoal(g)}
-                        className={`chip text-[10px] ${briefGoal === g ? 'active' : ''}`}
-                        style={briefGoal === g ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                        {g}
-                      </button>
-                    ))}
+              <div className="space-y-6">
+
+                {/* ── Group 1: Campaign Basics ── */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-bold tracking-widest uppercase" style={{ color: '#06b6d4' }}>01</span>
+                    <p className="text-[11px] font-semibold text-gray-300">Campaign Basics</p>
+                    <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                  </div>
+                  <div>
+                    <p className="hud-label text-[10px] mb-1.5">PRODUCT / BRAND</p>
+                    <input className="w-full input-field rounded-xl px-4 py-3 text-sm"
+                      value={briefProduct} onChange={e => setBriefProduct(e.target.value)}
+                      placeholder={brand?.brand_name && briefUseBrand ? `e.g. ${brand.brand_name} Summer Collection` : 'e.g. Premium Skincare Serum'} />
+                  </div>
+                  <div>
+                    <p className="hud-label text-[10px] mb-1.5">CAMPAIGN GOAL</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {['Brand Awareness', 'Product Launch', 'Conversion', 'Retargeting', 'Seasonal Campaign'].map(g => (
+                        <button key={g} onClick={() => setBriefGoal(g)}
+                          className="chip text-[10px]"
+                          style={briefGoal === g ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                          {g}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="hud-label text-[10px] mb-1.5">CAMPAIGN SCALE</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {['Awareness', 'Testing', 'Full Campaign', 'Product Launch'].map(s => (
+                        <button key={s} onClick={() => setBriefScale(s)}
+                          className="chip text-[10px]"
+                          style={briefScale === s ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <p className="hud-label text-[10px] mb-2">TARGET AUDIENCE</p>
-                  <input className="w-full input-field rounded-xl px-4 py-3 text-sm"
-                    value={briefAudience} onChange={e => setBriefAudience(e.target.value)}
-                    placeholder="e.g. Women 25-45, health-conscious" />
-                </div>
-                <div>
-                  <p className="hud-label text-[10px] mb-2">KEY MESSAGE</p>
-                  <input className="w-full input-field rounded-xl px-4 py-3 text-sm"
-                    value={briefKeyMessage} onChange={e => setBriefKeyMessage(e.target.value)}
-                    placeholder="e.g. Feel confident in your skin, effortlessly" />
-                </div>
-                <div>
-                  <p className="hud-label text-[10px] mb-2">TONE OF VOICE</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {['Playful', 'Professional', 'Urgent', 'Inspirational', 'Luxury', 'Friendly', 'Bold'].map(t => (
-                      <button key={t} onClick={() => setBriefTone(briefTone === t ? '' : t)}
-                        className={`chip text-[10px] ${briefTone === t ? 'active' : ''}`}
-                        style={briefTone === t ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                        {t}
-                      </button>
-                    ))}
+
+                {/* ── Group 2: Audience & Messaging ── */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-bold tracking-widest uppercase" style={{ color: '#a78bfa' }}>02</span>
+                    <p className="text-[11px] font-semibold text-gray-300">Audience & Messaging</p>
+                    <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                  </div>
+                  <div>
+                    <p className="hud-label text-[10px] mb-1.5">TARGET AUDIENCE</p>
+                    <input className="w-full input-field rounded-xl px-4 py-3 text-sm"
+                      value={briefAudience} onChange={e => setBriefAudience(e.target.value)}
+                      placeholder="e.g. Women 25–45, health-conscious" />
+                  </div>
+                  <div>
+                    <p className="hud-label text-[10px] mb-1.5">KEY MESSAGE</p>
+                    <input className="w-full input-field rounded-xl px-4 py-3 text-sm"
+                      value={briefKeyMessage} onChange={e => setBriefKeyMessage(e.target.value)}
+                      placeholder="e.g. Feel confident in your skin, effortlessly" />
+                  </div>
+                  <div>
+                    <p className="hud-label text-[10px] mb-1.5">TONE OF VOICE</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {['Playful', 'Professional', 'Urgent', 'Inspirational', 'Luxury', 'Friendly', 'Bold'].map(t => (
+                        <button key={t} onClick={() => setBriefTone(briefTone === t ? '' : t)}
+                          className="chip text-[10px]"
+                          style={briefTone === t ? { background: 'rgba(167,139,250,0.15)', borderColor: 'rgba(167,139,250,0.3)', color: '#a78bfa' } : {}}>
+                          {t}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <p className="hud-label text-[10px] mb-2">CAMPAIGN SCALE</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {['Awareness', 'Testing', 'Full Campaign', 'Product Launch'].map(s => (
-                      <button key={s} onClick={() => setBriefScale(s)}
-                        className={`chip text-[10px] ${briefScale === s ? 'active' : ''}`}
-                        style={briefScale === s ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                        {s}
-                      </button>
-                    ))}
+
+                {/* ── Group 3: Creative Direction ── */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-bold tracking-widest uppercase" style={{ color: '#4ade80' }}>03</span>
+                    <p className="text-[11px] font-semibold text-gray-300">Creative Direction</p>
+                    <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                  </div>
+                  <div>
+                    <p className="hud-label text-[10px] mb-1.5">REFERENCE STYLE</p>
+                    <input className="w-full input-field rounded-xl px-4 py-3 text-sm"
+                      value={briefRefStyle} onChange={e => setBriefRefStyle(e.target.value)}
+                      placeholder="e.g. Apple-minimalist, Nike-bold, Glossier-soft pastel" />
                   </div>
                 </div>
-                <div>
-                  <p className="hud-label text-[10px] mb-2">REFERENCE STYLE</p>
-                  <input className="w-full input-field rounded-xl px-4 py-3 text-sm"
-                    value={briefRefStyle} onChange={e => setBriefRefStyle(e.target.value)}
-                    placeholder="e.g. Apple-minimalist, Nike-bold, Glossier-soft pastel" />
-                </div>
+
               </div>
             </div>
 
@@ -1381,12 +1409,12 @@ export default function CreativePage() {
                               style={{ background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.25)', color: '#22d3ee' }}>5</div>
                             <div className="w-px flex-1 mt-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
                           </div>
-                          <div className="flex-1 pt-0.5 space-y-3 min-w-0">
+                          <div className="flex-1 pt-0.5 space-y-4 min-w-0">
                             <p className="text-[12px] font-semibold text-gray-200">Visual Details</p>
-                            <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                <p className="hud-label text-[9px] mb-1.5">LIGHTING</p>
-                                <div className="flex flex-wrap gap-1.5">
+                            <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.07)' }}>
+                              <div className="px-4 py-3 space-y-1" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}>
+                                <p className="hud-label text-[9px]" style={{ color: '#06b6d4' }}>LIGHTING</p>
+                                <div className="flex flex-wrap gap-1.5 pt-1">
                                   {LIGHTING_OPTIONS.map(l => (
                                     <button key={l} onClick={() => setBuilderLighting(builderLighting === l ? '' : l)}
                                       className="chip text-[10px]"
@@ -1396,9 +1424,9 @@ export default function CreativePage() {
                                   ))}
                                 </div>
                               </div>
-                              <div>
-                                <p className="hud-label text-[9px] mb-1.5">BACKGROUND</p>
-                                <div className="flex flex-wrap gap-1.5">
+                              <div className="px-4 py-3 space-y-1" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}>
+                                <p className="hud-label text-[9px]" style={{ color: '#06b6d4' }}>BACKGROUND</p>
+                                <div className="flex flex-wrap gap-1.5 pt-1">
                                   {BACKGROUND_OPTIONS.map(b => (
                                     <button key={b} onClick={() => setBuilderBackground(builderBackground === b ? '' : b)}
                                       className="chip text-[10px]"
@@ -1408,17 +1436,17 @@ export default function CreativePage() {
                                   ))}
                                 </div>
                               </div>
-                            </div>
-                            <div>
-                              <p className="hud-label text-[9px] mb-1.5">COLOR GRADING</p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {COLOR_GRADES.map(g => (
-                                  <button key={g} onClick={() => setBuilderColorGrade(builderColorGrade === g ? '' : g)}
-                                    className="chip text-[10px]"
-                                    style={builderColorGrade === g ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                                    {g}
-                                  </button>
-                                ))}
+                              <div className="px-4 py-3 space-y-1" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                                <p className="hud-label text-[9px]" style={{ color: '#06b6d4' }}>COLOR GRADING</p>
+                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                  {COLOR_GRADES.map(g => (
+                                    <button key={g} onClick={() => setBuilderColorGrade(builderColorGrade === g ? '' : g)}
+                                      className="chip text-[10px]"
+                                      style={builderColorGrade === g ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                                      {g}
+                                    </button>
+                                  ))}
+                                </div>
                               </div>
                             </div>
                           </div>
