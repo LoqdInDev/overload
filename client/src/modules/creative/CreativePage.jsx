@@ -44,28 +44,52 @@ const MODEL_GENDERS = [
 const MODEL_AGES = ['Teen 16–20', 'Young Adult 20–30', 'Adult 30–45', 'Mature 45–60', 'Senior 60+'];
 const MODEL_STYLES = ['Casual & Everyday', 'Professional', 'High Fashion / Editorial', 'Athletic / Activewear', 'Streetwear', 'Luxury / Elegant', 'Bohemian'];
 const SETTINGS = [
-  { id: 'studio', label: '🎬 Studio', prompt: 'professional studio setting' },
-  { id: 'home', label: '🏠 Home', prompt: 'modern home interior' },
-  { id: 'urban', label: '🏙 Urban', prompt: 'urban street environment, city backdrop' },
-  { id: 'beach', label: '🌊 Beach', prompt: 'beach or coastal environment, golden sand' },
-  { id: 'nature', label: '🌿 Nature', prompt: 'natural outdoor environment, lush greenery' },
-  { id: 'cafe', label: '☕ Café', prompt: 'cozy café or coffee shop interior' },
-  { id: 'office', label: '💼 Office', prompt: 'modern office or workspace environment' },
-  { id: 'gym', label: '💪 Gym', prompt: 'gym or fitness studio environment' },
-  { id: 'rooftop', label: '🌆 Rooftop', prompt: 'rooftop terrace with city views' },
-  { id: 'luxury', label: '✨ Luxury', prompt: 'luxury hotel or high-end interior setting' },
+  { id: 'studio', emoji: '🎬', name: 'Studio', prompt: 'professional studio setting' },
+  { id: 'home', emoji: '🏠', name: 'Home', prompt: 'modern home interior' },
+  { id: 'urban', emoji: '🏙', name: 'Urban', prompt: 'urban street environment, city backdrop' },
+  { id: 'beach', emoji: '🌊', name: 'Beach', prompt: 'beach or coastal environment, golden sand' },
+  { id: 'nature', emoji: '🌿', name: 'Nature', prompt: 'natural outdoor environment, lush greenery' },
+  { id: 'cafe', emoji: '☕', name: 'Café', prompt: 'cozy café or coffee shop interior' },
+  { id: 'office', emoji: '💼', name: 'Office', prompt: 'modern office or workspace environment' },
+  { id: 'gym', emoji: '💪', name: 'Gym', prompt: 'gym or fitness studio environment' },
+  { id: 'rooftop', emoji: '🌆', name: 'Rooftop', prompt: 'rooftop terrace with city views' },
+  { id: 'luxury', emoji: '✨', name: 'Luxury', prompt: 'luxury hotel or high-end interior setting' },
 ];
 const COMPOSITIONS = [
-  { id: 'centered', label: 'Centered Hero', prompt: 'centered hero composition' },
-  { id: 'thirds', label: 'Rule of Thirds', prompt: 'rule of thirds composition' },
-  { id: 'closeup', label: 'Close-Up', prompt: 'tight close-up shot, detailed framing' },
-  { id: 'wideshot', label: 'Wide Shot', prompt: 'wide establishing shot' },
-  { id: 'flatlay', label: 'Flat Lay', prompt: 'overhead flat lay composition' },
-  { id: 'lowangle', label: 'Low Angle', prompt: 'dramatic low-angle upward shot' },
-  { id: 'diagonal', label: 'Diagonal', prompt: 'dynamic diagonal composition' },
-  { id: 'split', label: 'Split Screen', prompt: 'split-screen dual composition' },
+  { id: 'centered', label: 'Centered Hero', mark: '⊙', prompt: 'centered hero composition' },
+  { id: 'thirds', label: 'Rule of Thirds', mark: '⊞', prompt: 'rule of thirds composition' },
+  { id: 'closeup', label: 'Close-Up', mark: '◎', prompt: 'tight close-up shot, detailed framing' },
+  { id: 'wideshot', label: 'Wide Shot', mark: '⊡', prompt: 'wide establishing shot' },
+  { id: 'flatlay', label: 'Flat Lay', mark: '□', prompt: 'overhead flat lay composition' },
+  { id: 'lowangle', label: 'Low Angle', mark: '↑', prompt: 'dramatic low-angle upward shot' },
+  { id: 'diagonal', label: 'Diagonal', mark: '◱', prompt: 'dynamic diagonal composition' },
+  { id: 'split', label: 'Split Screen', mark: '⬛', prompt: 'split-screen dual composition' },
 ];
-const COLOR_GRADES = ['Warm & Golden', 'Cool & Blue', 'Desaturated / Matte', 'High Contrast', 'Pastel & Soft', 'Cinematic Film Grain', 'Vivid & Saturated'];
+const LIGHTING_OPTIONS = [
+  { id: 'natural', label: 'Natural Light', swatch: 'linear-gradient(135deg,#fef9c3,#fde68a,#fbbf24)' },
+  { id: 'studio', label: 'Studio', swatch: 'linear-gradient(135deg,#f1f5f9,#cbd5e1,#94a3b8)' },
+  { id: 'golden', label: 'Golden Hour', swatch: 'linear-gradient(135deg,#fb923c,#f59e0b,#fcd34d)' },
+  { id: 'dramatic', label: 'Dramatic', swatch: 'linear-gradient(135deg,#0f172a,#1e293b,#334155)' },
+  { id: 'backlit', label: 'Backlit', swatch: 'linear-gradient(135deg,#1e1b4b,#4338ca,#c7d2fe)' },
+  { id: 'neon', label: 'Neon Glow', swatch: 'linear-gradient(135deg,#7c3aed,#06b6d4,#a855f7)' },
+];
+const BACKGROUND_OPTIONS = [
+  { id: 'white', label: 'Pure White', swatch: 'linear-gradient(135deg,#ffffff,#f8fafc)' },
+  { id: 'gradient', label: 'Gradient', swatch: 'linear-gradient(135deg,#818cf8,#c084fc,#fb7185)' },
+  { id: 'location', label: 'On Location', swatch: 'linear-gradient(135deg,#78716c,#a8a29e,#57534e)' },
+  { id: 'abstract', label: 'Abstract', swatch: 'linear-gradient(135deg,#ec4899,#8b5cf6,#3b82f6)' },
+  { id: 'transparent', label: 'Transparent', swatch: 'conic-gradient(#cbd5e1 90deg,transparent 90deg) 0 0/10px 10px' },
+  { id: 'textured', label: 'Textured', swatch: 'linear-gradient(135deg,#92400e,#b45309,#78350f)' },
+];
+const COLOR_GRADES = [
+  { id: 'warm', label: 'Warm & Golden', swatch: 'linear-gradient(135deg,#f59e0b,#d97706,#b45309)' },
+  { id: 'cool', label: 'Cool & Blue', swatch: 'linear-gradient(135deg,#60a5fa,#3b82f6,#1d4ed8)' },
+  { id: 'matte', label: 'Desaturated / Matte', swatch: 'linear-gradient(135deg,#9ca3af,#6b7280,#4b5563)' },
+  { id: 'contrast', label: 'High Contrast', swatch: 'linear-gradient(135deg,#000000 50%,#ffffff 50%)' },
+  { id: 'pastel', label: 'Pastel & Soft', swatch: 'linear-gradient(135deg,#fbcfe8,#c4b5fd,#bae6fd)' },
+  { id: 'film', label: 'Cinematic Film', swatch: 'linear-gradient(135deg,#451a03,#78350f,#92400e)' },
+  { id: 'vivid', label: 'Vivid & Saturated', swatch: 'linear-gradient(135deg,#f43f5e,#a855f7,#22d3ee)' },
+];
 
 const DIMENSIONS = {
   'ad-creative': [
@@ -474,9 +498,9 @@ export default function CreativePage() {
     }
     if (builderSetting) { const s = SETTINGS.find(x => x.id === builderSetting); if (s) parts.push(s.prompt); }
     if (builderComposition) { const c = COMPOSITIONS.find(x => x.id === builderComposition); if (c) parts.push(c.prompt); }
-    if (builderLighting) parts.push(`${builderLighting.toLowerCase()} lighting`);
-    if (builderBackground) parts.push(`${builderBackground.toLowerCase()} background`);
-    if (builderColorGrade) parts.push(`${builderColorGrade.toLowerCase()} color grading`);
+    if (builderLighting) { const l = LIGHTING_OPTIONS.find(x => x.id === builderLighting); if (l) parts.push(`${l.label.toLowerCase()} lighting`); }
+    if (builderBackground) { const b = BACKGROUND_OPTIONS.find(x => x.id === builderBackground); if (b) parts.push(`${b.label.toLowerCase()} background`); }
+    if (builderColorGrade) { const g = COLOR_GRADES.find(x => x.id === builderColorGrade); if (g) parts.push(`${g.label.toLowerCase()} color grading`); }
     if (showTextOverlay && builderTextOverlay) parts.push(`include text overlay reading "${builderTextOverlay}"`);
     setPrompt(parts.join(', '));
   }, [promptMode, builderSubject, builderVibe, showModels, builderModelGender, builderModelAge, builderModelStyle, builderSetting, builderComposition, builderLighting, builderBackground, builderColorGrade, showTextOverlay, builderTextOverlay]);
@@ -1304,30 +1328,42 @@ export default function CreativePage() {
                               style={{ background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.25)', color: '#22d3ee' }}>3</div>
                             <div className="w-px flex-1 mt-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
                           </div>
-                          <div className="flex-1 pt-0.5 space-y-3 min-w-0">
+                          <div className="flex-1 pt-0.5 space-y-4 min-w-0">
                             <p className="text-[12px] font-semibold text-gray-200">Scene & Composition</p>
                             <div>
-                              <p className="hud-label text-[9px] mb-1.5">SETTING / ENVIRONMENT</p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {SETTINGS.map(s => (
-                                  <button key={s.id} onClick={() => setBuilderSetting(builderSetting === s.id ? '' : s.id)}
-                                    className="chip text-[10px]"
-                                    style={builderSetting === s.id ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                                    {s.label}
-                                  </button>
-                                ))}
+                              <p className="hud-label text-[9px] mb-2" style={{ color: '#06b6d4' }}>SETTING / ENVIRONMENT</p>
+                              <div className="grid grid-cols-5 gap-2">
+                                {SETTINGS.map(s => {
+                                  const active = builderSetting === s.id;
+                                  return (
+                                    <button key={s.id} onClick={() => setBuilderSetting(active ? '' : s.id)}
+                                      className="flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl border-2 transition-all"
+                                      style={active
+                                        ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.5)' }
+                                        : { background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }}>
+                                      <span className="text-xl leading-none">{s.emoji}</span>
+                                      <span className="text-[9px] font-medium leading-none" style={{ color: active ? '#22d3ee' : '#6b7280' }}>{s.name}</span>
+                                    </button>
+                                  );
+                                })}
                               </div>
                             </div>
                             <div>
-                              <p className="hud-label text-[9px] mb-1.5">COMPOSITION & ANGLE</p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {COMPOSITIONS.map(c => (
-                                  <button key={c.id} onClick={() => setBuilderComposition(builderComposition === c.id ? '' : c.id)}
-                                    className="chip text-[10px]"
-                                    style={builderComposition === c.id ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                                    {c.label}
-                                  </button>
-                                ))}
+                              <p className="hud-label text-[9px] mb-2" style={{ color: '#06b6d4' }}>COMPOSITION & ANGLE</p>
+                              <div className="grid grid-cols-4 gap-2">
+                                {COMPOSITIONS.map(c => {
+                                  const active = builderComposition === c.id;
+                                  return (
+                                    <button key={c.id} onClick={() => setBuilderComposition(active ? '' : c.id)}
+                                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 transition-all"
+                                      style={active
+                                        ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.5)' }
+                                        : { background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }}>
+                                      <span className="text-base leading-none flex-shrink-0" style={{ color: active ? '#22d3ee' : '#4b5563' }}>{c.mark}</span>
+                                      <span className="text-[10px] font-medium leading-tight text-left" style={{ color: active ? '#22d3ee' : '#6b7280' }}>{c.label}</span>
+                                    </button>
+                                  );
+                                })}
                               </div>
                             </div>
                           </div>
@@ -1411,44 +1447,73 @@ export default function CreativePage() {
                           </div>
                           <div className="flex-1 pt-0.5 space-y-4 min-w-0">
                             <p className="text-[12px] font-semibold text-gray-200">Visual Details</p>
-                            <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.07)' }}>
-                              <div className="px-4 py-3 space-y-1" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}>
-                                <p className="hud-label text-[9px]" style={{ color: '#06b6d4' }}>LIGHTING</p>
-                                <div className="flex flex-wrap gap-1.5 pt-1">
-                                  {LIGHTING_OPTIONS.map(l => (
-                                    <button key={l} onClick={() => setBuilderLighting(builderLighting === l ? '' : l)}
-                                      className="chip text-[10px]"
-                                      style={builderLighting === l ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                                      {l}
+
+                            {/* Lighting */}
+                            <div>
+                              <p className="hud-label text-[9px] mb-2" style={{ color: '#06b6d4' }}>LIGHTING</p>
+                              <div className="grid grid-cols-3 gap-2">
+                                {LIGHTING_OPTIONS.map(l => {
+                                  const active = builderLighting === l.id;
+                                  return (
+                                    <button key={l.id} onClick={() => setBuilderLighting(active ? '' : l.id)}
+                                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border-2 transition-all"
+                                      style={active
+                                        ? { background: 'rgba(6,182,212,0.1)', borderColor: 'rgba(6,182,212,0.45)' }
+                                        : { background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }}>
+                                      <span className="w-5 h-5 rounded-lg flex-shrink-0 border border-black/20"
+                                        style={{ background: l.swatch }} />
+                                      <span className="text-[10px] font-medium leading-tight text-left"
+                                        style={{ color: active ? '#22d3ee' : '#6b7280' }}>{l.label}</span>
                                     </button>
-                                  ))}
-                                </div>
-                              </div>
-                              <div className="px-4 py-3 space-y-1" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}>
-                                <p className="hud-label text-[9px]" style={{ color: '#06b6d4' }}>BACKGROUND</p>
-                                <div className="flex flex-wrap gap-1.5 pt-1">
-                                  {BACKGROUND_OPTIONS.map(b => (
-                                    <button key={b} onClick={() => setBuilderBackground(builderBackground === b ? '' : b)}
-                                      className="chip text-[10px]"
-                                      style={builderBackground === b ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                                      {b}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                              <div className="px-4 py-3 space-y-1" style={{ background: 'rgba(255,255,255,0.02)' }}>
-                                <p className="hud-label text-[9px]" style={{ color: '#06b6d4' }}>COLOR GRADING</p>
-                                <div className="flex flex-wrap gap-1.5 pt-1">
-                                  {COLOR_GRADES.map(g => (
-                                    <button key={g} onClick={() => setBuilderColorGrade(builderColorGrade === g ? '' : g)}
-                                      className="chip text-[10px]"
-                                      style={builderColorGrade === g ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                                      {g}
-                                    </button>
-                                  ))}
-                                </div>
+                                  );
+                                })}
                               </div>
                             </div>
+
+                            {/* Background */}
+                            <div>
+                              <p className="hud-label text-[9px] mb-2" style={{ color: '#06b6d4' }}>BACKGROUND</p>
+                              <div className="grid grid-cols-3 gap-2">
+                                {BACKGROUND_OPTIONS.map(b => {
+                                  const active = builderBackground === b.id;
+                                  return (
+                                    <button key={b.id} onClick={() => setBuilderBackground(active ? '' : b.id)}
+                                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border-2 transition-all"
+                                      style={active
+                                        ? { background: 'rgba(6,182,212,0.1)', borderColor: 'rgba(6,182,212,0.45)' }
+                                        : { background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }}>
+                                      <span className="w-5 h-5 rounded-lg flex-shrink-0 border border-black/20"
+                                        style={{ background: b.swatch }} />
+                                      <span className="text-[10px] font-medium leading-tight text-left"
+                                        style={{ color: active ? '#22d3ee' : '#6b7280' }}>{b.label}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Color Grading */}
+                            <div>
+                              <p className="hud-label text-[9px] mb-2" style={{ color: '#06b6d4' }}>COLOR GRADING</p>
+                              <div className="grid grid-cols-2 gap-2">
+                                {COLOR_GRADES.map(g => {
+                                  const active = builderColorGrade === g.id;
+                                  return (
+                                    <button key={g.id} onClick={() => setBuilderColorGrade(active ? '' : g.id)}
+                                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border-2 transition-all"
+                                      style={active
+                                        ? { background: 'rgba(6,182,212,0.1)', borderColor: 'rgba(6,182,212,0.45)' }
+                                        : { background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }}>
+                                      <span className="w-14 h-5 rounded-lg flex-shrink-0 border border-black/20"
+                                        style={{ background: g.swatch }} />
+                                      <span className="text-[10px] font-medium leading-tight text-left"
+                                        style={{ color: active ? '#22d3ee' : '#6b7280' }}>{g.label}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
                           </div>
                         </div>
 
