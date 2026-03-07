@@ -10,7 +10,19 @@ export function BrandProvider({ children }) {
   const refreshBrand = useCallback(async () => {
     try {
       const data = await fetchJSON('/api/brand-profile/profile');
-      setBrand(data && data.brand_name ? data : null);
+      if (data && data.brand_name) {
+        const tryParse = (v) => { try { return typeof v === 'string' ? JSON.parse(v) : v; } catch { return v; } };
+        setBrand({
+          ...data,
+          colors: tryParse(data.colors) || {},
+          fonts: tryParse(data.fonts) || {},
+          values: tryParse(data.values) || [],
+          competitors: tryParse(data.competitors) || [],
+          keywords: tryParse(data.keywords) || [],
+        });
+      } else {
+        setBrand(null);
+      }
     } catch (e) {
       console.error('Failed to fetch brand profile:', e);
       setBrand(null);

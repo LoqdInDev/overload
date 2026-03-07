@@ -202,12 +202,18 @@ export default function BrandHubPage() {
       };
 
       const method = profileId ? 'PUT' : 'POST';
-      const url = profileId ? `/api/brand-profile/profile/${profileId}` : '/api/brand-profile/profile';
+      const url = profileId
+        ? `${API_BASE}/api/brand-profile/profile/${profileId}`
+        : `${API_BASE}/api/brand-profile/profile`;
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Server error ${res.status}`);
+      }
       const data = await res.json();
       if (!profileId && data.id) setProfileId(data.id);
       setSaveStatus('saved');

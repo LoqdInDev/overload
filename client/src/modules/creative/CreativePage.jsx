@@ -1212,7 +1212,7 @@ export default function CreativePage() {
                       )}
                     </div>
                   ) : (
-                    <p className="text-[11px] text-gray-500 leading-relaxed">Enable to use <span className="text-violet-400">{brand.brandName}</span>'s colors &amp; visual identity.</p>
+                    <p className="text-[11px] text-gray-500 leading-relaxed">Enable to use <span className="text-violet-400">{brand.brand_name}</span>'s colors &amp; visual identity.</p>
                   )}
                 </div>
               </div>

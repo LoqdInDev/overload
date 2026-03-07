@@ -119,26 +119,32 @@ router.put('/profile/:id', (req, res) => {
       industry, website, social_links, words_to_use, words_to_avoid
     } = req.body;
 
+    const def = (v, fallback) => v !== undefined ? v : fallback;
     db.prepare(
       `UPDATE bp_profiles SET brand_name = ?, tagline = ?, mission = ?, vision = ?, values = ?,
         voice_tone = ?, voice_personality = ?, target_audience = ?, competitors = ?, colors = ?,
         fonts = ?, logo_url = ?, guidelines = ?, keywords = ?, industry = ?, website = ?,
         social_links = ?, words_to_use = ?, words_to_avoid = ?, updated_at = datetime('now') WHERE id = ? AND workspace_id = ?`
     ).run(
-      brand_name || profile.brand_name, tagline || profile.tagline,
-      mission || profile.mission, vision || profile.vision,
-      values ? JSON.stringify(values) : profile.values,
-      voice_tone || profile.voice_tone, voice_personality || profile.voice_personality,
-      target_audience ? JSON.stringify(target_audience) : profile.target_audience,
-      competitors ? JSON.stringify(competitors) : profile.competitors,
-      colors ? JSON.stringify(colors) : profile.colors,
+      def(brand_name, profile.brand_name),
+      def(tagline, profile.tagline),
+      def(mission, profile.mission),
+      def(vision, profile.vision),
+      values !== undefined ? JSON.stringify(values) : profile.values,
+      def(voice_tone, profile.voice_tone),
+      def(voice_personality, profile.voice_personality),
+      target_audience !== undefined ? JSON.stringify(target_audience) : profile.target_audience,
+      competitors !== undefined ? JSON.stringify(competitors) : profile.competitors,
+      colors !== undefined ? JSON.stringify(colors) : profile.colors,
       fonts ? JSON.stringify(fonts) : profile.fonts,
-      logo_url || profile.logo_url, guidelines || profile.guidelines,
-      keywords ? JSON.stringify(keywords) : profile.keywords,
-      industry || profile.industry, website || profile.website,
+      logo_url || profile.logo_url,
+      def(guidelines, profile.guidelines),
+      keywords !== undefined ? JSON.stringify(keywords) : profile.keywords,
+      def(industry, profile.industry),
+      def(website, profile.website),
       social_links ? JSON.stringify(social_links) : profile.social_links,
-      words_to_use !== undefined ? words_to_use : profile.words_to_use,
-      words_to_avoid !== undefined ? words_to_avoid : profile.words_to_avoid,
+      def(words_to_use, profile.words_to_use),
+      def(words_to_avoid, profile.words_to_avoid),
       req.params.id, wsId
     );
 
