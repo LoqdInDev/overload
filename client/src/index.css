@@ -209,14 +209,14 @@
 /* ═══════════════════════════════════════════
    LIGHT MODE — Global text color remapping
    ═══════════════════════════════════════════ */
-[data-theme="light"] .text-white { color: #0f172a !important; }
+[data-theme="light"] :not(button):not(a).text-white { color: #0f172a !important; }
 [data-theme="light"] .text-gray-100 { color: #1e293b !important; }
 [data-theme="light"] .text-gray-200 { color: #334155 !important; }
 [data-theme="light"] .text-gray-300 { color: #475569 !important; }
 [data-theme="light"] .text-gray-400 { color: #64748b !important; }
 
 /* Hover state remapping */
-[data-theme="light"] .hover\:text-white:hover { color: #0f172a !important; }
+[data-theme="light"] :not(button):not(a).hover\:text-white:hover { color: #0f172a !important; }
 [data-theme="light"] .hover\:text-gray-200:hover { color: #1e293b !important; }
 [data-theme="light"] .hover\:text-gray-300:hover { color: #334155 !important; }
 [data-theme="light"] .group:hover .group-hover\:text-white { color: #0f172a !important; }

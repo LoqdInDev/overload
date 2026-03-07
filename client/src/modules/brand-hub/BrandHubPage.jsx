@@ -599,8 +599,8 @@ export default function BrandHubPage() {
             {/* Save Button */}
             <button onClick={saveProfile}
               disabled={saveStatus === 'saving'}
-              className="w-full py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 disabled:opacity-60"
-              style={{ background: COLOR, boxShadow: `0 4px 20px -4px ${COLOR}66` }}>
+              className="w-full py-3.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-60"
+              style={{ background: COLOR, color: '#ffffff', boxShadow: `0 4px 20px -4px ${COLOR}66` }}>
               {saveStatus === 'saving' ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
