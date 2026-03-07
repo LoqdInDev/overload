@@ -83,6 +83,7 @@ const COLOR_PALETTES = [
   { id: 'earth', name: 'Earth Tones', colors: ['#92400e', '#78716c', '#65a30d'] },
   { id: 'mono', name: 'Monochrome', colors: ['#18181b', '#71717a', '#e4e4e7'] },
   { id: 'neon', name: 'Neon Pop', colors: ['#f43f5e', '#a855f7', '#22d3ee'] },
+  { id: 'overload', name: 'Overload', colors: ['#C3A97A', '#B8893A', '#221F14'] },
 ];
 
 function formatDate(dateStr) {

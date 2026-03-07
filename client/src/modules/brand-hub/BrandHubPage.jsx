@@ -21,9 +21,9 @@ const TONES = [
 ];
 
 const EMPTY_PROFILE = {
-  brand_name: '', tagline: '', industry: '', website: '',
+  brand_name: '', tagline: '', industry: [], website: '',
   mission: '', vision: '', values: '',
-  voice_tone: '', voice_personality: '',
+  voice_tone: [], voice_personality: '',
   guidelines: '', words_to_use: '', words_to_avoid: '',
   target_audience: '', competitors: '', keywords: '',
   colors: { primary: '#C45D3E', secondary: '#5E8E6E' },
@@ -144,12 +144,12 @@ export default function BrandHubPage() {
           setProfile({
             brand_name: data.brand_name || '',
             tagline: data.tagline || '',
-            industry: data.industry || '',
+            industry: data.industry ? data.industry.split(',').map(s => s.trim()).filter(Boolean) : [],
             website: data.website || '',
             mission: data.mission || '',
             vision: data.vision || '',
             values: Array.isArray(parse(data.values)) ? parse(data.values).join(', ') : (data.values || ''),
-            voice_tone: data.voice_tone || '',
+            voice_tone: data.voice_tone ? data.voice_tone.split(',').map(s => s.trim()).filter(Boolean) : [],
             voice_personality: data.voice_personality || '',
             guidelines: data.guidelines || '',
             words_to_use: data.words_to_use || '',
@@ -185,12 +185,12 @@ export default function BrandHubPage() {
       const payload = {
         brand_name: profile.brand_name,
         tagline: profile.tagline,
-        industry: profile.industry,
+        industry: Array.isArray(profile.industry) ? profile.industry.join(', ') : profile.industry,
         website: profile.website,
         mission: profile.mission,
         vision: profile.vision,
         values: profile.values ? profile.values.split(',').map(s => s.trim()).filter(Boolean) : [],
-        voice_tone: profile.voice_tone,
+        voice_tone: Array.isArray(profile.voice_tone) ? profile.voice_tone.join(', ') : profile.voice_tone,
         voice_personality: profile.voice_personality,
         guidelines: profile.guidelines,
         words_to_use: profile.words_to_use,
@@ -441,9 +441,13 @@ export default function BrandHubPage() {
                     <label className={labelCls}>Industry</label>
                     <div className="flex flex-wrap gap-1.5 mb-2">
                       {INDUSTRIES.map(ind => (
-                        <button key={ind} onClick={() => update('industry', ind.toLowerCase())}
+                        <button key={ind} onClick={() => {
+                            const arr = Array.isArray(profile.industry) ? profile.industry : [];
+                            const val = ind.toLowerCase();
+                            update('industry', arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val]);
+                          }}
                           className={`px-3 py-1.5 text-[11px] font-medium rounded-lg transition-all ${
-                            profile.industry === ind.toLowerCase()
+                            (Array.isArray(profile.industry) ? profile.industry : []).includes(ind.toLowerCase())
                               ? dark ? 'bg-[#C45D3E]/15 text-[#C45D3E] border border-[#C45D3E]/25' : 'bg-[#C45D3E]/8 text-[#C45D3E] border border-[#C45D3E]/20'
                               : dark ? 'bg-white/[0.03] text-gray-500 border border-gray-200 hover:text-gray-300' : 'bg-[#F5F0E8] text-[#94908A] border border-[#e8e0d4] hover:text-[#332F2B]'
                           }`}>
@@ -494,9 +498,13 @@ export default function BrandHubPage() {
                   <label className={labelCls}>Voice Tone</label>
                   <div className="flex flex-wrap gap-2">
                     {TONES.map(t => (
-                      <button key={t} onClick={() => update('voice_tone', t.toLowerCase())}
+                      <button key={t} onClick={() => {
+                          const arr = Array.isArray(profile.voice_tone) ? profile.voice_tone : [];
+                          const val = t.toLowerCase();
+                          update('voice_tone', arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val]);
+                        }}
                         className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all ${
-                          profile.voice_tone === t.toLowerCase()
+                          (Array.isArray(profile.voice_tone) ? profile.voice_tone : []).includes(t.toLowerCase())
                             ? dark ? 'bg-[#C45D3E]/15 text-[#C45D3E] border border-[#C45D3E]/25 shadow-sm' : 'bg-[#C45D3E]/8 text-[#C45D3E] border border-[#C45D3E]/20 shadow-sm'
                             : dark ? 'bg-white/[0.03] text-gray-500 border border-gray-200 hover:text-gray-300' : 'bg-[#F5F0E8] text-[#94908A] border border-[#e8e0d4] hover:text-[#332F2B]'
                         }`}>
@@ -645,7 +653,7 @@ export default function BrandHubPage() {
                     const result = await postJSON('/api/brand-profile/audit-consistency', {
                       ...auditInputs,
                       brand_name: profile.brand_name,
-                      voice_tone: profile.voice_tone,
+                      voice_tone: Array.isArray(profile.voice_tone) ? profile.voice_tone.join(', ') : profile.voice_tone,
                       guidelines: profile.guidelines,
                     });
                     setAuditData(result);
