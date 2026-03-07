@@ -7,10 +7,10 @@ import { useBrand as useBrandContext } from '../../context/BrandContext';
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
 const CREATIVE_TYPES = [
-  { id: 'ad-creative', name: 'Ad Creatives', icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
-  { id: 'product-photo', name: 'Product Photos', icon: 'M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z' },
-  { id: 'social-graphic', name: 'Social Graphics', icon: 'M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z' },
-  { id: 'banner', name: 'Banner Designs', icon: 'M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5' },
+  { id: 'ad-creative', name: 'Ad Creatives', emoji: '🎯', desc: 'High-converting ads for social & paid media', tags: ['Facebook Ads', 'Instagram', 'Google Display', 'Retargeting'], accent: '#f97316', icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
+  { id: 'product-photo', name: 'Product Photos', emoji: '📸', desc: 'Studio-quality shots for listings & catalogues', tags: ['Amazon', 'Shopify', 'Lookbook', 'Detail Shot'], accent: '#22d3ee', icon: 'M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z' },
+  { id: 'social-graphic', name: 'Social Graphics', emoji: '✨', desc: 'Feed posts, stories & carousels that stop the scroll', tags: ['Instagram', 'TikTok', 'LinkedIn', 'Pinterest'], accent: '#a78bfa', icon: 'M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z' },
+  { id: 'banner', name: 'Banner Designs', emoji: '🖥', desc: 'Web banners, email headers & display ads', tags: ['Hero Banner', 'Email Header', 'Leaderboard', 'Billboard'], accent: '#4ade80', icon: 'M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5' },
 ];
 
 const STYLES = [
@@ -421,6 +421,10 @@ export default function CreativePage() {
   const [briefLoading, setBriefLoading] = useState(false);
   const [briefCopied, setBriefCopied] = useState(false);
   const [briefUseBrand, setBriefUseBrand] = useState(false);
+  const [briefKeyMessage, setBriefKeyMessage] = useState('');
+  const [briefTone, setBriefTone] = useState('');
+  const [briefScale, setBriefScale] = useState('Awareness');
+  const [briefRefStyle, setBriefRefStyle] = useState('');
 
   // Visual Prompt Builder state
   const [promptMode, setPromptMode] = useState('builder'); // 'builder' | 'manual'
@@ -678,28 +682,48 @@ export default function CreativePage() {
     return (
       <div className="p-4 sm:p-6 lg:p-12">
         <ModuleWrapper moduleId="creative">
-        <div className="mb-6 sm:mb-8 animate-fade-in">
-          <p className="hud-label text-[11px] mb-2" style={{ color: '#06b6d4' }}>AI CREATIVE STUDIO</p>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">What do you want to design?</h1>
-          <p className="text-base text-gray-500">Select a creative type to start generating AI-powered visuals</p>
+        <div className="mb-8 sm:mb-10 animate-fade-in">
+          <p className="hud-label text-[11px] mb-3" style={{ color: '#06b6d4' }}>AI CREATIVE STUDIO</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">What do you want to create?</h1>
+          <p className="text-base text-gray-500 max-w-lg">Pick a creative type and let AI handle the heavy lifting — from smart prompts to polished visuals.</p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 stagger">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10 stagger">
           {CREATIVE_TYPES.map(type => (
             <button key={type.id} onClick={() => { setActiveType(type.id); setDimension(DIMENSIONS[type.id]?.[0]?.id || null); setActiveTab('generate'); setImages([]); setShowInput(true); setReferenceImage(null); setPromptMode('builder'); setBuilderSubject(''); setBuilderVibe(''); setBuilderLighting(''); setBuilderBackground(''); setShowTextOverlay(false); setBuilderTextOverlay(''); setShowModels(false); setBuilderModelGender(''); setBuilderModelAge(''); setBuilderModelStyle(''); setBuilderSetting(''); setBuilderComposition(''); setBuilderColorGrade(''); }}
-              className="panel-interactive rounded-2xl p-4 sm:p-7 text-center group">
-              <div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center transition-all duration-300 group-hover:scale-110"
-                style={{ background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.12)' }}>
-                <svg className="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d={type.icon} />
+              className="panel-interactive rounded-2xl p-5 sm:p-6 text-left group relative overflow-hidden">
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                style={{ background: `radial-gradient(ellipse at 20% 50%, ${type.accent}18 0%, transparent 60%)` }} />
+              <div className="flex items-start gap-4 mb-4">
+                <div className="rounded-xl flex items-center justify-center flex-shrink-0 text-2xl transition-transform duration-300 group-hover:scale-110"
+                  style={{ width: 52, height: 52, background: `${type.accent}18`, border: `1px solid ${type.accent}30` }}>
+                  {type.emoji}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-bold text-gray-200 group-hover:text-white transition-colors">{type.name}</h3>
+                  <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{type.desc}</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-1.5 mb-4">
+                {type.tags.map(tag => (
+                  <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                    style={{ background: `${type.accent}15`, color: type.accent, border: `1px solid ${type.accent}25` }}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold"
+                style={{ color: type.accent }}>
+                Start creating
+                <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                 </svg>
               </div>
-              <p className="text-xs font-bold text-gray-300 group-hover:text-white transition-colors">{type.name}</p>
             </button>
           ))}
         </div>
 
-        <div className="mt-10">
+        <div>
           <div className="flex items-center gap-3 sm:gap-5 mb-4">
             <p className="hud-label text-[11px]">QUICK START TEMPLATES</p>
             <div className="flex-1 hud-line" />
@@ -710,10 +734,13 @@ export default function CreativePage() {
                 const ct = CREATIVE_TYPES.find(c => c.id === type);
                 return (
                   <button key={`${type}-${t.name}`} onClick={() => { setActiveType(type); setPrompt(t.prompt); setPromptMode('manual'); setDimension(DIMENSIONS[type]?.[0]?.id || null); setActiveTab('generate'); setShowInput(true); }}
-                    className="panel-interactive rounded-lg p-4 sm:p-6 text-left group">
-                    <p className="hud-label text-[11px] mb-1.5" style={{ color: '#06b6d4' }}>{ct?.name}</p>
+                    className="panel-interactive rounded-xl p-4 sm:p-5 text-left group">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-lg">{ct?.emoji}</span>
+                      <p className="hud-label text-[10px]" style={{ color: ct?.accent || '#06b6d4' }}>{ct?.name}</p>
+                    </div>
                     <p className="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">{t.name}</p>
-                    <p className="text-xs text-gray-600 mt-1 line-clamp-1">{t.prompt}</p>
+                    <p className="text-[11px] text-gray-600 mt-1 line-clamp-2 leading-relaxed">{t.prompt}</p>
                   </button>
                 );
               })
@@ -1015,6 +1042,42 @@ export default function CreativePage() {
                     value={briefAudience} onChange={e => setBriefAudience(e.target.value)}
                     placeholder="e.g. Women 25-45, health-conscious" />
                 </div>
+                <div>
+                  <p className="hud-label text-[10px] mb-2">KEY MESSAGE</p>
+                  <input className="w-full input-field rounded-xl px-4 py-3 text-sm"
+                    value={briefKeyMessage} onChange={e => setBriefKeyMessage(e.target.value)}
+                    placeholder="e.g. Feel confident in your skin, effortlessly" />
+                </div>
+                <div>
+                  <p className="hud-label text-[10px] mb-2">TONE OF VOICE</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {['Playful', 'Professional', 'Urgent', 'Inspirational', 'Luxury', 'Friendly', 'Bold'].map(t => (
+                      <button key={t} onClick={() => setBriefTone(briefTone === t ? '' : t)}
+                        className={`chip text-[10px] ${briefTone === t ? 'active' : ''}`}
+                        style={briefTone === t ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="hud-label text-[10px] mb-2">CAMPAIGN SCALE</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {['Awareness', 'Testing', 'Full Campaign', 'Product Launch'].map(s => (
+                      <button key={s} onClick={() => setBriefScale(s)}
+                        className={`chip text-[10px] ${briefScale === s ? 'active' : ''}`}
+                        style={briefScale === s ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="hud-label text-[10px] mb-2">REFERENCE STYLE</p>
+                  <input className="w-full input-field rounded-xl px-4 py-3 text-sm"
+                    value={briefRefStyle} onChange={e => setBriefRefStyle(e.target.value)}
+                    placeholder="e.g. Apple-minimalist, Nike-bold, Glossier-soft pastel" />
+                </div>
               </div>
             </div>
 
@@ -1023,6 +1086,7 @@ export default function CreativePage() {
                 setBriefLoading(true);
                 connectSSE('/api/creative/generate-brief', {
                   product: briefProduct, goal: briefGoal, audience: briefAudience,
+                  keyMessage: briefKeyMessage, tone: briefTone, scale: briefScale, refStyle: briefRefStyle,
                   brand: briefUseBrand && brand ? {
                     name: brand.brand_name,
                     tagline: brand.tagline,
@@ -1143,208 +1207,251 @@ export default function CreativePage() {
                     </div>
 
                     {promptMode === 'builder' ? (
-                      <div className="space-y-5">
-                        {/* Quick templates */}
-                        <div className="flex flex-wrap gap-1.5">
-                          {templates.map(t => (
-                            <button key={t.name} onClick={() => { setBuilderSubject(t.prompt.split(',')[0]); setPromptMode('manual'); setPrompt(t.prompt); }}
-                              className="chip text-[10px]">
-                              {t.name}
-                            </button>
-                          ))}
+                      <div>
+                        {/* ── Step 1: Subject ── */}
+                        <div className="flex gap-3 pb-5">
+                          <div className="flex flex-col items-center flex-shrink-0">
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+                              style={{ background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.25)', color: '#22d3ee' }}>1</div>
+                            <div className="w-px flex-1 mt-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                          </div>
+                          <div className="flex-1 pt-0.5 space-y-2.5 min-w-0">
+                            <p className="text-[12px] font-semibold text-gray-200">What are you designing?</p>
+                            <input className="w-full input-field rounded-xl px-4 py-2.5 text-sm"
+                              value={builderSubject} onChange={e => setBuilderSubject(e.target.value)}
+                              placeholder="e.g. a luxury skincare serum, a minimalist sneaker, a coffee brand..." />
+                            <div className="flex flex-wrap gap-1.5">
+                              {templates.map(t => (
+                                <button key={t.name} onClick={() => { setBuilderSubject(t.prompt.split(',')[0]); setPromptMode('manual'); setPrompt(t.prompt); }}
+                                  className="chip text-[10px]">
+                                  {t.name}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                         </div>
 
-                        {/* Subject */}
-                        <div>
-                          <p className="hud-label text-[10px] mb-2">WHAT ARE YOU DESIGNING?</p>
-                          <input className="w-full input-field rounded-xl px-4 py-2.5 text-sm"
-                            value={builderSubject} onChange={e => setBuilderSubject(e.target.value)}
-                            placeholder="e.g. a luxury skincare serum, a minimalist sneaker, a coffee brand logo..." />
-                        </div>
-
-                        {/* Vibe tiles */}
-                        <div>
-                          <p className="hud-label text-[10px] mb-2.5">VIBE / MOOD</p>
-                          <div className="grid grid-cols-3 gap-2">
-                            {VIBES.map(v => (
-                              <button key={v.id} onClick={() => setBuilderVibe(builderVibe === v.id ? '' : v.id)}
-                                className="relative rounded-xl overflow-hidden text-left transition-all duration-200 group"
-                                style={{
-                                  background: v.gradient,
-                                  aspectRatio: '3/2',
-                                  outline: builderVibe === v.id ? '2px solid #22d3ee' : '2px solid transparent',
-                                  outlineOffset: '2px',
-                                  boxShadow: builderVibe === v.id ? '0 0 16px rgba(6,182,212,0.3)' : 'none',
-                                }}>
-                                <div className="absolute inset-0 flex flex-col justify-end p-2.5"
-                                  style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)' }}>
-                                  <p className="text-[11px] font-bold leading-tight" style={{ color: v.dark ? '#fff' : '#1e293b' }}>{v.name}</p>
-                                  <p className="text-[9px] mt-0.5 leading-tight" style={{ color: v.dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }}>{v.sub}</p>
-                                </div>
-                                {builderVibe === v.id && (
-                                  <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: '#22d3ee' }}>
-                                    <svg className="w-2.5 h-2.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                    </svg>
+                        {/* ── Step 2: Vibe ── */}
+                        <div className="flex gap-3 pb-5">
+                          <div className="flex flex-col items-center flex-shrink-0">
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+                              style={{ background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.25)', color: '#22d3ee' }}>2</div>
+                            <div className="w-px flex-1 mt-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                          </div>
+                          <div className="flex-1 pt-0.5 min-w-0">
+                            <p className="text-[12px] font-semibold text-gray-200 mb-2.5">Vibe & Mood</p>
+                            <div className="grid grid-cols-3 gap-2">
+                              {VIBES.map(v => (
+                                <button key={v.id} onClick={() => setBuilderVibe(builderVibe === v.id ? '' : v.id)}
+                                  className="relative rounded-xl overflow-hidden text-left transition-all duration-200"
+                                  style={{
+                                    background: v.gradient,
+                                    aspectRatio: '3/2',
+                                    outline: builderVibe === v.id ? '2px solid #22d3ee' : '2px solid transparent',
+                                    outlineOffset: '2px',
+                                    boxShadow: builderVibe === v.id ? '0 0 16px rgba(6,182,212,0.3)' : 'none',
+                                  }}>
+                                  <div className="absolute inset-0 flex flex-col justify-end p-2"
+                                    style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)' }}>
+                                    <p className="text-[10px] font-bold leading-tight" style={{ color: v.dark ? '#fff' : '#1e293b' }}>{v.name}</p>
+                                    <p className="text-[9px] mt-0.5 leading-tight" style={{ color: v.dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }}>{v.sub}</p>
                                   </div>
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* People / Models toggle section */}
-                        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.07)' }}>
-                          <button onClick={() => setShowModels(v => !v)}
-                            className="w-full flex items-center justify-between px-4 py-3 transition-colors text-left"
-                            style={{ background: showModels ? 'rgba(6,182,212,0.08)' : 'rgba(255,255,255,0.03)' }}>
-                            <div className="flex items-center gap-2">
-                              <span className="text-base">👤</span>
-                              <div>
-                                <p className="text-[11px] font-semibold" style={{ color: showModels ? '#22d3ee' : '#9ca3af' }}>People & Models</p>
-                                <p className="text-[9px]" style={{ color: '#4b5563' }}>Include people in your design</p>
-                              </div>
-                            </div>
-                            <span className="relative inline-flex h-4 w-7 items-center rounded-full transition-colors flex-shrink-0"
-                              style={{ background: showModels ? '#22d3ee' : 'rgba(255,255,255,0.12)' }}>
-                              <span className="inline-block h-3 w-3 rounded-full bg-white shadow transition-transform"
-                                style={{ transform: showModels ? 'translateX(14px)' : 'translateX(2px)' }} />
-                            </span>
-                          </button>
-                          {showModels && (
-                            <div className="px-4 pb-4 pt-3 space-y-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                              <div>
-                                <p className="hud-label text-[9px] mb-1.5">GENDER / GROUP</p>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {MODEL_GENDERS.map(g => (
-                                    <button key={g.id} onClick={() => setBuilderModelGender(builderModelGender === g.id ? '' : g.id)}
-                                      className="chip text-[10px]"
-                                      style={builderModelGender === g.id ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                                      {g.label}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                              <div>
-                                <p className="hud-label text-[9px] mb-1.5">AGE RANGE</p>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {MODEL_AGES.map(a => (
-                                    <button key={a} onClick={() => setBuilderModelAge(builderModelAge === a ? '' : a)}
-                                      className="chip text-[10px]"
-                                      style={builderModelAge === a ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                                      {a}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                              <div>
-                                <p className="hud-label text-[9px] mb-1.5">OUTFIT / STYLE</p>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {MODEL_STYLES.map(s => (
-                                    <button key={s} onClick={() => setBuilderModelStyle(builderModelStyle === s ? '' : s)}
-                                      className="chip text-[10px]"
-                                      style={builderModelStyle === s ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                                      {s}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Setting */}
-                        <div>
-                          <p className="hud-label text-[10px] mb-2">SETTING / ENVIRONMENT</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {SETTINGS.map(s => (
-                              <button key={s.id} onClick={() => setBuilderSetting(builderSetting === s.id ? '' : s.id)}
-                                className="chip text-[10px]"
-                                style={builderSetting === s.id ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                                {s.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Composition */}
-                        <div>
-                          <p className="hud-label text-[10px] mb-2">COMPOSITION & ANGLE</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {COMPOSITIONS.map(c => (
-                              <button key={c.id} onClick={() => setBuilderComposition(builderComposition === c.id ? '' : c.id)}
-                                className="chip text-[10px]"
-                                style={builderComposition === c.id ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                                {c.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Lighting + Background in 2 cols */}
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <p className="hud-label text-[10px] mb-2">LIGHTING</p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {LIGHTING_OPTIONS.map(l => (
-                                <button key={l} onClick={() => setBuilderLighting(builderLighting === l ? '' : l)}
-                                  className="chip text-[10px]"
-                                  style={builderLighting === l ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                                  {l}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                          <div>
-                            <p className="hud-label text-[10px] mb-2">BACKGROUND</p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {BACKGROUND_OPTIONS.map(b => (
-                                <button key={b} onClick={() => setBuilderBackground(builderBackground === b ? '' : b)}
-                                  className="chip text-[10px]"
-                                  style={builderBackground === b ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                                  {b}
+                                  {builderVibe === v.id && (
+                                    <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: '#22d3ee' }}>
+                                      <svg className="w-2.5 h-2.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    </div>
+                                  )}
                                 </button>
                               ))}
                             </div>
                           </div>
                         </div>
 
-                        {/* Color Grade */}
-                        <div>
-                          <p className="hud-label text-[10px] mb-2">COLOR GRADING</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {COLOR_GRADES.map(g => (
-                              <button key={g} onClick={() => setBuilderColorGrade(builderColorGrade === g ? '' : g)}
-                                className="chip text-[10px]"
-                                style={builderColorGrade === g ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                                {g}
-                              </button>
-                            ))}
+                        {/* ── Step 3: Scene & Composition ── */}
+                        <div className="flex gap-3 pb-5">
+                          <div className="flex flex-col items-center flex-shrink-0">
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+                              style={{ background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.25)', color: '#22d3ee' }}>3</div>
+                            <div className="w-px flex-1 mt-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                          </div>
+                          <div className="flex-1 pt-0.5 space-y-3 min-w-0">
+                            <p className="text-[12px] font-semibold text-gray-200">Scene & Composition</p>
+                            <div>
+                              <p className="hud-label text-[9px] mb-1.5">SETTING / ENVIRONMENT</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {SETTINGS.map(s => (
+                                  <button key={s.id} onClick={() => setBuilderSetting(builderSetting === s.id ? '' : s.id)}
+                                    className="chip text-[10px]"
+                                    style={builderSetting === s.id ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                                    {s.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <p className="hud-label text-[9px] mb-1.5">COMPOSITION & ANGLE</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {COMPOSITIONS.map(c => (
+                                  <button key={c.id} onClick={() => setBuilderComposition(builderComposition === c.id ? '' : c.id)}
+                                    className="chip text-[10px]"
+                                    style={builderComposition === c.id ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                                    {c.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                           </div>
                         </div>
 
-                        {/* Text overlay toggle */}
-                        <div>
-                          <button onClick={() => setShowTextOverlay(v => !v)}
-                            className="flex items-center gap-2 text-[11px] font-semibold transition-colors"
-                            style={{ color: showTextOverlay ? '#22d3ee' : '#4b5563' }}>
-                            <span className="relative inline-flex h-4 w-7 items-center rounded-full transition-colors flex-shrink-0"
-                              style={{ background: showTextOverlay ? '#22d3ee' : 'rgba(255,255,255,0.12)' }}>
-                              <span className="inline-block h-3 w-3 rounded-full bg-white shadow transition-transform"
-                                style={{ transform: showTextOverlay ? 'translateX(14px)' : 'translateX(2px)' }} />
-                            </span>
-                            Add text / headline overlay
-                          </button>
-                          {showTextOverlay && (
-                            <input className="w-full input-field rounded-xl px-4 py-2.5 text-sm mt-2"
-                              value={builderTextOverlay} onChange={e => setBuilderTextOverlay(e.target.value)}
-                              placeholder='e.g. "Shop Now — 20% Off" or your brand tagline' />
-                          )}
+                        {/* ── Step 4: People & Models ── */}
+                        <div className="flex gap-3 pb-5">
+                          <div className="flex flex-col items-center flex-shrink-0">
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+                              style={{ background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.25)', color: '#22d3ee' }}>4</div>
+                            <div className="w-px flex-1 mt-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                          </div>
+                          <div className="flex-1 pt-0.5 min-w-0">
+                            <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.07)' }}>
+                              <button onClick={() => setShowModels(v => !v)}
+                                className="w-full flex items-center justify-between px-4 py-3 transition-colors text-left"
+                                style={{ background: showModels ? 'rgba(6,182,212,0.08)' : 'rgba(255,255,255,0.03)' }}>
+                                <div className="flex items-center gap-2.5">
+                                  <span className="text-lg">👤</span>
+                                  <div>
+                                    <p className="text-[12px] font-semibold" style={{ color: showModels ? '#22d3ee' : '#9ca3af' }}>People & Models</p>
+                                    <p className="text-[10px]" style={{ color: '#4b5563' }}>Include people in your design</p>
+                                  </div>
+                                </div>
+                                <span className="relative inline-flex h-4 w-7 items-center rounded-full transition-colors flex-shrink-0"
+                                  style={{ background: showModels ? '#22d3ee' : 'rgba(255,255,255,0.12)' }}>
+                                  <span className="inline-block h-3 w-3 rounded-full bg-white shadow transition-transform"
+                                    style={{ transform: showModels ? 'translateX(14px)' : 'translateX(2px)' }} />
+                                </span>
+                              </button>
+                              {showModels && (
+                                <div className="px-4 pb-4 pt-3 space-y-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                                  <div>
+                                    <p className="hud-label text-[9px] mb-1.5">GENDER / GROUP</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {MODEL_GENDERS.map(g => (
+                                        <button key={g.id} onClick={() => setBuilderModelGender(builderModelGender === g.id ? '' : g.id)}
+                                          className="chip text-[10px]"
+                                          style={builderModelGender === g.id ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                                          {g.label}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <p className="hud-label text-[9px] mb-1.5">AGE RANGE</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {MODEL_AGES.map(a => (
+                                        <button key={a} onClick={() => setBuilderModelAge(builderModelAge === a ? '' : a)}
+                                          className="chip text-[10px]"
+                                          style={builderModelAge === a ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                                          {a}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <p className="hud-label text-[9px] mb-1.5">OUTFIT / STYLE</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {MODEL_STYLES.map(s => (
+                                        <button key={s} onClick={() => setBuilderModelStyle(builderModelStyle === s ? '' : s)}
+                                          className="chip text-[10px]"
+                                          style={builderModelStyle === s ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                                          {s}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* ── Step 5: Visual Details ── */}
+                        <div className="flex gap-3 pb-5">
+                          <div className="flex flex-col items-center flex-shrink-0">
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+                              style={{ background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.25)', color: '#22d3ee' }}>5</div>
+                            <div className="w-px flex-1 mt-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                          </div>
+                          <div className="flex-1 pt-0.5 space-y-3 min-w-0">
+                            <p className="text-[12px] font-semibold text-gray-200">Visual Details</p>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <p className="hud-label text-[9px] mb-1.5">LIGHTING</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {LIGHTING_OPTIONS.map(l => (
+                                    <button key={l} onClick={() => setBuilderLighting(builderLighting === l ? '' : l)}
+                                      className="chip text-[10px]"
+                                      style={builderLighting === l ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                                      {l}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              <div>
+                                <p className="hud-label text-[9px] mb-1.5">BACKGROUND</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {BACKGROUND_OPTIONS.map(b => (
+                                    <button key={b} onClick={() => setBuilderBackground(builderBackground === b ? '' : b)}
+                                      className="chip text-[10px]"
+                                      style={builderBackground === b ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                                      {b}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            <div>
+                              <p className="hud-label text-[9px] mb-1.5">COLOR GRADING</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {COLOR_GRADES.map(g => (
+                                  <button key={g} onClick={() => setBuilderColorGrade(builderColorGrade === g ? '' : g)}
+                                    className="chip text-[10px]"
+                                    style={builderColorGrade === g ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                                    {g}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* ── Step 6: Text Overlay ── */}
+                        <div className="flex gap-3 pb-3">
+                          <div className="flex-shrink-0">
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+                              style={{ background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.25)', color: '#22d3ee' }}>6</div>
+                          </div>
+                          <div className="flex-1 pt-0.5 space-y-2 min-w-0">
+                            <button onClick={() => setShowTextOverlay(v => !v)}
+                              className="flex items-center gap-2 text-[12px] font-semibold transition-colors"
+                              style={{ color: showTextOverlay ? '#22d3ee' : '#9ca3af' }}>
+                              <span className="relative inline-flex h-4 w-7 items-center rounded-full transition-colors flex-shrink-0"
+                                style={{ background: showTextOverlay ? '#22d3ee' : 'rgba(255,255,255,0.12)' }}>
+                                <span className="inline-block h-3 w-3 rounded-full bg-white shadow transition-transform"
+                                  style={{ transform: showTextOverlay ? 'translateX(14px)' : 'translateX(2px)' }} />
+                              </span>
+                              Add text / headline overlay
+                            </button>
+                            {showTextOverlay && (
+                              <input className="w-full input-field rounded-xl px-4 py-2.5 text-sm"
+                                value={builderTextOverlay} onChange={e => setBuilderTextOverlay(e.target.value)}
+                                placeholder='e.g. "Shop Now — 20% Off" or your brand tagline' />
+                            )}
+                          </div>
                         </div>
 
                         {/* Assembled prompt preview */}
                         {prompt && (
-                          <div className="rounded-xl p-3" style={{ background: 'rgba(6,182,212,0.05)', border: '1px solid rgba(6,182,212,0.12)' }}>
+                          <div className="rounded-xl p-3 mt-2" style={{ background: 'rgba(6,182,212,0.05)', border: '1px solid rgba(6,182,212,0.12)' }}>
                             <div className="flex items-center justify-between mb-1.5">
                               <p className="hud-label text-[9px]" style={{ color: '#22d3ee' }}>ASSEMBLED PROMPT</p>
                               <button onClick={() => setPromptMode('manual')} className="text-[9px] font-semibold" style={{ color: '#4b5563' }}>Edit manually →</button>

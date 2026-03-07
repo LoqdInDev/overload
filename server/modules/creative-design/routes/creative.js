@@ -319,7 +319,7 @@ router.post('/generate-from-image-stream', async (req, res) => {
 
 // POST /generate-brief — generate a creative brief
 router.post('/generate-brief', async (req, res) => {
-  const { product, goal, audience, brand } = req.body;
+  const { product, goal, audience, keyMessage, tone, scale, refStyle, brand } = req.body;
   if (!product) return res.status(400).json({ error: 'product required' });
 
   const sse = setupSSE(res);
@@ -340,7 +340,11 @@ ${brand.words_to_avoid ? `Words to Avoid: ${brand.words_to_avoid}` : ''}`.replac
 
 Product: ${product}
 Goal: ${goal || 'Brand Awareness'}
-Target Audience: ${audience || 'General consumers'}${brandBlock}
+Target Audience: ${audience || 'General consumers'}
+${keyMessage ? `Key Message: ${keyMessage}` : ''}
+${tone ? `Tone of Voice: ${tone}` : ''}
+${scale ? `Campaign Scale: ${scale}` : ''}
+${refStyle ? `Reference Style: ${refStyle}` : ''}${brandBlock}
 
 Create a comprehensive creative brief with these sections:
 ## Visual Direction
