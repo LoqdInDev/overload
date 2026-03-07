@@ -73,7 +73,10 @@ app.use((req, res, next) => {
   // In production, validate Origin/Referer matches allowed origins
   if (process.env.NODE_ENV === 'production') {
     const origin = req.headers.origin || req.headers.referer;
-    if (origin && !corsOrigins.some(o => origin.startsWith(o))) {
+    const host = req.headers.host;
+    const ownOrigins = host ? [`https://${host}`, `http://${host}`] : [];
+    const allAllowed = [...corsOrigins, ...ownOrigins];
+    if (origin && !allAllowed.some(o => origin.startsWith(o))) {
       return res.status(403).json({ error: 'Invalid origin', code: 'CSRF_REJECTED' });
     }
   }
