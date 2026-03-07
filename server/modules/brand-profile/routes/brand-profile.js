@@ -81,7 +81,7 @@ router.post('/profile', (req, res) => {
     } = req.body;
 
     const result = db.prepare(
-      `INSERT INTO bp_profiles (brand_name, tagline, mission, vision, values, voice_tone, voice_personality,
+      `INSERT INTO bp_profiles (brand_name, tagline, mission, vision, "values", voice_tone, voice_personality,
         target_audience, competitors, colors, fonts, logo_url, guidelines, keywords, industry, website, social_links,
         words_to_use, words_to_avoid, workspace_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
@@ -121,7 +121,7 @@ router.put('/profile/:id', (req, res) => {
 
     const def = (v, fallback) => v !== undefined ? v : fallback;
     db.prepare(
-      `UPDATE bp_profiles SET brand_name = ?, tagline = ?, mission = ?, vision = ?, values = ?,
+      `UPDATE bp_profiles SET brand_name = ?, tagline = ?, mission = ?, vision = ?, "values" = ?,
         voice_tone = ?, voice_personality = ?, target_audience = ?, competitors = ?, colors = ?,
         fonts = ?, logo_url = ?, guidelines = ?, keywords = ?, industry = ?, website = ?,
         social_links = ?, words_to_use = ?, words_to_avoid = ?, updated_at = datetime('now') WHERE id = ? AND workspace_id = ?`
