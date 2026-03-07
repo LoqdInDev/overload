@@ -22,30 +22,57 @@ const STYLES = [
   { id: 'retro', name: 'Retro / Vintage' },
 ];
 
+const VIBES = [
+  { id: 'minimal', name: 'Clean & Minimal', sub: 'White space · Airy · Crisp', gradient: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', dark: false, prompt: 'clean minimal aesthetic, crisp white space, geometric composition, soft diffused lighting' },
+  { id: 'moody', name: 'Dark & Dramatic', sub: 'Shadows · Cinematic · Bold', gradient: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)', dark: true, prompt: 'dark moody atmosphere, dramatic deep shadows, cinematic high-contrast lighting' },
+  { id: 'vibrant', name: 'Bold & Vibrant', sub: 'High contrast · Energetic', gradient: 'linear-gradient(135deg, #f97316 0%, #dc2626 100%)', dark: true, prompt: 'bold vibrant colors, high contrast, energetic dynamic composition, eye-catching visual impact' },
+  { id: 'natural', name: 'Warm & Natural', sub: 'Earthy · Organic · Soft', gradient: 'linear-gradient(135deg, #c3a97a 0%, #78716c 100%)', dark: true, prompt: 'warm natural tones, earthy organic feel, soft golden lighting, authentic lifestyle aesthetic' },
+  { id: 'luxury', name: 'Luxury & Premium', sub: 'Gold accents · Refined', gradient: 'linear-gradient(135deg, #1c1917 0%, #3d3520 100%)', dark: true, prompt: 'luxury premium aesthetic, gold accents, refined elegance, sophisticated minimalist composition' },
+  { id: 'neon', name: 'Neon & Electric', sub: 'Glow · Futuristic · Vivid', gradient: 'linear-gradient(135deg, #4f0aad 0%, #0891b2 100%)', dark: true, prompt: 'vibrant neon glow effects, electric energy, futuristic digital aesthetic, high-impact color contrasts' },
+];
+
+const LIGHTING_OPTIONS = ['Natural Light', 'Studio', 'Golden Hour', 'Dramatic', 'Backlit', 'Neon Glow'];
+const BACKGROUND_OPTIONS = ['Pure White', 'Gradient', 'On Location', 'Abstract', 'Transparent', 'Custom Color'];
+
 const DIMENSIONS = {
   'ad-creative': [
     { id: '1080x1080', label: '1080×1080', desc: 'Feed Square' },
     { id: '1080x1350', label: '1080×1350', desc: 'Feed Portrait' },
     { id: '1200x628', label: '1200×628', desc: 'Landscape Ad' },
-    { id: '1080x1920', label: '1080×1920', desc: 'Story/Reel' },
+    { id: '1080x1920', label: '1080×1920', desc: 'Story / Reel' },
+    { id: '1280x720', label: '1280×720', desc: 'YouTube Thumb' },
+    { id: '1000x1500', label: '1000×1500', desc: 'Pinterest' },
+    { id: '1200x627', label: '1200×627', desc: 'LinkedIn Post' },
+    { id: '864x1080', label: '864×1080', desc: '4:5 Portrait' },
   ],
   'product-photo': [
     { id: '1080x1080', label: '1080×1080', desc: 'Square' },
     { id: '1500x1500', label: '1500×1500', desc: 'Marketplace' },
     { id: '2000x2000', label: '2000×2000', desc: 'High Res' },
     { id: '800x1000', label: '800×1000', desc: 'Product Card' },
+    { id: '1600x900', label: '1600×900', desc: 'Catalog Hero' },
+    { id: '1080x1350', label: '1080×1350', desc: 'Feed Portrait' },
+    { id: '970x600', label: '970×600', desc: 'Amazon A+' },
   ],
   'social-graphic': [
     { id: '1080x1080', label: '1080×1080', desc: 'Instagram Post' },
     { id: '1080x1920', label: '1080×1920', desc: 'Story / Reel' },
     { id: '1200x630', label: '1200×630', desc: 'Facebook / OG' },
-    { id: '1500x500', label: '1500×500', desc: 'Twitter Header' },
+    { id: '1500x500', label: '1500×500', desc: 'X / Twitter Header' },
+    { id: '1000x1500', label: '1000×1500', desc: 'Pinterest' },
+    { id: '1280x720', label: '1280×720', desc: 'YouTube Thumb' },
+    { id: '1584x396', label: '1584×396', desc: 'LinkedIn Banner' },
+    { id: '1080x608', label: '1080×608', desc: 'Facebook Cover' },
   ],
   'banner': [
     { id: '728x90', label: '728×90', desc: 'Leaderboard' },
     { id: '300x250', label: '300×250', desc: 'Medium Rectangle' },
     { id: '160x600', label: '160×600', desc: 'Wide Skyscraper' },
     { id: '1920x600', label: '1920×600', desc: 'Hero Banner' },
+    { id: '320x50', label: '320×50', desc: 'Mobile Banner' },
+    { id: '970x250', label: '970×250', desc: 'Billboard' },
+    { id: '600x200', label: '600×200', desc: 'Email Header' },
+    { id: '1440x400', label: '1440×400', desc: 'Full-Width Hero' },
   ],
 };
 
@@ -362,6 +389,15 @@ export default function CreativePage() {
   const [briefCopied, setBriefCopied] = useState(false);
   const [briefUseBrand, setBriefUseBrand] = useState(false);
 
+  // Visual Prompt Builder state
+  const [promptMode, setPromptMode] = useState('builder'); // 'builder' | 'manual'
+  const [builderSubject, setBuilderSubject] = useState('');
+  const [builderVibe, setBuilderVibe] = useState('');
+  const [builderLighting, setBuilderLighting] = useState('');
+  const [builderBackground, setBuilderBackground] = useState('');
+  const [builderTextOverlay, setBuilderTextOverlay] = useState('');
+  const [showTextOverlay, setShowTextOverlay] = useState(false);
+
   const loadHistory = useCallback(async () => {
     setHistoryLoading(true);
     try {
@@ -377,6 +413,19 @@ export default function CreativePage() {
   useEffect(() => {
     if (activeType && activeTab === 'history') loadHistory();
   }, [activeTab, activeType, loadHistory]);
+
+  // Auto-assemble prompt from builder selections
+  useEffect(() => {
+    if (promptMode !== 'builder') return;
+    const parts = [];
+    if (builderSubject) parts.push(builderSubject);
+    const vibeObj = VIBES.find(v => v.id === builderVibe);
+    if (vibeObj) parts.push(vibeObj.prompt);
+    if (builderLighting) parts.push(`${builderLighting.toLowerCase()} lighting`);
+    if (builderBackground) parts.push(`${builderBackground.toLowerCase()} background`);
+    if (showTextOverlay && builderTextOverlay) parts.push(`include text overlay reading "${builderTextOverlay}"`);
+    setPrompt(parts.join(', '));
+  }, [promptMode, builderSubject, builderVibe, builderLighting, builderBackground, showTextOverlay, builderTextOverlay]);
 
   const deleteProject = async (id) => {
     try {
@@ -587,7 +636,7 @@ export default function CreativePage() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 stagger">
           {CREATIVE_TYPES.map(type => (
-            <button key={type.id} onClick={() => { setActiveType(type.id); setDimension(DIMENSIONS[type.id]?.[0]?.id || null); setActiveTab('generate'); setImages([]); setShowInput(true); setReferenceImage(null); }}
+            <button key={type.id} onClick={() => { setActiveType(type.id); setDimension(DIMENSIONS[type.id]?.[0]?.id || null); setActiveTab('generate'); setImages([]); setShowInput(true); setReferenceImage(null); setPromptMode('builder'); setBuilderSubject(''); setBuilderVibe(''); setBuilderLighting(''); setBuilderBackground(''); setShowTextOverlay(false); setBuilderTextOverlay(''); }}
               className="panel-interactive rounded-2xl p-4 sm:p-7 text-center group">
               <div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center transition-all duration-300 group-hover:scale-110"
                 style={{ background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.12)' }}>
@@ -610,7 +659,7 @@ export default function CreativePage() {
               tmpls.slice(0, 1).map(t => {
                 const ct = CREATIVE_TYPES.find(c => c.id === type);
                 return (
-                  <button key={`${type}-${t.name}`} onClick={() => { setActiveType(type); setPrompt(t.prompt); setDimension(DIMENSIONS[type]?.[0]?.id || null); setActiveTab('generate'); setShowInput(true); }}
+                  <button key={`${type}-${t.name}`} onClick={() => { setActiveType(type); setPrompt(t.prompt); setPromptMode('manual'); setDimension(DIMENSIONS[type]?.[0]?.id || null); setActiveTab('generate'); setShowInput(true); }}
                     className="panel-interactive rounded-lg p-4 sm:p-6 text-left group">
                     <p className="hud-label text-[11px] mb-1.5" style={{ color: '#06b6d4' }}>{ct?.name}</p>
                     <p className="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">{t.name}</p>
@@ -1024,18 +1073,151 @@ export default function CreativePage() {
             <div className="lg:col-span-2 space-y-4">
               {showInput && !generating && (
                 <div className="space-y-4 animate-fade-in">
-                  {/* Templates (compact chips) */}
-                  <div>
-                    <p className="hud-label text-[11px] mb-2">TEMPLATES</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {templates.map(t => (
-                        <button key={t.name} onClick={() => setPrompt(t.prompt)}
-                          className={`chip text-[10px] ${prompt === t.prompt ? 'active' : ''}`}
-                          style={prompt === t.prompt ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
-                          {t.name}
-                        </button>
-                      ))}
+
+                  {/* ── VISUAL PROMPT BUILDER ── */}
+                  <div className="panel rounded-2xl p-4 sm:p-5 space-y-5">
+                    {/* Header: mode toggle + quick templates */}
+                    <div className="flex items-center justify-between">
+                      <p className="hud-label text-[11px]">PROMPT BUILDER</p>
+                      <div className="flex items-center gap-1 p-0.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                        {[{ id: 'builder', label: '✦ Visual' }, { id: 'manual', label: '✎ Manual' }].map(m => (
+                          <button key={m.id} onClick={() => setPromptMode(m.id)}
+                            className="px-3 py-1 rounded-md text-[10px] font-semibold transition-all"
+                            style={promptMode === m.id
+                              ? { background: 'rgba(6,182,212,0.2)', color: '#22d3ee', border: '1px solid rgba(6,182,212,0.25)' }
+                              : { color: '#4b5563' }}>
+                            {m.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
+
+                    {promptMode === 'builder' ? (
+                      <div className="space-y-5">
+                        {/* Quick templates */}
+                        <div className="flex flex-wrap gap-1.5">
+                          {templates.map(t => (
+                            <button key={t.name} onClick={() => { setBuilderSubject(t.prompt.split(',')[0]); setPromptMode('manual'); setPrompt(t.prompt); }}
+                              className="chip text-[10px]">
+                              {t.name}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Subject */}
+                        <div>
+                          <p className="hud-label text-[10px] mb-2">WHAT ARE YOU DESIGNING?</p>
+                          <input className="w-full input-field rounded-xl px-4 py-2.5 text-sm"
+                            value={builderSubject} onChange={e => setBuilderSubject(e.target.value)}
+                            placeholder="e.g. a luxury skincare serum, a minimalist sneaker, a coffee brand logo..." />
+                        </div>
+
+                        {/* Vibe tiles */}
+                        <div>
+                          <p className="hud-label text-[10px] mb-2.5">VIBE / MOOD</p>
+                          <div className="grid grid-cols-3 gap-2">
+                            {VIBES.map(v => (
+                              <button key={v.id} onClick={() => setBuilderVibe(builderVibe === v.id ? '' : v.id)}
+                                className="relative rounded-xl overflow-hidden text-left transition-all duration-200 group"
+                                style={{
+                                  background: v.gradient,
+                                  aspectRatio: '3/2',
+                                  outline: builderVibe === v.id ? '2px solid #22d3ee' : '2px solid transparent',
+                                  outlineOffset: '2px',
+                                  boxShadow: builderVibe === v.id ? '0 0 16px rgba(6,182,212,0.3)' : 'none',
+                                }}>
+                                <div className="absolute inset-0 flex flex-col justify-end p-2.5"
+                                  style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)' }}>
+                                  <p className="text-[11px] font-bold leading-tight" style={{ color: v.dark ? '#fff' : '#1e293b' }}>{v.name}</p>
+                                  <p className="text-[9px] mt-0.5 leading-tight" style={{ color: v.dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }}>{v.sub}</p>
+                                </div>
+                                {builderVibe === v.id && (
+                                  <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: '#22d3ee' }}>
+                                    <svg className="w-2.5 h-2.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  </div>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Lighting + Background in 2 cols */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="hud-label text-[10px] mb-2">LIGHTING</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {LIGHTING_OPTIONS.map(l => (
+                                <button key={l} onClick={() => setBuilderLighting(builderLighting === l ? '' : l)}
+                                  className="chip text-[10px]"
+                                  style={builderLighting === l ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                                  {l}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <p className="hud-label text-[10px] mb-2">BACKGROUND</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {BACKGROUND_OPTIONS.map(b => (
+                                <button key={b} onClick={() => setBuilderBackground(builderBackground === b ? '' : b)}
+                                  className="chip text-[10px]"
+                                  style={builderBackground === b ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                                  {b}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Text overlay toggle */}
+                        <div>
+                          <button onClick={() => setShowTextOverlay(v => !v)}
+                            className="flex items-center gap-2 text-[11px] font-semibold transition-colors"
+                            style={{ color: showTextOverlay ? '#22d3ee' : '#4b5563' }}>
+                            <span className="relative inline-flex h-4 w-7 items-center rounded-full transition-colors flex-shrink-0"
+                              style={{ background: showTextOverlay ? '#22d3ee' : 'rgba(255,255,255,0.12)' }}>
+                              <span className="inline-block h-3 w-3 rounded-full bg-white shadow transition-transform"
+                                style={{ transform: showTextOverlay ? 'translateX(14px)' : 'translateX(2px)' }} />
+                            </span>
+                            Add text / headline overlay
+                          </button>
+                          {showTextOverlay && (
+                            <input className="w-full input-field rounded-xl px-4 py-2.5 text-sm mt-2"
+                              value={builderTextOverlay} onChange={e => setBuilderTextOverlay(e.target.value)}
+                              placeholder='e.g. "Shop Now — 20% Off" or your brand tagline' />
+                          )}
+                        </div>
+
+                        {/* Assembled prompt preview */}
+                        {prompt && (
+                          <div className="rounded-xl p-3" style={{ background: 'rgba(6,182,212,0.05)', border: '1px solid rgba(6,182,212,0.12)' }}>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <p className="hud-label text-[9px]" style={{ color: '#22d3ee' }}>ASSEMBLED PROMPT</p>
+                              <button onClick={() => setPromptMode('manual')} className="text-[9px] font-semibold" style={{ color: '#4b5563' }}>Edit manually →</button>
+                            </div>
+                            <p className="text-[11px] text-gray-400 leading-relaxed">{prompt}</p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      /* Manual mode */
+                      <div>
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          {templates.map(t => (
+                            <button key={t.name} onClick={() => setPrompt(t.prompt)}
+                              className={`chip text-[10px] ${prompt === t.prompt ? 'active' : ''}`}
+                              style={prompt === t.prompt ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                              {t.name}
+                            </button>
+                          ))}
+                        </div>
+                        <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={5}
+                          placeholder="Describe your visual in detail — subject, composition, mood, lighting, colors, text overlays..."
+                          className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                      </div>
+                    )}
                   </div>
 
                   {/* Reference Image Upload */}
@@ -1080,15 +1262,15 @@ export default function CreativePage() {
                     <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                   </div>
 
-                  {/* Brief */}
-                  <div className="panel rounded-2xl p-4 sm:p-5">
-                    <p className="hud-label text-[11px] mb-2">{referenceImage ? 'VARIATION INSTRUCTIONS (OPTIONAL)' : 'CREATIVE BRIEF'}</p>
-                    <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={4}
-                      placeholder={referenceImage
-                        ? 'Describe how you want to vary this image — color mood, style changes, composition tweaks...'
-                        : 'Describe your visual in detail — subject, composition, mood, lighting, colors, text overlays...'}
-                      className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
-                  </div>
+                  {/* Variation instructions (only when reference image is present) */}
+                  {referenceImage && (
+                    <div className="panel rounded-2xl p-4 sm:p-5">
+                      <p className="hud-label text-[11px] mb-2">VARIATION INSTRUCTIONS (OPTIONAL)</p>
+                      <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={3}
+                        placeholder="Describe how you want to vary this image — color mood, style changes, composition tweaks..."
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                  )}
 
                   {/* Generate */}
                   <button onClick={generate} disabled={generating || (!prompt.trim() && !referenceImage)}
