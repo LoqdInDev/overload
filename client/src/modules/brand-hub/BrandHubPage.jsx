@@ -209,8 +209,8 @@ export default function BrandHubPage() {
       setTimeout(() => setSaveStatus('idle'), 2500);
     } catch (e) {
       console.error('Failed to save profile:', e);
-      setSaveStatus(e?.message || 'error');
-      setTimeout(() => setSaveStatus('idle'), 5000);
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
     }
   };
 
@@ -609,7 +609,7 @@ export default function BrandHubPage() {
                   </svg>
                   Saved!
                 </span>
-              ) : saveStatus !== 'idle' && saveStatus !== 'saving' && saveStatus !== 'saved' ? `Error: ${saveStatus}` : 'Save Brand Profile'}
+              ) : saveStatus === 'error' ? 'Error — Try Again' : 'Save Brand Profile'}
             </button>
 
             {/* Brand Consistency Audit */}
