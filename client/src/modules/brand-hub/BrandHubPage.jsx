@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import { useTheme } from '../../context/ThemeContext';
 import { useBrand } from '../../context/BrandContext';
-import { fetchJSON, postJSON, connectSSE } from '../../lib/api';
+import { fetchJSON, postJSON, putJSON, connectSSE } from '../../lib/api';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
@@ -137,8 +137,7 @@ export default function BrandHubPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/brand-profile/profile`);
-        const data = await res.json();
+        const data = await fetchJSON('/api/brand-profile/profile');
         if (data && data.id) {
           const parse = (v) => { try { return JSON.parse(v); } catch { return v; } };
           setProfile({
@@ -201,20 +200,9 @@ export default function BrandHubPage() {
         colors: profile.colors,
       };
 
-      const method = profileId ? 'PUT' : 'POST';
-      const url = profileId
-        ? `${API_BASE}/api/brand-profile/profile/${profileId}`
-        : `${API_BASE}/api/brand-profile/profile`;
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `Server error ${res.status}`);
-      }
-      const data = await res.json();
+      const data = profileId
+        ? await putJSON(`/api/brand-profile/profile/${profileId}`, payload)
+        : await postJSON('/api/brand-profile/profile', payload);
       if (!profileId && data.id) setProfileId(data.id);
       setSaveStatus('saved');
       refreshBrand();
