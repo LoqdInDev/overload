@@ -360,6 +360,7 @@ export default function CreativePage() {
   const [briefOutput, setBriefOutput] = useState('');
   const [briefLoading, setBriefLoading] = useState(false);
   const [briefCopied, setBriefCopied] = useState(false);
+  const [briefUseBrand, setBriefUseBrand] = useState(false);
 
   const loadHistory = useCallback(async () => {
     setHistoryLoading(true);
@@ -859,13 +860,45 @@ export default function CreativePage() {
           {/* Left: Brief form */}
           <div className="lg:col-span-2 space-y-4">
             <div className="panel rounded-2xl p-4 sm:p-6">
-              <p className="hud-label text-[11px] mb-4">BRIEF DETAILS</p>
+              <div className="flex items-center justify-between mb-4">
+                <p className="hud-label text-[11px]">BRIEF DETAILS</p>
+                {brand?.brand_name && (
+                  <button onClick={() => setBriefUseBrand(v => !v)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-semibold transition-all"
+                    style={briefUseBrand
+                      ? { background: 'rgba(6,182,212,0.12)', color: '#22d3ee', border: '1px solid rgba(6,182,212,0.25)' }
+                      : { background: 'rgba(255,255,255,0.04)', color: '#6b7280', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <span className="relative inline-flex h-4 w-7 items-center rounded-full transition-colors flex-shrink-0"
+                      style={{ background: briefUseBrand ? '#22d3ee' : 'rgba(255,255,255,0.15)' }}>
+                      <span className="inline-block h-3 w-3 rounded-full bg-white shadow transition-transform"
+                        style={{ transform: briefUseBrand ? 'translateX(14px)' : 'translateX(2px)' }} />
+                    </span>
+                    Include Brand Hub
+                  </button>
+                )}
+              </div>
+
+              {briefUseBrand && brand?.brand_name && (
+                <div className="mb-4 px-3 py-2.5 rounded-xl text-[11px] leading-relaxed"
+                  style={{ background: 'rgba(6,182,212,0.06)', border: '1px solid rgba(6,182,212,0.15)', color: '#67e8f9' }}>
+                  <span className="font-semibold">{brand.brand_name}</span>
+                  {brand.tagline && <span className="text-cyan-400/60"> · {brand.tagline}</span>}
+                  {brand.colors?.primary && (
+                    <span className="inline-flex items-center gap-1 ml-2">
+                      <span className="inline-block w-2.5 h-2.5 rounded-full border border-white/20" style={{ background: brand.colors.primary }} />
+                      <span className="text-cyan-400/60">{brand.colors.primary}</span>
+                    </span>
+                  )}
+                  {brand.voice_tone && <span className="ml-2 text-cyan-400/60">· {Array.isArray(brand.voice_tone) ? brand.voice_tone.join(', ') : brand.voice_tone}</span>}
+                </div>
+              )}
+
               <div className="space-y-4">
                 <div>
                   <p className="hud-label text-[10px] mb-2">PRODUCT / BRAND</p>
                   <input className="w-full input-field rounded-xl px-4 py-3 text-sm"
                     value={briefProduct} onChange={e => setBriefProduct(e.target.value)}
-                    placeholder="e.g. Premium Skincare Serum" />
+                    placeholder={brand?.brand_name && briefUseBrand ? `e.g. ${brand.brand_name} Summer Collection` : 'e.g. Premium Skincare Serum'} />
                 </div>
                 <div>
                   <p className="hud-label text-[10px] mb-2">CAMPAIGN GOAL</p>
@@ -891,7 +924,19 @@ export default function CreativePage() {
             <button onClick={() => {
                 setBriefOutput('');
                 setBriefLoading(true);
-                connectSSE('/api/creative/generate-brief', { product: briefProduct, goal: briefGoal, audience: briefAudience }, {
+                connectSSE('/api/creative/generate-brief', {
+                  product: briefProduct, goal: briefGoal, audience: briefAudience,
+                  brand: briefUseBrand && brand ? {
+                    name: brand.brand_name,
+                    tagline: brand.tagline,
+                    colors: brand.colors,
+                    voice_tone: Array.isArray(brand.voice_tone) ? brand.voice_tone.join(', ') : brand.voice_tone,
+                    mission: brand.mission,
+                    keywords: brand.keywords,
+                    words_to_use: brand.words_to_use,
+                    words_to_avoid: brand.words_to_avoid,
+                  } : null,
+                }, {
                   onChunk: (chunk) => setBriefOutput(prev => prev + chunk),
                   onResult: () => setBriefLoading(false),
                   onError: () => setBriefLoading(false),

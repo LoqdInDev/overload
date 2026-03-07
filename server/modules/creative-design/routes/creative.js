@@ -319,22 +319,35 @@ router.post('/generate-from-image-stream', async (req, res) => {
 
 // POST /generate-brief — generate a creative brief
 router.post('/generate-brief', async (req, res) => {
-  const { product, goal, audience } = req.body;
+  const { product, goal, audience, brand } = req.body;
   if (!product) return res.status(400).json({ error: 'product required' });
 
   const sse = setupSSE(res);
+
+  let brandBlock = '';
+  if (brand?.name) {
+    brandBlock = `\n\nBrand Context (use this to inform the brief):
+Brand: ${brand.name}${brand.tagline ? ` — "${brand.tagline}"` : ''}
+${brand.mission ? `Mission: ${brand.mission}` : ''}
+${brand.voice_tone ? `Voice & Tone: ${brand.voice_tone}` : ''}
+${brand.colors?.primary ? `Primary Color: ${brand.colors.primary}${brand.colors.secondary ? `, Secondary: ${brand.colors.secondary}` : ''}` : ''}
+${brand.keywords ? `Brand Keywords: ${brand.keywords}` : ''}
+${brand.words_to_use ? `Words to Use: ${brand.words_to_use}` : ''}
+${brand.words_to_avoid ? `Words to Avoid: ${brand.words_to_avoid}` : ''}`.replace(/\n+/g, '\n').trim();
+  }
+
   const prompt = `You are a senior creative director. Generate a detailed creative brief for:
 
 Product: ${product}
 Goal: ${goal || 'Brand Awareness'}
-Target Audience: ${audience || 'General consumers'}
+Target Audience: ${audience || 'General consumers'}${brandBlock}
 
 Create a comprehensive creative brief with these sections:
 ## Visual Direction
 (specific visual style, mood, composition)
 
 ## Color Palette
-(3-5 specific colors with hex codes and rationale)
+(3-5 specific colors with hex codes and rationale${brand?.colors?.primary ? ` — incorporate brand color ${brand.colors.primary}` : ''})
 
 ## Typography
 (recommended fonts and hierarchy)
