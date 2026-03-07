@@ -19,7 +19,7 @@ function errorHandler(err, req, res, _next) {
     path: req.path,
     status,
     code,
-    stack: status === 500 ? err.stack : undefined,
+    stack: status === 500 && process.env.NODE_ENV !== 'production' ? err.stack : undefined,
   });
 
   if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {

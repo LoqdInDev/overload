@@ -121,8 +121,10 @@ router.post('/auto-login', async (req, res, next) => {
     let user = db.prepare('SELECT * FROM users ORDER BY created_at ASC LIMIT 1').get();
 
     if (!user) {
-      // Create default owner
-      user = await createUser('owner@overload.local', 'overload-auto-2024', 'Owner');
+      // Create default owner with random password (dev only)
+      const crypto = require('crypto');
+      const randomPass = crypto.randomBytes(32).toString('hex');
+      user = await createUser('owner@overload.local', randomPass, 'Owner');
     }
 
     const tokens = generateTokenPair(user.id);

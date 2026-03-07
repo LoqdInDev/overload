@@ -36,7 +36,7 @@ const corsOrigins = [
 ].filter(Boolean);
 
 app.use(cors({
-  origin: corsOrigins.length ? corsOrigins : true,
+  origin: corsOrigins.length ? corsOrigins : ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
 }));
 
@@ -44,11 +44,22 @@ app.use(cors({
 app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), require('./routes/billing').webhookHandler);
 
 app.set('trust proxy', 1);
-app.use(express.json({ limit: '10mb' }));
-app.use(helmet());
+app.use(express.json({ limit: '2mb' }));
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "blob:", "https:"],
+      connectSrc: ["'self'", ...corsOrigins],
+    },
+  },
+}));
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000,                 // 1000 requests per window per IP (app uses frequent polling)
+  max: 300,                  // 300 requests per window per IP
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please try again later', code: 'RATE_LIMIT_EXCEEDED' },
@@ -64,21 +75,19 @@ app.use(apiResponse);
 // Pagination middleware — parses ?page=&limit= into req.pagination
 app.use(pagination);
 
-// CSRF protection via double-submit cookie pattern for state-changing requests
+// CSRF protection — validate Origin/Referer on all state-changing requests
 app.use((req, res, next) => {
-  // Skip non-state-changing methods and webhook endpoints
+  // Skip safe methods and webhook endpoints
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
   if (req.path === '/api/billing/webhook') return next();
 
-  // In production, validate Origin/Referer matches allowed origins
-  if (process.env.NODE_ENV === 'production') {
-    const origin = req.headers.origin || req.headers.referer;
-    const host = req.headers.host;
-    const ownOrigins = host ? [`https://${host}`, `http://${host}`] : [];
-    const allAllowed = [...corsOrigins, ...ownOrigins];
-    if (origin && !allAllowed.some(o => origin.startsWith(o))) {
-      return res.status(403).json({ error: 'Invalid origin', code: 'CSRF_REJECTED' });
-    }
+  // Validate Origin/Referer matches allowed origins (all environments)
+  const origin = req.headers.origin || req.headers.referer;
+  const host = req.headers.host;
+  const ownOrigins = host ? [`https://${host}`, `http://${host}`] : [];
+  const allAllowed = [...corsOrigins, ...ownOrigins];
+  if (origin && !allAllowed.some(o => origin.startsWith(o))) {
+    return res.status(403).json({ error: 'Invalid origin', code: 'CSRF_REJECTED' });
   }
   next();
 });

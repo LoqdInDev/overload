@@ -36,15 +36,15 @@ router.get('/export', (req, res) => {
     `).all(userId);
 
     // Gather activity log entries for workspaces the user belongs to
-    const workspaceIds = memberships.map(m => m.workspace_id);
+    const workspaceIds = memberships.map(m => String(m.workspace_id));
     let activityLog = [];
-    if (workspaceIds.length > 0) {
-      const placeholders = workspaceIds.map(() => '?').join(',');
-      activityLog = db.prepare(`
+    for (const wid of workspaceIds) {
+      const rows = db.prepare(`
         SELECT id, module_id, action, title, detail, entity_id, workspace_id, created_at
-        FROM activity_log WHERE workspace_id IN (${placeholders})
+        FROM activity_log WHERE workspace_id = ?
         ORDER BY created_at DESC LIMIT 1000
-      `).all(...workspaceIds);
+      `).all(wid);
+      activityLog.push(...rows);
     }
 
     const exportData = {
@@ -77,15 +77,13 @@ router.delete('/delete-account', (req, res) => {
       const ownedIds = ownedWorkspaces.map(w => w.id);
 
       // 2. Delete activity log entries for owned workspaces
-      if (ownedIds.length > 0) {
-        const placeholders = ownedIds.map(() => '?').join(',');
-        db.prepare(`DELETE FROM activity_log WHERE workspace_id IN (${placeholders})`).run(...ownedIds);
+      for (const wid of ownedIds) {
+        db.prepare('DELETE FROM activity_log WHERE workspace_id = ?').run(wid);
       }
 
       // 3. Delete workspace members for owned workspaces
-      if (ownedIds.length > 0) {
-        const placeholders = ownedIds.map(() => '?').join(',');
-        db.prepare(`DELETE FROM workspace_members WHERE workspace_id IN (${placeholders})`).run(...ownedIds);
+      for (const wid of ownedIds) {
+        db.prepare('DELETE FROM workspace_members WHERE workspace_id = ?').run(wid);
       }
 
       // 4. Delete all owned workspaces

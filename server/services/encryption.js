@@ -8,7 +8,9 @@ function getKey() {
   if (!key || key.length < 32) {
     throw new Error('ENCRYPTION_KEY must be at least 32 characters in .env');
   }
-  return crypto.scryptSync(key, 'overload-salt', 32);
+  // Use the key itself as salt material to derive a unique salt per deployment
+  const salt = crypto.createHash('sha256').update(key + '-overload-enc-salt').digest().slice(0, 16);
+  return crypto.scryptSync(key, salt, 32);
 }
 
 function encrypt(plaintext) {

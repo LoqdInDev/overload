@@ -237,8 +237,13 @@ router.post('/optimize', async (req, res) => {
 
     let products;
     if (product_ids && product_ids.length > 0) {
-      const placeholders = product_ids.map(() => '?').join(',');
-      products = db.prepare(`SELECT * FROM pf_products WHERE id IN (${placeholders}) AND workspace_id = ?`).all(...product_ids, wsId);
+      // Validate all IDs are integers, then query individually and merge
+      const safeIds = product_ids.map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+      products = [];
+      for (const id of safeIds) {
+        const row = db.prepare('SELECT * FROM pf_products WHERE id = ? AND workspace_id = ?').get(id, wsId);
+        if (row) products.push(row);
+      }
     } else if (feed_id) {
       products = db.prepare('SELECT * FROM pf_products WHERE feed_id = ? AND workspace_id = ? LIMIT 20').all(feed_id, wsId);
     } else {
