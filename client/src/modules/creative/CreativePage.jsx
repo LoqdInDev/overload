@@ -463,6 +463,8 @@ export default function CreativePage() {
   const [builderSetting, setBuilderSetting] = useState('');
   const [builderComposition, setBuilderComposition] = useState('');
   const [builderColorGrade, setBuilderColorGrade] = useState('');
+  const [expandedAttr, setExpandedAttr] = useState(null);
+  const pickAttr = (setter, id, current, attr) => { setter(id === current ? '' : id); setExpandedAttr(null); };
 
   const loadHistory = useCallback(async () => {
     setHistoryLoading(true);
@@ -1326,60 +1328,83 @@ export default function CreativePage() {
                               style={{ background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.25)', color: '#22d3ee' }}>3</div>
                             <div className="w-px flex-1 mt-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
                           </div>
-                          <div className="flex-1 pt-0.5 space-y-4 min-w-0">
-                            <p className="text-[12px] font-semibold text-gray-200">Scene & Composition</p>
+                          <div className="flex-1 pt-0.5 space-y-2 min-w-0">
+                            <p className="text-[12px] font-semibold text-gray-200 mb-3">Scene & Composition</p>
 
-                            {/* Settings — horizontal scroll strip */}
-                            <div>
-                              <div className="flex items-center justify-between mb-2">
-                                <p className="hud-label text-[9px]" style={{ color: '#06b6d4' }}>SETTING</p>
-                                {builderSetting && (
-                                  <button onClick={() => setBuilderSetting('')} className="text-[9px] text-gray-600 hover:text-gray-400 transition-colors">Clear</button>
-                                )}
-                              </div>
-                              <div className="overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-                                <div className="flex gap-2 pb-1" style={{ width: 'max-content' }}>
-                                  {SETTINGS.map(s => {
-                                    const active = builderSetting === s.id;
-                                    return (
-                                      <button key={s.id} onClick={() => setBuilderSetting(active ? '' : s.id)}
-                                        className="flex-shrink-0 flex flex-col items-center gap-1.5 rounded-xl border-2 transition-all"
-                                        style={{ width: 60, paddingTop: 10, paddingBottom: 10,
-                                          background: active ? 'rgba(6,182,212,0.12)' : 'rgba(255,255,255,0.03)',
-                                          borderColor: active ? 'rgba(6,182,212,0.5)' : 'rgba(255,255,255,0.07)' }}>
-                                        <span className="text-2xl leading-none">{s.emoji}</span>
-                                        <span className="text-[9px] font-medium leading-none mt-1"
-                                          style={{ color: active ? '#22d3ee' : '#6b7280' }}>{s.name}</span>
-                                      </button>
-                                    );
-                                  })}
+                            {/* Setting row */}
+                            {(() => {
+                              const sel = SETTINGS.find(s => s.id === builderSetting);
+                              const isOpen = expandedAttr === 'setting';
+                              return (
+                                <div>
+                                  <button onClick={() => setExpandedAttr(isOpen ? null : 'setting')}
+                                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left"
+                                    style={isOpen || sel
+                                      ? { borderColor: 'rgba(6,182,212,0.35)', background: 'rgba(6,182,212,0.06)' }
+                                      : { borderColor: 'rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}>
+                                    <span className="hud-label text-[9px] w-16 flex-shrink-0" style={{ color: isOpen ? '#22d3ee' : '#4b5563' }}>SETTING</span>
+                                    <span className="flex-1 text-[11px] font-medium" style={{ color: sel ? '#e5e7eb' : '#4b5563' }}>
+                                      {sel ? `${sel.emoji} ${sel.name}` : 'Not set'}
+                                    </span>
+                                    {sel && <button onClick={e => { e.stopPropagation(); setBuilderSetting(''); }} className="text-[10px] text-gray-600 hover:text-red-400 px-1 transition-colors">✕</button>}
+                                    <svg className="w-3 h-3 text-gray-600 flex-shrink-0 transition-transform" style={{ transform: isOpen ? 'rotate(180deg)' : '' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                                  </button>
+                                  {isOpen && (
+                                    <div className="mt-1.5 p-3 rounded-xl border" style={{ borderColor: 'rgba(6,182,212,0.15)', background: 'rgba(0,0,0,0.15)' }}>
+                                      <div className="grid grid-cols-5 gap-2">
+                                        {SETTINGS.map(s => (
+                                          <button key={s.id} onClick={() => pickAttr(setBuilderSetting, s.id, builderSetting, null)}
+                                            className="flex flex-col items-center gap-1 py-2.5 rounded-lg border-2 transition-all"
+                                            style={builderSetting === s.id
+                                              ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.5)' }
+                                              : { background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }}>
+                                            <span className="text-xl leading-none">{s.emoji}</span>
+                                            <span className="text-[9px] font-medium mt-0.5" style={{ color: builderSetting === s.id ? '#22d3ee' : '#6b7280' }}>{s.name}</span>
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
-                            </div>
+                              );
+                            })()}
 
-                            {/* Composition — compact 2-row grid */}
-                            <div>
-                              <div className="flex items-center justify-between mb-2">
-                                <p className="hud-label text-[9px]" style={{ color: '#06b6d4' }}>FRAMING</p>
-                                {builderComposition && (
-                                  <button onClick={() => setBuilderComposition('')} className="text-[9px] text-gray-600 hover:text-gray-400 transition-colors">Clear</button>
-                                )}
-                              </div>
-                              <div className="grid grid-cols-4 gap-1.5">
-                                {COMPOSITIONS.map(c => {
-                                  const active = builderComposition === c.id;
-                                  return (
-                                    <button key={c.id} onClick={() => setBuilderComposition(active ? '' : c.id)}
-                                      className="py-2 px-2 rounded-lg border-2 transition-all text-center text-[10px] font-medium leading-tight"
-                                      style={active
-                                        ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.5)', color: '#22d3ee' }
-                                        : { background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)', color: '#6b7280' }}>
-                                      {c.label}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
+                            {/* Framing row */}
+                            {(() => {
+                              const sel = COMPOSITIONS.find(c => c.id === builderComposition);
+                              const isOpen = expandedAttr === 'framing';
+                              return (
+                                <div>
+                                  <button onClick={() => setExpandedAttr(isOpen ? null : 'framing')}
+                                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left"
+                                    style={isOpen || sel
+                                      ? { borderColor: 'rgba(6,182,212,0.35)', background: 'rgba(6,182,212,0.06)' }
+                                      : { borderColor: 'rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}>
+                                    <span className="hud-label text-[9px] w-16 flex-shrink-0" style={{ color: isOpen ? '#22d3ee' : '#4b5563' }}>FRAMING</span>
+                                    <span className="flex-1 text-[11px] font-medium" style={{ color: sel ? '#e5e7eb' : '#4b5563' }}>
+                                      {sel ? sel.label : 'Not set'}
+                                    </span>
+                                    {sel && <button onClick={e => { e.stopPropagation(); setBuilderComposition(''); }} className="text-[10px] text-gray-600 hover:text-red-400 px-1 transition-colors">✕</button>}
+                                    <svg className="w-3 h-3 text-gray-600 flex-shrink-0 transition-transform" style={{ transform: isOpen ? 'rotate(180deg)' : '' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                                  </button>
+                                  {isOpen && (
+                                    <div className="mt-1.5 p-3 rounded-xl border" style={{ borderColor: 'rgba(6,182,212,0.15)', background: 'rgba(0,0,0,0.15)' }}>
+                                      <div className="grid grid-cols-4 gap-1.5">
+                                        {COMPOSITIONS.map(c => (
+                                          <button key={c.id} onClick={() => pickAttr(setBuilderComposition, c.id, builderComposition, null)}
+                                            className="py-2 px-2 rounded-lg border-2 transition-all text-center text-[10px] font-medium"
+                                            style={builderComposition === c.id
+                                              ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.5)', color: '#22d3ee' }
+                                              : { background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)', color: '#6b7280' }}>
+                                            {c.label}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
 
@@ -1459,92 +1484,125 @@ export default function CreativePage() {
                               style={{ background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.25)', color: '#22d3ee' }}>5</div>
                             <div className="w-px flex-1 mt-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
                           </div>
-                          <div className="flex-1 pt-0.5 space-y-4 min-w-0">
-                            <p className="text-[12px] font-semibold text-gray-200">Visual Details</p>
+                          <div className="flex-1 pt-0.5 space-y-2 min-w-0">
+                            <p className="text-[12px] font-semibold text-gray-200 mb-3">Visual Details</p>
 
-                            {/* Lighting — swatch cards, horizontal scroll */}
-                            <div>
-                              <div className="flex items-center justify-between mb-2">
-                                <p className="hud-label text-[9px]" style={{ color: '#06b6d4' }}>LIGHTING</p>
-                                {builderLighting && <button onClick={() => setBuilderLighting('')} className="text-[9px] text-gray-600 hover:text-gray-400 transition-colors">Clear</button>}
-                              </div>
-                              <div className="overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-                                <div className="flex gap-2 pb-1" style={{ width: 'max-content' }}>
-                                  {LIGHTING_OPTIONS.map(l => {
-                                    const active = builderLighting === l.id;
-                                    return (
-                                      <button key={l.id} onClick={() => setBuilderLighting(active ? '' : l.id)}
-                                        className="flex-shrink-0 rounded-xl border-2 overflow-hidden transition-all"
-                                        style={{ width: 80,
-                                          borderColor: active ? 'rgba(6,182,212,0.6)' : 'rgba(255,255,255,0.07)',
-                                          boxShadow: active ? '0 0 10px rgba(6,182,212,0.2)' : 'none' }}>
-                                        <div className="h-9 w-full" style={{ background: l.swatch }} />
-                                        <div className="px-1.5 py-1.5 text-center" style={{ background: active ? 'rgba(6,182,212,0.12)' : 'rgba(255,255,255,0.03)' }}>
-                                          <span className="text-[9px] font-medium leading-none"
-                                            style={{ color: active ? '#22d3ee' : '#6b7280' }}>{l.label}</span>
-                                        </div>
-                                      </button>
-                                    );
-                                  })}
+                            {/* Lighting row */}
+                            {(() => {
+                              const sel = LIGHTING_OPTIONS.find(l => l.id === builderLighting);
+                              const isOpen = expandedAttr === 'lighting';
+                              return (
+                                <div>
+                                  <button onClick={() => setExpandedAttr(isOpen ? null : 'lighting')}
+                                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left"
+                                    style={isOpen || sel
+                                      ? { borderColor: 'rgba(6,182,212,0.35)', background: 'rgba(6,182,212,0.06)' }
+                                      : { borderColor: 'rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}>
+                                    <span className="hud-label text-[9px] w-20 flex-shrink-0" style={{ color: isOpen ? '#22d3ee' : '#4b5563' }}>LIGHTING</span>
+                                    {sel && <span className="w-5 h-5 rounded-md flex-shrink-0 border border-black/20" style={{ background: sel.swatch }} />}
+                                    <span className="flex-1 text-[11px] font-medium" style={{ color: sel ? '#e5e7eb' : '#4b5563' }}>{sel ? sel.label : 'Not set'}</span>
+                                    {sel && <button onClick={e => { e.stopPropagation(); setBuilderLighting(''); }} className="text-[10px] text-gray-600 hover:text-red-400 px-1 transition-colors">✕</button>}
+                                    <svg className="w-3 h-3 text-gray-600 flex-shrink-0 transition-transform" style={{ transform: isOpen ? 'rotate(180deg)' : '' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                                  </button>
+                                  {isOpen && (
+                                    <div className="mt-1.5 p-3 rounded-xl border" style={{ borderColor: 'rgba(6,182,212,0.15)', background: 'rgba(0,0,0,0.15)' }}>
+                                      <div className="grid grid-cols-3 gap-2">
+                                        {LIGHTING_OPTIONS.map(l => (
+                                          <button key={l.id} onClick={() => pickAttr(setBuilderLighting, l.id, builderLighting, null)}
+                                            className="rounded-xl border-2 overflow-hidden transition-all"
+                                            style={builderLighting === l.id
+                                              ? { borderColor: 'rgba(6,182,212,0.6)' }
+                                              : { borderColor: 'rgba(255,255,255,0.07)' }}>
+                                            <div className="h-8 w-full" style={{ background: l.swatch }} />
+                                            <div className="py-1.5 text-center" style={{ background: builderLighting === l.id ? 'rgba(6,182,212,0.12)' : 'rgba(255,255,255,0.03)' }}>
+                                              <span className="text-[9px] font-medium" style={{ color: builderLighting === l.id ? '#22d3ee' : '#6b7280' }}>{l.label}</span>
+                                            </div>
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
-                            </div>
+                              );
+                            })()}
 
-                            {/* Background — swatch cards, horizontal scroll */}
-                            <div>
-                              <div className="flex items-center justify-between mb-2">
-                                <p className="hud-label text-[9px]" style={{ color: '#06b6d4' }}>BACKGROUND</p>
-                                {builderBackground && <button onClick={() => setBuilderBackground('')} className="text-[9px] text-gray-600 hover:text-gray-400 transition-colors">Clear</button>}
-                              </div>
-                              <div className="overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-                                <div className="flex gap-2 pb-1" style={{ width: 'max-content' }}>
-                                  {BACKGROUND_OPTIONS.map(b => {
-                                    const active = builderBackground === b.id;
-                                    return (
-                                      <button key={b.id} onClick={() => setBuilderBackground(active ? '' : b.id)}
-                                        className="flex-shrink-0 rounded-xl border-2 overflow-hidden transition-all"
-                                        style={{ width: 80,
-                                          borderColor: active ? 'rgba(6,182,212,0.6)' : 'rgba(255,255,255,0.07)',
-                                          boxShadow: active ? '0 0 10px rgba(6,182,212,0.2)' : 'none' }}>
-                                        <div className="h-9 w-full" style={{ background: b.swatch }} />
-                                        <div className="px-1.5 py-1.5 text-center" style={{ background: active ? 'rgba(6,182,212,0.12)' : 'rgba(255,255,255,0.03)' }}>
-                                          <span className="text-[9px] font-medium leading-none"
-                                            style={{ color: active ? '#22d3ee' : '#6b7280' }}>{b.label}</span>
-                                        </div>
-                                      </button>
-                                    );
-                                  })}
+                            {/* Background row */}
+                            {(() => {
+                              const sel = BACKGROUND_OPTIONS.find(b => b.id === builderBackground);
+                              const isOpen = expandedAttr === 'background';
+                              return (
+                                <div>
+                                  <button onClick={() => setExpandedAttr(isOpen ? null : 'background')}
+                                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left"
+                                    style={isOpen || sel
+                                      ? { borderColor: 'rgba(6,182,212,0.35)', background: 'rgba(6,182,212,0.06)' }
+                                      : { borderColor: 'rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}>
+                                    <span className="hud-label text-[9px] w-20 flex-shrink-0" style={{ color: isOpen ? '#22d3ee' : '#4b5563' }}>BACKGROUND</span>
+                                    {sel && <span className="w-5 h-5 rounded-md flex-shrink-0 border border-black/20" style={{ background: sel.swatch }} />}
+                                    <span className="flex-1 text-[11px] font-medium" style={{ color: sel ? '#e5e7eb' : '#4b5563' }}>{sel ? sel.label : 'Not set'}</span>
+                                    {sel && <button onClick={e => { e.stopPropagation(); setBuilderBackground(''); }} className="text-[10px] text-gray-600 hover:text-red-400 px-1 transition-colors">✕</button>}
+                                    <svg className="w-3 h-3 text-gray-600 flex-shrink-0 transition-transform" style={{ transform: isOpen ? 'rotate(180deg)' : '' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                                  </button>
+                                  {isOpen && (
+                                    <div className="mt-1.5 p-3 rounded-xl border" style={{ borderColor: 'rgba(6,182,212,0.15)', background: 'rgba(0,0,0,0.15)' }}>
+                                      <div className="grid grid-cols-3 gap-2">
+                                        {BACKGROUND_OPTIONS.map(b => (
+                                          <button key={b.id} onClick={() => pickAttr(setBuilderBackground, b.id, builderBackground, null)}
+                                            className="rounded-xl border-2 overflow-hidden transition-all"
+                                            style={builderBackground === b.id
+                                              ? { borderColor: 'rgba(6,182,212,0.6)' }
+                                              : { borderColor: 'rgba(255,255,255,0.07)' }}>
+                                            <div className="h-8 w-full" style={{ background: b.swatch }} />
+                                            <div className="py-1.5 text-center" style={{ background: builderBackground === b.id ? 'rgba(6,182,212,0.12)' : 'rgba(255,255,255,0.03)' }}>
+                                              <span className="text-[9px] font-medium" style={{ color: builderBackground === b.id ? '#22d3ee' : '#6b7280' }}>{b.label}</span>
+                                            </div>
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
-                            </div>
+                              );
+                            })()}
 
-                            {/* Color Grade — wide swatch cards, horizontal scroll */}
-                            <div>
-                              <div className="flex items-center justify-between mb-2">
-                                <p className="hud-label text-[9px]" style={{ color: '#06b6d4' }}>COLOR GRADE</p>
-                                {builderColorGrade && <button onClick={() => setBuilderColorGrade('')} className="text-[9px] text-gray-600 hover:text-gray-400 transition-colors">Clear</button>}
-                              </div>
-                              <div className="overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-                                <div className="flex gap-2 pb-1" style={{ width: 'max-content' }}>
-                                  {COLOR_GRADES.map(g => {
-                                    const active = builderColorGrade === g.id;
-                                    return (
-                                      <button key={g.id} onClick={() => setBuilderColorGrade(active ? '' : g.id)}
-                                        className="flex-shrink-0 rounded-xl border-2 overflow-hidden transition-all"
-                                        style={{ width: 96,
-                                          borderColor: active ? 'rgba(6,182,212,0.6)' : 'rgba(255,255,255,0.07)',
-                                          boxShadow: active ? '0 0 10px rgba(6,182,212,0.2)' : 'none' }}>
-                                        <div className="h-7 w-full" style={{ background: g.swatch }} />
-                                        <div className="px-1.5 py-1.5 text-center" style={{ background: active ? 'rgba(6,182,212,0.12)' : 'rgba(255,255,255,0.03)' }}>
-                                          <span className="text-[9px] font-medium leading-none"
-                                            style={{ color: active ? '#22d3ee' : '#6b7280' }}>{g.label}</span>
-                                        </div>
-                                      </button>
-                                    );
-                                  })}
+                            {/* Color Grade row */}
+                            {(() => {
+                              const sel = COLOR_GRADES.find(g => g.id === builderColorGrade);
+                              const isOpen = expandedAttr === 'colorgrade';
+                              return (
+                                <div>
+                                  <button onClick={() => setExpandedAttr(isOpen ? null : 'colorgrade')}
+                                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left"
+                                    style={isOpen || sel
+                                      ? { borderColor: 'rgba(6,182,212,0.35)', background: 'rgba(6,182,212,0.06)' }
+                                      : { borderColor: 'rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}>
+                                    <span className="hud-label text-[9px] w-20 flex-shrink-0" style={{ color: isOpen ? '#22d3ee' : '#4b5563' }}>COLOR GRADE</span>
+                                    {sel && <span className="w-10 h-4 rounded flex-shrink-0 border border-black/20" style={{ background: sel.swatch }} />}
+                                    <span className="flex-1 text-[11px] font-medium" style={{ color: sel ? '#e5e7eb' : '#4b5563' }}>{sel ? sel.label : 'Not set'}</span>
+                                    {sel && <button onClick={e => { e.stopPropagation(); setBuilderColorGrade(''); }} className="text-[10px] text-gray-600 hover:text-red-400 px-1 transition-colors">✕</button>}
+                                    <svg className="w-3 h-3 text-gray-600 flex-shrink-0 transition-transform" style={{ transform: isOpen ? 'rotate(180deg)' : '' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                                  </button>
+                                  {isOpen && (
+                                    <div className="mt-1.5 p-3 rounded-xl border" style={{ borderColor: 'rgba(6,182,212,0.15)', background: 'rgba(0,0,0,0.15)' }}>
+                                      <div className="grid grid-cols-4 gap-2">
+                                        {COLOR_GRADES.map(g => (
+                                          <button key={g.id} onClick={() => pickAttr(setBuilderColorGrade, g.id, builderColorGrade, null)}
+                                            className="rounded-xl border-2 overflow-hidden transition-all"
+                                            style={builderColorGrade === g.id
+                                              ? { borderColor: 'rgba(6,182,212,0.6)' }
+                                              : { borderColor: 'rgba(255,255,255,0.07)' }}>
+                                            <div className="h-7 w-full" style={{ background: g.swatch }} />
+                                            <div className="py-1.5 text-center px-1" style={{ background: builderColorGrade === g.id ? 'rgba(6,182,212,0.12)' : 'rgba(255,255,255,0.03)' }}>
+                                              <span className="text-[8px] font-medium leading-tight" style={{ color: builderColorGrade === g.id ? '#22d3ee' : '#6b7280' }}>{g.label}</span>
+                                            </div>
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
-                            </div>
+                              );
+                            })()}
 
                           </div>
                         </div>
