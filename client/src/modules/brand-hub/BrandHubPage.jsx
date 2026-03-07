@@ -406,6 +406,65 @@ export default function BrandHubPage() {
         {tab === 'profile' && (
           <div className="animate-fade-in space-y-6">
 
+            {/* ── Brand Summary Card (shown when profile is saved) ── */}
+            {profileId && profile.brand_name && (
+              <div className={`rounded-2xl p-5 sm:p-6 ${card}`} style={{ boxShadow: dark ? 'none' : '0 2px 20px -4px rgba(0,0,0,0.06)', border: dark ? '1px solid rgba(255,255,255,0.06)' : `1px solid ${COLOR}22` }}>
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="hud-label text-[10px] mb-1" style={{ color: COLOR }}>YOUR BRAND</p>
+                    <h2 className={`text-xl sm:text-2xl font-bold tracking-tight truncate ${dark ? 'text-white' : 'text-[#332F2B]'}`} style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: '-0.02em' }}>
+                      {profile.brand_name}
+                    </h2>
+                    {profile.tagline && <p className={`text-sm mt-0.5 ${dark ? 'text-gray-400' : 'text-[#94908A]'}`}>{profile.tagline}</p>}
+                  </div>
+                  <div className="flex gap-1.5 shrink-0">
+                    {profile.colors?.primary && <div className="w-7 h-7 rounded-full border-2 border-white shadow-sm" style={{ background: profile.colors.primary }} title={profile.colors.primary} />}
+                    {profile.colors?.secondary && <div className="w-7 h-7 rounded-full border-2 border-white shadow-sm" style={{ background: profile.colors.secondary }} title={profile.colors.secondary} />}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                  {profile.mission && (
+                    <div>
+                      <p className={`text-[10px] font-semibold uppercase tracking-widest mb-1 ${dark ? 'text-gray-500' : 'text-[#B8A898]'}`}>Mission</p>
+                      <p className={`text-xs leading-relaxed line-clamp-2 ${dark ? 'text-gray-300' : 'text-[#332F2B]'}`}>{profile.mission}</p>
+                    </div>
+                  )}
+                  {Array.isArray(profile.voice_tone) && profile.voice_tone.length > 0 && (
+                    <div>
+                      <p className={`text-[10px] font-semibold uppercase tracking-widest mb-1 ${dark ? 'text-gray-500' : 'text-[#B8A898]'}`}>Voice</p>
+                      <div className="flex flex-wrap gap-1">
+                        {profile.voice_tone.map(t => (
+                          <span key={t} className="px-2 py-0.5 rounded-md text-[10px] font-medium capitalize" style={{ background: `${COLOR}15`, color: COLOR }}>{t}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {Array.isArray(profile.industry) && profile.industry.length > 0 && (
+                    <div>
+                      <p className={`text-[10px] font-semibold uppercase tracking-widest mb-1 ${dark ? 'text-gray-500' : 'text-[#B8A898]'}`}>Industry</p>
+                      <div className="flex flex-wrap gap-1">
+                        {profile.industry.map(i => (
+                          <span key={i} className={`px-2 py-0.5 rounded-md text-[10px] font-medium capitalize ${dark ? 'bg-white/5 text-gray-300' : 'bg-[#F5F0E8] text-[#332F2B]'}`}>{i}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {profile.keywords && (
+                  <div className={`mt-4 pt-4 ${dark ? 'border-t border-white/[0.06]' : 'border-t border-[#EDE8E0]'}`}>
+                    <p className={`text-[10px] font-semibold uppercase tracking-widest mb-1.5 ${dark ? 'text-gray-500' : 'text-[#B8A898]'}`}>Keywords</p>
+                    <div className="flex flex-wrap gap-1">
+                      {profile.keywords.split(',').map(k => k.trim()).filter(Boolean).map(k => (
+                        <span key={k} className={`px-2 py-0.5 rounded-md text-[10px] ${dark ? 'bg-white/5 text-gray-400' : 'bg-[#F5F0E8] text-[#94908A]'}`}>{k}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Brand Basics */}
             <div className={`rounded-2xl p-4 sm:p-6 ${card}`} style={{ boxShadow: dark ? 'none' : '0 2px 20px -4px rgba(0,0,0,0.04)' }}>
               <p className="hud-label text-[11px] mb-5" style={{ color: COLOR }}>BRAND INFORMATION</p>
