@@ -864,12 +864,10 @@ export default function CreativePage() {
                 <p className="hud-label text-[11px]">BRIEF DETAILS</p>
                 {brand?.brand_name && (
                   <button onClick={() => setBriefUseBrand(v => !v)}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-semibold transition-all"
-                    style={briefUseBrand
-                      ? { background: 'rgba(6,182,212,0.12)', color: '#22d3ee', border: '1px solid rgba(6,182,212,0.25)' }
-                      : { background: 'rgba(255,255,255,0.04)', color: '#6b7280', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    className={`chip flex items-center gap-2 text-[10px] font-semibold transition-all ${briefUseBrand ? 'active' : ''}`}
+                    style={briefUseBrand ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
                     <span className="relative inline-flex h-4 w-7 items-center rounded-full transition-colors flex-shrink-0"
-                      style={{ background: briefUseBrand ? '#22d3ee' : 'rgba(255,255,255,0.15)' }}>
+                      style={{ background: briefUseBrand ? '#22d3ee' : 'currentColor', opacity: briefUseBrand ? 1 : 0.25 }}>
                       <span className="inline-block h-3 w-3 rounded-full bg-white shadow transition-transform"
                         style={{ transform: briefUseBrand ? 'translateX(14px)' : 'translateX(2px)' }} />
                     </span>
