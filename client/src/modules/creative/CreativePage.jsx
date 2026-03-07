@@ -1245,7 +1245,7 @@ export default function CreativePage() {
                     {/* Header: mode toggle + quick templates */}
                     <div className="flex items-center justify-between">
                       <p className="hud-label text-[11px]">PROMPT BUILDER</p>
-                      <div className="flex items-center gap-1 p-0.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                      <div className="flex items-center gap-1 p-0.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(0,0,0,0.1)' }}>
                         {[{ id: 'builder', label: '✦ Visual' }, { id: 'manual', label: '✎ Manual' }].map(m => (
                           <button key={m.id} onClick={() => setPromptMode(m.id)}
                             className="px-3 py-1 rounded-md text-[10px] font-semibold transition-all"
@@ -1341,9 +1341,9 @@ export default function CreativePage() {
                                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left"
                                     style={isOpen || sel
                                       ? { borderColor: 'rgba(6,182,212,0.35)', background: 'rgba(6,182,212,0.06)' }
-                                      : { borderColor: 'rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}>
+                                      : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(0,0,0,0.02)' }}>
                                     <span className="hud-label text-[9px] w-16 flex-shrink-0" style={{ color: isOpen ? '#22d3ee' : '#4b5563' }}>SETTING</span>
-                                    <span className="flex-1 text-[11px] font-medium" style={{ color: sel ? '#e5e7eb' : '#4b5563' }}>
+                                    <span className="flex-1 text-[11px] font-medium" style={{ color: sel ? '#111827' : '#6b7280' }}>
                                       {sel ? `${sel.emoji} ${sel.name}` : 'Not set'}
                                     </span>
                                     {sel && <button onClick={e => { e.stopPropagation(); setBuilderSetting(''); }} className="text-[10px] text-gray-600 hover:text-red-400 px-1 transition-colors">✕</button>}
@@ -1357,7 +1357,7 @@ export default function CreativePage() {
                                             className="flex flex-col items-center gap-1 py-2.5 rounded-lg border-2 transition-all"
                                             style={builderSetting === s.id
                                               ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.5)' }
-                                              : { background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }}>
+                                              : { background: 'rgba(0,0,0,0.03)', borderColor: 'rgba(0,0,0,0.1)' }}>
                                             <span className="text-xl leading-none">{s.emoji}</span>
                                             <span className="text-[9px] font-medium mt-0.5" style={{ color: builderSetting === s.id ? '#22d3ee' : '#6b7280' }}>{s.name}</span>
                                           </button>
@@ -1379,9 +1379,9 @@ export default function CreativePage() {
                                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left"
                                     style={isOpen || sel
                                       ? { borderColor: 'rgba(6,182,212,0.35)', background: 'rgba(6,182,212,0.06)' }
-                                      : { borderColor: 'rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}>
+                                      : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(0,0,0,0.02)' }}>
                                     <span className="hud-label text-[9px] w-16 flex-shrink-0" style={{ color: isOpen ? '#22d3ee' : '#4b5563' }}>FRAMING</span>
-                                    <span className="flex-1 text-[11px] font-medium" style={{ color: sel ? '#e5e7eb' : '#4b5563' }}>
+                                    <span className="flex-1 text-[11px] font-medium" style={{ color: sel ? '#111827' : '#6b7280' }}>
                                       {sel ? sel.label : 'Not set'}
                                     </span>
                                     {sel && <button onClick={e => { e.stopPropagation(); setBuilderComposition(''); }} className="text-[10px] text-gray-600 hover:text-red-400 px-1 transition-colors">✕</button>}
@@ -1395,7 +1395,7 @@ export default function CreativePage() {
                                             className="py-2 px-2 rounded-lg border-2 transition-all text-center text-[10px] font-medium"
                                             style={builderComposition === c.id
                                               ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.5)', color: '#22d3ee' }
-                                              : { background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)', color: '#6b7280' }}>
+                                              : { background: 'rgba(0,0,0,0.03)', borderColor: 'rgba(0,0,0,0.1)', color: '#6b7280' }}>
                                             {c.label}
                                           </button>
                                         ))}
@@ -1416,10 +1416,10 @@ export default function CreativePage() {
                             <div className="w-px flex-1 mt-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
                           </div>
                           <div className="flex-1 pt-0.5 min-w-0">
-                            <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.07)' }}>
+                            <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(0,0,0,0.1)' }}>
                               <button onClick={() => setShowModels(v => !v)}
                                 className="w-full flex items-center justify-between px-4 py-3 transition-colors text-left"
-                                style={{ background: showModels ? 'rgba(6,182,212,0.08)' : 'rgba(255,255,255,0.03)' }}>
+                                style={{ background: showModels ? 'rgba(6,182,212,0.08)' : 'rgba(0,0,0,0.03)' }}>
                                 <div className="flex items-center gap-2.5">
                                   <span className="text-lg">👤</span>
                                   <div>
@@ -1497,10 +1497,10 @@ export default function CreativePage() {
                                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left"
                                     style={isOpen || sel
                                       ? { borderColor: 'rgba(6,182,212,0.35)', background: 'rgba(6,182,212,0.06)' }
-                                      : { borderColor: 'rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}>
+                                      : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(0,0,0,0.02)' }}>
                                     <span className="hud-label text-[9px] w-20 flex-shrink-0" style={{ color: isOpen ? '#22d3ee' : '#4b5563' }}>LIGHTING</span>
                                     {sel && <span className="w-5 h-5 rounded-md flex-shrink-0 border border-black/20" style={{ background: sel.swatch }} />}
-                                    <span className="flex-1 text-[11px] font-medium" style={{ color: sel ? '#e5e7eb' : '#4b5563' }}>{sel ? sel.label : 'Not set'}</span>
+                                    <span className="flex-1 text-[11px] font-medium" style={{ color: sel ? '#111827' : '#6b7280' }}>{sel ? sel.label : 'Not set'}</span>
                                     {sel && <button onClick={e => { e.stopPropagation(); setBuilderLighting(''); }} className="text-[10px] text-gray-600 hover:text-red-400 px-1 transition-colors">✕</button>}
                                     <svg className="w-3 h-3 text-gray-600 flex-shrink-0 transition-transform" style={{ transform: isOpen ? 'rotate(180deg)' : '' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
                                   </button>
@@ -1512,9 +1512,9 @@ export default function CreativePage() {
                                             className="rounded-xl border-2 overflow-hidden transition-all"
                                             style={builderLighting === l.id
                                               ? { borderColor: 'rgba(6,182,212,0.6)' }
-                                              : { borderColor: 'rgba(255,255,255,0.07)' }}>
+                                              : { borderColor: 'rgba(0,0,0,0.1)' }}>
                                             <div className="h-8 w-full" style={{ background: l.swatch }} />
-                                            <div className="py-1.5 text-center" style={{ background: builderLighting === l.id ? 'rgba(6,182,212,0.12)' : 'rgba(255,255,255,0.03)' }}>
+                                            <div className="py-1.5 text-center" style={{ background: builderLighting === l.id ? 'rgba(6,182,212,0.12)' : 'rgba(0,0,0,0.03)' }}>
                                               <span className="text-[9px] font-medium" style={{ color: builderLighting === l.id ? '#22d3ee' : '#6b7280' }}>{l.label}</span>
                                             </div>
                                           </button>
@@ -1536,10 +1536,10 @@ export default function CreativePage() {
                                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left"
                                     style={isOpen || sel
                                       ? { borderColor: 'rgba(6,182,212,0.35)', background: 'rgba(6,182,212,0.06)' }
-                                      : { borderColor: 'rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}>
+                                      : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(0,0,0,0.02)' }}>
                                     <span className="hud-label text-[9px] w-20 flex-shrink-0" style={{ color: isOpen ? '#22d3ee' : '#4b5563' }}>BACKGROUND</span>
                                     {sel && <span className="w-5 h-5 rounded-md flex-shrink-0 border border-black/20" style={{ background: sel.swatch }} />}
-                                    <span className="flex-1 text-[11px] font-medium" style={{ color: sel ? '#e5e7eb' : '#4b5563' }}>{sel ? sel.label : 'Not set'}</span>
+                                    <span className="flex-1 text-[11px] font-medium" style={{ color: sel ? '#111827' : '#6b7280' }}>{sel ? sel.label : 'Not set'}</span>
                                     {sel && <button onClick={e => { e.stopPropagation(); setBuilderBackground(''); }} className="text-[10px] text-gray-600 hover:text-red-400 px-1 transition-colors">✕</button>}
                                     <svg className="w-3 h-3 text-gray-600 flex-shrink-0 transition-transform" style={{ transform: isOpen ? 'rotate(180deg)' : '' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
                                   </button>
@@ -1551,9 +1551,9 @@ export default function CreativePage() {
                                             className="rounded-xl border-2 overflow-hidden transition-all"
                                             style={builderBackground === b.id
                                               ? { borderColor: 'rgba(6,182,212,0.6)' }
-                                              : { borderColor: 'rgba(255,255,255,0.07)' }}>
+                                              : { borderColor: 'rgba(0,0,0,0.1)' }}>
                                             <div className="h-8 w-full" style={{ background: b.swatch }} />
-                                            <div className="py-1.5 text-center" style={{ background: builderBackground === b.id ? 'rgba(6,182,212,0.12)' : 'rgba(255,255,255,0.03)' }}>
+                                            <div className="py-1.5 text-center" style={{ background: builderBackground === b.id ? 'rgba(6,182,212,0.12)' : 'rgba(0,0,0,0.03)' }}>
                                               <span className="text-[9px] font-medium" style={{ color: builderBackground === b.id ? '#22d3ee' : '#6b7280' }}>{b.label}</span>
                                             </div>
                                           </button>
@@ -1575,10 +1575,10 @@ export default function CreativePage() {
                                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left"
                                     style={isOpen || sel
                                       ? { borderColor: 'rgba(6,182,212,0.35)', background: 'rgba(6,182,212,0.06)' }
-                                      : { borderColor: 'rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}>
+                                      : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(0,0,0,0.02)' }}>
                                     <span className="hud-label text-[9px] w-20 flex-shrink-0" style={{ color: isOpen ? '#22d3ee' : '#4b5563' }}>COLOR GRADE</span>
                                     {sel && <span className="w-10 h-4 rounded flex-shrink-0 border border-black/20" style={{ background: sel.swatch }} />}
-                                    <span className="flex-1 text-[11px] font-medium" style={{ color: sel ? '#e5e7eb' : '#4b5563' }}>{sel ? sel.label : 'Not set'}</span>
+                                    <span className="flex-1 text-[11px] font-medium" style={{ color: sel ? '#111827' : '#6b7280' }}>{sel ? sel.label : 'Not set'}</span>
                                     {sel && <button onClick={e => { e.stopPropagation(); setBuilderColorGrade(''); }} className="text-[10px] text-gray-600 hover:text-red-400 px-1 transition-colors">✕</button>}
                                     <svg className="w-3 h-3 text-gray-600 flex-shrink-0 transition-transform" style={{ transform: isOpen ? 'rotate(180deg)' : '' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
                                   </button>
@@ -1590,9 +1590,9 @@ export default function CreativePage() {
                                             className="rounded-xl border-2 overflow-hidden transition-all"
                                             style={builderColorGrade === g.id
                                               ? { borderColor: 'rgba(6,182,212,0.6)' }
-                                              : { borderColor: 'rgba(255,255,255,0.07)' }}>
+                                              : { borderColor: 'rgba(0,0,0,0.1)' }}>
                                             <div className="h-7 w-full" style={{ background: g.swatch }} />
-                                            <div className="py-1.5 text-center px-1" style={{ background: builderColorGrade === g.id ? 'rgba(6,182,212,0.12)' : 'rgba(255,255,255,0.03)' }}>
+                                            <div className="py-1.5 text-center px-1" style={{ background: builderColorGrade === g.id ? 'rgba(6,182,212,0.12)' : 'rgba(0,0,0,0.03)' }}>
                                               <span className="text-[8px] font-medium leading-tight" style={{ color: builderColorGrade === g.id ? '#22d3ee' : '#6b7280' }}>{g.label}</span>
                                             </div>
                                           </button>
@@ -1900,7 +1900,7 @@ export default function CreativePage() {
                         className="relative px-3 py-2.5 rounded-xl border text-[11px] font-medium transition-all text-left"
                         style={style === s.id
                           ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.4)', color: '#22d3ee' }
-                          : { background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)', color: '#6b7280' }}>
+                          : { background: 'rgba(0,0,0,0.02)', borderColor: 'rgba(255,255,255,0.06)', color: '#6b7280' }}>
                         {style === s.id && (
                           <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full" style={{ background: '#06b6d4' }} />
                         )}
@@ -1932,7 +1932,7 @@ export default function CreativePage() {
                           className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all"
                           style={active
                             ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.4)' }
-                            : { background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
+                            : { background: 'rgba(0,0,0,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
                           <div className="flex-shrink-0 flex items-center justify-center" style={{ width: 22, height: 22 }}>
                             <div className="rounded-sm border-2 transition-all"
                               style={{ width: bw, height: bh, borderColor: active ? '#22d3ee' : '#374151', background: active ? 'rgba(6,182,212,0.15)' : 'transparent' }} />
@@ -1962,7 +1962,7 @@ export default function CreativePage() {
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all"
                       style={palette === 'image-colors'
                         ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.4)' }
-                        : { background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
+                        : { background: 'rgba(0,0,0,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
                       <div className="flex gap-0.5 flex-shrink-0">
                         {imageColors.slice(0, 5).map((c, i) => (
                           <div key={i} className="w-4 h-4 rounded-full border border-black/20" style={{ background: c }} />
@@ -1977,7 +1977,7 @@ export default function CreativePage() {
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all"
                       style={palette === p.id
                         ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.4)' }
-                        : { background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
+                        : { background: 'rgba(0,0,0,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
                       <div className="flex gap-0.5 flex-shrink-0">
                         {p.colors.map((c, i) => (
                           <div key={i} className="w-4 h-4 rounded-full border border-black/20" style={{ background: c }} />
@@ -2005,7 +2005,7 @@ export default function CreativePage() {
                         className="flex flex-col items-center justify-center py-3 rounded-xl border transition-all"
                         style={quantity === q.v
                           ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.4)' }
-                          : { background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
+                          : { background: 'rgba(0,0,0,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
                         <span className="text-lg font-bold leading-none" style={{ color: quantity === q.v ? '#22d3ee' : '#9ca3af' }}>{q.label}</span>
                         <span className="text-[9px] mt-1" style={{ color: quantity === q.v ? 'rgba(34,211,238,0.55)' : '#4b5563' }}>imgs</span>
                       </button>
