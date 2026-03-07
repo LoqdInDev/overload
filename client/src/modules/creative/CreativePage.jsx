@@ -32,7 +32,40 @@ const VIBES = [
 ];
 
 const LIGHTING_OPTIONS = ['Natural Light', 'Studio', 'Golden Hour', 'Dramatic', 'Backlit', 'Neon Glow'];
-const BACKGROUND_OPTIONS = ['Pure White', 'Gradient', 'On Location', 'Abstract', 'Transparent', 'Custom Color'];
+const BACKGROUND_OPTIONS = ['Pure White', 'Gradient', 'On Location', 'Abstract', 'Transparent', 'Textured'];
+
+const MODEL_GENDERS = [
+  { id: 'woman', label: 'Woman', prompt: 'young woman' },
+  { id: 'man', label: 'Man', prompt: 'young man' },
+  { id: 'group', label: 'Group', prompt: 'diverse group of people' },
+  { id: 'couple', label: 'Couple', prompt: 'couple' },
+  { id: 'no-pref', label: 'No preference', prompt: 'person' },
+];
+const MODEL_AGES = ['Teen 16–20', 'Young Adult 20–30', 'Adult 30–45', 'Mature 45–60', 'Senior 60+'];
+const MODEL_STYLES = ['Casual & Everyday', 'Professional', 'High Fashion / Editorial', 'Athletic / Activewear', 'Streetwear', 'Luxury / Elegant', 'Bohemian'];
+const SETTINGS = [
+  { id: 'studio', label: '🎬 Studio', prompt: 'professional studio setting' },
+  { id: 'home', label: '🏠 Home', prompt: 'modern home interior' },
+  { id: 'urban', label: '🏙 Urban', prompt: 'urban street environment, city backdrop' },
+  { id: 'beach', label: '🌊 Beach', prompt: 'beach or coastal environment, golden sand' },
+  { id: 'nature', label: '🌿 Nature', prompt: 'natural outdoor environment, lush greenery' },
+  { id: 'cafe', label: '☕ Café', prompt: 'cozy café or coffee shop interior' },
+  { id: 'office', label: '💼 Office', prompt: 'modern office or workspace environment' },
+  { id: 'gym', label: '💪 Gym', prompt: 'gym or fitness studio environment' },
+  { id: 'rooftop', label: '🌆 Rooftop', prompt: 'rooftop terrace with city views' },
+  { id: 'luxury', label: '✨ Luxury', prompt: 'luxury hotel or high-end interior setting' },
+];
+const COMPOSITIONS = [
+  { id: 'centered', label: 'Centered Hero', prompt: 'centered hero composition' },
+  { id: 'thirds', label: 'Rule of Thirds', prompt: 'rule of thirds composition' },
+  { id: 'closeup', label: 'Close-Up', prompt: 'tight close-up shot, detailed framing' },
+  { id: 'wideshot', label: 'Wide Shot', prompt: 'wide establishing shot' },
+  { id: 'flatlay', label: 'Flat Lay', prompt: 'overhead flat lay composition' },
+  { id: 'lowangle', label: 'Low Angle', prompt: 'dramatic low-angle upward shot' },
+  { id: 'diagonal', label: 'Diagonal', prompt: 'dynamic diagonal composition' },
+  { id: 'split', label: 'Split Screen', prompt: 'split-screen dual composition' },
+];
+const COLOR_GRADES = ['Warm & Golden', 'Cool & Blue', 'Desaturated / Matte', 'High Contrast', 'Pastel & Soft', 'Cinematic Film Grain', 'Vivid & Saturated'];
 
 const DIMENSIONS = {
   'ad-creative': [
@@ -397,6 +430,13 @@ export default function CreativePage() {
   const [builderBackground, setBuilderBackground] = useState('');
   const [builderTextOverlay, setBuilderTextOverlay] = useState('');
   const [showTextOverlay, setShowTextOverlay] = useState(false);
+  const [showModels, setShowModels] = useState(false);
+  const [builderModelGender, setBuilderModelGender] = useState('');
+  const [builderModelAge, setBuilderModelAge] = useState('');
+  const [builderModelStyle, setBuilderModelStyle] = useState('');
+  const [builderSetting, setBuilderSetting] = useState('');
+  const [builderComposition, setBuilderComposition] = useState('');
+  const [builderColorGrade, setBuilderColorGrade] = useState('');
 
   const loadHistory = useCallback(async () => {
     setHistoryLoading(true);
@@ -421,11 +461,21 @@ export default function CreativePage() {
     if (builderSubject) parts.push(builderSubject);
     const vibeObj = VIBES.find(v => v.id === builderVibe);
     if (vibeObj) parts.push(vibeObj.prompt);
+    if (showModels && builderModelGender) {
+      const gObj = MODEL_GENDERS.find(g => g.id === builderModelGender);
+      let modelDesc = gObj?.prompt || 'person';
+      if (builderModelAge) modelDesc = `${builderModelAge.toLowerCase()}, ${modelDesc}`;
+      if (builderModelStyle) modelDesc += `, wearing ${builderModelStyle.toLowerCase()} clothing`;
+      parts.push(`featuring a ${modelDesc}`);
+    }
+    if (builderSetting) { const s = SETTINGS.find(x => x.id === builderSetting); if (s) parts.push(s.prompt); }
+    if (builderComposition) { const c = COMPOSITIONS.find(x => x.id === builderComposition); if (c) parts.push(c.prompt); }
     if (builderLighting) parts.push(`${builderLighting.toLowerCase()} lighting`);
     if (builderBackground) parts.push(`${builderBackground.toLowerCase()} background`);
+    if (builderColorGrade) parts.push(`${builderColorGrade.toLowerCase()} color grading`);
     if (showTextOverlay && builderTextOverlay) parts.push(`include text overlay reading "${builderTextOverlay}"`);
     setPrompt(parts.join(', '));
-  }, [promptMode, builderSubject, builderVibe, builderLighting, builderBackground, showTextOverlay, builderTextOverlay]);
+  }, [promptMode, builderSubject, builderVibe, showModels, builderModelGender, builderModelAge, builderModelStyle, builderSetting, builderComposition, builderLighting, builderBackground, builderColorGrade, showTextOverlay, builderTextOverlay]);
 
   const deleteProject = async (id) => {
     try {
@@ -636,7 +686,7 @@ export default function CreativePage() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 stagger">
           {CREATIVE_TYPES.map(type => (
-            <button key={type.id} onClick={() => { setActiveType(type.id); setDimension(DIMENSIONS[type.id]?.[0]?.id || null); setActiveTab('generate'); setImages([]); setShowInput(true); setReferenceImage(null); setPromptMode('builder'); setBuilderSubject(''); setBuilderVibe(''); setBuilderLighting(''); setBuilderBackground(''); setShowTextOverlay(false); setBuilderTextOverlay(''); }}
+            <button key={type.id} onClick={() => { setActiveType(type.id); setDimension(DIMENSIONS[type.id]?.[0]?.id || null); setActiveTab('generate'); setImages([]); setShowInput(true); setReferenceImage(null); setPromptMode('builder'); setBuilderSubject(''); setBuilderVibe(''); setBuilderLighting(''); setBuilderBackground(''); setShowTextOverlay(false); setBuilderTextOverlay(''); setShowModels(false); setBuilderModelGender(''); setBuilderModelAge(''); setBuilderModelStyle(''); setBuilderSetting(''); setBuilderComposition(''); setBuilderColorGrade(''); }}
               className="panel-interactive rounded-2xl p-4 sm:p-7 text-center group">
               <div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center transition-all duration-300 group-hover:scale-110"
                 style={{ background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.12)' }}>
@@ -1143,6 +1193,94 @@ export default function CreativePage() {
                           </div>
                         </div>
 
+                        {/* People / Models toggle section */}
+                        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.07)' }}>
+                          <button onClick={() => setShowModels(v => !v)}
+                            className="w-full flex items-center justify-between px-4 py-3 transition-colors text-left"
+                            style={{ background: showModels ? 'rgba(6,182,212,0.08)' : 'rgba(255,255,255,0.03)' }}>
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">👤</span>
+                              <div>
+                                <p className="text-[11px] font-semibold" style={{ color: showModels ? '#22d3ee' : '#9ca3af' }}>People & Models</p>
+                                <p className="text-[9px]" style={{ color: '#4b5563' }}>Include people in your design</p>
+                              </div>
+                            </div>
+                            <span className="relative inline-flex h-4 w-7 items-center rounded-full transition-colors flex-shrink-0"
+                              style={{ background: showModels ? '#22d3ee' : 'rgba(255,255,255,0.12)' }}>
+                              <span className="inline-block h-3 w-3 rounded-full bg-white shadow transition-transform"
+                                style={{ transform: showModels ? 'translateX(14px)' : 'translateX(2px)' }} />
+                            </span>
+                          </button>
+                          {showModels && (
+                            <div className="px-4 pb-4 pt-3 space-y-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                              <div>
+                                <p className="hud-label text-[9px] mb-1.5">GENDER / GROUP</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {MODEL_GENDERS.map(g => (
+                                    <button key={g.id} onClick={() => setBuilderModelGender(builderModelGender === g.id ? '' : g.id)}
+                                      className="chip text-[10px]"
+                                      style={builderModelGender === g.id ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                                      {g.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              <div>
+                                <p className="hud-label text-[9px] mb-1.5">AGE RANGE</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {MODEL_AGES.map(a => (
+                                    <button key={a} onClick={() => setBuilderModelAge(builderModelAge === a ? '' : a)}
+                                      className="chip text-[10px]"
+                                      style={builderModelAge === a ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                                      {a}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              <div>
+                                <p className="hud-label text-[9px] mb-1.5">OUTFIT / STYLE</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {MODEL_STYLES.map(s => (
+                                    <button key={s} onClick={() => setBuilderModelStyle(builderModelStyle === s ? '' : s)}
+                                      className="chip text-[10px]"
+                                      style={builderModelStyle === s ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                                      {s}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Setting */}
+                        <div>
+                          <p className="hud-label text-[10px] mb-2">SETTING / ENVIRONMENT</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {SETTINGS.map(s => (
+                              <button key={s.id} onClick={() => setBuilderSetting(builderSetting === s.id ? '' : s.id)}
+                                className="chip text-[10px]"
+                                style={builderSetting === s.id ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                                {s.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Composition */}
+                        <div>
+                          <p className="hud-label text-[10px] mb-2">COMPOSITION & ANGLE</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {COMPOSITIONS.map(c => (
+                              <button key={c.id} onClick={() => setBuilderComposition(builderComposition === c.id ? '' : c.id)}
+                                className="chip text-[10px]"
+                                style={builderComposition === c.id ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                                {c.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
                         {/* Lighting + Background in 2 cols */}
                         <div className="grid grid-cols-2 gap-4">
                           <div>
@@ -1168,6 +1306,20 @@ export default function CreativePage() {
                                 </button>
                               ))}
                             </div>
+                          </div>
+                        </div>
+
+                        {/* Color Grade */}
+                        <div>
+                          <p className="hud-label text-[10px] mb-2">COLOR GRADING</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {COLOR_GRADES.map(g => (
+                              <button key={g} onClick={() => setBuilderColorGrade(builderColorGrade === g ? '' : g)}
+                                className="chip text-[10px]"
+                                style={builderColorGrade === g ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                                {g}
+                              </button>
+                            ))}
                           </div>
                         </div>
 
