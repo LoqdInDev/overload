@@ -242,9 +242,14 @@ Format each with the platform name bolded. Be specific, compelling, and conversi
 router.post('/generate-from-image-stream', async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
-  const { type, prompt, imageData, imageMimeType, style, palette, paletteColors, useBrand, quantity: rawQty, dimension: rawDim } = req.body;
+  const { type, prompt, imageData, imageMimeType, images: rawImages, style, palette, paletteColors, useBrand, quantity: rawQty, dimension: rawDim } = req.body;
 
-  if (!imageData || !imageMimeType) return res.status(400).json({ error: 'imageData and imageMimeType are required' });
+  // Support both legacy single-image and new multi-image format
+  const refImages = rawImages?.length
+    ? rawImages
+    : (imageData && imageMimeType ? [{ base64: imageData, mimeType: imageMimeType }] : null);
+
+  if (!refImages) return res.status(400).json({ error: 'At least one reference image is required' });
 
   const sse = setupSSE(res);
 
@@ -294,7 +299,7 @@ router.post('/generate-from-image-stream', async (req, res) => {
       variations.map(async (v, i) => {
         const imgId = uuid();
         try {
-          const gen = await generateImageFromReference(v.prompt, imageData, imageMimeType, ratio);
+          const gen = await generateImageFromReference(v.prompt, refImages, ratio);
           q.createImage(imgId, projectId, gen.url, v.alt, 'gemini', 'completed', JSON.stringify(v));
           sse.sendChunk(JSON.stringify({
             step: 'image', index: i,

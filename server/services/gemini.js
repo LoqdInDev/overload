@@ -139,16 +139,25 @@ async function generateImages(prompts, { aspectRatio, dimension } = {}) {
  * @param {string} referenceMimeType - e.g. 'image/jpeg' or 'image/png'
  * @param {string} [aspectRatio] - Gemini aspect ratio e.g. '1:1'
  */
-async function generateImageFromReference(promptText, referenceBase64, referenceMimeType, aspectRatio = '1:1') {
+async function generateImageFromReference(promptText, referenceImages, aspectRatio = '1:1') {
   if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY is not configured');
 
-  const dimensionInstruction = buildDimensionInstruction(aspectRatio);
+  // Accept either a single {base64,mimeType} object or an array
+  const images = Array.isArray(referenceImages) ? referenceImages : [{ base64: referenceImages, mimeType: arguments[2] }];
+  // If called with old signature (promptText, base64string, mimeType, ratio) detect and normalise
+  const isLegacy = typeof referenceImages === 'string';
+  const imgs = isLegacy
+    ? [{ base64: referenceImages, mimeType: aspectRatio }]
+    : images;
+  const ratio = isLegacy ? (arguments[3] || '1:1') : (aspectRatio || '1:1');
+
+  const dimensionInstruction = buildDimensionInstruction(ratio);
   const fullPromptText = dimensionInstruction ? `${dimensionInstruction}\n\n${promptText}` : promptText;
 
   const body = {
     contents: [{
       parts: [
-        { inlineData: { data: referenceBase64, mimeType: referenceMimeType } },
+        ...imgs.map(img => ({ inlineData: { data: img.base64, mimeType: img.mimeType } })),
         { text: fullPromptText },
       ],
     }],

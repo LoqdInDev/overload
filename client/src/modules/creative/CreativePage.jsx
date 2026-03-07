@@ -421,8 +421,8 @@ export default function CreativePage() {
   const [palette, setPalette] = useState('brand');
   const [quantity, setQuantity] = useState('4');
   const [useBrandHub, setUseBrandHub] = useState(false);
-  const [referenceImage, setReferenceImage] = useState(null); // { dataUrl, base64, mimeType, name }
-  const [imageColors, setImageColors] = useState([]); // dominant colors extracted from reference image
+  const [referenceImages, setReferenceImages] = useState([]); // [{ dataUrl, base64, mimeType, name }]
+  const [imageColors, setImageColors] = useState([]); // dominant colors extracted from first reference image
   const fileInputRef = useRef(null);
   const [generating, setGenerating] = useState(false);
   const [images, setImages] = useState([]);
@@ -550,9 +550,9 @@ export default function CreativePage() {
     });
   };
 
-  // Extract dominant colors from reference image via Canvas
+  // Extract dominant colors from first reference image via Canvas
   useEffect(() => {
-    if (!referenceImage) { setImageColors([]); return; }
+    if (!referenceImages.length) { setImageColors([]); return; }
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
@@ -581,27 +581,39 @@ export default function CreativePage() {
         });
       setImageColors(colors);
     };
-    img.src = referenceImage.dataUrl;
-  }, [referenceImage]);
+    img.src = referenceImages[0].dataUrl;
+  }, [referenceImages]);
 
   const handleImageUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    // Reset input so same file can be re-selected
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
     e.target.value = '';
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataUrl = ev.target.result;
-      const base64 = dataUrl.split(',')[1];
-      setReferenceImage({ dataUrl, base64, mimeType: file.type, name: file.name });
-      setPalette('image-colors'); // auto-select image colors when uploading a reference
-    };
-    reader.readAsDataURL(file);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target.result;
+        const base64 = dataUrl.split(',')[1];
+        setReferenceImages(prev => {
+          const next = [...prev, { dataUrl, base64, mimeType: file.type, name: file.name }];
+          if (prev.length === 0) setPalette('image-colors');
+          return next;
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeReferenceImage = (idx) => {
+    setReferenceImages(prev => {
+      const next = prev.filter((_, i) => i !== idx);
+      if (next.length === 0) { setImageColors([]); if (palette === 'image-colors') setPalette('brand'); }
+      return next;
+    });
   };
 
   const generate = () => {
     if (!activeType) return;
-    if (!referenceImage && !prompt.trim()) return;
+    if (!referenceImages.length && !prompt.trim()) return;
     setGenerating(true);
     setError(null);
     setImages([]);
@@ -612,13 +624,12 @@ export default function CreativePage() {
       ? { name: 'Image Colors', colors: imageColors }
       : COLOR_PALETTES.find(p => p.id === palette);
 
-    if (referenceImage) {
+    if (referenceImages.length) {
       // Variation mode — use reference image endpoint
       connectSSE('/api/creative/generate-from-image-stream', {
         type: activeType,
         prompt: prompt.trim(),
-        imageData: referenceImage.base64,
-        imageMimeType: referenceImage.mimeType,
+        images: referenceImages.map(r => ({ base64: r.base64, mimeType: r.mimeType })),
         style: selectedStyle?.name,
         palette: selectedPalette?.name,
         paletteColors: selectedPalette?.colors,
@@ -1661,29 +1672,41 @@ export default function CreativePage() {
                     )}
                   </div>
 
-                  {/* Reference Image Upload */}
+                  {/* Reference Images Upload */}
                   <div className="panel rounded-2xl p-4 sm:p-5"
-                    style={referenceImage ? { borderColor: 'rgba(6,182,212,0.25)', background: 'rgba(6,182,212,0.04)' } : {}}>
-                    <p className="hud-label text-[11px] mb-2">REFERENCE IMAGE</p>
-                    {referenceImage ? (
-                      <div className="flex items-start gap-3">
-                        <div className="relative flex-shrink-0">
-                          <img src={referenceImage.dataUrl} alt="Reference"
-                            className="w-20 h-20 rounded-xl object-cover"
-                            style={{ border: '1px solid rgba(6,182,212,0.3)' }} />
-                          <button onClick={() => { setReferenceImage(null); setImageColors([]); if (palette === 'image-colors') setPalette('brand'); }}
-                            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                            style={{ background: '#ef4444', border: '1px solid rgba(0,0,0,0.3)' }}>
-                            ×
-                          </button>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[11px] text-cyan-300 font-medium mb-0.5">Variation mode active</p>
-                          <p className="text-[10px] text-gray-500 line-clamp-1">{referenceImage.name}</p>
-                          <p className="text-[10px] text-gray-600 mt-1 leading-relaxed">
-                            AI will generate {quantity} variations based on this image. Add instructions below (optional).
-                          </p>
-                        </div>
+                    style={referenceImages.length ? { borderColor: 'rgba(6,182,212,0.25)', background: 'rgba(6,182,212,0.04)' } : {}}>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="hud-label text-[11px]">REFERENCE IMAGES</p>
+                      {referenceImages.length > 0 && (
+                        <span className="text-[9px] text-cyan-400 font-medium">{referenceImages.length} image{referenceImages.length !== 1 ? 's' : ''}</span>
+                      )}
+                    </div>
+                    {referenceImages.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {referenceImages.map((img, idx) => (
+                          <div key={idx} className="relative flex-shrink-0">
+                            <img src={img.dataUrl} alt={img.name}
+                              className="w-16 h-16 rounded-xl object-cover"
+                              style={{ border: idx === 0 ? '2px solid rgba(6,182,212,0.5)' : '1px solid rgba(0,0,0,0.1)' }} />
+                            {idx === 0 && (
+                              <span className="absolute bottom-0.5 left-0.5 text-[7px] font-bold bg-cyan-500 text-black px-1 rounded leading-tight">PRIMARY</span>
+                            )}
+                            <button onClick={() => removeReferenceImage(idx)}
+                              className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
+                              style={{ background: '#ef4444', border: '1px solid rgba(0,0,0,0.3)' }}>
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                        {/* Add more button */}
+                        <button onClick={() => fileInputRef.current?.click()}
+                          className="w-16 h-16 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all"
+                          style={{ borderColor: 'rgba(6,182,212,0.25)', background: 'rgba(6,182,212,0.03)' }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(6,182,212,0.5)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(6,182,212,0.25)'; }}>
+                          <svg className="w-4 h-4 text-cyan-500/60" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                          <span className="text-[8px] text-gray-500">Add</span>
+                        </button>
                       </div>
                     ) : (
                       <button onClick={() => fileInputRef.current?.click()}
@@ -1695,16 +1718,16 @@ export default function CreativePage() {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                         </svg>
                         <div>
-                          <p className="text-[11px] text-gray-400 font-medium">Upload reference image</p>
-                          <p className="text-[10px] text-gray-600 mt-0.5">Generate variations of your existing design</p>
+                          <p className="text-[11px] text-gray-400 font-medium">Upload reference images</p>
+                          <p className="text-[10px] text-gray-600 mt-0.5">Add one or more images — AI generates variations</p>
                         </div>
                       </button>
                     )}
-                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                    <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} />
                   </div>
 
-                  {/* Variation instructions (only when reference image is present) */}
-                  {referenceImage && (
+                  {/* Variation instructions (only when reference images are present) */}
+                  {referenceImages.length > 0 && (
                     <div className="panel rounded-2xl p-4 sm:p-5">
                       <p className="hud-label text-[11px] mb-2">VARIATION INSTRUCTIONS (OPTIONAL)</p>
                       <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={3}
@@ -1714,10 +1737,10 @@ export default function CreativePage() {
                   )}
 
                   {/* Generate */}
-                  <button onClick={generate} disabled={generating || (!prompt.trim() && !referenceImage)}
+                  <button onClick={generate} disabled={generating || (!prompt.trim() && !referenceImages.length)}
                     className="btn-accent w-full py-3 rounded-lg font-bold text-sm tracking-wide"
-                    style={{ background: (!prompt.trim() && !referenceImage) ? '#1e1e2e' : '#06b6d4', boxShadow: (!prompt.trim() && !referenceImage) ? 'none' : '0 4px 20px -4px rgba(6,182,212,0.4)' }}>
-                    {referenceImage ? `GENERATE ${quantity} VARIATIONS` : `GENERATE ${quantity} CREATIVES`}
+                    style={{ background: (!prompt.trim() && !referenceImages.length) ? '#1e1e2e' : '#06b6d4', boxShadow: (!prompt.trim() && !referenceImages.length) ? 'none' : '0 4px 20px -4px rgba(6,182,212,0.4)' }}>
+                    {referenceImages.length ? `GENERATE ${quantity} VARIATIONS` : `GENERATE ${quantity} CREATIVES`}
                   </button>
                 </div>
               )}
@@ -1750,8 +1773,8 @@ export default function CreativePage() {
                     ))}
                   </div>
                   <p className="text-xs text-gray-500">
-                    {referenceImage
-                      ? `Generating ${quantity} variations from your reference image`
+                    {referenceImages.length
+                      ? `Generating ${quantity} variations from ${referenceImages.length > 1 ? `${referenceImages.length} reference images` : 'your reference image'}`
                       : `Creating ${quantity} variations with ${STYLES.find(s => s.id === style)?.name} style`}
                   </p>
                 </div>
@@ -1956,7 +1979,7 @@ export default function CreativePage() {
                   </div>
                 </div>
                 <div className="p-2.5 space-y-1">
-                  {referenceImage && imageColors.length > 0 && (
+                  {referenceImages.length > 0 && imageColors.length > 0 && (
                     <button onClick={() => setPalette('image-colors')}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all"
                       style={palette === 'image-colors'
