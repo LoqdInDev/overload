@@ -1292,21 +1292,20 @@ export default function CreativePage() {
                           </div>
                           <div className="flex-1 pt-0.5 min-w-0">
                             <p className="text-[12px] font-semibold text-gray-200 mb-2.5">Vibe & Mood</p>
-                            <div className="grid grid-cols-3 gap-2">
+                            <div className="grid grid-cols-6 gap-1.5">
                               {VIBES.map(v => (
                                 <button key={v.id} onClick={() => setBuilderVibe(builderVibe === v.id ? '' : v.id)}
-                                  className="relative rounded-xl overflow-hidden text-left transition-all duration-200"
+                                  className="relative rounded-lg overflow-hidden text-left transition-all duration-200"
                                   style={{
                                     background: v.gradient,
-                                    aspectRatio: '3/2',
+                                    aspectRatio: '1/1',
                                     outline: builderVibe === v.id ? '2px solid #22d3ee' : '2px solid transparent',
                                     outlineOffset: '2px',
-                                    boxShadow: builderVibe === v.id ? '0 0 16px rgba(6,182,212,0.3)' : 'none',
+                                    boxShadow: builderVibe === v.id ? '0 0 12px rgba(6,182,212,0.3)' : 'none',
                                   }}>
-                                  <div className="absolute inset-0 flex flex-col justify-end p-2"
-                                    style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)' }}>
-                                    <p className="text-[10px] font-bold leading-tight" style={{ color: v.dark ? '#fff' : '#1e293b' }}>{v.name}</p>
-                                    <p className="text-[9px] mt-0.5 leading-tight" style={{ color: v.dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }}>{v.sub}</p>
+                                  <div className="absolute inset-0 flex flex-col justify-end p-1.5"
+                                    style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)' }}>
+                                    <p className="text-[8px] font-bold leading-tight" style={{ color: '#fff' }}>{v.name}</p>
                                   </div>
                                   {builderVibe === v.id && (
                                     <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: '#22d3ee' }}>
