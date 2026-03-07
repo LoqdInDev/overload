@@ -31,8 +31,6 @@ const VIBES = [
   { id: 'neon', name: 'Neon & Electric', sub: 'Glow · Futuristic · Vivid', gradient: 'linear-gradient(135deg, #4f0aad 0%, #0891b2 100%)', dark: true, prompt: 'vibrant neon glow effects, electric energy, futuristic digital aesthetic, high-impact color contrasts' },
 ];
 
-const LIGHTING_OPTIONS = ['Natural Light', 'Studio', 'Golden Hour', 'Dramatic', 'Backlit', 'Neon Glow'];
-const BACKGROUND_OPTIONS = ['Pure White', 'Gradient', 'On Location', 'Abstract', 'Transparent', 'Textured'];
 
 const MODEL_GENDERS = [
   { id: 'woman', label: 'Woman', prompt: 'young woman' },
@@ -1330,37 +1328,53 @@ export default function CreativePage() {
                           </div>
                           <div className="flex-1 pt-0.5 space-y-4 min-w-0">
                             <p className="text-[12px] font-semibold text-gray-200">Scene & Composition</p>
+
+                            {/* Settings — horizontal scroll strip */}
                             <div>
-                              <p className="hud-label text-[9px] mb-2" style={{ color: '#06b6d4' }}>SETTING / ENVIRONMENT</p>
-                              <div className="grid grid-cols-5 gap-2">
-                                {SETTINGS.map(s => {
-                                  const active = builderSetting === s.id;
-                                  return (
-                                    <button key={s.id} onClick={() => setBuilderSetting(active ? '' : s.id)}
-                                      className="flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl border-2 transition-all"
-                                      style={active
-                                        ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.5)' }
-                                        : { background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }}>
-                                      <span className="text-xl leading-none">{s.emoji}</span>
-                                      <span className="text-[9px] font-medium leading-none" style={{ color: active ? '#22d3ee' : '#6b7280' }}>{s.name}</span>
-                                    </button>
-                                  );
-                                })}
+                              <div className="flex items-center justify-between mb-2">
+                                <p className="hud-label text-[9px]" style={{ color: '#06b6d4' }}>SETTING</p>
+                                {builderSetting && (
+                                  <button onClick={() => setBuilderSetting('')} className="text-[9px] text-gray-600 hover:text-gray-400 transition-colors">Clear</button>
+                                )}
+                              </div>
+                              <div className="overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                                <div className="flex gap-2 pb-1" style={{ width: 'max-content' }}>
+                                  {SETTINGS.map(s => {
+                                    const active = builderSetting === s.id;
+                                    return (
+                                      <button key={s.id} onClick={() => setBuilderSetting(active ? '' : s.id)}
+                                        className="flex-shrink-0 flex flex-col items-center gap-1.5 rounded-xl border-2 transition-all"
+                                        style={{ width: 60, paddingTop: 10, paddingBottom: 10,
+                                          background: active ? 'rgba(6,182,212,0.12)' : 'rgba(255,255,255,0.03)',
+                                          borderColor: active ? 'rgba(6,182,212,0.5)' : 'rgba(255,255,255,0.07)' }}>
+                                        <span className="text-2xl leading-none">{s.emoji}</span>
+                                        <span className="text-[9px] font-medium leading-none mt-1"
+                                          style={{ color: active ? '#22d3ee' : '#6b7280' }}>{s.name}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             </div>
+
+                            {/* Composition — compact 2-row grid */}
                             <div>
-                              <p className="hud-label text-[9px] mb-2" style={{ color: '#06b6d4' }}>COMPOSITION & ANGLE</p>
-                              <div className="grid grid-cols-4 gap-2">
+                              <div className="flex items-center justify-between mb-2">
+                                <p className="hud-label text-[9px]" style={{ color: '#06b6d4' }}>FRAMING</p>
+                                {builderComposition && (
+                                  <button onClick={() => setBuilderComposition('')} className="text-[9px] text-gray-600 hover:text-gray-400 transition-colors">Clear</button>
+                                )}
+                              </div>
+                              <div className="grid grid-cols-4 gap-1.5">
                                 {COMPOSITIONS.map(c => {
                                   const active = builderComposition === c.id;
                                   return (
                                     <button key={c.id} onClick={() => setBuilderComposition(active ? '' : c.id)}
-                                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 transition-all"
+                                      className="py-2 px-2 rounded-lg border-2 transition-all text-center text-[10px] font-medium leading-tight"
                                       style={active
-                                        ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.5)' }
-                                        : { background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }}>
-                                      <span className="text-base leading-none flex-shrink-0" style={{ color: active ? '#22d3ee' : '#4b5563' }}>{c.mark}</span>
-                                      <span className="text-[10px] font-medium leading-tight text-left" style={{ color: active ? '#22d3ee' : '#6b7280' }}>{c.label}</span>
+                                        ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.5)', color: '#22d3ee' }
+                                        : { background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)', color: '#6b7280' }}>
+                                      {c.label}
                                     </button>
                                   );
                                 })}
@@ -1448,69 +1462,87 @@ export default function CreativePage() {
                           <div className="flex-1 pt-0.5 space-y-4 min-w-0">
                             <p className="text-[12px] font-semibold text-gray-200">Visual Details</p>
 
-                            {/* Lighting */}
+                            {/* Lighting — swatch cards, horizontal scroll */}
                             <div>
-                              <p className="hud-label text-[9px] mb-2" style={{ color: '#06b6d4' }}>LIGHTING</p>
-                              <div className="grid grid-cols-3 gap-2">
-                                {LIGHTING_OPTIONS.map(l => {
-                                  const active = builderLighting === l.id;
-                                  return (
-                                    <button key={l.id} onClick={() => setBuilderLighting(active ? '' : l.id)}
-                                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border-2 transition-all"
-                                      style={active
-                                        ? { background: 'rgba(6,182,212,0.1)', borderColor: 'rgba(6,182,212,0.45)' }
-                                        : { background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }}>
-                                      <span className="w-5 h-5 rounded-lg flex-shrink-0 border border-black/20"
-                                        style={{ background: l.swatch }} />
-                                      <span className="text-[10px] font-medium leading-tight text-left"
-                                        style={{ color: active ? '#22d3ee' : '#6b7280' }}>{l.label}</span>
-                                    </button>
-                                  );
-                                })}
+                              <div className="flex items-center justify-between mb-2">
+                                <p className="hud-label text-[9px]" style={{ color: '#06b6d4' }}>LIGHTING</p>
+                                {builderLighting && <button onClick={() => setBuilderLighting('')} className="text-[9px] text-gray-600 hover:text-gray-400 transition-colors">Clear</button>}
+                              </div>
+                              <div className="overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                                <div className="flex gap-2 pb-1" style={{ width: 'max-content' }}>
+                                  {LIGHTING_OPTIONS.map(l => {
+                                    const active = builderLighting === l.id;
+                                    return (
+                                      <button key={l.id} onClick={() => setBuilderLighting(active ? '' : l.id)}
+                                        className="flex-shrink-0 rounded-xl border-2 overflow-hidden transition-all"
+                                        style={{ width: 80,
+                                          borderColor: active ? 'rgba(6,182,212,0.6)' : 'rgba(255,255,255,0.07)',
+                                          boxShadow: active ? '0 0 10px rgba(6,182,212,0.2)' : 'none' }}>
+                                        <div className="h-9 w-full" style={{ background: l.swatch }} />
+                                        <div className="px-1.5 py-1.5 text-center" style={{ background: active ? 'rgba(6,182,212,0.12)' : 'rgba(255,255,255,0.03)' }}>
+                                          <span className="text-[9px] font-medium leading-none"
+                                            style={{ color: active ? '#22d3ee' : '#6b7280' }}>{l.label}</span>
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             </div>
 
-                            {/* Background */}
+                            {/* Background — swatch cards, horizontal scroll */}
                             <div>
-                              <p className="hud-label text-[9px] mb-2" style={{ color: '#06b6d4' }}>BACKGROUND</p>
-                              <div className="grid grid-cols-3 gap-2">
-                                {BACKGROUND_OPTIONS.map(b => {
-                                  const active = builderBackground === b.id;
-                                  return (
-                                    <button key={b.id} onClick={() => setBuilderBackground(active ? '' : b.id)}
-                                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border-2 transition-all"
-                                      style={active
-                                        ? { background: 'rgba(6,182,212,0.1)', borderColor: 'rgba(6,182,212,0.45)' }
-                                        : { background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }}>
-                                      <span className="w-5 h-5 rounded-lg flex-shrink-0 border border-black/20"
-                                        style={{ background: b.swatch }} />
-                                      <span className="text-[10px] font-medium leading-tight text-left"
-                                        style={{ color: active ? '#22d3ee' : '#6b7280' }}>{b.label}</span>
-                                    </button>
-                                  );
-                                })}
+                              <div className="flex items-center justify-between mb-2">
+                                <p className="hud-label text-[9px]" style={{ color: '#06b6d4' }}>BACKGROUND</p>
+                                {builderBackground && <button onClick={() => setBuilderBackground('')} className="text-[9px] text-gray-600 hover:text-gray-400 transition-colors">Clear</button>}
+                              </div>
+                              <div className="overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                                <div className="flex gap-2 pb-1" style={{ width: 'max-content' }}>
+                                  {BACKGROUND_OPTIONS.map(b => {
+                                    const active = builderBackground === b.id;
+                                    return (
+                                      <button key={b.id} onClick={() => setBuilderBackground(active ? '' : b.id)}
+                                        className="flex-shrink-0 rounded-xl border-2 overflow-hidden transition-all"
+                                        style={{ width: 80,
+                                          borderColor: active ? 'rgba(6,182,212,0.6)' : 'rgba(255,255,255,0.07)',
+                                          boxShadow: active ? '0 0 10px rgba(6,182,212,0.2)' : 'none' }}>
+                                        <div className="h-9 w-full" style={{ background: b.swatch }} />
+                                        <div className="px-1.5 py-1.5 text-center" style={{ background: active ? 'rgba(6,182,212,0.12)' : 'rgba(255,255,255,0.03)' }}>
+                                          <span className="text-[9px] font-medium leading-none"
+                                            style={{ color: active ? '#22d3ee' : '#6b7280' }}>{b.label}</span>
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             </div>
 
-                            {/* Color Grading */}
+                            {/* Color Grade — wide swatch cards, horizontal scroll */}
                             <div>
-                              <p className="hud-label text-[9px] mb-2" style={{ color: '#06b6d4' }}>COLOR GRADING</p>
-                              <div className="grid grid-cols-2 gap-2">
-                                {COLOR_GRADES.map(g => {
-                                  const active = builderColorGrade === g.id;
-                                  return (
-                                    <button key={g.id} onClick={() => setBuilderColorGrade(active ? '' : g.id)}
-                                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border-2 transition-all"
-                                      style={active
-                                        ? { background: 'rgba(6,182,212,0.1)', borderColor: 'rgba(6,182,212,0.45)' }
-                                        : { background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }}>
-                                      <span className="w-14 h-5 rounded-lg flex-shrink-0 border border-black/20"
-                                        style={{ background: g.swatch }} />
-                                      <span className="text-[10px] font-medium leading-tight text-left"
-                                        style={{ color: active ? '#22d3ee' : '#6b7280' }}>{g.label}</span>
-                                    </button>
-                                  );
-                                })}
+                              <div className="flex items-center justify-between mb-2">
+                                <p className="hud-label text-[9px]" style={{ color: '#06b6d4' }}>COLOR GRADE</p>
+                                {builderColorGrade && <button onClick={() => setBuilderColorGrade('')} className="text-[9px] text-gray-600 hover:text-gray-400 transition-colors">Clear</button>}
+                              </div>
+                              <div className="overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                                <div className="flex gap-2 pb-1" style={{ width: 'max-content' }}>
+                                  {COLOR_GRADES.map(g => {
+                                    const active = builderColorGrade === g.id;
+                                    return (
+                                      <button key={g.id} onClick={() => setBuilderColorGrade(active ? '' : g.id)}
+                                        className="flex-shrink-0 rounded-xl border-2 overflow-hidden transition-all"
+                                        style={{ width: 96,
+                                          borderColor: active ? 'rgba(6,182,212,0.6)' : 'rgba(255,255,255,0.07)',
+                                          boxShadow: active ? '0 0 10px rgba(6,182,212,0.2)' : 'none' }}>
+                                        <div className="h-7 w-full" style={{ background: g.swatch }} />
+                                        <div className="px-1.5 py-1.5 text-center" style={{ background: active ? 'rgba(6,182,212,0.12)' : 'rgba(255,255,255,0.03)' }}>
+                                          <span className="text-[9px] font-medium leading-none"
+                                            style={{ color: active ? '#22d3ee' : '#6b7280' }}>{g.label}</span>
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             </div>
 
