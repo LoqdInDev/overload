@@ -45,6 +45,7 @@ app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), requ
 
 app.set('trust proxy', 1);
 app.use('/api/creative', express.json({ limit: '20mb' }));
+app.use('/api/video', express.json({ limit: '20mb' }));
 app.use(express.json({ limit: '2mb' }));
 app.use(helmet({
   contentSecurityPolicy: {
