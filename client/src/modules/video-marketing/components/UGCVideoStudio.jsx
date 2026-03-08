@@ -151,7 +151,6 @@ export default function UGCVideoStudio({ image, onClose }) {
     setSceneErrors(prev => ({ ...prev, [i]: null }));
     try {
       const { jobId } = await postJSON('/api/video/generate-quick', {
-        campaignId: 'ugc-studio',
         hookText: buildScenePrompt(scene, productName, moods),
         // productImageUrl intentionally omitted — using text-to-video for reliability
         duration: scene.duration,

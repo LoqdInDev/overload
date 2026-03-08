@@ -100,8 +100,11 @@ router.post('/generate-quick', async (req, res) => {
     ai_video_settings: { duration, aspectRatio, resolution: '720p' },
   };
 
+  // Use null for campaign_id when no real campaign — 'quick'/'ugc-studio' aren't valid FK values
+  const safeCampaignId = campaignId && campaignId.length > 10 && !['quick', 'ugc-studio'].includes(campaignId)
+    ? campaignId : null;
   const jobId = videoQueries.createVideoJob(
-    campaignId || 'quick',
+    safeCampaignId,
     0,
     'processing',
     hookText,
