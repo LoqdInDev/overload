@@ -70,10 +70,31 @@ router.post('/generate-quick', async (req, res) => {
   const wsId = req.workspace.id;
   const videoQueries = getVideoQueries(wsId);
   const { campaignId, hookText, productImageUrl, provider, duration = 5, aspectRatio = '9:16' } = req.body;
+
+  // If image is a base64 data URL, save it to disk and use a public server URL.
+  // WaveSpeed requires a real HTTPS URL — it cannot accept base64 data URIs.
+  let resolvedImageUrl = productImageUrl || null;
+  if (productImageUrl && productImageUrl.startsWith('data:')) {
+    try {
+      const match = productImageUrl.match(/^data:([^;]+);base64,(.+)$/s);
+      if (match) {
+        const ext = match[1].split('/')[1]?.replace(/[^a-z0-9]/gi, '') || 'jpg';
+        const filename = `tmp_img_${Date.now()}.${ext}`;
+        const filepath = path.join(videosDir, filename);
+        fs.writeFileSync(filepath, Buffer.from(match[2], 'base64'));
+        const proto = req.headers['x-forwarded-proto'] || req.protocol;
+        const host = req.headers['x-forwarded-host'] || req.get('host');
+        resolvedImageUrl = `${proto}://${host}/api/video/download/${filename}`;
+      }
+    } catch {
+      resolvedImageUrl = null; // fall back to text-to-video
+    }
+  }
+
   const scene = {
     scene_number: 0,
-    generation_method: productImageUrl ? 'image-to-video' : 'text-to-video',
-    source_image_index: productImageUrl ? 0 : null,
+    generation_method: resolvedImageUrl ? 'image-to-video' : 'text-to-video',
+    source_image_index: resolvedImageUrl ? 0 : null,
     ai_video_prompt: hookText,
     ai_video_settings: { duration, aspectRatio, resolution: '720p' },
   };
@@ -90,7 +111,7 @@ router.post('/generate-quick', async (req, res) => {
   try {
     const result = await videoManager.generateScene(
       scene,
-      productImageUrl ? [productImageUrl] : []
+      resolvedImageUrl ? [resolvedImageUrl] : []
     );
     videoQueries.updateVideoJob(jobId, result.success ? 'completed' : 'failed', result);
   } catch (error) {
