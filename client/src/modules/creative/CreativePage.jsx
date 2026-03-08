@@ -918,16 +918,27 @@ export default function CreativePage() {
                     {imageUrls.length > 0 ? (
                       <div className={`grid gap-0.5 ${imageUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
                         {displayUrls.map((url, i) => (
-                          <div key={i} className="relative overflow-hidden group/img cursor-zoom-in min-h-16 bg-white/[0.02]"
-                            style={{ aspectRatio: imageUrls.length === 1 ? '4/3' : '1' }}
-                            onClick={() => setHistoryLightbox({ images: lbImages, index: i })}>
+                          <div key={i} className="relative overflow-hidden group/img min-h-16 bg-white/[0.02]"
+                            style={{ aspectRatio: imageUrls.length === 1 ? '4/3' : '1' }}>
                             <img src={`${API_BASE}${url}`} alt="" loading="lazy"
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105"
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105 cursor-zoom-in"
+                              onClick={() => setHistoryLightbox({ images: lbImages, index: i })}
                               onError={e => { e.currentTarget.style.display = 'none'; }} />
-                            <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/40 transition-colors flex items-center justify-center">
-                              <svg className="w-5 h-5 text-white opacity-0 group-hover/img:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
-                              </svg>
+                            <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/50 transition-colors pointer-events-none" />
+                            <div className="absolute inset-0 opacity-0 group-hover/img:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5">
+                              <button
+                                onClick={e => { e.stopPropagation(); handleCreateVideo({ url: `${API_BASE}${url}`, alt: project.title || 'Creative' }); }}
+                                className="px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 pointer-events-auto"
+                                style={{ background: 'rgba(6,182,212,0.85)', color: '#fff', backdropFilter: 'blur(4px)' }}>
+                                ▶ Create Video
+                              </button>
+                              <button onClick={() => setHistoryLightbox({ images: lbImages, index: i })}
+                                className="pointer-events-auto"
+                                title="View full image">
+                                <svg className="w-4 h-4 text-white/70 hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
+                                </svg>
+                              </button>
                             </div>
                             {i === 3 && extraCount > 0 && (
                               <div className="absolute inset-0 bg-black/65 flex items-center justify-center">
@@ -985,15 +996,19 @@ export default function CreativePage() {
                     {/* Clickable thumbnails */}
                     <div className="flex gap-1.5 flex-shrink-0">
                       {imageUrls.slice(0, 3).map((url, i) => (
-                        <div key={i} className="relative w-14 h-14 rounded-lg overflow-hidden cursor-zoom-in group/thumb"
-                          onClick={() => setHistoryLightbox({ images: lbImages, index: i })}>
+                        <div key={i} className="relative w-14 h-14 rounded-lg overflow-hidden group/thumb">
                           <img src={`${API_BASE}${url}`} alt="" loading="lazy"
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover/thumb:scale-110"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover/thumb:scale-110 cursor-zoom-in"
+                            onClick={() => setHistoryLightbox({ images: lbImages, index: i })}
                             onError={e => { e.currentTarget.style.display = 'none'; }} />
-                          <div className="absolute inset-0 bg-black/0 group-hover/thumb:bg-black/50 transition-colors flex items-center justify-center">
-                            <svg className="w-3.5 h-3.5 text-white opacity-0 group-hover/thumb:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
-                            </svg>
+                          <div className="absolute inset-0 bg-black/0 group-hover/thumb:bg-black/60 transition-colors pointer-events-none" />
+                          <div className="absolute inset-0 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center">
+                            <button
+                              onClick={e => { e.stopPropagation(); handleCreateVideo({ url: `${API_BASE}${url}`, alt: project.title || 'Creative' }); }}
+                              className="text-[8px] font-bold text-white leading-tight text-center px-1"
+                              title="Create Video">
+                              ▶ Video
+                            </button>
                           </div>
                         </div>
                       ))}
