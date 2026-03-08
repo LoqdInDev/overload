@@ -69,13 +69,13 @@ router.post('/generate-all', async (req, res) => {
 router.post('/generate-quick', async (req, res) => {
   const wsId = req.workspace.id;
   const videoQueries = getVideoQueries(wsId);
-  const { campaignId, hookText, productImageUrl, provider } = req.body;
+  const { campaignId, hookText, productImageUrl, provider, duration = 5, aspectRatio = '9:16' } = req.body;
   const scene = {
     scene_number: 0,
     generation_method: productImageUrl ? 'image-to-video' : 'text-to-video',
     source_image_index: productImageUrl ? 0 : null,
     ai_video_prompt: hookText,
-    ai_video_settings: { duration: 5, aspectRatio: '9:16', resolution: '720p' },
+    ai_video_settings: { duration, aspectRatio, resolution: '720p' },
   };
 
   const jobId = videoQueries.createVideoJob(

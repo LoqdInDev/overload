@@ -5,7 +5,7 @@ import ModuleWrapper from '../../components/shared/ModuleWrapper';
 import ProductInput from './components/ProductInput';
 import Dashboard from './components/Dashboard';
 import CampaignHistory from './components/CampaignHistory';
-import QuickVideoWizard from './components/QuickVideoWizard';
+import UGCVideoStudio from './components/UGCVideoStudio';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -111,7 +111,7 @@ export default function VideoMarketingPage() {
   if (!hasCampaigns && showingForm) {
     return (
       <div className="h-full overflow-y-auto">
-        {wizardImage && <QuickVideoWizard image={wizardImage} onClose={() => setWizardImage(null)} />}
+        {wizardImage && <UGCVideoStudio image={wizardImage} onClose={() => setWizardImage(null)} />}
         <ModuleWrapper moduleId="video-marketing">
         <div className="p-6 sm:p-10 lg:p-16 max-w-5xl mx-auto">
           <ProductInput onSubmit={createCampaign} welcome />
@@ -123,7 +123,7 @@ export default function VideoMarketingPage() {
 
   return (
     <div className="flex h-full overflow-hidden">
-      {wizardImage && <QuickVideoWizard image={wizardImage} onClose={() => setWizardImage(null)} />}
+      {wizardImage && <UGCVideoStudio image={wizardImage} onClose={() => setWizardImage(null)} />}
       {/* Mobile overlay when sidebar is open */}
       {sidebarOpen && <div className="fixed inset-0 bg-black/40 z-20 md:hidden" onClick={() => setSidebarOpen(false)} />}
 
