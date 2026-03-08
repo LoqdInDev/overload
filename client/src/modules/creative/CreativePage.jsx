@@ -439,12 +439,14 @@ export default function CreativePage() {
   const handleCreateVideo = (img) => {
     const url = img.dataUrl || img.url || null;
     if (!url) return;
-    localStorage.setItem('creative_video_import', JSON.stringify({
-      url,
-      alt: img.alt || img.prompt || 'Creative image',
-      sourceType: activeType,
-    }));
-    navigate('/video-marketing');
+    navigate('/video-marketing', {
+      state: {
+        creativeImport: {
+          url,
+          alt: img.alt || img.prompt || 'Creative image',
+        },
+      },
+    });
   };
   const [activeType, setActiveType] = useState(null);
   const [prompt, setPrompt] = useState('');

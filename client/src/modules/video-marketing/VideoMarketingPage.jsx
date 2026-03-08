@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
@@ -24,21 +25,15 @@ const STEPS = [
 export default function VideoMarketingPage() {
   usePageTitle('Video Marketing');
   const { dark } = useTheme();
+  const location = useLocation();
   const [campaigns, setCampaigns] = useState([]);
   const [activeCampaign, setActiveCampaign] = useState(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(typeof window !== 'undefined' && window.innerWidth >= 768);
   const [useBrandHub, setUseBrandHub] = useState(false);
-  const [wizardImage, setWizardImage] = useState(() => {
-    try {
-      const stored = localStorage.getItem('creative_video_import');
-      if (stored) {
-        localStorage.removeItem('creative_video_import');
-        return JSON.parse(stored);
-      }
-    } catch {}
-    return null;
-  });
+  const [wizardImage, setWizardImage] = useState(
+    () => location.state?.creativeImport || null
+  );
 
   const fetchCampaigns = useCallback(async (autoSelect = false) => {
     try {
