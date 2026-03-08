@@ -5,6 +5,7 @@ import ModuleWrapper from '../../components/shared/ModuleWrapper';
 import ProductInput from './components/ProductInput';
 import Dashboard from './components/Dashboard';
 import CampaignHistory from './components/CampaignHistory';
+import QuickVideoWizard from './components/QuickVideoWizard';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -28,6 +29,7 @@ export default function VideoMarketingPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(typeof window !== 'undefined' && window.innerWidth >= 768);
   const [useBrandHub, setUseBrandHub] = useState(false);
+  const [wizardImage, setWizardImage] = useState(null);
 
   const fetchCampaigns = useCallback(async (autoSelect = false) => {
     try {
@@ -44,6 +46,15 @@ export default function VideoMarketingPage() {
   }, [activeCampaign]);
 
   useEffect(() => { fetchCampaigns(true); }, []);
+
+  // Open Quick Video Wizard when arriving from Creative module
+  useEffect(() => {
+    const stored = localStorage.getItem('creative_video_import');
+    if (stored) {
+      try { setWizardImage(JSON.parse(stored)); } catch {}
+      localStorage.removeItem('creative_video_import');
+    }
+  }, []);
 
   const loadCampaign = async (id) => {
     try {
@@ -100,6 +111,7 @@ export default function VideoMarketingPage() {
   if (!hasCampaigns && showingForm) {
     return (
       <div className="h-full overflow-y-auto">
+        {wizardImage && <QuickVideoWizard image={wizardImage} onClose={() => setWizardImage(null)} />}
         <ModuleWrapper moduleId="video-marketing">
         <div className="p-6 sm:p-10 lg:p-16 max-w-5xl mx-auto">
           <ProductInput onSubmit={createCampaign} welcome />
@@ -111,6 +123,7 @@ export default function VideoMarketingPage() {
 
   return (
     <div className="flex h-full overflow-hidden">
+      {wizardImage && <QuickVideoWizard image={wizardImage} onClose={() => setWizardImage(null)} />}
       {/* Mobile overlay when sidebar is open */}
       {sidebarOpen && <div className="fixed inset-0 bg-black/40 z-20 md:hidden" onClick={() => setSidebarOpen(false)} />}
 

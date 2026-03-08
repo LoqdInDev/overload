@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTheme } from '../../../context/ThemeContext';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
@@ -21,17 +21,6 @@ export default function ProductInput({ onSubmit, welcome }) {
   const [gallery, setGallery] = useState([]);
   const [galleryLoading, setGalleryLoading] = useState(false);
 
-  // Auto-load image passed via "Create Video" button in Creative module
-  useEffect(() => {
-    const stored = localStorage.getItem('creative_video_import');
-    if (stored) {
-      try {
-        const { url: imgUrl, alt } = JSON.parse(stored);
-        if (imgUrl) setCreativeImages([{ url: imgUrl, alt }]);
-      } catch {}
-      localStorage.removeItem('creative_video_import');
-    }
-  }, []);
 
   const loadGallery = async () => {
     setGalleryLoading(true);
