@@ -131,7 +131,34 @@ router.get('/download/:filename', (req, res) => {
   const filename = path.basename(req.params.filename);
   const filepath = path.join(process.cwd(), 'videos', filename);
   if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'File not found' });
-  res.download(filepath);
+
+  const stat = fs.statSync(filepath);
+  const fileSize = stat.size;
+  const range = req.headers.range;
+
+  if (range) {
+    // Support range requests so <video> can seek and determine duration
+    const [startStr, endStr] = range.replace(/bytes=/, '').split('-');
+    const start = parseInt(startStr, 10);
+    const end = endStr ? parseInt(endStr, 10) : fileSize - 1;
+    const chunkSize = (end - start) + 1;
+
+    res.writeHead(206, {
+      'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+      'Accept-Ranges': 'bytes',
+      'Content-Length': chunkSize,
+      'Content-Type': 'video/mp4',
+    });
+    fs.createReadStream(filepath, { start, end }).pipe(res);
+  } else {
+    res.writeHead(200, {
+      'Content-Length': fileSize,
+      'Content-Type': 'video/mp4',
+      'Accept-Ranges': 'bytes',
+      'Content-Disposition': `inline; filename="${filename}"`,
+    });
+    fs.createReadStream(filepath).pipe(res);
+  }
 });
 
 router.get('/download-all/:campaignId', (req, res) => {

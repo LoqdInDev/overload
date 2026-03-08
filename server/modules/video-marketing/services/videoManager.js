@@ -80,7 +80,13 @@ class VideoManager {
 
   async downloadVideo(url, filepath) {
     const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to download video from provider: HTTP ${response.status}`);
+    }
     const buffer = Buffer.from(await response.arrayBuffer());
+    if (buffer.length === 0) {
+      throw new Error('Provider returned an empty video file');
+    }
     fs.writeFileSync(filepath, buffer);
   }
 }
