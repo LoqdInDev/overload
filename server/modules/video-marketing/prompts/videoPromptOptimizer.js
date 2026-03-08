@@ -1,7 +1,8 @@
-const { getBrandContext, buildBrandSystemPrompt } = require('../../../services/brandContext');
+const { buildBrandSystemPrompt } = require('../../../services/brandContext');
 
-function getVideoPromptOptimizerPrompt(sceneDescription, productProfile, videoProvider) {
-  const brandBlock = buildBrandSystemPrompt(getBrandContext());
+
+function getVideoPromptOptimizerPrompt(sceneDescription, productProfile, videoProvider, brandCtx = null) {
+  const brandBlock = buildBrandSystemPrompt(brandCtx);
 
   return `You are an AI Video Prompt Engineer for ${videoProvider}.
 ${brandBlock}

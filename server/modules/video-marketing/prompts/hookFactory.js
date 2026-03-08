@@ -1,8 +1,9 @@
-const { getBrandContext, buildBrandSystemPrompt } = require('../../../services/brandContext');
+const { buildBrandSystemPrompt } = require('../../../services/brandContext');
 
-function buildHookPrompt(productProfile) {
+
+function buildHookPrompt(productProfile, brandCtx = null) {
   const topBenefit = productProfile.features?.[0] || productProfile.description?.slice(0, 100) || 'key benefit';
-  const brandBlock = buildBrandSystemPrompt(getBrandContext());
+  const brandBlock = buildBrandSystemPrompt(brandCtx);
 
   return `You are a hook specialist. You've studied 10,000 viral TikTok ads and know exactly what makes people stop scrolling.
 ${brandBlock}

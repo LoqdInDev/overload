@@ -18,7 +18,7 @@ function getLatestGeneration(campaign, stage) {
   return gens[0] || null;
 }
 
-export default function Dashboard({ campaign, setCampaign, currentStep, setCurrentStep }) {
+export default function Dashboard({ campaign, setCampaign, currentStep, setCurrentStep, useBrandHub }) {
   const [selectedAngles, setSelectedAngles] = useState([]);
   const [generating, setGenerating] = useState(false);
   const [streamText, setStreamText] = useState('');
@@ -71,7 +71,7 @@ export default function Dashboard({ campaign, setCampaign, currentStep, setCurre
   }, [setCampaign]);
 
   const generateAngles = async () => {
-    const result = await callSSE('/api/generate/angles', { campaignId: campaign.id, productProfile });
+    const result = await callSSE('/api/generate/angles', { campaignId: campaign.id, productProfile, useBrandHub });
     if (result) addGeneration('angles', result.data, result.generationId);
   };
 
@@ -79,25 +79,25 @@ export default function Dashboard({ campaign, setCampaign, currentStep, setCurre
     const selected = selectedAngles.map(i => angles[i]).filter(Boolean);
     if (!selected.length) { alert('Please select at least one angle first.'); return; }
     const result = await callSSE('/api/generate/scripts', {
-      campaignId: campaign.id, productProfile, selectedAngles: selected, duration: 30, platform: 'tiktok',
+      campaignId: campaign.id, productProfile, selectedAngles: selected, duration: 30, platform: 'tiktok', useBrandHub,
     });
     if (result) addGeneration('scripts', result.data, result.generationId);
   };
 
   const generateHooks = async () => {
-    const result = await callSSE('/api/generate/hooks', { campaignId: campaign.id, productProfile });
+    const result = await callSSE('/api/generate/hooks', { campaignId: campaign.id, productProfile, useBrandHub });
     if (result) addGeneration('hooks', result.data, result.generationId);
   };
 
   const generateStoryboard = async () => {
     if (!scripts.length) { alert('Generate scripts first.'); return; }
-    const result = await callSSE('/api/generate/storyboard', { campaignId: campaign.id, scripts });
+    const result = await callSSE('/api/generate/storyboard', { campaignId: campaign.id, scripts, useBrandHub });
     if (result) addGeneration('storyboard', result.data, result.generationId);
   };
 
   const generateUGC = async () => {
     if (!scripts.length) { alert('Generate scripts first.'); return; }
-    const result = await callSSE('/api/generate/ugc', { campaignId: campaign.id, productProfile, scripts });
+    const result = await callSSE('/api/generate/ugc', { campaignId: campaign.id, productProfile, scripts, useBrandHub });
     if (result) addGeneration('ugc', result.data, result.generationId);
   };
 

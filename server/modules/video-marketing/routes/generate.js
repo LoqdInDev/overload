@@ -5,6 +5,7 @@ const { generateWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
 const { getQueries } = require('../db/queries');
 const { logActivity } = require('../../../db/database');
+const { getBrandContext } = require('../../../services/brandContext');
 const { buildAnglePrompt } = require('../prompts/angleGenerator');
 const { buildScriptPrompt } = require('../prompts/scriptWriter');
 const { buildHookPrompt } = require('../prompts/hookFactory');
@@ -15,13 +16,14 @@ const { buildIteratePrompt } = require('../prompts/iterateWinner');
 const MODULE_ID = 'video-marketing';
 
 router.post('/angles', async (req, res) => {
-  const { campaignId, productProfile } = req.body;
+  const { campaignId, productProfile, useBrandHub } = req.body;
   const sse = setupSSE(res);
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
 
   try {
-    const prompt = buildAnglePrompt(productProfile);
+    const brandCtx = useBrandHub ? getBrandContext(wsId) : null;
+    const prompt = buildAnglePrompt(productProfile, brandCtx);
     const { parsed, raw } = await generateWithClaude(prompt, {
       onChunk: (text) => sse.sendChunk(text),
       moduleId: MODULE_ID,
@@ -39,15 +41,16 @@ router.post('/angles', async (req, res) => {
 });
 
 router.post('/scripts', async (req, res) => {
-  const { campaignId, productProfile, selectedAngles, duration = 30, platform = 'tiktok' } = req.body;
+  const { campaignId, productProfile, selectedAngles, duration = 30, platform = 'tiktok', useBrandHub } = req.body;
   const sse = setupSSE(res);
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
 
   try {
+    const brandCtx = useBrandHub ? getBrandContext(wsId) : null;
     const scripts = [];
     for (const angle of selectedAngles) {
-      const prompt = buildScriptPrompt(productProfile, angle, { duration, platform });
+      const prompt = buildScriptPrompt(productProfile, angle, { duration, platform }, brandCtx);
       const { parsed, raw } = await generateWithClaude(prompt, {
         onChunk: (text) => sse.sendChunk(text),
         moduleId: MODULE_ID,
@@ -67,13 +70,14 @@ router.post('/scripts', async (req, res) => {
 });
 
 router.post('/hooks', async (req, res) => {
-  const { campaignId, productProfile } = req.body;
+  const { campaignId, productProfile, useBrandHub } = req.body;
   const sse = setupSSE(res);
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
 
   try {
-    const prompt = buildHookPrompt(productProfile);
+    const brandCtx = useBrandHub ? getBrandContext(wsId) : null;
+    const prompt = buildHookPrompt(productProfile, brandCtx);
     const { parsed, raw } = await generateWithClaude(prompt, {
       onChunk: (text) => sse.sendChunk(text),
       moduleId: MODULE_ID,
@@ -92,15 +96,16 @@ router.post('/hooks', async (req, res) => {
 });
 
 router.post('/storyboard', async (req, res) => {
-  const { campaignId, scripts } = req.body;
+  const { campaignId, scripts, useBrandHub } = req.body;
   const sse = setupSSE(res);
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
 
   try {
+    const brandCtx = useBrandHub ? getBrandContext(wsId) : null;
     const storyboards = [];
     for (const script of scripts) {
-      const prompt = buildStoryboardPrompt(script);
+      const prompt = buildStoryboardPrompt(script, brandCtx);
       const { parsed, raw } = await generateWithClaude(prompt, {
         onChunk: (text) => sse.sendChunk(text),
         moduleId: MODULE_ID,
@@ -121,13 +126,14 @@ router.post('/storyboard', async (req, res) => {
 });
 
 router.post('/ugc', async (req, res) => {
-  const { campaignId, productProfile, scripts } = req.body;
+  const { campaignId, productProfile, scripts, useBrandHub } = req.body;
   const sse = setupSSE(res);
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
 
   try {
-    const prompt = buildUGCPrompt(productProfile, scripts);
+    const brandCtx = useBrandHub ? getBrandContext(wsId) : null;
+    const prompt = buildUGCPrompt(productProfile, scripts, brandCtx);
     const { parsed, raw } = await generateWithClaude(prompt, {
       onChunk: (text) => sse.sendChunk(text),
       moduleId: MODULE_ID,
@@ -146,13 +152,14 @@ router.post('/ugc', async (req, res) => {
 });
 
 router.post('/iterate', async (req, res) => {
-  const { campaignId, winners, productProfile } = req.body;
+  const { campaignId, winners, productProfile, useBrandHub } = req.body;
   const sse = setupSSE(res);
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
 
   try {
-    const prompt = buildIteratePrompt(winners, productProfile);
+    const brandCtx = useBrandHub ? getBrandContext(wsId) : null;
+    const prompt = buildIteratePrompt(winners, productProfile, brandCtx);
     const { parsed, raw } = await generateWithClaude(prompt, {
       onChunk: (text) => sse.sendChunk(text),
       moduleId: MODULE_ID,

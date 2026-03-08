@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
 import { fetchJSON, postJSON, deleteJSON, connectSSE } from '../../lib/api';
@@ -312,7 +313,7 @@ function ImageLightbox({ images, index, onClose, type }) {
 }
 
 // Individual image card with proper error fallback
-function ImageCard({ img, apiBase, onOpen, onRegenerate }) {
+function ImageCard({ img, apiBase, onOpen, onRegenerate, onCreateVideo }) {
   const [failed, setFailed] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
   const imgSrc = img.dataUrl || (img.url ? `${apiBase}${img.url}` : null);
@@ -355,6 +356,16 @@ function ImageCard({ img, apiBase, onOpen, onRegenerate }) {
                 </svg>
                 Download
               </a>
+              {onCreateVideo && (
+                <button onClick={e => { e.stopPropagation(); onCreateVideo(img); }}
+                  className="chip text-[10px] w-full justify-center"
+                  style={{ background: 'rgba(139,92,246,0.25)', borderColor: 'rgba(139,92,246,0.4)', color: '#a78bfa' }}>
+                  <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                  Create Video
+                </button>
+              )}
               <button onClick={e => { e.stopPropagation(); copyPrompt(); }} className="chip text-[10px] w-full justify-center">
                 {promptCopied ? 'Copied!' : 'Copy Prompt'}
               </button>
@@ -413,7 +424,19 @@ function ImageCard({ img, apiBase, onOpen, onRegenerate }) {
 
 export default function CreativePage() {
   usePageTitle('Creative & Design');
+  const navigate = useNavigate();
   const { brand } = useBrandContext();
+
+  const handleCreateVideo = (img) => {
+    const url = img.dataUrl || (img.url ? `${API_BASE}${img.url}` : null);
+    if (!url) return;
+    localStorage.setItem('creative_video_import', JSON.stringify({
+      url,
+      alt: img.alt || img.prompt || 'Creative image',
+      sourceType: activeType,
+    }));
+    navigate('/video-marketing');
+  };
   const [activeType, setActiveType] = useState(null);
   const [prompt, setPrompt] = useState('');
   const [style, setStyle] = useState('minimal');
@@ -1828,7 +1851,8 @@ export default function CreativePage() {
                     {images.map((img, i) => (
                       <ImageCard key={img.id || i} img={img} apiBase={API_BASE}
                         onOpen={img.dataUrl || img.url ? () => setLightbox({ index: i }) : undefined}
-                        onRegenerate={() => regenerateImage(img, i)} />
+                        onRegenerate={() => regenerateImage(img, i)}
+                        onCreateVideo={img.status === 'completed' ? handleCreateVideo : undefined} />
                     ))}
                   </div>
 

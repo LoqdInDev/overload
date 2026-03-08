@@ -1,7 +1,8 @@
-const { getBrandContext, buildBrandSystemPrompt } = require('../../../services/brandContext');
+const { buildBrandSystemPrompt } = require('../../../services/brandContext');
 
-function buildUGCPrompt(productProfile, scripts) {
-  const brandBlock = buildBrandSystemPrompt(getBrandContext());
+
+function buildUGCPrompt(productProfile, scripts, brandCtx = null) {
+  const brandBlock = buildBrandSystemPrompt(brandCtx);
 
   return `You are a UGC (User Generated Content) strategist for e-commerce brands.
 ${brandBlock}

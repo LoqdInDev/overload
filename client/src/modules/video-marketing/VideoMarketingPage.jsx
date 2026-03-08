@@ -27,6 +27,7 @@ export default function VideoMarketingPage() {
   const [activeCampaign, setActiveCampaign] = useState(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(typeof window !== 'undefined' && window.innerWidth >= 768);
+  const [useBrandHub, setUseBrandHub] = useState(false);
 
   const fetchCampaigns = useCallback(async (autoSelect = false) => {
     try {
@@ -170,6 +171,30 @@ export default function VideoMarketingPage() {
 
             <div className={`flex-shrink-0 w-px h-4 mx-1 ${dark ? 'bg-indigo-500/10' : 'bg-[#e8e0d4]'}`} />
 
+            {/* Brand Hub toggle */}
+            <button
+              onClick={() => setUseBrandHub(v => !v)}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-medium transition-all duration-200 ml-auto ${
+                useBrandHub
+                  ? dark
+                    ? 'bg-violet-500/15 text-violet-300 border border-violet-500/20'
+                    : 'bg-[#C45D3E]/10 text-[#C45D3E] border border-[#C45D3E]/20'
+                  : dark
+                    ? 'text-gray-600 hover:text-gray-400 hover:bg-white/[0.03]'
+                    : 'text-[#94908A] hover:text-[#332F2B] hover:bg-[#EDE5DA]/60'
+              }`}
+              title={useBrandHub ? 'Brand Hub active — generations use your brand voice' : 'Enable Brand Hub to apply your brand voice'}
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" />
+              </svg>
+              <span className="hidden sm:inline">Brand Hub</span>
+              <div className={`w-6 h-3 rounded-full relative transition-all duration-200 ${useBrandHub ? (dark ? 'bg-violet-500' : 'bg-[#C45D3E]') : (dark ? 'bg-white/10' : 'bg-[#e8e0d4]')}`}>
+                <div className={`absolute top-0.5 w-2 h-2 rounded-full bg-white transition-all duration-200 ${useBrandHub ? 'left-3.5' : 'left-0.5'}`} />
+              </div>
+            </button>
+
             {STEPS.map((step, i) => (
               <button
                 key={step.key}
@@ -215,6 +240,7 @@ export default function VideoMarketingPage() {
                 setCampaign={setActiveCampaign}
                 currentStep={currentStep}
                 setCurrentStep={setCurrentStep}
+                useBrandHub={useBrandHub}
               />
             )}
             </ModuleWrapper>

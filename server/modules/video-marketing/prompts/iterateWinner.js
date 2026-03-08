@@ -1,7 +1,8 @@
-const { getBrandContext, buildBrandSystemPrompt } = require('../../../services/brandContext');
+const { buildBrandSystemPrompt } = require('../../../services/brandContext');
 
-function buildIteratePrompt(winners, productProfile) {
-  const brandBlock = buildBrandSystemPrompt(getBrandContext());
+
+function buildIteratePrompt(winners, productProfile, brandCtx = null) {
+  const brandBlock = buildBrandSystemPrompt(brandCtx);
 
   return `You are an ad creative iteration specialist. Your job: take what's working and multiply it.
 ${brandBlock}

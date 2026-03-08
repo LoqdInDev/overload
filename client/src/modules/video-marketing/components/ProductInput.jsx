@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from '../../../context/ThemeContext';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
@@ -14,6 +14,58 @@ export default function ProductInput({ onSubmit, welcome }) {
     features: ['', '', '', '', ''],
     targetAudience: '', painPoints: '', competitors: '',
   });
+
+  // Creative image import
+  const [creativeImages, setCreativeImages] = useState([]); // selected image URLs
+  const [showGallery, setShowGallery] = useState(false);
+  const [gallery, setGallery] = useState([]);
+  const [galleryLoading, setGalleryLoading] = useState(false);
+
+  // Auto-load image passed via "Create Video" button in Creative module
+  useEffect(() => {
+    const stored = localStorage.getItem('creative_video_import');
+    if (stored) {
+      try {
+        const { url: imgUrl, alt } = JSON.parse(stored);
+        if (imgUrl) setCreativeImages([{ url: imgUrl, alt }]);
+      } catch {}
+      localStorage.removeItem('creative_video_import');
+    }
+  }, []);
+
+  const loadGallery = async () => {
+    setGalleryLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/creative/projects`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('overload_access_token')}`, 'X-Workspace-Id': localStorage.getItem('overload_workspace_id') || '' },
+      });
+      const data = await res.json();
+      // Flatten all completed images from all projects
+      const imgs = [];
+      for (const project of (data.projects || [])) {
+        for (const img of (project.images || [])) {
+          if (img.status === 'completed' && img.url) {
+            imgs.push({ url: img.url, alt: img.alt || project.title, projectType: project.type });
+          }
+        }
+      }
+      setGallery(imgs.slice(0, 24));
+    } catch {}
+    setGalleryLoading(false);
+  };
+
+  const toggleGallery = () => {
+    if (!showGallery && gallery.length === 0) loadGallery();
+    setShowGallery(v => !v);
+  };
+
+  const addCreativeImage = (img) => {
+    if (creativeImages.length >= 3) return;
+    if (creativeImages.find(i => i.url === img.url)) return;
+    setCreativeImages(prev => [...prev, img]);
+  };
+
+  const removeCreativeImage = (url) => setCreativeImages(prev => prev.filter(i => i.url !== url));
 
   const handleScrape = async () => {
     if (!url.trim()) return;
@@ -53,7 +105,12 @@ export default function ProductInput({ onSubmit, welcome }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.name.trim()) return;
-    onSubmit({ ...form, features: form.features.filter(f => f.trim()), url: url || undefined });
+    onSubmit({
+      ...form,
+      features: form.features.filter(f => f.trim()),
+      url: url || undefined,
+      images: creativeImages.map(i => i.url),
+    });
   };
 
   const inputClass = dark
@@ -237,6 +294,130 @@ export default function ProductInput({ onSubmit, welcome }) {
             </div>
 
             <InputField label="Competitors (optional)" value={form.competitors} onChange={v => setForm({ ...form, competitors: v })} placeholder="e.g., Brand X, Brand Y" dark={dark} inputClass={inputClass} labelClass={labelClass} />
+
+            {/* Creative Image Import */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className={`text-xs font-medium ${labelClass}`}>
+                  Reference Images <span className={`text-[10px] font-normal ${dark ? 'text-gray-600' : 'text-[#b0a89e]'}`}>(from Creative &amp; Design)</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={toggleGallery}
+                  className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg transition-all duration-150 ${
+                    dark
+                      ? 'text-violet-400 hover:text-violet-300 bg-violet-500/10 hover:bg-violet-500/20'
+                      : 'text-[#C45D3E] hover:text-[#a84d32] bg-[#C45D3E]/08 hover:bg-[#C45D3E]/12 border border-[#C45D3E]/20'
+                  }`}
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Browse Gallery
+                </button>
+              </div>
+
+              {/* Selected images strip */}
+              {creativeImages.length > 0 && (
+                <div className="flex gap-2 mb-2 flex-wrap">
+                  {creativeImages.map((img, idx) => (
+                    <div key={img.url} className="relative group">
+                      <img
+                        src={img.url}
+                        alt={img.alt}
+                        className="w-16 h-16 object-cover rounded-lg"
+                        style={{ border: dark ? '1px solid rgba(139,92,246,0.25)' : '1px solid rgba(196,93,62,0.2)' }}
+                      />
+                      {idx === 0 && (
+                        <span className="absolute bottom-0.5 left-0.5 text-[9px] font-bold px-1 rounded-sm leading-tight"
+                          style={{ background: dark ? 'rgba(139,92,246,0.85)' : 'rgba(196,93,62,0.85)', color: '#fff' }}>
+                          PRIMARY
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeCreativeImage(img.url)}
+                        className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-[10px] font-bold leading-none"
+                        style={{ background: '#ef4444' }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  {creativeImages.length < 3 && (
+                    <button
+                      type="button"
+                      onClick={toggleGallery}
+                      className={`w-16 h-16 rounded-lg flex items-center justify-center text-xs transition-all duration-150 ${
+                        dark ? 'bg-white/5 hover:bg-white/10 text-gray-500' : 'bg-[#F5F0E8] hover:bg-[#ede8df] text-[#94908A] border border-dashed border-[#e8e0d4]'
+                      }`}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Gallery picker panel */}
+              {showGallery && (
+                <div className={`rounded-xl overflow-hidden ${dark ? 'glass border border-white/5' : 'bg-[#F5F0E8] border border-[#e8e0d4]'}`}>
+                  <div className="flex items-center justify-between px-3 py-2.5" style={{ borderBottom: dark ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e8e0d4' }}>
+                    <span className={`text-xs font-semibold ${dark ? 'text-gray-300' : 'text-[#332F2B]'}`}>Creative Gallery</span>
+                    <button type="button" onClick={() => setShowGallery(false)} className={`text-xs ${dark ? 'text-gray-500 hover:text-gray-300' : 'text-[#94908A] hover:text-[#332F2B]'}`}>✕ Close</button>
+                  </div>
+                  {galleryLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke={dark ? '#a78bfa' : '#C45D3E'} strokeWidth="4" />
+                        <path className="opacity-75" fill={dark ? '#a78bfa' : '#C45D3E'} d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                    </div>
+                  ) : gallery.length === 0 ? (
+                    <div className={`text-center py-8 text-xs ${dark ? 'text-gray-500' : 'text-[#94908A]'}`}>
+                      No Creative images yet.<br />Generate some in the Creative &amp; Design module first.
+                    </div>
+                  ) : (
+                    <div className="p-3 grid grid-cols-5 sm:grid-cols-6 gap-2 max-h-48 overflow-y-auto">
+                      {gallery.map((img) => {
+                        const selected = creativeImages.find(i => i.url === img.url);
+                        return (
+                          <button
+                            key={img.url}
+                            type="button"
+                            onClick={() => selected ? removeCreativeImage(img.url) : addCreativeImage(img)}
+                            disabled={!selected && creativeImages.length >= 3}
+                            className="relative group rounded-lg overflow-hidden transition-all duration-150 disabled:opacity-40"
+                            style={{ aspectRatio: '1/1' }}
+                            title={img.alt}
+                          >
+                            <img src={img.url} alt={img.alt} className="w-full h-full object-cover" />
+                            {selected && (
+                              <div className="absolute inset-0 flex items-center justify-center" style={{ background: dark ? 'rgba(139,92,246,0.5)' : 'rgba(196,93,62,0.5)' }}>
+                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                            )}
+                            {!selected && (
+                              <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div className={`px-3 py-2 text-[10px] ${dark ? 'text-gray-600' : 'text-[#b0a89e]'}`} style={{ borderTop: dark ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e8e0d4' }}>
+                    {creativeImages.length}/3 selected · First image used as primary reference for image-to-video scenes
+                  </div>
+                </div>
+              )}
+            </div>
 
             <button
               type="submit"

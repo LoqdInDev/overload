@@ -1,7 +1,8 @@
-const { getBrandContext, buildBrandSystemPrompt } = require('../../../services/brandContext');
+const { buildBrandSystemPrompt } = require('../../../services/brandContext');
 
-function buildScriptPrompt(productProfile, selectedAngle, { duration = 30, platform = 'tiktok' } = {}) {
-  const brandBlock = buildBrandSystemPrompt(getBrandContext());
+
+function buildScriptPrompt(productProfile, selectedAngle, { duration = 30, platform = 'tiktok' } = {}, brandCtx = null) {
+  const brandBlock = buildBrandSystemPrompt(brandCtx);
 
   return `You are a TikTok/Reels ad scriptwriter. You write scripts that feel native to the platform — NOT like ads. Your scripts get 3-8% CTR consistently.
 ${brandBlock}
