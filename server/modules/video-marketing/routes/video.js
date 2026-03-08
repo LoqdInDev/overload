@@ -299,4 +299,41 @@ Only return the JSON.`);
   }
 });
 
+// GET /test-wavespeed — fires a minimal text-to-video job and returns the raw WaveSpeed response
+// Use this to diagnose connectivity/auth issues without waiting for polling
+router.get('/test-wavespeed', async (req, res) => {
+  const wavespeed = require('../services/wavespeed');
+  const apiKey = process.env.WAVESPEED_API_KEY;
+  if (!apiKey) return res.json({ error: 'WAVESPEED_API_KEY not set', env: Object.keys(process.env).filter(k => k.includes('WAVE')) });
+
+  try {
+    const endpoint = 'kwaivgi/kling-v3.0-pro/text-to-video';
+    const response = await fetch(`https://api.wavespeed.ai/api/v3/${endpoint}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'A red apple on a white table.', duration: 3, aspect_ratio: '9:16', cfg_scale: 0.5 }),
+    });
+    const text = await response.text();
+    let data;
+    try { data = JSON.parse(text); } catch { data = text; }
+    res.json({ status: response.status, ok: response.ok, data, keyPrefix: apiKey.slice(0, 8) + '...' });
+  } catch (err) {
+    res.json({ fetchError: err.message, cause: err.cause?.message || err.cause?.code || null });
+  }
+});
+
+// GET /test-poll/:taskId — poll a WaveSpeed task once and return the raw status
+router.get('/test-poll/:taskId', async (req, res) => {
+  const apiKey = process.env.WAVESPEED_API_KEY;
+  try {
+    const response = await fetch(`https://api.wavespeed.ai/api/v3/predictions/${req.params.taskId}/result`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    const data = await response.json();
+    res.json({ status: response.status, data });
+  } catch (err) {
+    res.json({ fetchError: err.message, cause: err.cause?.message || err.cause?.code || null });
+  }
+});
+
 module.exports = router;

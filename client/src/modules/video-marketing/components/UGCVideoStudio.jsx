@@ -153,7 +153,7 @@ export default function UGCVideoStudio({ image, onClose }) {
       const { jobId } = await postJSON('/api/video/generate-quick', {
         campaignId: 'ugc-studio',
         hookText: buildScenePrompt(scene, productName, moods),
-        productImageUrl: image.url,
+        // productImageUrl intentionally omitted — using text-to-video for reliability
         duration: scene.duration,
         aspectRatio,
       });
