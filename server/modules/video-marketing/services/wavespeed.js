@@ -50,7 +50,9 @@ class WaveSpeedService {
 
       return this.pollForResult(data.data.id);
     } catch (error) {
-      return { success: false, error: error.message };
+      const cause = error.cause?.message || error.cause?.code || '';
+      console.error('[WaveSpeed] generateFromText failed:', error.message, cause || '');
+      return { success: false, error: cause ? `${error.message} (${cause})` : error.message };
     }
   }
 
@@ -79,7 +81,9 @@ class WaveSpeedService {
 
       return this.pollForResult(data.data.id);
     } catch (error) {
-      return { success: false, error: error.message };
+      const cause = error.cause?.message || error.cause?.code || '';
+      console.error('[WaveSpeed] generateFromImage failed:', error.message, cause || '', 'image:', imageUrl);
+      return { success: false, error: cause ? `${error.message} (${cause})` : error.message };
     }
   }
 
@@ -111,7 +115,7 @@ class WaveSpeedService {
       }
     }
 
-    return { success: false, error: 'Polling timed out after 10 minutes' };
+    return { success: false, error: 'Generation timed out after 4 minutes. Try again.' };
   }
 }
 

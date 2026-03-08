@@ -49,9 +49,18 @@ class VideoManager {
     if (result.success && result.videoUrl) {
       const filename = `campaign_scene${scene.scene_number}_${Date.now()}.mp4`;
       const filepath = path.join(this.videoDir, filename);
-      await this.downloadVideo(result.videoUrl, filepath);
-      result.localPath = `/videos/${filename}`;
-      result.filename = filename;
+      try {
+        await this.downloadVideo(result.videoUrl, filepath);
+        result.localPath = `/videos/${filename}`;
+        result.filename = filename;
+      } catch (downloadErr) {
+        // Download failed (CDN unreachable, expired URL, etc.) but video WAS generated.
+        // Keep result.success = true and expose the remote URL so the client can use it.
+        console.error('[VideoManager] Video download failed, using remote URL:', downloadErr.message, result.videoUrl);
+        result.localPath = null;
+        result.filename = null;
+        // result.videoUrl is already set — client will fall back to it
+      }
     }
 
     return result;

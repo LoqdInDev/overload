@@ -537,8 +537,10 @@ export default function UGCVideoStudio({ image, onClose }) {
                       <div className="flex items-center gap-1.5">
                         {result && (
                           <a
-                            href={`${API_BASE}${result.localPath}`}
-                            download={`scene_${String(i + 1).padStart(2, '0')}.mp4`}
+                            href={result.localPath ? `${API_BASE}${result.localPath}` : result.videoUrl}
+                            target={result.localPath ? undefined : '_blank'}
+                            rel={result.localPath ? undefined : 'noreferrer'}
+                            download={result.localPath ? `scene_${String(i + 1).padStart(2, '0')}.mp4` : undefined}
                             className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-all"
                             style={{ background: accentBg, border: `1px solid ${accentBorder}`, color: accent }}>
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -585,9 +587,9 @@ export default function UGCVideoStudio({ image, onClose }) {
                     )}
 
                     {/* Video */}
-                    {result && (
+                    {result && (result.localPath || result.videoUrl) && (
                       <video
-                        src={`${API_BASE}${result.localPath}`}
+                        src={result.localPath ? `${API_BASE}${result.localPath}` : result.videoUrl}
                         controls
                         className="w-full bg-black"
                         style={{ maxHeight: 220 }}
