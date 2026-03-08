@@ -73,10 +73,12 @@ const RATIOS = [
 ];
 const STEP_LABELS = ['Product', 'Video Type', 'Scenes', 'Settings', 'Results'];
 
-function buildScenePrompt(scene, productName, moods) {
+function buildScenePrompt(scene, productName, moods, withAudio = false) {
   const moodStr = moods.length ? ` ${moods.join(', ')} mood.` : '';
   const productStr = productName ? ` Product: ${productName}.` : '';
-  return `${scene.visual}${moodStr}${productStr} Cinematic, professional quality, short-form social media video.`.trim();
+  // When audio is on, embed the voiceover line so Kling generates matching speech
+  const voStr = withAudio && scene.vo ? ` A person says "${scene.vo}".` : '';
+  return `${scene.visual}${voStr}${moodStr}${productStr} Cinematic, professional quality, short-form social media video.`.trim();
 }
 
 export default function UGCVideoStudio({ image, onClose }) {
@@ -94,6 +96,7 @@ export default function UGCVideoStudio({ image, onClose }) {
   // Step 4
   const [aspectRatio, setAspectRatio] = useState('9:16');
   const [moods, setMoods] = useState([]);
+  const [enableAudio, setEnableAudio] = useState(false);
   // Step 5 — per-scene generation state
   const [sceneGenerating, setSceneGenerating] = useState({});
   const [sceneResults, setSceneResults] = useState({});
@@ -164,10 +167,11 @@ export default function UGCVideoStudio({ image, onClose }) {
         ? productPhoto
         : (image?.url || null);
       const { jobId } = await postJSON('/api/video/generate-quick', {
-        hookText: buildScenePrompt(scene, productName, moods),
+        hookText: buildScenePrompt(scene, productName, moods, enableAudio),
         productImageUrl: sceneImage,
         duration: scene.duration,
         aspectRatio,
+        sound: enableAudio,
       });
       pollScene(jobId, i);
     } catch (e) {
@@ -532,6 +536,29 @@ export default function UGCVideoStudio({ image, onClose }) {
                 </div>
               </div>
 
+              {/* Audio toggle */}
+              <div className="rounded-xl p-4 flex items-start justify-between gap-4"
+                style={{ background: card, border: `1px solid ${enableAudio ? accentBorder : border}` }}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold" style={{ color: textPrimary }}>
+                    Generate with Audio
+                    <span className="ml-2 text-[10px] font-medium px-1.5 py-0.5 rounded" style={{ background: accentBg, color: accent }}>
+                      Kling v2.6
+                    </span>
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: textSecondary }}>
+                    AI generates synchronized sound effects, ambient audio, and speech from your voiceover lines. Doubles generation cost (~$0.70/clip).
+                  </p>
+                </div>
+                <button type="button"
+                  onClick={() => setEnableAudio(v => !v)}
+                  className="flex-shrink-0 w-11 h-6 rounded-full transition-all duration-200 relative"
+                  style={{ background: enableAudio ? accent : (dark ? 'rgba(255,255,255,0.12)' : '#d1ccc6') }}>
+                  <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-200"
+                    style={{ left: enableAudio ? '22px' : '2px' }} />
+                </button>
+              </div>
+
               {/* Package summary */}
               <div className="rounded-xl p-4 space-y-2.5"
                 style={{ background: accentBg, border: `1px solid ${accentBorder}` }}>
@@ -570,15 +597,25 @@ export default function UGCVideoStudio({ image, onClose }) {
                 </div>
               )}
 
-              {/* Silent video notice */}
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
-                style={{ background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', color: textSecondary }}>
-                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707A1 1 0 0112 5v14a1 1 0 01-1.707.707L5.586 15z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
-                </svg>
-                AI-generated clips are silent by default. Add voiceover, music, or captions in CapCut or Premiere.
-              </div>
+              {/* Audio / silent notice */}
+              {enableAudio ? (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
+                  style={{ background: accentBg, border: `1px solid ${accentBorder}`, color: accent }}>
+                  <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072M19.07 4.93a10 10 0 010 14.14" />
+                  </svg>
+                  Audio enabled — Kling v2.6 will generate synchronized sound and speech.
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
+                  style={{ background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', color: textSecondary }}>
+                  <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707A1 1 0 0112 5v14a1 1 0 01-1.707.707L5.586 15z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                  </svg>
+                  Silent clips — add voiceover, music, or captions in CapCut or Premiere.
+                </div>
+              )}
 
               {scenes.map((scene, i) => {
                 const result = sceneResults[i];

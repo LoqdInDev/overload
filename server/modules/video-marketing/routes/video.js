@@ -69,7 +69,7 @@ router.post('/generate-all', async (req, res) => {
 router.post('/generate-quick', async (req, res) => {
   const wsId = req.workspace.id;
   const videoQueries = getVideoQueries(wsId);
-  const { campaignId, hookText, productImageUrl, provider, duration = 5, aspectRatio = '9:16' } = req.body;
+  const { campaignId, hookText, productImageUrl, provider, duration = 5, aspectRatio = '9:16', sound = false } = req.body;
 
   // If image is a base64 data URL, save it to disk and use a public server URL.
   // WaveSpeed requires a real HTTPS URL — it cannot accept base64 data URIs.
@@ -97,7 +97,7 @@ router.post('/generate-quick', async (req, res) => {
     generation_method: resolvedImageUrl ? 'image-to-video' : 'text-to-video',
     source_image_index: resolvedImageUrl ? 0 : null,
     ai_video_prompt: hookText,
-    ai_video_settings: { duration, aspectRatio, resolution: '720p' },
+    ai_video_settings: { duration, aspectRatio, resolution: '720p', sound },
   };
 
   // Use null for campaign_id when no real campaign — 'quick'/'ugc-studio' aren't valid FK values

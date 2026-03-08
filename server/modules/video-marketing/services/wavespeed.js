@@ -33,8 +33,10 @@ class WaveSpeedService {
   }
 
   async generateFromText(prompt, settings = {}) {
-    const { duration = 5, aspectRatio = '9:16', model = DEFAULT_MODEL } = settings;
-    const endpoint = MODELS[model]?.t2v || MODELS[DEFAULT_MODEL].t2v;
+    const { duration = 5, aspectRatio = '9:16', sound = false } = settings;
+    // kling-v2.6-pro has documented native audio support via sound:true
+    const modelKey = sound ? 'kling-v2.6-pro' : (settings.model || DEFAULT_MODEL);
+    const endpoint = MODELS[modelKey]?.t2v || MODELS[DEFAULT_MODEL].t2v;
 
     try {
       const response = await fetchWithTimeout(`${BASE_URL}/${endpoint}`, {
@@ -46,6 +48,7 @@ class WaveSpeedService {
           duration: Math.min(Math.max(duration, 3), 15),
           aspect_ratio: aspectRatio === '9:16' ? '9:16' : aspectRatio === '1:1' ? '1:1' : '16:9',
           cfg_scale: 0.5,
+          ...(sound && { sound: true }),
         }),
       }, 30000);
 
@@ -64,8 +67,9 @@ class WaveSpeedService {
   }
 
   async generateFromImage(imageUrl, prompt, settings = {}) {
-    const { duration = 5, model = DEFAULT_MODEL } = settings;
-    const endpoint = MODELS[model]?.i2v || MODELS[DEFAULT_MODEL].i2v;
+    const { duration = 5, sound = false } = settings;
+    const modelKey = sound ? 'kling-v2.6-pro' : (settings.model || DEFAULT_MODEL);
+    const endpoint = MODELS[modelKey]?.i2v || MODELS[DEFAULT_MODEL].i2v;
 
     try {
       const response = await fetchWithTimeout(`${BASE_URL}/${endpoint}`, {
@@ -77,6 +81,7 @@ class WaveSpeedService {
           negative_prompt: 'blurry, distorted, low quality, watermark, text overlay',
           duration: Math.min(Math.max(duration, 3), 15),
           cfg_scale: 0.5,
+          ...(sound && { sound: true }),
         }),
       }, 30000);
 
