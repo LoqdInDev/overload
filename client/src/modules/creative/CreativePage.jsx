@@ -175,7 +175,7 @@ function formatDate(dateStr) {
 }
 
 // Full-screen lightbox
-function ImageLightbox({ images, index, onClose, type }) {
+function ImageLightbox({ images, index, onClose, type, onCreateVideo }) {
   const [current, setCurrent] = useState(index);
   const [promptCopied, setPromptCopied] = useState(false);
   const [caption, setCaption] = useState('');
@@ -264,6 +264,15 @@ function ImageLightbox({ images, index, onClose, type }) {
               style={promptCopied ? { color: '#4ade80', borderColor: 'rgba(74,222,128,0.3)' } : {}}>
               {promptCopied ? 'Prompt Copied!' : 'Copy Prompt'}
             </button>
+            {onCreateVideo && img.status === 'completed' && (
+              <button onClick={() => { onClose(); onCreateVideo(img); }} className="chip text-[10px]"
+                style={{ background: 'rgba(139,92,246,0.15)', borderColor: 'rgba(139,92,246,0.3)', color: '#a78bfa' }}>
+                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+                Create Video
+              </button>
+            )}
             <button
               onClick={() => {
                 if (captionLoading) return;
@@ -1033,6 +1042,7 @@ export default function CreativePage() {
               index={Math.min(historyLightbox.index, historyLightbox.images.length - 1)}
               onClose={() => setHistoryLightbox(null)}
               type={activeType}
+              onCreateVideo={handleCreateVideo}
             />
           )}
         </div>
@@ -1862,6 +1872,7 @@ export default function CreativePage() {
                       index={Math.min(lightbox.index, images.filter(im => im.dataUrl || im.url).length - 1)}
                       onClose={() => setLightbox(null)}
                       type={activeType}
+                      onCreateVideo={handleCreateVideo}
                     />
                   )}
                 </div>
