@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { fetchJSON, postJSON } from '../../../lib/api';
+import { fetchJSON, postJSON, API_BASE } from '../../../lib/api';
 
 export default function QuickVideoButton({ hookText, campaignId, productImageUrl }) {
   const [status, setStatus] = useState('idle');
@@ -51,7 +51,8 @@ export default function QuickVideoButton({ hookText, campaignId, productImageUrl
         pollErrors = 0;
         if (data.status === 'completed') {
           clearInterval(pollRef.current);
-          setVideoPath(data.result?.localPath || data.result?.videoUrl);
+          const p = data.result?.localPath;
+          setVideoPath(p ? `${API_BASE}${p}` : data.result?.videoUrl);
           setStatus('done');
         } else if (data.status === 'failed') {
           clearInterval(pollRef.current);

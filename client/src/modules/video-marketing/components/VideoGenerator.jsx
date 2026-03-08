@@ -277,7 +277,7 @@ export default function VideoGenerator({ storyboards, campaignId, productProfile
               {/* Video preview or placeholder */}
               {status === 'completed' && result?.localPath ? (
                 <div className="bg-black">
-                  <video src={result.localPath} controls className="w-full max-h-64 object-contain" />
+                  <video src={`${API_BASE}${result.localPath}`} controls className="w-full max-h-64 object-contain" />
                 </div>
               ) : status === 'processing' || status === 'queued' ? (
                 <div className="h-32 bg-gradient-to-br from-violet-950/20 to-fuchsia-950/10 flex items-center justify-center">
@@ -332,7 +332,7 @@ export default function VideoGenerator({ storyboards, campaignId, productProfile
                 )}
                 {status === 'completed' && result?.localPath && (
                   <a
-                    href={result.localPath}
+                    href={`${API_BASE}${result.localPath}`}
                     download
                     className="px-4 py-2 text-xs glass text-gray-400 hover:text-gray-200 rounded-xl font-medium transition-colors"
                   >

@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || '';
+export const API_BASE = import.meta.env.VITE_API_URL || '';
 const TOKEN_KEY = 'overload_access_token';
 const REFRESH_KEY = 'overload_refresh_token';
 const WORKSPACE_KEY = 'overload_workspace_id';

@@ -105,7 +105,7 @@ export default function VideoGallery({ campaignId }) {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {filtered.map((job) => {
           const result = job.result;
-          const videoPath = result?.localPath;
+          const videoPath = result?.localPath ? `${API_BASE}${result.localPath}` : null;
 
           return (
             <div key={job.id} className="glass rounded-2xl overflow-hidden group card-hover">
@@ -171,7 +171,7 @@ export default function VideoGallery({ campaignId }) {
           onClick={() => setModalVideo(null)}
         >
           <div className="max-w-lg w-full mx-4 animate-slide-up" onClick={(e) => e.stopPropagation()}>
-            <video src={modalVideo} controls autoPlay className="w-full rounded-2xl shadow-2xl" />
+            <video src={modalVideo} controls autoPlay className="w-full rounded-2xl shadow-2xl" crossOrigin="anonymous" />
             <button
               onClick={() => setModalVideo(null)}
               className="mt-4 w-full py-2.5 glass rounded-xl text-sm text-gray-400 hover:text-gray-200 transition-colors font-medium"
