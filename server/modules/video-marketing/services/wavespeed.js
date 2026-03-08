@@ -1,5 +1,12 @@
 const BASE_URL = 'https://api.wavespeed.ai/api/v3';
 
+function fetchWithTimeout(url, options = {}, timeoutMs = 30000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal })
+    .finally(() => clearTimeout(timer));
+}
+
 const MODELS = {
   'kling-v3.0-pro': {
     t2v: 'kwaivgi/kling-v3.0-pro/text-to-video',
@@ -30,7 +37,7 @@ class WaveSpeedService {
     const endpoint = MODELS[model]?.t2v || MODELS[DEFAULT_MODEL].t2v;
 
     try {
-      const response = await fetch(`${BASE_URL}/${endpoint}`, {
+      const response = await fetchWithTimeout(`${BASE_URL}/${endpoint}`, {
         method: 'POST',
         headers: this.headers(),
         body: JSON.stringify({
@@ -40,7 +47,7 @@ class WaveSpeedService {
           aspect_ratio: aspectRatio === '9:16' ? '9:16' : aspectRatio === '1:1' ? '1:1' : '16:9',
           cfg_scale: 0.5,
         }),
-      });
+      }, 30000);
 
       const data = await response.json();
 
@@ -61,7 +68,7 @@ class WaveSpeedService {
     const endpoint = MODELS[model]?.i2v || MODELS[DEFAULT_MODEL].i2v;
 
     try {
-      const response = await fetch(`${BASE_URL}/${endpoint}`, {
+      const response = await fetchWithTimeout(`${BASE_URL}/${endpoint}`, {
         method: 'POST',
         headers: this.headers(),
         body: JSON.stringify({
@@ -71,7 +78,7 @@ class WaveSpeedService {
           duration: Math.min(Math.max(duration, 3), 15),
           cfg_scale: 0.5,
         }),
-      });
+      }, 30000);
 
       const data = await response.json();
 
@@ -92,9 +99,9 @@ class WaveSpeedService {
       await new Promise((r) => setTimeout(r, interval));
 
       try {
-        const res = await fetch(`${BASE_URL}/predictions/${taskId}/result`, {
+        const res = await fetchWithTimeout(`${BASE_URL}/predictions/${taskId}/result`, {
           headers: { Authorization: `Bearer ${this.apiKey}` },
-        });
+        }, 15000);
 
         const data = await res.json();
         const status = data.data?.status;
@@ -111,7 +118,8 @@ class WaveSpeedService {
           return { success: false, error: data.data?.error || 'Generation failed' };
         }
       } catch (error) {
-        // Ignore transient poll errors
+        console.error('[WaveSpeed] poll error:', error.name, error.message);
+        // Continue polling on transient errors
       }
     }
 
