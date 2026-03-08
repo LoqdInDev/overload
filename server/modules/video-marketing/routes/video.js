@@ -84,7 +84,8 @@ router.post('/generate-quick', async (req, res) => {
         fs.writeFileSync(filepath, Buffer.from(match[2], 'base64'));
         const proto = req.headers['x-forwarded-proto'] || req.protocol;
         const host = req.headers['x-forwarded-host'] || req.get('host');
-        resolvedImageUrl = `${proto}://${host}/api/video/download/${filename}`;
+        // Use public static /videos route — /api/video/download requires auth, WaveSpeed can't authenticate
+        resolvedImageUrl = `${proto}://${host}/videos/${filename}`;
       }
     } catch {
       resolvedImageUrl = null; // fall back to text-to-video
