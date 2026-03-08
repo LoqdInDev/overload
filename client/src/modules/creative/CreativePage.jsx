@@ -437,7 +437,7 @@ export default function CreativePage() {
   const { brand } = useBrandContext();
 
   const handleCreateVideo = (img) => {
-    const url = img.dataUrl || (img.url ? `${API_BASE}${img.url}` : null);
+    const url = img.dataUrl || img.url || null;
     if (!url) return;
     localStorage.setItem('creative_video_import', JSON.stringify({
       url,

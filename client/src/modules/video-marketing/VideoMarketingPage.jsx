@@ -29,7 +29,16 @@ export default function VideoMarketingPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(typeof window !== 'undefined' && window.innerWidth >= 768);
   const [useBrandHub, setUseBrandHub] = useState(false);
-  const [wizardImage, setWizardImage] = useState(null);
+  const [wizardImage, setWizardImage] = useState(() => {
+    try {
+      const stored = localStorage.getItem('creative_video_import');
+      if (stored) {
+        localStorage.removeItem('creative_video_import');
+        return JSON.parse(stored);
+      }
+    } catch {}
+    return null;
+  });
 
   const fetchCampaigns = useCallback(async (autoSelect = false) => {
     try {
@@ -47,14 +56,6 @@ export default function VideoMarketingPage() {
 
   useEffect(() => { fetchCampaigns(true); }, []);
 
-  // Open Quick Video Wizard when arriving from Creative module
-  useEffect(() => {
-    const stored = localStorage.getItem('creative_video_import');
-    if (stored) {
-      try { setWizardImage(JSON.parse(stored)); } catch {}
-      localStorage.removeItem('creative_video_import');
-    }
-  }, []);
 
   const loadCampaign = async (id) => {
     try {
