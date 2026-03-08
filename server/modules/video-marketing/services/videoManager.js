@@ -3,9 +3,13 @@ const klingService = require('./kling');
 const fs = require('fs');
 const path = require('path');
 
+// Use the same volume-aware dataDir as server/index.js so files land
+// in the persistent volume on Railway instead of the ephemeral app dir.
+const dataDir = process.env.DB_PATH ? path.dirname(process.env.DB_PATH) : process.cwd();
+
 class VideoManager {
   constructor() {
-    this.videoDir = path.join(process.cwd(), 'videos');
+    this.videoDir = path.join(dataDir, 'videos');
     if (!fs.existsSync(this.videoDir)) {
       fs.mkdirSync(this.videoDir, { recursive: true });
     }
@@ -46,7 +50,7 @@ class VideoManager {
       const filename = `campaign_scene${scene.scene_number}_${Date.now()}.mp4`;
       const filepath = path.join(this.videoDir, filename);
       await this.downloadVideo(result.videoUrl, filepath);
-      result.localPath = `/api/video/download/${filename}`;
+      result.localPath = `/videos/${filename}`;
       result.filename = filename;
     }
 

@@ -2,6 +2,10 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const archiver = require('archiver');
+
+// Match the volume-aware dataDir used by server/index.js and videoManager
+const dataDir = process.env.DB_PATH ? path.dirname(process.env.DB_PATH) : process.cwd();
+const videosDir = path.join(dataDir, 'videos');
 const videoManager = require('../services/videoManager');
 const { getVideoQueries } = require('../db/queries');
 const { generateWithClaude, generateTextWithClaude } = require('../../../services/claude');
@@ -129,7 +133,7 @@ router.get('/campaign/:campaignId', (req, res) => {
 
 router.get('/download/:filename', (req, res) => {
   const filename = path.basename(req.params.filename);
-  const filepath = path.join(process.cwd(), 'videos', filename);
+  const filepath = path.join(videosDir, filename);
   if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'File not found' });
 
   const stat = fs.statSync(filepath);
@@ -182,7 +186,7 @@ router.get('/download-all/:campaignId', (req, res) => {
     if (job.result) {
       const result = typeof job.result === 'string' ? safeParse(job.result) : job.result;
       if (result.filename) {
-        const filepath = path.join(process.cwd(), 'videos', result.filename);
+        const filepath = path.join(videosDir, result.filename);
         if (fs.existsSync(filepath)) {
           archive.file(filepath, { name: result.filename });
         }
@@ -200,7 +204,7 @@ router.delete('/:jobId', (req, res) => {
   if (job?.result) {
     const result = typeof job.result === 'string' ? safeParse(job.result) : job.result;
     if (result.filename) {
-      const filepath = path.join(process.cwd(), 'videos', result.filename);
+      const filepath = path.join(videosDir, result.filename);
       if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
     }
   }
