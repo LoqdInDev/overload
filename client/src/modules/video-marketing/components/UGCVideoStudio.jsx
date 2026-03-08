@@ -570,6 +570,16 @@ export default function UGCVideoStudio({ image, onClose }) {
                 </div>
               )}
 
+              {/* Silent video notice */}
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
+                style={{ background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', color: textSecondary }}>
+                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707A1 1 0 0112 5v14a1 1 0 01-1.707.707L5.586 15z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                </svg>
+                AI-generated clips are silent by default. Add voiceover, music, or captions in CapCut or Premiere.
+              </div>
+
               {scenes.map((scene, i) => {
                 const result = sceneResults[i];
                 const err = sceneErrors[i];
