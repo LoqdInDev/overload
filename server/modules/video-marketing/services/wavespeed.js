@@ -83,7 +83,7 @@ class WaveSpeedService {
     }
   }
 
-  async pollForResult(taskId, maxAttempts = 120, interval = 5000) {
+  async pollForResult(taskId, maxAttempts = 48, interval = 5000) {
     for (let i = 0; i < maxAttempts; i++) {
       await new Promise((r) => setTimeout(r, interval));
 
