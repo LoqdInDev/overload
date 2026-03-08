@@ -85,6 +85,8 @@ export default function UGCVideoStudio({ image, onClose }) {
 
   // Step 1
   const [productName, setProductName] = useState('');
+  const [productPhoto, setProductPhoto] = useState(null); // optional second image
+  const productPhotoRef = useRef(null);
   // Step 2
   const [archetypeId, setArchetypeId] = useState('');
   // Step 3 — editable scenes
@@ -104,10 +106,18 @@ export default function UGCVideoStudio({ image, onClose }) {
 
   const toggleMood = (m) => setMoods(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);
 
+  const handleProductPhotoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setProductPhoto(ev.target.result);
+    reader.readAsDataURL(file);
+  };
+
   const selectArchetype = (id) => {
     setArchetypeId(id);
     const arch = ARCHETYPES.find(a => a.id === id);
-    if (arch) setScenes(arch.scenes.map(s => ({ ...s })));
+    if (arch) setScenes(arch.scenes.map(s => ({ ...s, imgSrc: 'model' })));
   };
 
   const updateScene = (i, field, value) =>
@@ -117,7 +127,7 @@ export default function UGCVideoStudio({ image, onClose }) {
 
   const addScene = () => setScenes(prev => [
     ...prev,
-    { label: `Scene ${prev.length + 1}`, duration: 5, visual: '', vo: '' },
+    { label: `Scene ${prev.length + 1}`, duration: 5, visual: '', vo: '', imgSrc: 'model' },
   ]);
 
   const pollScene = (jobId, i) => {
@@ -150,9 +160,12 @@ export default function UGCVideoStudio({ image, onClose }) {
     setSceneGenerating(prev => ({ ...prev, [i]: true }));
     setSceneErrors(prev => ({ ...prev, [i]: null }));
     try {
+      const sceneImage = scene.imgSrc === 'product' && productPhoto
+        ? productPhoto
+        : (image?.url || null);
       const { jobId } = await postJSON('/api/video/generate-quick', {
         hookText: buildScenePrompt(scene, productName, moods),
-        // productImageUrl intentionally omitted — using text-to-video for reliability
+        productImageUrl: sceneImage,
         duration: scene.duration,
         aspectRatio,
       });
@@ -280,6 +293,39 @@ export default function UGCVideoStudio({ image, onClose }) {
                   </div>
                 </div>
               </div>
+
+              {/* Product photo */}
+              <div>
+                <label className="block text-xs font-medium mb-2" style={{ color: textSecondary }}>
+                  Product photo <span className="font-normal opacity-60">(optional — for product-only scenes)</span>
+                </label>
+                {productPhoto ? (
+                  <div className="flex items-center gap-3">
+                    <img src={productPhoto} alt="Product" className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+                      style={{ border: `1px solid ${accentBorder}` }} />
+                    <div className="flex-1">
+                      <p className="text-xs font-medium mb-1" style={{ color: textPrimary }}>Product photo added</p>
+                      <p className="text-[10px] mb-2" style={{ color: textSecondary }}>You can assign scenes to use this in the Scene Builder</p>
+                      <button type="button" onClick={() => setProductPhoto(null)}
+                        className="text-[10px] px-2 py-1 rounded-lg transition-all"
+                        style={{ background: 'rgba(239,68,68,0.08)', color: '#f87171', border: '1px solid rgba(239,68,68,0.15)' }}>
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => productPhotoRef.current?.click()}
+                    className="w-full py-3 rounded-xl text-xs font-medium flex items-center justify-center gap-2 transition-all hover:opacity-80"
+                    style={{ border: `1px dashed ${border}`, color: textSecondary }}>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Upload product photo
+                  </button>
+                )}
+                <input ref={productPhotoRef} type="file" accept="image/*" className="hidden"
+                  onChange={handleProductPhotoUpload} />
+              </div>
               <div className="rounded-xl p-4 grid grid-cols-2 gap-y-2.5 gap-x-4"
                 style={{ background: accentBg, border: `1px solid ${accentBorder}` }}>
                 {[
@@ -359,6 +405,22 @@ export default function UGCVideoStudio({ image, onClose }) {
                       />
                     </div>
                     <div className="flex items-center gap-2">
+                      {productPhoto && (
+                        <div className="flex gap-1">
+                          {[{ v: 'model', label: '👤' }, { v: 'product', label: '📦' }].map(({ v, label }) => (
+                            <button key={v} type="button"
+                              onClick={() => updateScene(i, 'imgSrc', v)}
+                              title={v === 'model' ? 'Use model photo' : 'Use product photo'}
+                              className="px-1.5 py-0.5 rounded text-xs transition-all"
+                              style={{
+                                background: scene.imgSrc === v ? accentBg : 'transparent',
+                                border: `1px solid ${scene.imgSrc === v ? accentBorder : border}`,
+                              }}>
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                       <div className="flex gap-1">
                         {[5, 8].map(d => (
                           <button key={d} type="button"
