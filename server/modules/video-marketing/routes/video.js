@@ -329,7 +329,7 @@ Only return the JSON.`);
 
 // POST /lipsync — generate TTS from voiceover text, then lip-sync it onto an existing video clip
 router.post('/lipsync', async (req, res) => {
-  const { voText, videoUrl, localPath } = req.body;
+  const { voText, videoUrl, localPath, voiceId } = req.body;
   if (!voText) return res.status(400).json({ success: false, error: 'voText is required' });
 
   // WaveSpeed needs a public HTTPS URL for the source video.
@@ -350,7 +350,7 @@ router.post('/lipsync', async (req, res) => {
     const lipsyncService = require('../services/lipsync');
 
     // Step 1: text → audio
-    const audioUrl = await ttsService.generateSpeech(voText);
+    const audioUrl = await ttsService.generateSpeech(voText, { voice: voiceId || 'Calm_Woman' });
 
     // Step 2: video + audio → lip-synced video
     const result = await lipsyncService.syncLips(publicVideoUrl, audioUrl);

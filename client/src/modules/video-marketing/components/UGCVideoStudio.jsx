@@ -183,6 +183,7 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
   const [aspectRatio, setAspectRatio] = useState('9:16');
   const [moods, setMoods] = useState([]);
   const [enableAudio, setEnableAudio] = useState(false);
+  const [voiceId, setVoiceId] = useState('Calm_Woman');
   // Step 5 — per-scene generation state
   const [sceneGenerating, setSceneGenerating] = useState({});
   const [sceneResults, setSceneResults] = useState({});
@@ -208,6 +209,7 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
     setAspectRatio('9:16');
     setMoods([]);
     setEnableAudio(false);
+    setVoiceId('Calm_Woman');
     setSceneResults({});
     setSceneErrors({});
     setSceneGenerating({});
@@ -341,6 +343,7 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
         voText: scene.vo,
         videoUrl: videoResult.videoUrl || null,
         localPath: videoResult.localPath || null,
+        voiceId,
       });
       if (res.success) {
         setSceneLipsync(prev => ({ ...prev, [i]: { status: 'done', result: res, error: null } }));
@@ -787,6 +790,41 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
                 style={{ left: enableAudio ? '22px' : '2px' }} />
             </button>
           </div>
+
+          {/* Voice picker — for lip-sync */}
+          {!enableAudio && (
+            <div className="rounded-xl p-4 space-y-2.5" style={{ background: card, border: `1px solid ${border}` }}>
+              <div>
+                <p className="text-sm font-semibold" style={{ color: textPrimary }}>Lip-Sync Voice</p>
+                <p className="text-xs mt-0.5" style={{ color: textSecondary }}>Applied to all scenes when you click Lip-Sync VO after generating.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {[
+                  { id: 'Calm_Woman', label: 'Calm Woman' },
+                  { id: 'Calm_Man', label: 'Calm Man' },
+                  { id: 'Friendly_Person', label: 'Friendly' },
+                  { id: 'Lively_Girl', label: 'Lively Girl' },
+                  { id: 'Deep_Voice_Man', label: 'Deep Man' },
+                  { id: 'Inspirational_girl', label: 'Inspirational' },
+                  { id: 'Casual_Guy', label: 'Casual Guy' },
+                  { id: 'Determined_Man', label: 'Determined' },
+                  { id: 'Wise_Woman', label: 'Wise Woman' },
+                  { id: 'Sweet_Girl_2', label: 'Sweet Girl' },
+                ].map(v => (
+                  <button key={v.id} type="button"
+                    onClick={() => setVoiceId(v.id)}
+                    className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-left transition-all"
+                    style={{
+                      background: voiceId === v.id ? accentBg : 'transparent',
+                      border: `1px solid ${voiceId === v.id ? accentBorder : border}`,
+                      color: voiceId === v.id ? accent : textSecondary,
+                    }}>
+                    {v.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Package summary */}
           <div className="rounded-xl p-4 space-y-2.5"
