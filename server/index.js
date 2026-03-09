@@ -275,7 +275,7 @@ function cleanupOldMedia(maxAgeDays = 7) {
 
 // Admin cleanup endpoint — POST /api/admin/cleanup-storage
 app.post('/api/admin/cleanup-storage', requireAuth, (req, res) => {
-  const maxAgeDays = parseInt(req.query.days) || 7;
+  const maxAgeDays = req.query.days !== undefined ? parseInt(req.query.days) : 7;
   const result = cleanupOldMedia(maxAgeDays);
   res.json({ ok: true, ...result, freedMB: (result.freed / 1024 / 1024).toFixed(1) });
 });
