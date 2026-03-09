@@ -7,6 +7,7 @@ import ProductInput from './components/ProductInput';
 import Dashboard from './components/Dashboard';
 import CampaignHistory from './components/CampaignHistory';
 import UGCVideoStudio from './components/UGCVideoStudio';
+import VideoHistory from './components/VideoHistory';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -31,6 +32,7 @@ export default function VideoMarketingPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(typeof window !== 'undefined' && window.innerWidth >= 768);
   const [useBrandHub, setUseBrandHub] = useState(false);
+  const [showVideoHistory, setShowVideoHistory] = useState(false);
   const [wizardImage, setWizardImage] = useState(
     () => location.state?.creativeImport || null
   );
@@ -128,7 +130,7 @@ export default function VideoMarketingPage() {
         <div className={`absolute inset-0 ${dark ? 'bg-[#050508]' : 'bg-white/60'}`} />
         <div className={`absolute inset-y-0 right-0 w-px ${dark ? 'bg-indigo-500/[0.06]' : 'bg-[#e8e0d4]'}`} />
 
-        <div className="relative px-3 py-3">
+        <div className="relative px-3 py-3 flex flex-col gap-2">
           <button
             onClick={handleNewCampaign}
             className="w-full py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all"
@@ -142,6 +144,17 @@ export default function VideoMarketingPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
             New Campaign
+          </button>
+          <button
+            onClick={() => setShowVideoHistory(true)}
+            className={`w-full py-2 rounded-xl text-xs font-medium flex items-center justify-center gap-2 transition-all ${
+              dark ? 'bg-white/[0.04] hover:bg-white/[0.07] text-gray-400 hover:text-gray-200' : 'bg-[#f0ebe4] hover:bg-[#e8e0d4] text-[#5C5650] hover:text-[#332F2B]'
+            }`}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Video History
           </button>
         </div>
 
@@ -237,23 +250,27 @@ export default function VideoMarketingPage() {
 
         {/* Content area */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-3 sm:p-6 lg:p-8">
-            <ModuleWrapper moduleId="video-marketing">
-            {showingForm ? (
-              <div className="max-w-3xl mx-auto">
-                <ProductInput onSubmit={createCampaign} />
-              </div>
-            ) : (
-              <Dashboard
-                campaign={activeCampaign}
-                setCampaign={setActiveCampaign}
-                currentStep={currentStep}
-                setCurrentStep={setCurrentStep}
-                useBrandHub={useBrandHub}
-              />
-            )}
-            </ModuleWrapper>
-          </div>
+          <ModuleWrapper moduleId="video-marketing">
+          {showVideoHistory ? (
+            <VideoHistory onClose={() => setShowVideoHistory(false)} />
+          ) : (
+            <div className="p-3 sm:p-6 lg:p-8">
+              {showingForm ? (
+                <div className="max-w-3xl mx-auto">
+                  <ProductInput onSubmit={createCampaign} />
+                </div>
+              ) : (
+                <Dashboard
+                  campaign={activeCampaign}
+                  setCampaign={setActiveCampaign}
+                  currentStep={currentStep}
+                  setCurrentStep={setCurrentStep}
+                  useBrandHub={useBrandHub}
+                />
+              )}
+            </div>
+          )}
+          </ModuleWrapper>
         </div>
       </div>
     </div>

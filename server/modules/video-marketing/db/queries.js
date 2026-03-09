@@ -81,6 +81,17 @@ function getVideoQueries(wsId) {
     deleteVideoJob(jobId) {
       return db.prepare('DELETE FROM vm_video_jobs WHERE id = ? AND workspace_id = ?').run(jobId, wsId);
     },
+
+    getAllVideoJobs() {
+      return db.prepare(`
+        SELECT j.*, c.product_name
+        FROM vm_video_jobs j
+        LEFT JOIN vm_campaigns c ON c.id = j.campaign_id
+        WHERE j.workspace_id = ?
+        ORDER BY j.created_at DESC
+        LIMIT 200
+      `).all(wsId);
+    },
   };
 }
 

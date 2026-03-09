@@ -139,6 +139,13 @@ router.post('/optimize-prompt', async (req, res) => {
   }
 });
 
+router.get('/history', (req, res) => {
+  const wsId = req.workspace.id;
+  const videoQueries = getVideoQueries(wsId);
+  const jobs = videoQueries.getAllVideoJobs();
+  res.json(jobs.map((j) => ({ ...j, result: safeParse(j.result) })));
+});
+
 router.get('/status/:jobId', (req, res) => {
   const wsId = req.workspace.id;
   const videoQueries = getVideoQueries(wsId);
