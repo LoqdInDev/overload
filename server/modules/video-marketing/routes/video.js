@@ -229,6 +229,24 @@ router.get('/download-all/:campaignId', (req, res) => {
   archive.finalize();
 });
 
+router.delete('/all', (req, res) => {
+  const wsId = req.workspace.id;
+  const videoQueries = getVideoQueries(wsId);
+  const jobs = videoQueries.getAllVideoJobs();
+  let filesDeleted = 0;
+  for (const job of jobs) {
+    if (job.result) {
+      const result = safeParse(job.result);
+      if (result?.filename) {
+        const filepath = path.join(videosDir, result.filename);
+        try { if (fs.existsSync(filepath)) { fs.unlinkSync(filepath); filesDeleted++; } } catch {}
+      }
+    }
+  }
+  videoQueries.deleteAllVideoJobs();
+  res.json({ deleted: jobs.length, filesDeleted });
+});
+
 router.delete('/:jobId', (req, res) => {
   const wsId = req.workspace.id;
   const videoQueries = getVideoQueries(wsId);

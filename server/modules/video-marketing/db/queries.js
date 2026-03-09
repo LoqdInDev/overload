@@ -82,6 +82,10 @@ function getVideoQueries(wsId) {
       return db.prepare('DELETE FROM vm_video_jobs WHERE id = ? AND workspace_id = ?').run(jobId, wsId);
     },
 
+    deleteAllVideoJobs() {
+      return db.prepare('DELETE FROM vm_video_jobs WHERE workspace_id = ?').run(wsId);
+    },
+
     getAllVideoJobs() {
       return db.prepare(`
         SELECT j.*, c.product_name

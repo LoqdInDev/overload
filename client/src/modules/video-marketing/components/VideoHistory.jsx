@@ -147,6 +147,8 @@ export default function VideoHistory({ onClose }) {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all | completed | failed
+  const [clearingAll, setClearingAll] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -163,6 +165,18 @@ export default function VideoHistory({ onClose }) {
   useEffect(() => { load(); }, []);
 
   const handleDelete = (id) => setJobs(prev => prev.filter(j => j.id !== id));
+
+  const handleClearAll = async () => {
+    if (!confirmClear) { setConfirmClear(true); return; }
+    setClearingAll(true);
+    setConfirmClear(false);
+    try {
+      await fetch(`${API_BASE}/api/video/all`, { method: 'DELETE', credentials: 'include' });
+      setJobs([]);
+    } catch { /* ignore */ } finally {
+      setClearingAll(false);
+    }
+  };
 
   const filtered = filter === 'all' ? jobs : jobs.filter(j => j.status === filter);
   const completedCount = jobs.filter(j => j.status === 'completed').length;
@@ -204,6 +218,21 @@ export default function VideoHistory({ onClose }) {
               {f}
             </button>
           ))}
+          {jobs.length > 0 && (
+            <button
+              onClick={handleClearAll}
+              disabled={clearingAll}
+              onBlur={() => setConfirmClear(false)}
+              className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-all ${
+                confirmClear
+                  ? 'bg-red-500 text-white hover:bg-red-600'
+                  : dark ? 'text-red-400/70 hover:text-red-400 hover:bg-red-500/10' : 'text-red-400 hover:text-red-500 hover:bg-red-50'
+              } ${clearingAll ? 'opacity-40 cursor-not-allowed' : ''}`}
+              title="Delete all videos and free disk space"
+            >
+              {clearingAll ? 'Clearing…' : confirmClear ? 'Confirm?' : 'Clear All'}
+            </button>
+          )}
           <button
             onClick={load}
             className={`p-1.5 rounded-lg transition-all ${dark ? 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.05]' : 'text-[#94908A] hover:text-[#332F2B] hover:bg-[#f0ebe4]'}`}
