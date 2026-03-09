@@ -243,11 +243,11 @@ setInterval(checkTrialExpirations, 24 * 60 * 60 * 1000); // every 24 hours
 checkTrialExpirations(); // run once on startup
 
 // ── Media storage cleanup ──────────────────────────────────────────
-// Deletes generated images + videos older than maxAgeDays to prevent ENOSPC
+// Deletes old generated videos to prevent ENOSPC.
+// Creative images (uploads/creatives/) are NOT cleaned — they appear in the history tab.
 function cleanupOldMedia(maxAgeDays = 7) {
   const cutoff = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000;
   const dirs = [
-    path.join(dataDir, 'uploads', 'creatives'),
     path.join(dataDir, 'videos'),
   ];
   let deleted = 0;
