@@ -242,6 +242,48 @@ function checkTrialExpirations() {
 setInterval(checkTrialExpirations, 24 * 60 * 60 * 1000); // every 24 hours
 checkTrialExpirations(); // run once on startup
 
+// ── Media storage cleanup ──────────────────────────────────────────
+// Deletes generated images + videos older than maxAgeDays to prevent ENOSPC
+function cleanupOldMedia(maxAgeDays = 7) {
+  const cutoff = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000;
+  const dirs = [
+    path.join(dataDir, 'uploads', 'creatives'),
+    path.join(dataDir, 'videos'),
+  ];
+  let deleted = 0;
+  let freed = 0;
+  for (const dir of dirs) {
+    if (!fs.existsSync(dir)) continue;
+    for (const file of fs.readdirSync(dir)) {
+      // Never delete brand-media or protected dirs — only generated files
+      const fp = path.join(dir, file);
+      try {
+        const stat = fs.statSync(fp);
+        if (stat.isFile() && stat.mtimeMs < cutoff) {
+          freed += stat.size;
+          fs.unlinkSync(fp);
+          deleted++;
+        }
+      } catch { /* ignore locked/missing */ }
+    }
+  }
+  if (deleted > 0) {
+    logger.info(`[cleanup] Removed ${deleted} old media files, freed ${(freed / 1024 / 1024).toFixed(1)} MB`);
+  }
+  return { deleted, freed };
+}
+
+// Admin cleanup endpoint — POST /api/admin/cleanup-storage
+app.post('/api/admin/cleanup-storage', requireAuth, (req, res) => {
+  const maxAgeDays = parseInt(req.query.days) || 7;
+  const result = cleanupOldMedia(maxAgeDays);
+  res.json({ ok: true, ...result, freedMB: (result.freed / 1024 / 1024).toFixed(1) });
+});
+
+// Run cleanup on startup and daily
+cleanupOldMedia(7);
+setInterval(() => cleanupOldMedia(7), 24 * 60 * 60 * 1000);
+
 // Start the automation rule engine
 const { startRuleEngine } = require('./services/ruleEngine');
 startRuleEngine();
