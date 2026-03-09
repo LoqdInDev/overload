@@ -78,7 +78,9 @@ function buildScenePrompt(scene, productName, moods, withAudio = false) {
   const productStr = productName ? ` Product: ${productName}.` : '';
   // When audio is on, embed the voiceover line so Kling generates matching speech
   const voStr = withAudio && scene.vo ? ` A person says "${scene.vo}".` : '';
-  return `${scene.visual}${voStr}${moodStr}${productStr} Cinematic, professional quality, short-form social media video.`.trim();
+  // When scene has a VO direction, tell Kling the person is speaking — drives lip movement
+  const lipStr = scene.vo ? ' Person speaking naturally to camera, mouth and lips moving.' : '';
+  return `${scene.visual}${lipStr}${voStr}${moodStr}${productStr} Cinematic, professional quality, short-form social media video.`.trim();
 }
 
 export default function UGCVideoStudio({ image, onClose }) {
