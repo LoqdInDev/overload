@@ -101,12 +101,14 @@ export default function UGCVideoStudio({ image, onClose }) {
   const [sceneGenerating, setSceneGenerating] = useState({});
   const [sceneResults, setSceneResults] = useState({});
   const [sceneErrors, setSceneErrors] = useState({});
-  const pollRefs = useRef({});
   // Per-scene lip-sync state: { [i]: { status: 'loading'|'done'|'error', result, error } }
   const [sceneLipsync, setSceneLipsync] = useState({});
-
+  const [generatingAll, setGeneratingAll] = useState(false);
+  // Used to abort polling loops when the modal is closed
+  const activeRef = useRef(true);
   useEffect(() => {
-    return () => { Object.values(pollRefs.current).forEach(clearInterval); };
+    activeRef.current = true;
+    return () => { activeRef.current = false; };
   }, []);
 
   const toggleMood = (m) => setMoods(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);
@@ -135,32 +137,30 @@ export default function UGCVideoStudio({ image, onClose }) {
     { label: `Scene ${prev.length + 1}`, duration: 5, visual: '', vo: '', imgSrc: 'model' },
   ]);
 
-  const pollScene = (jobId, i) => {
-    let polls = 0;
-    if (pollRefs.current[i]) clearInterval(pollRefs.current[i]);
-    pollRefs.current[i] = setInterval(async () => {
-      polls++;
-      if (polls > 200) {
-        clearInterval(pollRefs.current[i]);
-        setSceneErrors(prev => ({ ...prev, [i]: 'Timed out after 10 minutes. Try regenerating this scene.' }));
-        setSceneGenerating(prev => ({ ...prev, [i]: false }));
-        return;
-      }
+  // Awaitable poll — resolves when job completes, fails, or times out
+  const pollSceneAsync = async (jobId, i) => {
+    for (let polls = 0; polls <= 200; polls++) {
+      await new Promise(r => setTimeout(r, 3000));
+      if (!activeRef.current) return; // modal closed
       try {
         const job = await fetchJSON(`/api/video/status/${jobId}`);
         if (job.status === 'completed') {
-          clearInterval(pollRefs.current[i]);
           setSceneResults(prev => ({ ...prev, [i]: job.result }));
           setSceneGenerating(prev => ({ ...prev, [i]: false }));
-        } else if (job.status === 'failed') {
-          clearInterval(pollRefs.current[i]);
+          return;
+        }
+        if (job.status === 'failed') {
           setSceneErrors(prev => ({ ...prev, [i]: job.result?.error || 'Generation failed.' }));
           setSceneGenerating(prev => ({ ...prev, [i]: false }));
+          return;
         }
-      } catch {}
-    }, 3000);
+      } catch { /* transient network error — keep polling */ }
+    }
+    setSceneErrors(prev => ({ ...prev, [i]: 'Timed out after 10 minutes. Try regenerating this scene.' }));
+    setSceneGenerating(prev => ({ ...prev, [i]: false }));
   };
 
+  // Fire a single scene and await its completion (so generateAll can be truly sequential)
   const fireScene = async (scene, i) => {
     setSceneGenerating(prev => ({ ...prev, [i]: true }));
     setSceneErrors(prev => ({ ...prev, [i]: null }));
@@ -175,30 +175,32 @@ export default function UGCVideoStudio({ image, onClose }) {
         aspectRatio,
         sound: enableAudio,
       });
-      pollScene(jobId, i);
+      await pollSceneAsync(jobId, i);
     } catch (e) {
       setSceneErrors(prev => ({ ...prev, [i]: e.message || 'Failed to start.' }));
       setSceneGenerating(prev => ({ ...prev, [i]: false }));
     }
   };
 
+  // Truly sequential: scene 2 only starts after scene 1 fully completes.
+  // This ensures WaveSpeed only ever processes one job at a time — no queue buildup.
   const generateAll = async () => {
     setSceneResults({});
     setSceneErrors({});
-    Object.values(pollRefs.current).forEach(clearInterval);
-    pollRefs.current = {};
-    const genMap = {};
-    scenes.forEach((_, i) => { genMap[i] = true; });
-    setSceneGenerating(genMap);
+    setSceneLipsync({});
+    setSceneGenerating({});
+    setGeneratingAll(true);
     setStep(5);
     for (let i = 0; i < scenes.length; i++) {
-      if (i > 0) await new Promise(r => setTimeout(r, 15000));
-      fireScene(scenes[i], i);
+      if (!activeRef.current) break;
+      await fireScene(scenes[i], i);
     }
+    setGeneratingAll(false);
   };
 
   const regenerateScene = (i) => {
     setSceneResults(prev => { const n = { ...prev }; delete n[i]; return n; });
+    setSceneErrors(prev => { const n = { ...prev }; delete n[i]; return n; });
     setSceneLipsync(prev => { const n = { ...prev }; delete n[i]; return n; });
     fireScene(scenes[i], i);
   };
@@ -615,7 +617,7 @@ export default function UGCVideoStudio({ image, onClose }) {
                     ))}
                   </div>
                   <span className="text-xs font-medium" style={{ color: accent }}>
-                    Generating scenes one by one… ~2–7 min per clip
+                    Scenes generate one at a time — up to 7 min per clip. Please keep this tab open.
                   </span>
                 </div>
               )}
@@ -712,7 +714,15 @@ export default function UGCVideoStudio({ image, onClose }) {
                       </div>
                     </div>
 
-                    {/* Loading video */}
+                    {/* Queued — waiting for previous scene to finish */}
+                    {!isGen && !result && !err && generatingAll && (
+                      <div className="flex items-center justify-center gap-2 py-8"
+                        style={{ background: dark ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)' }}>
+                        <span className="text-xs" style={{ color: textSecondary }}>In queue — starts after previous scene completes</span>
+                      </div>
+                    )}
+
+                    {/* Generating */}
                     {isGen && !result && (
                       <div className="flex items-center justify-center gap-3 py-8"
                         style={{ background: dark ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)' }}>
@@ -722,7 +732,7 @@ export default function UGCVideoStudio({ image, onClose }) {
                               style={{ background: accent, animationDelay: `${delay}ms` }} />
                           ))}
                         </div>
-                        <span className="text-xs" style={{ color: textSecondary }}>Generating scene {i + 1}…</span>
+                        <span className="text-xs" style={{ color: textSecondary }}>Generating scene {i + 1}… up to 7 min</span>
                       </div>
                     )}
 
