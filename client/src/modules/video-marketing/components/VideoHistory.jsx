@@ -15,6 +15,19 @@ function timeAgo(dateStr) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
+const VOICES = [
+  { id: 'Calm_Woman', label: 'Calm Woman' },
+  { id: 'Calm_Man', label: 'Calm Man' },
+  { id: 'Friendly_Person', label: 'Friendly' },
+  { id: 'Lively_Girl', label: 'Lively Girl' },
+  { id: 'Deep_Voice_Man', label: 'Deep Man' },
+  { id: 'Inspirational_girl', label: 'Inspirational' },
+  { id: 'Casual_Guy', label: 'Casual Guy' },
+  { id: 'Determined_Man', label: 'Determined' },
+  { id: 'Wise_Woman', label: 'Wise Woman' },
+  { id: 'Sweet_Girl_2', label: 'Sweet Girl' },
+];
+
 function VideoCard({ job, dark, onDelete }) {
   const result = typeof job.result === 'string' ? (() => { try { return JSON.parse(job.result); } catch { return null; } })() : job.result;
   const localPath = result?.localPath;
@@ -24,6 +37,32 @@ function VideoCard({ job, dark, onDelete }) {
   const isCompleted = job.status === 'completed';
   const isFailed = job.status === 'failed';
   const [deleting, setDeleting] = useState(false);
+  const [showLipsync, setShowLipsync] = useState(false);
+  const [voText, setVoText] = useState('');
+  const [voiceId, setVoiceId] = useState('Calm_Woman');
+  const [lipsyncState, setLipsyncState] = useState(null); // null | 'loading' | { videoUrl, localPath } | { error }
+
+  const handleLipsync = async () => {
+    if (!voText.trim()) return;
+    setLipsyncState('loading');
+    try {
+      const res = await fetch(`${API_BASE}/api/video/lipsync`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ voText, voiceId, videoUrl: remoteUrl || null, localPath: localPath || null }),
+      });
+      const data = await res.json();
+      if (data.success) setLipsyncState({ videoUrl: data.videoUrl, localPath: data.localPath });
+      else setLipsyncState({ error: data.error || 'Lip-sync failed' });
+    } catch (e) {
+      setLipsyncState({ error: e.message });
+    }
+  };
+
+  const lipsyncSrc = lipsyncState && typeof lipsyncState === 'object' && !lipsyncState.error
+    ? (lipsyncState.localPath ? `${API_BASE}${lipsyncState.localPath}` : lipsyncState.videoUrl)
+    : null;
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -124,6 +163,21 @@ function VideoCard({ job, dark, onDelete }) {
               Download
             </button>
           )}
+          {isCompleted && videoSrc && (
+            <button
+              onClick={() => setShowLipsync(v => !v)}
+              className={`p-1.5 rounded-lg transition-all ${
+                showLipsync
+                  ? dark ? 'bg-violet-500/20 text-violet-300' : 'bg-[#C45D3E]/10 text-[#C45D3E]'
+                  : dark ? 'text-gray-600 hover:text-gray-300 hover:bg-white/[0.05]' : 'text-[#94908A] hover:text-[#332F2B] hover:bg-[#f0ebe4]'
+              }`}
+              title="Add lip-sync voiceover"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+              </svg>
+            </button>
+          )}
           <button
             onClick={handleDelete}
             disabled={deleting}
@@ -137,6 +191,61 @@ function VideoCard({ job, dark, onDelete }) {
             </svg>
           </button>
         </div>
+
+        {/* Lip-sync panel */}
+        {showLipsync && (
+          <div className={`mt-2 pt-2 border-t space-y-2 ${dark ? 'border-white/[0.06]' : 'border-[#e8e0d4]'}`}>
+            {lipsyncSrc ? (
+              <>
+                <p className={`text-[10px] font-semibold ${dark ? 'text-emerald-400' : 'text-emerald-600'}`}>Lip-synced ✓</p>
+                <video src={lipsyncSrc} className="w-full rounded-lg" controls preload="metadata" playsInline />
+                <a href={lipsyncSrc} download={`lipsync_${job.id}.mp4`}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                    dark ? 'bg-white/[0.05] hover:bg-white/[0.08] text-gray-300' : 'bg-[#f0ebe4] hover:bg-[#e8e0d4] text-[#332F2B]'
+                  }`}>
+                  Download lip-synced
+                </a>
+              </>
+            ) : lipsyncState === 'loading' ? (
+              <p className={`text-[10px] ${dark ? 'text-gray-500' : 'text-[#94908A]'}`}>Generating voiceover + syncing… ~2 min</p>
+            ) : (
+              <>
+                {lipsyncState?.error && (
+                  <p className="text-[10px] text-red-400">{lipsyncState.error}</p>
+                )}
+                <textarea
+                  value={voText}
+                  onChange={e => setVoText(e.target.value)}
+                  rows={2}
+                  placeholder="Type the voiceover text to lip-sync…"
+                  className={`w-full text-[11px] px-2.5 py-2 rounded-lg resize-none outline-none transition-all ${
+                    dark ? 'bg-white/[0.05] border border-white/[0.08] text-gray-200 placeholder-gray-600 focus:border-white/20' : 'bg-[#f0ebe4] border border-[#e8e0d4] text-[#332F2B] placeholder-[#94908A] focus:border-[#C45D3E]/30'
+                  }`}
+                />
+                <div className="grid grid-cols-2 gap-1">
+                  {VOICES.map(v => (
+                    <button key={v.id} type="button" onClick={() => setVoiceId(v.id)}
+                      className={`px-2 py-1 rounded text-[10px] font-medium text-left transition-all ${
+                        voiceId === v.id
+                          ? dark ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30' : 'bg-[#C45D3E]/10 text-[#C45D3E] border border-[#C45D3E]/20'
+                          : dark ? 'text-gray-500 border border-white/[0.06]' : 'text-[#94908A] border border-[#e8e0d4]'
+                      }`}>
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={handleLipsync} disabled={!voText.trim()}
+                  className={`w-full py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
+                    voText.trim()
+                      ? dark ? 'bg-violet-500/20 text-violet-300 hover:bg-violet-500/30' : 'bg-[#C45D3E] text-white hover:bg-[#b54e33]'
+                      : 'opacity-40 cursor-not-allowed ' + (dark ? 'bg-white/[0.05] text-gray-500' : 'bg-[#f0ebe4] text-[#94908A]')
+                  }`}>
+                  Lip-Sync VO
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
