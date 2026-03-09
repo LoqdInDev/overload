@@ -102,6 +102,8 @@ export default function UGCVideoStudio({ image, onClose }) {
   const [sceneResults, setSceneResults] = useState({});
   const [sceneErrors, setSceneErrors] = useState({});
   const pollRefs = useRef({});
+  // Per-scene lip-sync state: { [i]: { status: 'loading'|'done'|'error', result, error } }
+  const [sceneLipsync, setSceneLipsync] = useState({});
 
   useEffect(() => {
     return () => { Object.values(pollRefs.current).forEach(clearInterval); };
@@ -197,7 +199,28 @@ export default function UGCVideoStudio({ image, onClose }) {
 
   const regenerateScene = (i) => {
     setSceneResults(prev => { const n = { ...prev }; delete n[i]; return n; });
+    setSceneLipsync(prev => { const n = { ...prev }; delete n[i]; return n; });
     fireScene(scenes[i], i);
+  };
+
+  const handleLipsync = async (i) => {
+    const videoResult = sceneResults[i];
+    const scene = scenes[i];
+    setSceneLipsync(prev => ({ ...prev, [i]: { status: 'loading', result: null, error: null } }));
+    try {
+      const res = await postJSON('/api/video/lipsync', {
+        voText: scene.vo,
+        videoUrl: videoResult.videoUrl || null,
+        localPath: videoResult.localPath || null,
+      });
+      if (res.success) {
+        setSceneLipsync(prev => ({ ...prev, [i]: { status: 'done', result: res, error: null } }));
+      } else {
+        setSceneLipsync(prev => ({ ...prev, [i]: { status: 'error', result: null, error: res.error || 'Lip-sync failed' } }));
+      }
+    } catch (e) {
+      setSceneLipsync(prev => ({ ...prev, [i]: { status: 'error', result: null, error: e.message } }));
+    }
   };
 
   // Theme tokens
@@ -621,10 +644,13 @@ export default function UGCVideoStudio({ image, onClose }) {
                 const result = sceneResults[i];
                 const err = sceneErrors[i];
                 const isGen = sceneGenerating[i];
+                const ls = sceneLipsync[i];
+                // Show lip-synced video when done, otherwise original
+                const displayResult = ls?.status === 'done' ? ls.result : result;
 
                 return (
                   <div key={i} className="rounded-xl overflow-hidden transition-all duration-300"
-                    style={{ border: `1px solid ${result ? accentBorder : border}` }}>
+                    style={{ border: `1px solid ${ls?.status === 'done' ? accentBorder : result ? accentBorder : border}` }}>
                     {/* Scene header bar */}
                     <div className="flex items-center justify-between px-4 py-2.5"
                       style={{
@@ -641,14 +667,31 @@ export default function UGCVideoStudio({ image, onClose }) {
                         </div>
                         <span className="text-xs font-semibold" style={{ color: textPrimary }}>{scene.label}</span>
                         <span className="text-[10px]" style={{ color: textSecondary }}>{scene.duration}s · {aspectRatio}</span>
+                        {ls?.status === 'done' && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
+                            style={{ background: accentBg, color: accent }}>Lip-synced</span>
+                        )}
                       </div>
                       <div className="flex items-center gap-1.5">
-                        {result && (
+                        {/* Lip-sync button — only show if scene has VO, video done, not audio-enabled, no lipsync yet */}
+                        {result && scene.vo && !enableAudio && !ls && (
+                          <button type="button"
+                            onClick={() => handleLipsync(i)}
+                            className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-all"
+                            style={{ background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', border: `1px solid ${border}`, color: textSecondary }}>
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                            </svg>
+                            Lip-Sync VO
+                          </button>
+                        )}
+                        {/* Download — shows lipsync version if available */}
+                        {displayResult && (displayResult.localPath || displayResult.videoUrl) && (
                           <a
-                            href={result.localPath ? `${API_BASE}${result.localPath}` : result.videoUrl}
-                            target={result.localPath ? undefined : '_blank'}
-                            rel={result.localPath ? undefined : 'noreferrer'}
-                            download={result.localPath ? `scene_${String(i + 1).padStart(2, '0')}.mp4` : undefined}
+                            href={displayResult.localPath ? `${API_BASE}${displayResult.localPath}` : displayResult.videoUrl}
+                            target={displayResult.localPath ? undefined : '_blank'}
+                            rel={displayResult.localPath ? undefined : 'noreferrer'}
+                            download={displayResult.localPath ? `scene_${String(i + 1).padStart(2, '0')}${ls?.status === 'done' ? '_lipsync' : ''}.mp4` : undefined}
                             className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-all"
                             style={{ background: accentBg, border: `1px solid ${accentBorder}`, color: accent }}>
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -669,7 +712,7 @@ export default function UGCVideoStudio({ image, onClose }) {
                       </div>
                     </div>
 
-                    {/* Loading */}
+                    {/* Loading video */}
                     {isGen && !result && (
                       <div className="flex items-center justify-center gap-3 py-8"
                         style={{ background: dark ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)' }}>
@@ -683,7 +726,44 @@ export default function UGCVideoStudio({ image, onClose }) {
                       </div>
                     )}
 
-                    {/* Error */}
+                    {/* Lip-sync loading */}
+                    {ls?.status === 'loading' && (
+                      <div className="flex items-center gap-3 px-4 py-3 text-xs"
+                        style={{ background: dark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', borderTop: `1px solid ${border}` }}>
+                        <div className="flex gap-1">
+                          {[0, 150, 300].map(d => (
+                            <div key={d} className="w-1.5 h-1.5 rounded-full animate-bounce"
+                              style={{ background: accent, animationDelay: `${d}ms` }} />
+                          ))}
+                        </div>
+                        <span style={{ color: textSecondary }}>Generating voiceover + syncing lips… ~2 min</span>
+                      </div>
+                    )}
+
+                    {/* Lip-sync error */}
+                    {ls?.status === 'error' && (
+                      <div className="flex items-center justify-between px-4 py-2.5 text-xs gap-2"
+                        style={{ background: 'rgba(239,68,68,0.06)', borderTop: `1px solid ${border}` }}>
+                        <span style={{ color: '#f87171' }}>{ls.error}</span>
+                        <button type="button" onClick={() => handleLipsync(i)}
+                          className="text-[10px] font-medium px-2 py-1 rounded flex-shrink-0"
+                          style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171' }}>
+                          Retry
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Video — lip-synced if available, else original */}
+                    {displayResult && (displayResult.localPath || displayResult.videoUrl) && (
+                      <video
+                        src={displayResult.localPath ? `${API_BASE}${displayResult.localPath}` : displayResult.videoUrl}
+                        controls
+                        className="w-full bg-black"
+                        style={{ maxHeight: 220 }}
+                      />
+                    )}
+
+                    {/* Generation error */}
                     {err && !isGen && (
                       <div className="flex items-center gap-2 px-4 py-3 text-xs"
                         style={{ background: 'rgba(239,68,68,0.06)', color: '#f87171' }}>
@@ -692,16 +772,6 @@ export default function UGCVideoStudio({ image, onClose }) {
                         </svg>
                         {err}
                       </div>
-                    )}
-
-                    {/* Video */}
-                    {result && (result.localPath || result.videoUrl) && (
-                      <video
-                        src={result.localPath ? `${API_BASE}${result.localPath}` : result.videoUrl}
-                        controls
-                        className="w-full bg-black"
-                        style={{ maxHeight: 220 }}
-                      />
                     )}
                   </div>
                 );

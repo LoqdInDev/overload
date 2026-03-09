@@ -302,6 +302,59 @@ Only return the JSON.`);
   }
 });
 
+// POST /lipsync — generate TTS from voiceover text, then lip-sync it onto an existing video clip
+router.post('/lipsync', async (req, res) => {
+  const { voText, videoUrl, localPath } = req.body;
+  if (!voText) return res.status(400).json({ success: false, error: 'voText is required' });
+
+  // WaveSpeed needs a public HTTPS URL for the source video.
+  // Prefer the CDN URL (videoUrl) — it's already public.
+  // Fall back to building a URL from localPath using our server's public address.
+  let publicVideoUrl = videoUrl || null;
+  if (!publicVideoUrl && localPath) {
+    const proto = req.headers['x-forwarded-proto'] || req.protocol;
+    const host = req.headers['x-forwarded-host'] || req.get('host');
+    publicVideoUrl = `${proto}://${host}${localPath}`;
+  }
+  if (!publicVideoUrl) {
+    return res.status(400).json({ success: false, error: 'No accessible video URL — try regenerating the scene first' });
+  }
+
+  try {
+    const ttsService = require('../services/tts');
+    const lipsyncService = require('../services/lipsync');
+
+    // Step 1: text → audio
+    const audioUrl = await ttsService.generateSpeech(voText);
+
+    // Step 2: video + audio → lip-synced video
+    const result = await lipsyncService.syncLips(publicVideoUrl, audioUrl);
+    if (!result.success) return res.json(result);
+
+    // Step 3: download lip-synced video to local storage
+    const filename = `lipsync_${Date.now()}.mp4`;
+    const filepath = path.join(videosDir, filename);
+    try {
+      const dl = await fetch(result.videoUrl);
+      if (dl.ok) {
+        const buf = Buffer.from(await dl.arrayBuffer());
+        if (buf.length > 0) {
+          fs.writeFileSync(filepath, buf);
+          result.localPath = `/videos/${filename}`;
+          result.filename = filename;
+        }
+      }
+    } catch (dlErr) {
+      console.error('[LipSync] download failed, using remote URL:', dlErr.message);
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error('[LipSync route]', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // GET /test-wavespeed — fires a minimal text-to-video job and returns the raw WaveSpeed response
 // Use this to diagnose connectivity/auth issues without waiting for polling
 router.get('/test-wavespeed', async (req, res) => {
