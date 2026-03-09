@@ -182,6 +182,13 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Admin cleanup endpoint — POST /api/admin/cleanup-storage
+app.post('/api/admin/cleanup-storage', requireAuth, (req, res) => {
+  const maxAgeDays = req.query.days !== undefined ? parseInt(req.query.days) : 7;
+  const result = cleanupOldMedia(maxAgeDays);
+  res.json({ ok: true, ...result, freedMB: (result.freed / 1024 / 1024).toFixed(1) });
+});
+
 // Catch-all 404 for unmatched /api/* routes
 app.all('/api/*', (req, res) => {
   res.status(404).json({ error: 'Not found', code: 'NOT_FOUND' });
@@ -272,13 +279,6 @@ function cleanupOldMedia(maxAgeDays = 7) {
   }
   return { deleted, freed };
 }
-
-// Admin cleanup endpoint — POST /api/admin/cleanup-storage
-app.post('/api/admin/cleanup-storage', requireAuth, (req, res) => {
-  const maxAgeDays = req.query.days !== undefined ? parseInt(req.query.days) : 7;
-  const result = cleanupOldMedia(maxAgeDays);
-  res.json({ ok: true, ...result, freedMB: (result.freed / 1024 / 1024).toFixed(1) });
-});
 
 // Run cleanup on startup and daily
 cleanupOldMedia(7);
