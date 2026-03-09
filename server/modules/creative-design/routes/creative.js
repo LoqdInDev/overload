@@ -1,4 +1,6 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const { v4: uuid } = require('uuid');
 const { generateWithClaude, generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
@@ -6,6 +8,8 @@ const { generateImages, generateImage, generateImageFromReference, dimensionToAs
 const { db, logActivity } = require('../../../db/database');
 const { getQueries } = require('../db/queries');
 const { buildImagePromptOptimizer } = require('../prompts/imagePrompt');
+
+const dataDir = process.env.DB_PATH ? path.dirname(process.env.DB_PATH) : path.join(__dirname, '..', '..', '..', '..');
 
 const router = express.Router();
 
@@ -134,10 +138,20 @@ router.get('/projects/:id', (req, res) => {
   res.json({ ...project, images });
 });
 
-// Delete project
+// Delete project — also removes image files from disk to free storage
 router.delete('/projects/:id', (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
+
+  // Delete files from disk before removing DB records
+  const images = q.getImagesByProject(req.params.id);
+  for (const img of images) {
+    if (img.url && img.url.startsWith('/uploads/creatives/')) {
+      const filepath = path.join(dataDir, img.url);
+      try { if (fs.existsSync(filepath)) fs.unlinkSync(filepath); } catch { /* ignore */ }
+    }
+  }
+
   q.deleteProject(req.params.id);
   logActivity('creative', 'delete', 'Deleted creative project', null, req.params.id, wsId);
   res.json({ success: true });
