@@ -651,51 +651,44 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
                   <label className="text-[10px] font-semibold tracking-wide" style={{ color: textSecondary }}>
                     VISUAL DIRECTION
                   </label>
-                  <button type="button" onClick={() => toggleManualMode(i)}
-                    className="text-[10px] font-medium transition-colors"
-                    style={{ color: scene.manualMode ? accent : textSecondary }}>
-                    {scene.manualMode ? '← Use Builder' : 'Edit manually →'}
-                  </button>
+                  {scene.manualMode && (
+                    <button type="button" onClick={() => toggleManualMode(i)}
+                      className="text-[10px] font-medium transition-colors"
+                      style={{ color: textSecondary }}>
+                      ↺ Reset from builder
+                    </button>
+                  )}
                 </div>
 
-                {/* Builder chips — shown when not in manual mode */}
-                {!scene.manualMode && (
-                  <div className="space-y-2.5 pb-1">
-                    {Object.entries(BUILDER_OPTIONS).map(([key, options]) => (
-                      <ChipRow
-                        key={key}
-                        label={BUILDER_LABELS[key]}
-                        options={options}
-                        value={scene.builder[key]}
-                        onSelect={(val) => updateBuilder(i, key, val)}
-                        accent={accent}
-                        accentBg={accentBg}
-                        accentBorder={accentBorder}
-                        border={border}
-                        textSecondary={textSecondary}
-                        dark={dark}
-                      />
-                    ))}
-                    {/* Preview of composed visual */}
-                    {scene.visual && (
-                      <p className="text-[10px] leading-relaxed pt-0.5 italic"
-                        style={{ color: textSecondary, opacity: 0.7 }}>
-                        {scene.visual.length > 120 ? scene.visual.slice(0, 120) + '…' : scene.visual}
-                      </p>
-                    )}
-                  </div>
-                )}
+                {/* Builder chips — always visible */}
+                <div className="space-y-2.5 pb-2">
+                  {Object.entries(BUILDER_OPTIONS).map(([key, options]) => (
+                    <ChipRow
+                      key={key}
+                      label={BUILDER_LABELS[key]}
+                      options={options}
+                      value={scene.builder[key]}
+                      onSelect={(val) => updateBuilder(i, key, val)}
+                      accent={accent}
+                      accentBg={accentBg}
+                      accentBorder={accentBorder}
+                      border={border}
+                      textSecondary={textSecondary}
+                      dark={dark}
+                    />
+                  ))}
+                </div>
 
-                {/* Manual textarea — shown in manual mode */}
-                {scene.manualMode && (
-                  <textarea
-                    value={scene.visual}
-                    onChange={e => updateScene(i, 'visual', e.target.value)}
-                    rows={3}
-                    placeholder="Describe what the camera sees and what's happening…"
-                    className={inputCls + ' resize-none text-xs'}
-                  />
-                )}
+                {/* Visual prompt textarea — always visible, editable */}
+                <textarea
+                  value={scene.visual}
+                  onChange={e => setScenes(prev => prev.map((s, idx) =>
+                    idx === i ? { ...s, visual: e.target.value, manualMode: true } : s
+                  ))}
+                  rows={3}
+                  placeholder="Describe what the camera sees and what's happening…"
+                  className={inputCls + ' resize-none text-xs'}
+                />
 
                 {/* Voiceover */}
                 <div>
