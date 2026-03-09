@@ -128,7 +128,7 @@ function emptyBuilder() {
 }
 
 function sceneFromArchetype(s) {
-  return { ...s, archBase: s.visual, builder: emptyBuilder(), manualMode: false, imgSrc: 'model' };
+  return { ...s, archBase: s.visual, builder: emptyBuilder(), manualMode: false, imgSrc: 'model', enableAudio: false };
 }
 
 function buildScenePrompt(scene, productName, moods, withAudio = false) {
@@ -182,7 +182,6 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
   // Step 4
   const [aspectRatio, setAspectRatio] = useState('9:16');
   const [moods, setMoods] = useState([]);
-  const [enableAudio, setEnableAudio] = useState(false);
   const [voiceId, setVoiceId] = useState('Calm_Woman');
   // Step 5 — per-scene generation state
   const [sceneGenerating, setSceneGenerating] = useState({});
@@ -208,7 +207,6 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
     setScenes([]);
     setAspectRatio('9:16');
     setMoods([]);
-    setEnableAudio(false);
     setVoiceId('Calm_Woman');
     setSceneResults({});
     setSceneErrors({});
@@ -267,7 +265,7 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
 
   const addScene = () => setScenes(prev => [
     ...prev,
-    { label: `Scene ${prev.length + 1}`, duration: 5, visual: '', vo: '', imgSrc: 'model', archBase: '', builder: emptyBuilder(), manualMode: false },
+    { label: `Scene ${prev.length + 1}`, duration: 5, visual: '', vo: '', imgSrc: 'model', archBase: '', builder: emptyBuilder(), manualMode: false, enableAudio: false },
   ]);
 
   const pollSceneAsync = async (jobId, i) => {
@@ -300,11 +298,11 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
         ? productPhoto
         : (activeImage?.url || null);
       const { jobId } = await postJSON('/api/video/generate-quick', {
-        hookText: buildScenePrompt(scene, productName, moods, enableAudio),
+        hookText: buildScenePrompt(scene, productName, moods, scene.enableAudio),
         productImageUrl: sceneImage,
         duration: scene.duration,
         aspectRatio,
-        sound: enableAudio,
+        sound: scene.enableAudio,
       });
       await pollSceneAsync(jobId, i);
     } catch (e) {
@@ -634,6 +632,27 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
                       </button>
                     ))}
                   </div>
+                  <button type="button"
+                    onClick={() => updateScene(i, 'enableAudio', !scene.enableAudio)}
+                    title={scene.enableAudio ? 'Audio ON (Kling v2.6) — click to make silent' : 'Silent — click to enable native audio'}
+                    className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold transition-all"
+                    style={{
+                      background: scene.enableAudio ? accentBg : 'transparent',
+                      border: `1px solid ${scene.enableAudio ? accentBorder : border}`,
+                      color: scene.enableAudio ? accent : textSecondary,
+                    }}>
+                    {scene.enableAudio ? (
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072M19.07 4.93a10 10 0 010 14.14" />
+                      </svg>
+                    ) : (
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707A1 1 0 0112 5v14a1 1 0 01-1.707.707L5.586 15z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                      </svg>
+                    )}
+                    {scene.enableAudio ? 'Audio' : 'Silent'}
+                  </button>
                   {scenes.length > 1 && (
                     <button type="button" onClick={() => removeScene(i)}
                       className="w-5 h-5 rounded-full flex items-center justify-center"
@@ -768,63 +787,40 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
             </div>
           </div>
 
-          {/* Audio toggle */}
-          <div className="rounded-xl p-4 flex items-start justify-between gap-4"
-            style={{ background: card, border: `1px solid ${enableAudio ? accentBorder : border}` }}>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold" style={{ color: textPrimary }}>
-                Generate with Audio
-                <span className="ml-2 text-[10px] font-medium px-1.5 py-0.5 rounded" style={{ background: accentBg, color: accent }}>
-                  Kling v2.6
-                </span>
-              </p>
-              <p className="text-xs mt-1" style={{ color: textSecondary }}>
-                AI generates synchronized sound effects, ambient audio, and speech from your voiceover lines. Doubles generation cost (~$0.70/clip).
+          {/* Voice picker — for lip-sync on silent scenes */}
+          <div className="rounded-xl p-4 space-y-2.5" style={{ background: card, border: `1px solid ${border}` }}>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: textPrimary }}>Lip-Sync Voice</p>
+              <p className="text-xs mt-0.5" style={{ color: textSecondary }}>
+                Used for Lip-Sync VO on silent scenes. Toggle audio per-scene in Step 3.
               </p>
             </div>
-            <button type="button"
-              onClick={() => setEnableAudio(v => !v)}
-              className="flex-shrink-0 w-11 h-6 rounded-full transition-all duration-200 relative"
-              style={{ background: enableAudio ? accent : (dark ? 'rgba(255,255,255,0.12)' : '#d1ccc6') }}>
-              <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-200"
-                style={{ left: enableAudio ? '22px' : '2px' }} />
-            </button>
+            <div className="grid grid-cols-2 gap-1.5">
+              {[
+                { id: 'Calm_Woman', label: 'Calm Woman' },
+                { id: 'Calm_Man', label: 'Calm Man' },
+                { id: 'Friendly_Person', label: 'Friendly' },
+                { id: 'Lively_Girl', label: 'Lively Girl' },
+                { id: 'Deep_Voice_Man', label: 'Deep Man' },
+                { id: 'Inspirational_girl', label: 'Inspirational' },
+                { id: 'Casual_Guy', label: 'Casual Guy' },
+                { id: 'Determined_Man', label: 'Determined' },
+                { id: 'Wise_Woman', label: 'Wise Woman' },
+                { id: 'Sweet_Girl_2', label: 'Sweet Girl' },
+              ].map(v => (
+                <button key={v.id} type="button"
+                  onClick={() => setVoiceId(v.id)}
+                  className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-left transition-all"
+                  style={{
+                    background: voiceId === v.id ? accentBg : 'transparent',
+                    border: `1px solid ${voiceId === v.id ? accentBorder : border}`,
+                    color: voiceId === v.id ? accent : textSecondary,
+                  }}>
+                  {v.label}
+                </button>
+              ))}
+            </div>
           </div>
-
-          {/* Voice picker — for lip-sync */}
-          {!enableAudio && (
-            <div className="rounded-xl p-4 space-y-2.5" style={{ background: card, border: `1px solid ${border}` }}>
-              <div>
-                <p className="text-sm font-semibold" style={{ color: textPrimary }}>Lip-Sync Voice</p>
-                <p className="text-xs mt-0.5" style={{ color: textSecondary }}>Applied to all scenes when you click Lip-Sync VO after generating.</p>
-              </div>
-              <div className="grid grid-cols-2 gap-1.5">
-                {[
-                  { id: 'Calm_Woman', label: 'Calm Woman' },
-                  { id: 'Calm_Man', label: 'Calm Man' },
-                  { id: 'Friendly_Person', label: 'Friendly' },
-                  { id: 'Lively_Girl', label: 'Lively Girl' },
-                  { id: 'Deep_Voice_Man', label: 'Deep Man' },
-                  { id: 'Inspirational_girl', label: 'Inspirational' },
-                  { id: 'Casual_Guy', label: 'Casual Guy' },
-                  { id: 'Determined_Man', label: 'Determined' },
-                  { id: 'Wise_Woman', label: 'Wise Woman' },
-                  { id: 'Sweet_Girl_2', label: 'Sweet Girl' },
-                ].map(v => (
-                  <button key={v.id} type="button"
-                    onClick={() => setVoiceId(v.id)}
-                    className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-left transition-all"
-                    style={{
-                      background: voiceId === v.id ? accentBg : 'transparent',
-                      border: `1px solid ${voiceId === v.id ? accentBorder : border}`,
-                      color: voiceId === v.id ? accent : textSecondary,
-                    }}>
-                    {v.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Package summary */}
           <div className="rounded-xl p-4 space-y-2.5"
@@ -838,7 +834,7 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
                     {i + 1}
                   </div>
                   <span className="text-xs font-medium flex-1" style={{ color: textPrimary }}>{s.label}</span>
-                  <span className="text-[10px]" style={{ color: textSecondary }}>{s.duration}s · {aspectRatio}</span>
+                  <span className="text-[10px]" style={{ color: textSecondary }}>{s.duration}s · {aspectRatio}{s.enableAudio ? ' · 🔊' : ''}</span>
                 </div>
               ))}
             </div>
@@ -864,13 +860,15 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
             </div>
           )}
 
-          {enableAudio ? (
+          {scenes.some(s => s.enableAudio) ? (
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
               style={{ background: accentBg, border: `1px solid ${accentBorder}`, color: accent }}>
               <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072M19.07 4.93a10 10 0 010 14.14" />
               </svg>
-              Audio enabled — Kling v2.6 will generate synchronized sound and speech.
+              {scenes.every(s => s.enableAudio)
+                ? 'All scenes generating with native audio (Kling v2.6).'
+                : `${scenes.filter(s => s.enableAudio).length} scene(s) generating with audio — others are silent.`}
             </div>
           ) : (
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
@@ -908,13 +906,17 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
                     </div>
                     <span className="text-xs font-semibold" style={{ color: textPrimary }}>{scene.label}</span>
                     <span className="text-[10px]" style={{ color: textSecondary }}>{scene.duration}s · {aspectRatio}</span>
+                    {scene.enableAudio && (
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
+                        style={{ background: accentBg, color: accent }}>🔊 Audio</span>
+                    )}
                     {ls?.status === 'done' && (
                       <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
                         style={{ background: accentBg, color: accent }}>Lip-synced</span>
                     )}
                   </div>
                   <div className="flex items-center gap-1.5">
-                    {result && scene.vo && !enableAudio && !ls && (
+                    {result && scene.vo && !scene.enableAudio && !ls && (
                       <button type="button"
                         onClick={() => handleLipsync(i)}
                         className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-all"
