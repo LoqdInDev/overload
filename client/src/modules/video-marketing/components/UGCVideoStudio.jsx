@@ -140,9 +140,9 @@ export default function UGCVideoStudio({ image, onClose }) {
     if (pollRefs.current[i]) clearInterval(pollRefs.current[i]);
     pollRefs.current[i] = setInterval(async () => {
       polls++;
-      if (polls > 80) {
+      if (polls > 200) {
         clearInterval(pollRefs.current[i]);
-        setSceneErrors(prev => ({ ...prev, [i]: 'Timed out. Try regenerating this scene.' }));
+        setSceneErrors(prev => ({ ...prev, [i]: 'Timed out after 10 minutes. Try regenerating this scene.' }));
         setSceneGenerating(prev => ({ ...prev, [i]: false }));
         return;
       }
@@ -192,7 +192,7 @@ export default function UGCVideoStudio({ image, onClose }) {
     setSceneGenerating(genMap);
     setStep(5);
     for (let i = 0; i < scenes.length; i++) {
-      if (i > 0) await new Promise(r => setTimeout(r, 3000));
+      if (i > 0) await new Promise(r => setTimeout(r, 15000));
       fireScene(scenes[i], i);
     }
   };
@@ -615,7 +615,7 @@ export default function UGCVideoStudio({ image, onClose }) {
                     ))}
                   </div>
                   <span className="text-xs font-medium" style={{ color: accent }}>
-                    Generating scenes one by one… ~60–90s per clip
+                    Generating scenes one by one… ~2–7 min per clip
                   </span>
                 </div>
               )}

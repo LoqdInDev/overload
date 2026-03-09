@@ -99,7 +99,7 @@ class WaveSpeedService {
     }
   }
 
-  async pollForResult(taskId, maxAttempts = 48, interval = 5000) {
+  async pollForResult(taskId, maxAttempts = 108, interval = 5000) {
     for (let i = 0; i < maxAttempts; i++) {
       await new Promise((r) => setTimeout(r, interval));
 
@@ -128,7 +128,7 @@ class WaveSpeedService {
       }
     }
 
-    return { success: false, error: 'Generation timed out after 4 minutes. Try again.' };
+    return { success: false, error: 'Generation timed out after 9 minutes. Try again.' };
   }
 }
 
