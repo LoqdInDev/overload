@@ -29,12 +29,7 @@ async function initDatabase() {
   `);
 
   // Migration: add recurrence column if missing
-  try {
-    const cols = db.prepare("PRAGMA table_info(mc_events)").all();
-    if (!cols.find(c => c.name === 'recurrence')) {
-      await db.exec("ALTER TABLE mc_events ADD COLUMN recurrence TEXT DEFAULT NULL");
-    }
-  } catch (e) { /* table may not exist yet */ }
+  await db.exec("ALTER TABLE mc_events ADD COLUMN IF NOT EXISTS recurrence TEXT DEFAULT NULL");
 }
 
 module.exports = { initDatabase };

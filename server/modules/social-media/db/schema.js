@@ -58,18 +58,16 @@ async function initDatabase() {
   `);
 
   // Add missing columns if upgrading from old schema
-  const cols = db.prepare("PRAGMA table_info(sm_posts)").all().map(c => c.name);
-  if (!cols.includes('post_type')) await db.exec("ALTER TABLE sm_posts ADD COLUMN post_type TEXT DEFAULT 'feed'");
-  if (!cols.includes('caption')) await db.exec("ALTER TABLE sm_posts ADD COLUMN caption TEXT");
-  if (!cols.includes('media_notes')) await db.exec("ALTER TABLE sm_posts ADD COLUMN media_notes TEXT");
-  if (!cols.includes('best_time')) await db.exec("ALTER TABLE sm_posts ADD COLUMN best_time TEXT");
-  if (!cols.includes('external_post_id')) await db.exec("ALTER TABLE sm_posts ADD COLUMN external_post_id TEXT");
+  await db.exec("ALTER TABLE sm_posts ADD COLUMN IF NOT EXISTS post_type TEXT DEFAULT 'feed'");
+  await db.exec("ALTER TABLE sm_posts ADD COLUMN IF NOT EXISTS caption TEXT");
+  await db.exec("ALTER TABLE sm_posts ADD COLUMN IF NOT EXISTS media_notes TEXT");
+  await db.exec("ALTER TABLE sm_posts ADD COLUMN IF NOT EXISTS best_time TEXT");
+  await db.exec("ALTER TABLE sm_posts ADD COLUMN IF NOT EXISTS external_post_id TEXT");
 
-  const acctCols = db.prepare("PRAGMA table_info(sm_accounts)").all().map(c => c.name);
-  if (!acctCols.includes('provider_id')) await db.exec("ALTER TABLE sm_accounts ADD COLUMN provider_id TEXT");
-  if (!acctCols.includes('avatar_url')) await db.exec("ALTER TABLE sm_accounts ADD COLUMN avatar_url TEXT");
-  if (!acctCols.includes('followers')) await db.exec("ALTER TABLE sm_accounts ADD COLUMN followers INTEGER DEFAULT 0");
-  if (!acctCols.includes('account_id')) await db.exec("ALTER TABLE sm_accounts ADD COLUMN account_id TEXT");
+  await db.exec("ALTER TABLE sm_accounts ADD COLUMN IF NOT EXISTS provider_id TEXT");
+  await db.exec("ALTER TABLE sm_accounts ADD COLUMN IF NOT EXISTS avatar_url TEXT");
+  await db.exec("ALTER TABLE sm_accounts ADD COLUMN IF NOT EXISTS followers INTEGER DEFAULT 0");
+  await db.exec("ALTER TABLE sm_accounts ADD COLUMN IF NOT EXISTS account_id TEXT");
 }
 
 module.exports = { initDatabase };

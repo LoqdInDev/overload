@@ -60,71 +60,25 @@ async function initDatabase() {
     );
   `);
 
-  // Migration: add status column to crm_contacts if missing
-  try {
-    const contactCols = db.prepare('PRAGMA table_info(crm_contacts)').all();
-    if (!contactCols.find(c => c.name === 'status')) {
-      await db.exec("ALTER TABLE crm_contacts ADD COLUMN status TEXT DEFAULT 'lead'");
-    }
-  } catch (e) { /* column may already exist */ }
+  // Migrations: add columns if they don't already exist
+  await db.exec("ALTER TABLE crm_contacts ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'lead'");
+  await db.exec("ALTER TABLE crm_contacts ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL");
+  await db.exec("ALTER TABLE crm_contacts ADD COLUMN IF NOT EXISTS score INTEGER DEFAULT 0");
+  await db.exec("ALTER TABLE crm_contacts ADD COLUMN IF NOT EXISTS segment TEXT DEFAULT NULL");
 
-  // Migration: add deleted_at column to crm_contacts if missing
-  try {
-    const contactCols = db.prepare('PRAGMA table_info(crm_contacts)').all();
-    if (!contactCols.find(c => c.name === 'deleted_at')) {
-      await db.exec('ALTER TABLE crm_contacts ADD COLUMN deleted_at TEXT DEFAULT NULL');
-    }
-  } catch (e) { /* column may already exist */ }
-
-  // Migration: add deleted_at column to crm_deals if missing
-  try {
-    const dealCols = db.prepare('PRAGMA table_info(crm_deals)').all();
-    if (!dealCols.find(c => c.name === 'deleted_at')) {
-      await db.exec('ALTER TABLE crm_deals ADD COLUMN deleted_at TEXT DEFAULT NULL');
-    }
-  } catch (e) { /* column may already exist */ }
+  await db.exec("ALTER TABLE crm_deals ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL");
+  await db.exec("ALTER TABLE crm_deals ADD COLUMN IF NOT EXISTS pipeline TEXT DEFAULT 'default'");
 
   // Migration: rename title to name in crm_deals if title exists but name does not
   try {
-    const dealCols = db.prepare('PRAGMA table_info(crm_deals)').all();
-    const hasTitle = dealCols.find(c => c.name === 'title');
-    const hasName = dealCols.find(c => c.name === 'name');
+    const hasTitle = await db.prepare("SELECT column_name FROM information_schema.columns WHERE table_name = $1 AND column_name = $2").get('crm_deals', 'title');
+    const hasName = await db.prepare("SELECT column_name FROM information_schema.columns WHERE table_name = $1 AND column_name = $2").get('crm_deals', 'name');
     if (hasTitle && !hasName) {
       await db.exec('ALTER TABLE crm_deals RENAME COLUMN title TO name');
     }
-  } catch (e) { /* column rename may not be supported or already done */ }
+  } catch (e) { /* column rename may already be done */ }
 
-  // Migration: add pipeline column to crm_deals if missing
-  try {
-    const dealCols = db.prepare('PRAGMA table_info(crm_deals)').all();
-    if (!dealCols.find(c => c.name === 'pipeline')) {
-      await db.exec("ALTER TABLE crm_deals ADD COLUMN pipeline TEXT DEFAULT 'default'");
-    }
-  } catch (e) { /* column may already exist */ }
-
-  // Migration: add score column to crm_contacts if missing
-  try {
-    const contactCols = db.prepare('PRAGMA table_info(crm_contacts)').all();
-    if (!contactCols.find(c => c.name === 'score')) {
-      await db.exec('ALTER TABLE crm_contacts ADD COLUMN score INTEGER DEFAULT 0');
-    }
-  } catch (e) { /* column may already exist */ }
-
-  // Migration: add segment column to crm_contacts if missing
-  try {
-    const contactCols = db.prepare('PRAGMA table_info(crm_contacts)').all();
-    if (!contactCols.find(c => c.name === 'segment')) {
-      await db.exec('ALTER TABLE crm_contacts ADD COLUMN segment TEXT DEFAULT NULL');
-    }
-  } catch (e) { /* column may already exist */ }
-
-  // Migration: add title column to crm_activities if missing
-  try {
-    const activityCols = db.prepare('PRAGMA table_info(crm_activities)').all();
-    if (!activityCols.find(c => c.name === 'title')) {
-      await db.exec('ALTER TABLE crm_activities ADD COLUMN title TEXT DEFAULT NULL');
-    }
-  } catch (e) { /* column may already exist */ }
+  await db.exec("ALTER TABLE crm_activities ADD COLUMN IF NOT EXISTS title TEXT DEFAULT NULL");
 }
 
 module.exports = { initDatabase };
