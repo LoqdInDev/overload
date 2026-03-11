@@ -18,6 +18,47 @@ const { sendWelcome, sendVerification, sendPasswordReset } = require('../service
 
 const router = express.Router();
 
+// ── Account lockout (per-email, in-memory) ──────────────────────────
+const LOCKOUT_MAX = 5;
+const LOCKOUT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const failedLogins = new Map(); // email -> { count, firstFailAt }
+
+function checkLockout(email) {
+  const entry = failedLogins.get(email);
+  if (!entry) return null;
+  const elapsed = Date.now() - entry.firstFailAt;
+  if (elapsed > LOCKOUT_WINDOW_MS) {
+    failedLogins.delete(email);
+    return null;
+  }
+  if (entry.count >= LOCKOUT_MAX) {
+    const minutesLeft = Math.ceil((LOCKOUT_WINDOW_MS - elapsed) / 60000);
+    return `Too many failed attempts. Try again in ${minutesLeft} minute${minutesLeft === 1 ? '' : 's'}.`;
+  }
+  return null;
+}
+
+function recordFailedLogin(email) {
+  const entry = failedLogins.get(email);
+  if (!entry || Date.now() - entry.firstFailAt > LOCKOUT_WINDOW_MS) {
+    failedLogins.set(email, { count: 1, firstFailAt: Date.now() });
+  } else {
+    entry.count++;
+  }
+}
+
+function clearFailedLogins(email) {
+  failedLogins.delete(email);
+}
+
+// Cleanup stale lockout entries every hour
+setInterval(() => {
+  const now = Date.now();
+  for (const [email, entry] of failedLogins) {
+    if (now - entry.firstFailAt > LOCKOUT_WINDOW_MS) failedLogins.delete(email);
+  }
+}, 60 * 60 * 1000).unref();
+
 // Stricter rate limiter for login/signup: 5 attempts per 15 minutes per IP
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -61,10 +102,20 @@ router.post('/login', authLimiter, validate(schemas.login), async (req, res, nex
   try {
     const { email, password } = req.body;
 
+    // Account lockout check
+    const lockoutMsg = checkLockout(email.toLowerCase());
+    if (lockoutMsg) {
+      return res.status(429).json({ error: lockoutMsg, code: 'ACCOUNT_LOCKED' });
+    }
+
     const user = await authenticateUser(email, password);
     if (!user) {
+      recordFailedLogin(email.toLowerCase());
       return res.status(401).json({ error: 'Invalid email or password', code: 'INVALID_CREDENTIALS' });
     }
+
+    // Successful login — reset failed attempts
+    clearFailedLogins(email.toLowerCase());
 
     const tokens = generateTokenPair(user.id);
 
@@ -184,8 +235,9 @@ router.post('/reset-password', resetLimiter, async (req, res, next) => {
     if (!token || !newPassword) {
       return res.status(400).json({ error: 'Token and new password are required', code: 'VALIDATION_ERROR' });
     }
-    if (newPassword.length < 8) {
-      return res.status(400).json({ error: 'Password must be at least 8 characters', code: 'VALIDATION_ERROR' });
+    const pwOk = newPassword.length >= 10 && /[A-Z]/.test(newPassword) && /[a-z]/.test(newPassword) && /[0-9]/.test(newPassword);
+    if (!pwOk) {
+      return res.status(400).json({ error: 'Password must be at least 10 characters and include an uppercase letter, a lowercase letter, and a number', code: 'VALIDATION_ERROR' });
     }
 
     await resetPassword(token, newPassword);

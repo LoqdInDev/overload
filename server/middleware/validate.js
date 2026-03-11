@@ -23,12 +23,23 @@ function validate(schema) {
   };
 }
 
+// ── Shared password rule ─────────────────────────────────────────────
+const PASSWORD_MSG =
+  'Password must be at least 10 characters and include an uppercase letter, a lowercase letter, and a number';
+
+const strongPassword = z
+  .string()
+  .min(10, PASSWORD_MSG)
+  .regex(/[A-Z]/, PASSWORD_MSG)
+  .regex(/[a-z]/, PASSWORD_MSG)
+  .regex(/[0-9]/, PASSWORD_MSG);
+
 // ── Reusable schemas ──────────────────────────────────────────────────
 
 const schemas = {
   signup: z.object({
     email: z.string().email('Invalid email address'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
+    password: strongPassword,
     displayName: z.string().min(1, 'Display name is required').max(100).optional(),
   }),
 
@@ -43,7 +54,7 @@ const schemas = {
 
   resetPassword: z.object({
     token: z.string().min(1, 'Token is required'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
+    password: strongPassword,
   }),
 
   createWorkspace: z.object({
