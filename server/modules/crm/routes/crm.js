@@ -19,7 +19,7 @@ router.post('/generate', async (req, res) => {
       const { text } = await generateTextWithClaude(rawPrompt, {
         onChunk: (chunk) => sse.sendChunk(chunk),
       });
-      logActivity('crm', 'generate', `Generated ${type || 'content'}`, 'AI generation', null, wsId);
+      await logActivity('crm', 'generate', `Generated ${type || 'content'}`, 'AI generation', null, wsId);
       sse.sendResult({ content: text, type: type || 'custom' });
       return;
     }
@@ -131,7 +131,7 @@ Provide:
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
-    logActivity('crm', 'generate', `Generated ${type || 'analysis'}`, contact?.name || 'Unknown contact', null, wsId);
+    await logActivity('crm', 'generate', `Generated ${type || 'analysis'}`, contact?.name || 'Unknown contact', null, wsId);
     sse.sendResult({ content: text, type: type || 'analysis' });
   } catch (error) {
     console.error('CRM generation error:', error);
@@ -140,7 +140,7 @@ Provide:
 });
 
 // GET /contacts - list all contacts
-router.get('/contacts', (req, res) => {
+router.get('/contacts', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { status, segment, search } = req.query;
@@ -166,7 +166,7 @@ router.get('/contacts', (req, res) => {
     }
     query += ' ORDER BY created_at DESC';
 
-    const contacts = db.prepare(query).all(...params);
+    const contacts = await db.prepare(query).all(...params);
     res.json(contacts);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -174,7 +174,7 @@ router.get('/contacts', (req, res) => {
 });
 
 // POST /contacts - create a contact
-router.post('/contacts', (req, res) => {
+router.post('/contacts', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { name, email, phone, company, title, status, score, tags, segment, source, notes } = req.body;
@@ -183,8 +183,8 @@ router.post('/contacts', (req, res) => {
     db.prepare(
       'INSERT INTO crm_contacts (id, name, email, phone, company, title, status, score, tags, segment, source, notes, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(id, name, email || null, phone || null, company || null, title || null, status || 'lead', score || 0, tags || null, segment || null, source || null, notes || null, wsId);
-    const contact = db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ?').get(id, wsId);
-    logActivity('crm', 'create', 'Added contact', name, null, wsId);
+    const contact = await db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ?').get(id, wsId);
+    await logActivity('crm', 'create', 'Added contact', name, null, wsId);
     res.status(201).json(contact);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -192,16 +192,16 @@ router.post('/contacts', (req, res) => {
 });
 
 // GET /contacts/:id - get a single contact with their deals and activities
-router.get('/contacts/:id', (req, res) => {
+router.get('/contacts/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { id } = req.params;
-    const contact = db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ?').get(id, wsId);
+    const contact = await db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ?').get(id, wsId);
     if (!contact) {
       return res.status(404).json({ error: 'Contact not found' });
     }
-    const deals = db.prepare('SELECT * FROM crm_deals WHERE contact_id = ? AND workspace_id = ? ORDER BY created_at DESC').all(id, wsId);
-    const activities = db.prepare('SELECT * FROM crm_activities WHERE contact_id = ? AND workspace_id = ? ORDER BY created_at DESC LIMIT 50').all(id, wsId);
+    const deals = await db.prepare('SELECT * FROM crm_deals WHERE contact_id = ? AND workspace_id = ? ORDER BY created_at DESC').all(id, wsId);
+    const activities = await db.prepare('SELECT * FROM crm_activities WHERE contact_id = ? AND workspace_id = ? ORDER BY created_at DESC LIMIT 50').all(id, wsId);
     res.json({ ...contact, deals, activities });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -209,18 +209,18 @@ router.get('/contacts/:id', (req, res) => {
 });
 
 // PUT /contacts/:id - update a contact
-router.put('/contacts/:id', (req, res) => {
+router.put('/contacts/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { id } = req.params;
-    const existing = db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ?').get(id, wsId);
+    const existing = await db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ?').get(id, wsId);
     if (!existing) {
       return res.status(404).json({ error: 'Contact not found' });
     }
 
     const { name, email, phone, company, title, status, score, tags, segment, source, notes } = req.body;
-    db.prepare(
-      'UPDATE crm_contacts SET name = ?, email = ?, phone = ?, company = ?, title = ?, status = ?, score = ?, tags = ?, segment = ?, source = ?, notes = ?, updated_at = datetime(\'now\') WHERE id = ? AND workspace_id = ?'
+    await db.prepare(
+      'UPDATE crm_contacts SET name = ?, email = ?, phone = ?, company = ?, title = ?, status = ?, score = ?, tags = ?, segment = ?, source = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?'
     ).run(
       name || existing.name,
       email !== undefined ? email : existing.email,
@@ -236,8 +236,8 @@ router.put('/contacts/:id', (req, res) => {
       id, wsId
     );
 
-    const updated = db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ?').get(id, wsId);
-    logActivity('crm', 'update', 'Updated contact', name || existing.name, null, wsId);
+    const updated = await db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ?').get(id, wsId);
+    await logActivity('crm', 'update', 'Updated contact', name || existing.name, null, wsId);
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -245,24 +245,23 @@ router.put('/contacts/:id', (req, res) => {
 });
 
 // DELETE /contacts/:id (soft delete)
-router.delete('/contacts/:id', (req, res) => {
+router.delete('/contacts/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { id } = req.params;
-    const existing = db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL').get(id, wsId);
+    const existing = await db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL').get(id, wsId);
     if (!existing) {
       return res.status(404).json({ error: 'Contact not found' });
     }
-    const softDeleteContact = db.transaction(() => {
-      softDelete(db, 'crm_contacts', id);
+    await db.transaction(async (tx) => {
+      softDelete(tx, 'crm_contacts', id);
       // Also soft-delete associated deals
-      const deals = db.prepare('SELECT id FROM crm_deals WHERE contact_id = ? AND workspace_id = ? AND deleted_at IS NULL').all(id, wsId);
+      const deals = await tx.prepare('SELECT id FROM crm_deals WHERE contact_id = ? AND workspace_id = ? AND deleted_at IS NULL').all(id, wsId);
       for (const deal of deals) {
-        softDelete(db, 'crm_deals', deal.id);
+        softDelete(tx, 'crm_deals', deal.id);
       }
     });
-    softDeleteContact();
-    logActivity('crm', 'delete', 'Deleted contact (soft)', existing.name, null, wsId);
+    await logActivity('crm', 'delete', 'Deleted contact (soft)', existing.name, null, wsId);
     res.json({ success: true, deleted: existing });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -270,17 +269,17 @@ router.delete('/contacts/:id', (req, res) => {
 });
 
 // POST /contacts/:id/restore - Restore a soft-deleted contact
-router.post('/contacts/:id/restore', (req, res) => {
+router.post('/contacts/:id/restore', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { id } = req.params;
-    const existing = db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ? AND deleted_at IS NOT NULL').get(id, wsId);
+    const existing = await db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ? AND deleted_at IS NOT NULL').get(id, wsId);
     if (!existing) {
       return res.status(404).json({ error: 'Deleted contact not found' });
     }
     restoreRecord(db, 'crm_contacts', id);
-    logActivity('crm', 'restore', 'Restored contact', existing.name, null, wsId);
-    const restored = db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ?').get(id, wsId);
+    await logActivity('crm', 'restore', 'Restored contact', existing.name, null, wsId);
+    const restored = await db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ?').get(id, wsId);
     res.json(restored);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -288,7 +287,7 @@ router.post('/contacts/:id/restore', (req, res) => {
 });
 
 // GET /deals - list all deals with contact info
-router.get('/deals', (req, res) => {
+router.get('/deals', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { stage, pipeline, contact_id } = req.query;
@@ -314,7 +313,7 @@ router.get('/deals', (req, res) => {
     }
     query += ' ORDER BY d.created_at DESC';
 
-    const deals = db.prepare(query).all(...params);
+    const deals = await db.prepare(query).all(...params);
     res.json(deals);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -322,12 +321,12 @@ router.get('/deals', (req, res) => {
 });
 
 // POST /deals - create a deal
-router.post('/deals', (req, res) => {
+router.post('/deals', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { contact_id, name, value, stage, pipeline, probability, expected_close, notes } = req.body;
 
-    const contact = db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ?').get(contact_id, wsId);
+    const contact = await db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ?').get(contact_id, wsId);
     if (!contact) {
       return res.status(404).json({ error: 'Contact not found' });
     }
@@ -337,8 +336,8 @@ router.post('/deals', (req, res) => {
     db.prepare(
       'INSERT INTO crm_deals (id, contact_id, name, value, stage, pipeline, probability, expected_close, notes, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(dealId, contact_id, name, value || 0, stage || 'lead', pipeline || 'default', probability || 0, expected_close || null, notes || null, wsId);
-    const deal = db.prepare('SELECT * FROM crm_deals WHERE id = ? AND workspace_id = ?').get(dealId, wsId);
-    logActivity('crm', 'create', 'Created deal', name, null, wsId);
+    const deal = await db.prepare('SELECT * FROM crm_deals WHERE id = ? AND workspace_id = ?').get(dealId, wsId);
+    await logActivity('crm', 'create', 'Created deal', name, null, wsId);
     res.status(201).json(deal);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -346,19 +345,19 @@ router.post('/deals', (req, res) => {
 });
 
 // PUT /deals/:id - update a deal (stage changes, etc.)
-router.put('/deals/:id', (req, res) => {
+router.put('/deals/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { id } = req.params;
-    const existing = db.prepare('SELECT * FROM crm_deals WHERE id = ? AND workspace_id = ?').get(id, wsId);
+    const existing = await db.prepare('SELECT * FROM crm_deals WHERE id = ? AND workspace_id = ?').get(id, wsId);
     if (!existing) {
       return res.status(404).json({ error: 'Deal not found' });
     }
 
     const { name, value, stage, pipeline, probability, expected_close, notes } = req.body;
-    const updateDeal = db.transaction(() => {
-      db.prepare(
-        'UPDATE crm_deals SET name = ?, value = ?, stage = ?, pipeline = ?, probability = ?, expected_close = ?, notes = ?, updated_at = datetime(\'now\') WHERE id = ? AND workspace_id = ?'
+    await db.transaction(async (tx) => {
+      await tx.prepare(
+        'UPDATE crm_deals SET name = ?, value = ?, stage = ?, pipeline = ?, probability = ?, expected_close = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?'
       ).run(
         name || existing.name,
         value !== undefined ? value : existing.value,
@@ -372,16 +371,15 @@ router.put('/deals/:id', (req, res) => {
 
       // Log stage changes within the same transaction
       if (stage && stage !== existing.stage) {
-        db.prepare(
+        await tx.prepare(
           'INSERT INTO crm_activities (id, contact_id, deal_id, type, title, description, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
         ).run(uuidv4(), existing.contact_id, id, 'stage_change', `Deal moved to ${stage}`, `${existing.stage} -> ${stage}`, wsId);
       }
     });
-    updateDeal();
 
-    const updated = db.prepare('SELECT * FROM crm_deals WHERE id = ? AND workspace_id = ?').get(id, wsId);
+    const updated = await db.prepare('SELECT * FROM crm_deals WHERE id = ? AND workspace_id = ?').get(id, wsId);
     if (stage && stage !== existing.stage) {
-      logActivity('crm', 'stage-change', `Deal moved to ${stage}`, `${existing.name}: ${existing.stage} -> ${stage}`, null, wsId);
+      await logActivity('crm', 'stage-change', `Deal moved to ${stage}`, `${existing.name}: ${existing.stage} -> ${stage}`, null, wsId);
     }
 
     res.json(updated);
@@ -391,16 +389,16 @@ router.put('/deals/:id', (req, res) => {
 });
 
 // DELETE /deals/:id (soft delete)
-router.delete('/deals/:id', (req, res) => {
+router.delete('/deals/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { id } = req.params;
-    const existing = db.prepare('SELECT * FROM crm_deals WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL').get(id, wsId);
+    const existing = await db.prepare('SELECT * FROM crm_deals WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL').get(id, wsId);
     if (!existing) {
       return res.status(404).json({ error: 'Deal not found' });
     }
     softDelete(db, 'crm_deals', id);
-    logActivity('crm', 'delete', 'Deleted deal (soft)', existing.name, null, wsId);
+    await logActivity('crm', 'delete', 'Deleted deal (soft)', existing.name, null, wsId);
     res.json({ success: true, deleted: existing });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -408,17 +406,17 @@ router.delete('/deals/:id', (req, res) => {
 });
 
 // POST /deals/:id/restore - Restore a soft-deleted deal
-router.post('/deals/:id/restore', (req, res) => {
+router.post('/deals/:id/restore', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { id } = req.params;
-    const existing = db.prepare('SELECT * FROM crm_deals WHERE id = ? AND workspace_id = ? AND deleted_at IS NOT NULL').get(id, wsId);
+    const existing = await db.prepare('SELECT * FROM crm_deals WHERE id = ? AND workspace_id = ? AND deleted_at IS NOT NULL').get(id, wsId);
     if (!existing) {
       return res.status(404).json({ error: 'Deleted deal not found' });
     }
     restoreRecord(db, 'crm_deals', id);
-    logActivity('crm', 'restore', 'Restored deal', existing.name, null, wsId);
-    const restored = db.prepare('SELECT * FROM crm_deals WHERE id = ? AND workspace_id = ?').get(id, wsId);
+    await logActivity('crm', 'restore', 'Restored deal', existing.name, null, wsId);
+    const restored = await db.prepare('SELECT * FROM crm_deals WHERE id = ? AND workspace_id = ?').get(id, wsId);
     res.json(restored);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -426,7 +424,7 @@ router.post('/deals/:id/restore', (req, res) => {
 });
 
 // POST /activities - log an activity
-router.post('/activities', (req, res) => {
+router.post('/activities', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { contact_id, deal_id, type, title, description } = req.body;
@@ -434,7 +432,7 @@ router.post('/activities', (req, res) => {
     db.prepare(
       'INSERT INTO crm_activities (id, contact_id, deal_id, type, title, description, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(actId, contact_id || null, deal_id || null, type, title, description || null, wsId);
-    const activity = db.prepare('SELECT * FROM crm_activities WHERE id = ? AND workspace_id = ?').get(actId, wsId);
+    const activity = await db.prepare('SELECT * FROM crm_activities WHERE id = ? AND workspace_id = ?').get(actId, wsId);
     res.status(201).json(activity);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -442,7 +440,7 @@ router.post('/activities', (req, res) => {
 });
 
 // GET /activities - list recent activities
-router.get('/activities', (req, res) => {
+router.get('/activities', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { contact_id, deal_id } = req.query;
@@ -464,7 +462,7 @@ router.get('/activities', (req, res) => {
     }
     query += ' ORDER BY a.created_at DESC LIMIT 50';
 
-    const activities = db.prepare(query).all(...params);
+    const activities = await db.prepare(query).all(...params);
     res.json(activities);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -472,7 +470,7 @@ router.get('/activities', (req, res) => {
 });
 
 // GET /pipeline-stats - get deal counts and values by stage
-router.get('/pipeline-stats', (req, res) => {
+router.get('/pipeline-stats', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { pipeline } = req.query;
@@ -483,7 +481,7 @@ router.get('/pipeline-stats', (req, res) => {
       params.push(pipeline);
     }
     query += ' GROUP BY stage';
-    const stats = db.prepare(query).all(...params);
+    const stats = await db.prepare(query).all(...params);
     res.json(stats);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -491,14 +489,14 @@ router.get('/pipeline-stats', (req, res) => {
 });
 
 // POST /segments - create a segment
-router.post('/segments', (req, res) => {
+router.post('/segments', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { name, rules, color } = req.body;
     const result = db.prepare(
       'INSERT INTO crm_segments (name, rules, color, workspace_id) VALUES (?, ?, ?, ?)'
     ).run(name, rules ? JSON.stringify(rules) : null, color || null, wsId);
-    const segment = db.prepare('SELECT * FROM crm_segments WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    const segment = await db.prepare('SELECT * FROM crm_segments WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(segment);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -506,10 +504,10 @@ router.post('/segments', (req, res) => {
 });
 
 // GET /segments - list segments
-router.get('/segments', (req, res) => {
+router.get('/segments', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const segments = db.prepare('SELECT * FROM crm_segments WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
+    const segments = await db.prepare('SELECT * FROM crm_segments WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(segments);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -517,7 +515,7 @@ router.get('/segments', (req, res) => {
 });
 
 // POST /score-lead — AI lead scoring
-router.post('/score-lead', (req, res) => {
+router.post('/score-lead', async (req, res) => {
   const { contact_name, company, job_title, emails_opened, pages_visited, downloads, days_in_pipeline } = req.body;
 
   generateTextWithClaude(`You are a B2B sales expert. Score this lead:
@@ -558,11 +556,11 @@ Only return JSON.`)
 router.post('/contacts/:id/next-action', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const contact = db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const contact = await db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!contact) return res.status(404).json({ error: 'Contact not found' });
 
-    const deals = db.prepare('SELECT * FROM crm_deals WHERE contact_id = ? AND workspace_id = ? AND deleted_at IS NULL').all(req.params.id, wsId);
-    const activities = db.prepare('SELECT * FROM crm_activities WHERE contact_id = ? AND workspace_id = ? ORDER BY created_at DESC LIMIT 10').all(req.params.id, wsId);
+    const deals = await db.prepare('SELECT * FROM crm_deals WHERE contact_id = ? AND workspace_id = ? AND deleted_at IS NULL').all(req.params.id, wsId);
+    const activities = await db.prepare('SELECT * FROM crm_activities WHERE contact_id = ? AND workspace_id = ? ORDER BY created_at DESC LIMIT 10').all(req.params.id, wsId);
 
     const { text } = await generateTextWithClaude(`You are an expert B2B sales coach. Recommend the single most impactful next action for this contact.
 

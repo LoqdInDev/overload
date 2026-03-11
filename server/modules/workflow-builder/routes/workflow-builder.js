@@ -13,7 +13,7 @@ router.post('/generate', async (req, res) => {
     const { text } = await generateTextWithClaude(prompt || `Generate ${type || 'content'} for Workflow Builder`, {
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
-    logActivity('workflow-builder', 'generate', `Generated ${type || 'content'}`, 'AI generation', null, wsId);
+    await logActivity('workflow-builder', 'generate', `Generated ${type || 'content'}`, 'AI generation', null, wsId);
     sse.sendResult({ content: text, type });
   } catch (error) {
     console.error('Workflow Builder generation error:', error);
@@ -22,10 +22,10 @@ router.post('/generate', async (req, res) => {
 });
 
 // Get all workflows
-router.get('/workflows', (req, res) => {
+router.get('/workflows', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const workflows = db.prepare('SELECT * FROM wf_workflows WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
+    const workflows = await db.prepare('SELECT * FROM wf_workflows WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(workflows);
   } catch (error) {
     console.error('Error fetching workflows:', error);
@@ -34,31 +34,30 @@ router.get('/workflows', (req, res) => {
 });
 
 // Create a new workflow
-router.post('/workflows', (req, res) => {
+router.post('/workflows', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, description, trigger_type, trigger_config, steps } = req.body;
-    const createWorkflow = db.transaction(() => {
-      const result = db.prepare(
+    const workflowId = await db.transaction(async (tx) => {
+      const result = await tx.prepare(
         'INSERT INTO wf_workflows (name, description, trigger_type, trigger_config, workspace_id) VALUES (?, ?, ?, ?, ?)'
       ).run(name, description, trigger_type, JSON.stringify(trigger_config || {}), wsId);
 
-      const workflowId = result.lastInsertRowid;
+      const wfId = result.lastInsertRowid;
 
       if (steps && Array.isArray(steps)) {
-        const insertStep = db.prepare(
-          'INSERT INTO wf_steps (workflow_id, step_order, module, action, config, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
-        );
-        steps.forEach((step, index) => {
-          insertStep.run(workflowId, index + 1, step.module, step.action, JSON.stringify(step.config || {}), wsId);
-        });
+        for (let index = 0; index < steps.length; index++) {
+          const step = steps[index];
+          await tx.prepare(
+            'INSERT INTO wf_steps (workflow_id, step_order, module, action, config, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
+          ).run(wfId, index + 1, step.module, step.action, JSON.stringify(step.config || {}), wsId);
+        }
       }
 
-      return workflowId;
+      return wfId;
     });
-    const workflowId = createWorkflow();
 
-    logActivity('workflow-builder', 'create', `Created workflow: ${name}`, 'Workflow', null, wsId);
+    await logActivity('workflow-builder', 'create', `Created workflow: ${name}`, 'Workflow', null, wsId);
     res.json({ id: workflowId, name, description });
   } catch (error) {
     console.error('Error creating workflow:', error);
@@ -67,14 +66,14 @@ router.post('/workflows', (req, res) => {
 });
 
 // Update a workflow
-router.put('/workflows/:id', (req, res) => {
+router.put('/workflows/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, description, trigger_type, status } = req.body;
     db.prepare(
       'UPDATE wf_workflows SET name = COALESCE(?, name), description = COALESCE(?, description), trigger_type = COALESCE(?, trigger_type), status = COALESCE(?, status) WHERE id = ? AND workspace_id = ?'
     ).run(name, description, trigger_type, status, req.params.id, wsId);
-    const wf = db.prepare('SELECT * FROM wf_workflows WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const wf = await db.prepare('SELECT * FROM wf_workflows WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     res.json(wf || { error: 'not found' });
   } catch (error) {
     console.error('Error updating workflow:', error);
@@ -83,15 +82,15 @@ router.put('/workflows/:id', (req, res) => {
 });
 
 // Get a specific workflow with its steps
-router.get('/workflows/:id', (req, res) => {
+router.get('/workflows/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const workflow = db.prepare('SELECT * FROM wf_workflows WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const workflow = await db.prepare('SELECT * FROM wf_workflows WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!workflow) {
       return res.status(404).json({ error: 'Workflow not found' });
     }
-    const steps = db.prepare('SELECT * FROM wf_steps WHERE workflow_id = ? AND workspace_id = ? ORDER BY step_order').all(req.params.id, wsId);
-    const runs = db.prepare('SELECT * FROM wf_runs WHERE workflow_id = ? AND workspace_id = ? ORDER BY started_at DESC LIMIT 10').all(req.params.id, wsId);
+    const steps = await db.prepare('SELECT * FROM wf_steps WHERE workflow_id = ? AND workspace_id = ? ORDER BY step_order').all(req.params.id, wsId);
+    const runs = await db.prepare('SELECT * FROM wf_runs WHERE workflow_id = ? AND workspace_id = ? ORDER BY started_at DESC LIMIT 10').all(req.params.id, wsId);
     res.json({ ...workflow, steps, runs });
   } catch (error) {
     console.error('Error fetching workflow:', error);
@@ -100,22 +99,21 @@ router.get('/workflows/:id', (req, res) => {
 });
 
 // Delete a workflow
-router.delete('/workflows/:id', (req, res) => {
+router.delete('/workflows/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const workflow = db.prepare('SELECT * FROM wf_workflows WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const workflow = await db.prepare('SELECT * FROM wf_workflows WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!workflow) {
       return res.status(404).json({ error: 'Workflow not found' });
     }
 
-    const deleteWorkflow = db.transaction(() => {
-      db.prepare('DELETE FROM wf_runs WHERE workflow_id = ? AND workspace_id = ?').run(req.params.id, wsId);
-      db.prepare('DELETE FROM wf_steps WHERE workflow_id = ? AND workspace_id = ?').run(req.params.id, wsId);
-      db.prepare('DELETE FROM wf_workflows WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.transaction(async (tx) => {
+      await tx.prepare('DELETE FROM wf_runs WHERE workflow_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+      await tx.prepare('DELETE FROM wf_steps WHERE workflow_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+      await tx.prepare('DELETE FROM wf_workflows WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
     });
-    deleteWorkflow();
 
-    logActivity('workflow-builder', 'delete', `Deleted workflow: ${workflow.name}`, 'Workflow', null, wsId);
+    await logActivity('workflow-builder', 'delete', `Deleted workflow: ${workflow.name}`, 'Workflow', null, wsId);
     res.json({ success: true, deleted: workflow });
   } catch (error) {
     console.error('Error deleting workflow:', error);
@@ -127,13 +125,13 @@ router.delete('/workflows/:id', (req, res) => {
 router.post('/workflows/:id/run', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const workflow = db.prepare('SELECT * FROM wf_workflows WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const workflow = await db.prepare('SELECT * FROM wf_workflows WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!workflow) {
       return res.status(404).json({ error: 'Workflow not found' });
     }
 
     const now = new Date().toISOString();
-    const steps = db.prepare('SELECT * FROM wf_steps WHERE workflow_id = ? AND workspace_id = ? ORDER BY step_order').all(req.params.id, wsId);
+    const steps = await db.prepare('SELECT * FROM wf_steps WHERE workflow_id = ? AND workspace_id = ? ORDER BY step_order').all(req.params.id, wsId);
 
     const logs = [`Workflow "${workflow.name}" started at ${now}`, `Executing ${steps.length} step(s)...`];
     steps.forEach((step) => {
@@ -141,22 +139,21 @@ router.post('/workflows/:id/run', async (req, res) => {
     });
     logs.push('Workflow completed.');
 
-    const executeRun = db.transaction(() => {
-      const runResult = db.prepare(
+    const runId = await db.transaction(async (tx) => {
+      const runResult = await tx.prepare(
         'INSERT INTO wf_runs (workflow_id, status, started_at, workspace_id) VALUES (?, ?, ?, ?)'
       ).run(req.params.id, 'running', now, wsId);
 
-      const runId = runResult.lastInsertRowid;
+      const rid = runResult.lastInsertRowid;
 
-      db.prepare('UPDATE wf_workflows SET run_count = run_count + 1, last_run = ? WHERE id = ? AND workspace_id = ?').run(now, req.params.id, wsId);
-      db.prepare('UPDATE wf_runs SET status = ?, completed_at = ?, logs = ? WHERE id = ? AND workspace_id = ?')
-        .run('completed', new Date().toISOString(), JSON.stringify(logs), runId, wsId);
+      await tx.prepare('UPDATE wf_workflows SET run_count = run_count + 1, last_run = ? WHERE id = ? AND workspace_id = ?').run(now, req.params.id, wsId);
+      await tx.prepare('UPDATE wf_runs SET status = ?, completed_at = ?, logs = ? WHERE id = ? AND workspace_id = ?')
+        .run('completed', new Date().toISOString(), JSON.stringify(logs), rid, wsId);
 
-      return runId;
+      return rid;
     });
-    const runId = executeRun();
 
-    logActivity('workflow-builder', 'run', `Ran workflow: ${workflow.name}`, 'Workflow execution', null, wsId);
+    await logActivity('workflow-builder', 'run', `Ran workflow: ${workflow.name}`, 'Workflow execution', null, wsId);
     res.json({ runId, status: 'completed', logs });
   } catch (error) {
     console.error('Error running workflow:', error);

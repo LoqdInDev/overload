@@ -8,24 +8,24 @@ const AUTOMATABLE_MODULES = [
   'audience-builder', 'funnel-builder', 'brand-hub', 'customer-intelligence',
 ];
 
-function initDatabase() {
-  db.exec(`
+async function initDatabase() {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS ae_module_modes (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       module_id TEXT NOT NULL,
       mode TEXT NOT NULL DEFAULT 'manual',
       config TEXT,
       risk_level TEXT DEFAULT 'conservative',
-      updated_at TEXT DEFAULT (datetime('now')),
-      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(module_id, workspace_id)
     )
   `);
 
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS ae_approval_queue (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       module_id TEXT NOT NULL,
       action_type TEXT NOT NULL,
@@ -40,13 +40,13 @@ function initDatabase() {
       source TEXT,
       expires_at TEXT,
       reviewed_at TEXT,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS ae_action_log (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       module_id TEXT NOT NULL,
       action_type TEXT NOT NULL,
@@ -58,14 +58,14 @@ function initDatabase() {
       error TEXT,
       approval_id INTEGER,
       duration_ms INTEGER,
-      created_at TEXT DEFAULT (datetime('now')),
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       completed_at TEXT
     )
   `);
 
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS ae_rules (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       module_id TEXT NOT NULL,
       name TEXT NOT NULL,
@@ -77,55 +77,53 @@ function initDatabase() {
       status TEXT DEFAULT 'active',
       last_triggered TEXT,
       run_count INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS ae_notifications (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       type TEXT NOT NULL,
       title TEXT NOT NULL,
       message TEXT,
       module_id TEXT,
       read INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS ae_settings (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       key TEXT NOT NULL,
       workspace_id TEXT NOT NULL,
       value TEXT NOT NULL,
-      updated_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(key, workspace_id)
     )
   `);
 
   // Add indexes for query performance (IF NOT EXISTS is implicit — SQLite ignores duplicates)
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_ae_approval_queue_ws_status ON ae_approval_queue(workspace_id, status)`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_ae_action_log_ws_created ON ae_action_log(workspace_id, created_at DESC)`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_ae_action_log_ws_module ON ae_action_log(workspace_id, module_id)`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_ae_notifications_ws_read ON ae_notifications(workspace_id, read)`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_ae_rules_ws_status ON ae_rules(workspace_id, status)`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_ae_module_modes_ws ON ae_module_modes(workspace_id)`);
+  await db.exec(`CREATE INDEX IF NOT EXISTS idx_ae_approval_queue_ws_status ON ae_approval_queue(workspace_id, status)`);
+  await db.exec(`CREATE INDEX IF NOT EXISTS idx_ae_action_log_ws_created ON ae_action_log(workspace_id, created_at DESC)`);
+  await db.exec(`CREATE INDEX IF NOT EXISTS idx_ae_action_log_ws_module ON ae_action_log(workspace_id, module_id)`);
+  await db.exec(`CREATE INDEX IF NOT EXISTS idx_ae_notifications_ws_read ON ae_notifications(workspace_id, read)`);
+  await db.exec(`CREATE INDEX IF NOT EXISTS idx_ae_rules_ws_status ON ae_rules(workspace_id, status)`);
+  await db.exec(`CREATE INDEX IF NOT EXISTS idx_ae_module_modes_ws ON ae_module_modes(workspace_id)`);
 
   // Seed default mode rows for all automatable modules per workspace
-  const workspaces = db.prepare('SELECT id FROM workspaces').all();
-  const insert = db.prepare(
-    'INSERT OR IGNORE INTO ae_module_modes (module_id, mode, workspace_id) VALUES (?, ?, ?)'
-  );
-  const seedModes = db.transaction(() => {
+  const workspaces = await db.prepare('SELECT id FROM workspaces').all();
+  await db.transaction(async (tx) => {
     for (const ws of workspaces) {
       for (const moduleId of AUTOMATABLE_MODULES) {
-        insert.run(moduleId, 'manual', ws.id);
+        await tx.prepare(
+          'INSERT OR IGNORE INTO ae_module_modes (module_id, mode, workspace_id) VALUES (?, ?, ?)'
+        ).run(moduleId, 'manual', ws.id);
       }
     }
   });
-  seedModes();
 
   // Seed demo data only in non-production environments
   if (process.env.NODE_ENV !== 'production' && workspaces.length > 0) {
@@ -139,76 +137,76 @@ function createNotification(type, title, message, moduleId, wsId) {
   ).run(type, title, message || null, moduleId || null, wsId || null);
 }
 
-function seedDemoData(wsId) {
+async function seedDemoData(wsId) {
   if (!wsId) return;
-  const existing = db.prepare('SELECT COUNT(*) as count FROM ae_approval_queue WHERE workspace_id = ?').get(wsId);
+  const existing = await db.prepare('SELECT COUNT(*) as count FROM ae_approval_queue WHERE workspace_id = ?').get(wsId);
   if (existing.count > 0) return;
 
   // Wrap all demo inserts in a single transaction for speed
-  const runSeed = db.transaction(_seedDemoDataInner);
-  runSeed(wsId);
+  await db.transaction(async (tx) => {
+    await _seedDemoDataInner(tx, wsId);
+  });
 }
 
-function _seedDemoDataInner(wsId) {
+async function _seedDemoDataInner(tx, wsId) {
   // Set some modules to copilot/autopilot
-  const updateMode = db.prepare('UPDATE ae_module_modes SET mode = ?, updated_at = datetime(\'now\') WHERE module_id = ? AND workspace_id = ?');
-  updateMode.run('copilot', 'content', wsId);
-  updateMode.run('copilot', 'social', wsId);
-  updateMode.run('autopilot', 'email-sms', wsId);
-  updateMode.run('autopilot', 'ads', wsId);
-  updateMode.run('copilot', 'seo', wsId);
-  updateMode.run('autopilot', 'reviews', wsId);
+  await tx.prepare('UPDATE ae_module_modes SET mode = ?, updated_at = CURRENT_TIMESTAMP WHERE module_id = ? AND workspace_id = ?').run('copilot', 'content', wsId);
+  await tx.prepare('UPDATE ae_module_modes SET mode = ?, updated_at = CURRENT_TIMESTAMP WHERE module_id = ? AND workspace_id = ?').run('copilot', 'social', wsId);
+  await tx.prepare('UPDATE ae_module_modes SET mode = ?, updated_at = CURRENT_TIMESTAMP WHERE module_id = ? AND workspace_id = ?').run('autopilot', 'email-sms', wsId);
+  await tx.prepare('UPDATE ae_module_modes SET mode = ?, updated_at = CURRENT_TIMESTAMP WHERE module_id = ? AND workspace_id = ?').run('autopilot', 'ads', wsId);
+  await tx.prepare('UPDATE ae_module_modes SET mode = ?, updated_at = CURRENT_TIMESTAMP WHERE module_id = ? AND workspace_id = ?').run('copilot', 'seo', wsId);
+  await tx.prepare('UPDATE ae_module_modes SET mode = ?, updated_at = CURRENT_TIMESTAMP WHERE module_id = ? AND workspace_id = ?').run('autopilot', 'reviews', wsId);
 
   // --- Approval Queue (7 pending items) ---
-  const insertApproval = db.prepare(`
+  const insertApproval = tx.prepare(`
     INSERT INTO ae_approval_queue (module_id, action_type, title, description, payload, ai_confidence, priority, status, source, created_at, workspace_id)
     VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 'ai', datetime('now', ?), ?)
   `);
 
-  insertApproval.run('content', 'publish_blog',
+  await insertApproval.run('content', 'publish_blog',
     'Blog Post: "7 Email Subject Line Formulas That Double Open Rates"',
     'AI-generated blog post based on top-performing content patterns. Includes SEO-optimized headline, meta description, and internal linking suggestions.',
     JSON.stringify({ type: 'blog', headline: '7 Email Subject Line Formulas That Double Open Rates', word_count: 1842, seo_score: 92, tone: 'professional', preview: 'Your email subject line is the gatekeeper between your message and your audience. Here are 7 proven formulas that consistently achieve 2x open rates...' }),
     0.91, 'high', '-2 hours', wsId);
 
-  insertApproval.run('social', 'schedule_post',
+  await insertApproval.run('social', 'schedule_post',
     'Instagram Carousel: Spring Collection Launch',
     'AI created a 5-slide carousel post announcing the Spring 2026 collection. Scheduled for tomorrow at 11:30 AM EST (peak engagement window).',
     JSON.stringify({ platform: 'instagram', post_type: 'carousel', slides: 5, scheduled_time: '2026-02-28T11:30:00Z', caption: 'Spring is calling. Our new collection just dropped — fresh colors, timeless cuts, made for the season ahead.', hashtags: ['#SpringCollection', '#NewArrivals', '#FashionForward'] }),
     0.87, 'medium', '-4 hours', wsId);
 
-  insertApproval.run('seo', 'update_meta',
+  await insertApproval.run('seo', 'update_meta',
     'SEO Meta Overhaul: 12 Product Pages Below Score 60',
     'AI identified 12 product pages with SEO scores below 60. Proposed new meta titles, descriptions, and heading structures for each.',
     JSON.stringify({ pages_affected: 12, avg_current_score: 47, avg_proposed_score: 84, changes: ['meta titles', 'meta descriptions', 'H1 restructure', 'alt text updates'] }),
     0.83, 'medium', '-6 hours', wsId);
 
-  insertApproval.run('email-sms', 'send_campaign',
+  await insertApproval.run('email-sms', 'send_campaign',
     'Re-engagement Email: "We Miss You" to Inactive Subscribers',
     'Automated re-engagement campaign targeting 1,247 subscribers inactive for 30+ days. Includes personalized subject lines and a 15% discount offer.',
     JSON.stringify({ campaign_type: 'reengagement', recipients: 1247, subject_line: "We miss you — here's 15% off to welcome you back", segments: ['inactive_30d'], discount: '15%', estimated_open_rate: 0.24 }),
     0.78, 'high', '-8 hours', wsId);
 
-  insertApproval.run('ads', 'adjust_budget',
+  await insertApproval.run('ads', 'adjust_budget',
     'Meta Ads: Increase Budget for High-ROAS "Summer Retargeting" Campaign',
     'Campaign "Summer Sale Retargeting" is achieving 4.2x ROAS, significantly above the 2.5x target. AI recommends increasing daily budget from $50 to $85.',
     JSON.stringify({ platform: 'meta', campaign: 'Summer Sale Retargeting', current_budget: 50, proposed_budget: 85, current_roas: 4.2, target_roas: 2.5, recommendation: 'Scale winning campaign while ROAS remains strong' }),
     0.95, 'urgent', '-1 hours', wsId);
 
-  insertApproval.run('content', 'publish_blog',
+  await insertApproval.run('content', 'publish_blog',
     'Product Guide: "The Complete Guide to Sustainable Fashion in 2026"',
     'Long-form SEO content piece targeting high-volume keyword cluster. 3,200 words with product callouts and internal links.',
     JSON.stringify({ type: 'guide', headline: 'The Complete Guide to Sustainable Fashion in 2026', word_count: 3200, seo_score: 88, target_keyword: 'sustainable fashion 2026', estimated_traffic: '2.4K monthly', preview: 'Sustainable fashion is no longer a niche — it is the new standard. In this comprehensive guide, we break down everything you need to know...' }),
     0.85, 'medium', '-12 hours', wsId);
 
-  insertApproval.run('reviews', 'respond_review',
+  await insertApproval.run('reviews', 'respond_review',
     'Auto-Responses for 4 New Google Reviews',
     'AI drafted personalized responses for 4 new Google reviews (3 positive, 1 neutral). Each response references specific details from the review.',
     JSON.stringify({ reviews: 4, positive: 3, neutral: 1, negative: 0, platform: 'google', responses_drafted: 4, avg_response_length: 85 }),
     0.72, 'low', '-16 hours', wsId);
 
   // --- Action Log (25 entries across 3 days) ---
-  const insertAction = db.prepare(`
+  const insertAction = tx.prepare(`
     INSERT INTO ae_action_log (module_id, action_type, mode, description, status, duration_ms, created_at, completed_at, workspace_id)
     VALUES (?, ?, ?, ?, ?, ?, datetime('now', ?), datetime('now', ?, '+' || ? || ' seconds'), ?)
   `);
@@ -242,86 +240,86 @@ function _seedDemoDataInner(wsId) {
   ];
 
   for (const a of actions) {
-    insertAction.run(...a, wsId);
+    await insertAction.run(...a, wsId);
   }
 
   // --- Rules (10 automation rules) ---
-  const insertRule = db.prepare(`
+  const insertRule = tx.prepare(`
     INSERT INTO ae_rules (module_id, name, trigger_type, trigger_config, action_type, action_config, requires_approval, status, last_triggered, run_count, created_at, workspace_id)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now', ?), ?, datetime('now', '-30 days'), ?)
   `);
 
-  insertRule.run('content', 'Weekly Blog Post Generator', 'schedule',
+  await insertRule.run('content', 'Weekly Blog Post Generator', 'schedule',
     JSON.stringify({ frequency: 'weekly', day: 'monday', time: '09:00' }),
     'generate_content', JSON.stringify({ type: 'blog', tone: 'professional', wordTarget: 1200 }),
     1, 'active', '-2 days', 8, wsId);
 
-  insertRule.run('social', 'Daily Social Post Scheduler', 'schedule',
+  await insertRule.run('social', 'Daily Social Post Scheduler', 'schedule',
     JSON.stringify({ frequency: 'daily', time: '10:00' }),
     'schedule_post', JSON.stringify({ platforms: ['instagram', 'twitter', 'linkedin'] }),
     1, 'active', '-6 hours', 24, wsId);
 
-  insertRule.run('email-sms', 'Weekly Newsletter Send', 'schedule',
+  await insertRule.run('email-sms', 'Weekly Newsletter Send', 'schedule',
     JSON.stringify({ frequency: 'weekly', day: 'wednesday', time: '08:00' }),
     'send_campaign', JSON.stringify({ template: 'weekly_newsletter', segment: 'active_subscribers' }),
     0, 'active', '-4 days', 12, wsId);
 
-  insertRule.run('reports', 'Monthly Performance Report', 'schedule',
+  await insertRule.run('reports', 'Monthly Performance Report', 'schedule',
     JSON.stringify({ frequency: 'monthly', day: 1, time: '07:00' }),
     'generate_report', JSON.stringify({ report_type: 'monthly_summary', include: ['revenue', 'traffic', 'conversions', 'engagement'] }),
     1, 'active', '-25 days', 3, wsId);
 
-  insertRule.run('seo', 'Bi-weekly SEO Audit', 'schedule',
+  await insertRule.run('seo', 'Bi-weekly SEO Audit', 'schedule',
     JSON.stringify({ frequency: 'biweekly', day: 'friday', time: '14:00' }),
     'generate_report', JSON.stringify({ report_type: 'seo_audit', check: ['meta_tags', 'broken_links', 'page_speed', 'keyword_rankings'] }),
     1, 'active', '-10 days', 6, wsId);
 
-  insertRule.run('reviews', 'Review Auto-Response', 'event',
+  await insertRule.run('reviews', 'Review Auto-Response', 'event',
     JSON.stringify({ event: 'new_review', platforms: ['google', 'trustpilot'], min_rating: 3 }),
     'respond_review', JSON.stringify({ tone: 'grateful', include_name: true, max_length: 100 }),
     0, 'active', '-3 hours', 47, wsId);
 
-  insertRule.run('email-sms', 'New Subscriber Welcome', 'event',
+  await insertRule.run('email-sms', 'New Subscriber Welcome', 'event',
     JSON.stringify({ event: 'new_subscriber', source: 'any' }),
     'send_campaign', JSON.stringify({ template: 'welcome_sequence', delay: '0m' }),
     0, 'active', '-1 days', 189, wsId);
 
-  insertRule.run('content', 'Content Republish on Milestone', 'event',
+  await insertRule.run('content', 'Content Republish on Milestone', 'event',
     JSON.stringify({ event: 'content_milestone', metric: 'views', threshold: 1000 }),
     'schedule_post', JSON.stringify({ action: 'reshare_to_social', platforms: ['twitter', 'linkedin'] }),
     1, 'inactive', '-15 days', 5, wsId);
 
-  insertRule.run('ads', 'Budget Adjustment on ROAS', 'threshold',
+  await insertRule.run('ads', 'Budget Adjustment on ROAS', 'threshold',
     JSON.stringify({ metric: 'roas', operator: '>', value: 3.5, window: '7d' }),
     'adjust_budget', JSON.stringify({ action: 'increase', percentage: 20, max_daily: 200 }),
     0, 'active', '-2 days', 11, wsId);
 
-  insertRule.run('ads', 'Alert on Engagement Drop', 'threshold',
+  await insertRule.run('ads', 'Alert on Engagement Drop', 'threshold',
     JSON.stringify({ metric: 'ctr', operator: '<', value: 1.0, window: '3d' }),
     'generate_report', JSON.stringify({ action: 'alert_and_report', notify: true }),
     1, 'inactive', '-7 days', 3, wsId);
 
   // --- Notifications (15 demo notifications) ---
-  const insertNotif = db.prepare(`
+  const insertNotif = tx.prepare(`
     INSERT INTO ae_notifications (type, title, message, module_id, read, created_at, workspace_id)
     VALUES (?, ?, ?, ?, ?, datetime('now', ?), ?)
   `);
 
-  insertNotif.run('action_completed', 'Newsletter sent successfully', 'Weekly newsletter "This Week in E-commerce" sent to 4,218 subscribers', 'email-sms', 0, '-1 hours', wsId);
-  insertNotif.run('suggestion_ready', 'New blog post ready for review', 'AI generated: "7 Email Subject Line Formulas That Double Open Rates"', 'content', 0, '-2 hours', wsId);
-  insertNotif.run('action_completed', 'Ad budget adjusted', 'Decreased TikTok Ads budget by 15% for underperforming campaign', 'ads', 0, '-2 hours', wsId);
-  insertNotif.run('suggestion_ready', 'Instagram carousel ready', 'Spring Collection Launch carousel scheduled for review', 'social', 0, '-4 hours', wsId);
-  insertNotif.run('action_completed', 'Review response sent', 'Auto-responded to 5-star Google review from "Sarah M."', 'reviews', 0, '-3 hours', wsId);
-  insertNotif.run('rule_triggered', 'Daily Social Post rule fired', 'Daily Social Post Scheduler generated new content', 'social', 1, '-6 hours', wsId);
-  insertNotif.run('suggestion_ready', 'SEO overhaul proposed', '12 product pages identified for meta tag improvements', 'seo', 1, '-6 hours', wsId);
-  insertNotif.run('action_completed', 'Abandoned cart emails sent', 'Recovery email sent to 342 users with cart items', 'email-sms', 1, '-10 hours', wsId);
-  insertNotif.run('action_failed', 'Welcome email generation failed', 'Template not found for welcome email generation', 'email-sms', 1, '-22 hours', wsId);
-  insertNotif.run('rule_triggered', 'Review Auto-Response triggered', 'New Google review detected — auto-response generated', 'reviews', 1, '-11 hours', wsId);
-  insertNotif.run('action_completed', 'SEO report generated', 'Weekly SEO performance report for Feb 17-23 ready', 'seo', 1, '-1 days', wsId);
-  insertNotif.run('suggestion_ready', 'Re-engagement campaign ready', '"We Miss You" email targeting 1,247 inactive subscribers', 'email-sms', 1, '-8 hours', wsId);
-  insertNotif.run('action_completed', 'Flash sale email sent', 'Promotional email sent to 6,521 subscribers', 'email-sms', 1, '-2 days', wsId);
-  insertNotif.run('rule_triggered', 'ROAS threshold exceeded', 'Budget Adjustment rule triggered for Meta Ads campaign', 'ads', 1, '-2 days', wsId);
-  insertNotif.run('action_completed', 'Ad report generated', 'Weekly ad performance report across all platforms complete', 'ads', 1, '-3 days', wsId);
+  await insertNotif.run('action_completed', 'Newsletter sent successfully', 'Weekly newsletter "This Week in E-commerce" sent to 4,218 subscribers', 'email-sms', 0, '-1 hours', wsId);
+  await insertNotif.run('suggestion_ready', 'New blog post ready for review', 'AI generated: "7 Email Subject Line Formulas That Double Open Rates"', 'content', 0, '-2 hours', wsId);
+  await insertNotif.run('action_completed', 'Ad budget adjusted', 'Decreased TikTok Ads budget by 15% for underperforming campaign', 'ads', 0, '-2 hours', wsId);
+  await insertNotif.run('suggestion_ready', 'Instagram carousel ready', 'Spring Collection Launch carousel scheduled for review', 'social', 0, '-4 hours', wsId);
+  await insertNotif.run('action_completed', 'Review response sent', 'Auto-responded to 5-star Google review from "Sarah M."', 'reviews', 0, '-3 hours', wsId);
+  await insertNotif.run('rule_triggered', 'Daily Social Post rule fired', 'Daily Social Post Scheduler generated new content', 'social', 1, '-6 hours', wsId);
+  await insertNotif.run('suggestion_ready', 'SEO overhaul proposed', '12 product pages identified for meta tag improvements', 'seo', 1, '-6 hours', wsId);
+  await insertNotif.run('action_completed', 'Abandoned cart emails sent', 'Recovery email sent to 342 users with cart items', 'email-sms', 1, '-10 hours', wsId);
+  await insertNotif.run('action_failed', 'Welcome email generation failed', 'Template not found for welcome email generation', 'email-sms', 1, '-22 hours', wsId);
+  await insertNotif.run('rule_triggered', 'Review Auto-Response triggered', 'New Google review detected — auto-response generated', 'reviews', 1, '-11 hours', wsId);
+  await insertNotif.run('action_completed', 'SEO report generated', 'Weekly SEO performance report for Feb 17-23 ready', 'seo', 1, '-1 days', wsId);
+  await insertNotif.run('suggestion_ready', 'Re-engagement campaign ready', '"We Miss You" email targeting 1,247 inactive subscribers', 'email-sms', 1, '-8 hours', wsId);
+  await insertNotif.run('action_completed', 'Flash sale email sent', 'Promotional email sent to 6,521 subscribers', 'email-sms', 1, '-2 days', wsId);
+  await insertNotif.run('rule_triggered', 'ROAS threshold exceeded', 'Budget Adjustment rule triggered for Meta Ads campaign', 'ads', 1, '-2 days', wsId);
+  await insertNotif.run('action_completed', 'Ad report generated', 'Weekly ad performance report across all platforms complete', 'ads', 1, '-3 days', wsId);
 }
 
 module.exports = { initDatabase, AUTOMATABLE_MODULES, createNotification };

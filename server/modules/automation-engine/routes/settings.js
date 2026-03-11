@@ -20,36 +20,35 @@ const DEFAULTS = {
 };
 
 // GET /settings — all settings as flat object
-router.get('/settings', (req, res) => {
+router.get('/settings', async (req, res) => {
   const wsId = req.workspace.id;
-  const rows = db.prepare('SELECT key, value FROM ae_settings WHERE workspace_id = ?').all(wsId);
+  const rows = await db.prepare('SELECT key, value FROM ae_settings WHERE workspace_id = ?').all(wsId);
   const result = { ...DEFAULTS };
   for (const row of rows) result[row.key] = row.value;
   res.json(result);
 });
 
 // PUT /settings — upsert changed settings
-router.put('/settings', (req, res) => {
+router.put('/settings', async (req, res) => {
   const wsId = req.workspace.id;
-  const stmt = db.prepare(
-    "INSERT INTO ae_settings (key, value, workspace_id) VALUES (?, ?, ?) ON CONFLICT(key, workspace_id) DO UPDATE SET value = excluded.value, updated_at = datetime('now')"
-  );
-  const transaction = db.transaction((entries) => {
+  const entries = Object.entries(req.body);
+  await db.transaction(async (tx) => {
     for (const [key, value] of entries) {
       if (DEFAULTS.hasOwnProperty(key)) {
-        stmt.run(key, String(value), wsId);
+        await tx.prepare(
+          "INSERT INTO ae_settings (key, value, workspace_id) VALUES (?, ?, ?) ON CONFLICT(key, workspace_id) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP"
+        ).run(key, String(value), wsId);
       }
     }
   });
-  transaction(Object.entries(req.body));
   res.json({ success: true });
 });
 
 // GET /execution-log — get automation execution history
-router.get('/execution-log', (req, res) => {
+router.get('/execution-log', async (req, res) => {
   const workspace_id = req.workspace.id;
   try {
-    const logs = db.prepare(`
+    const logs = await db.prepare(`
       SELECT * FROM automation_executions WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 100
     `).all(workspace_id);
     res.json({ logs: logs || [] });

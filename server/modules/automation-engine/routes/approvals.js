@@ -5,7 +5,7 @@ const { createNotification } = require('../db/schema');
 const { generateTextWithClaude } = require('../../../services/claude');
 
 // GET /approvals — list queue items
-router.get('/approvals', (req, res) => {
+router.get('/approvals', async (req, res) => {
   const wsId = req.workspace.id;
   const { module: moduleId, status, priority, limit = 50, offset = 0 } = req.query;
 
@@ -32,7 +32,7 @@ router.get('/approvals', (req, res) => {
   sql += ' LIMIT ? OFFSET ?';
   params.push(Number(limit), Number(offset));
 
-  const rows = db.prepare(sql).all(...params);
+  const rows = await db.prepare(sql).all(...params);
   const total = db.prepare('SELECT COUNT(*) as count FROM ae_approval_queue WHERE status = ? AND workspace_id = ?').get('pending', wsId);
 
   res.json({
@@ -55,7 +55,7 @@ router.get('/approvals', (req, res) => {
 });
 
 // GET /approvals/count — pending counts
-router.get('/approvals/count', (req, res) => {
+router.get('/approvals/count', async (req, res) => {
   const wsId = req.workspace.id;
   const total = db.prepare('SELECT COUNT(*) as count FROM ae_approval_queue WHERE status = ? AND workspace_id = ?').get('pending', wsId);
   const byModule = db.prepare(
@@ -74,9 +74,9 @@ router.get('/approvals/count', (req, res) => {
 });
 
 // GET /approvals/:id — single item
-router.get('/approvals/:id', (req, res) => {
+router.get('/approvals/:id', async (req, res) => {
   const wsId = req.workspace.id;
-  const row = db.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+  const row = await db.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
   if (!row) return res.status(404).json({ error: 'Approval item not found' });
   res.json({
     id: row.id,
@@ -95,50 +95,48 @@ router.get('/approvals/:id', (req, res) => {
 });
 
 // POST /approvals/:id/approve
-router.post('/approvals/:id/approve', (req, res) => {
+router.post('/approvals/:id/approve', async (req, res) => {
   const wsId = req.workspace.id;
-  const item = db.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+  const item = await db.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
   if (!item) return res.status(404).json({ error: 'Approval item not found' });
   if (item.status !== 'pending') return res.status(400).json({ error: 'Item is not pending' });
 
-  const approveItem = db.transaction(() => {
-    db.prepare(`
-      UPDATE ae_approval_queue SET status = 'approved', reviewed_at = datetime('now'), reviewed_by = ? WHERE id = ? AND workspace_id = ?
+  await db.transaction(async (tx) => {
+    await tx.prepare(`
+      UPDATE ae_approval_queue SET status = 'approved', reviewed_at = CURRENT_TIMESTAMP, reviewed_by = ? WHERE id = ? AND workspace_id = ?
     `).run(req.user?.id || 'system', req.params.id, wsId);
 
-    db.prepare(`
+    await tx.prepare(`
       INSERT INTO ae_action_log (module_id, action_type, mode, description, status, approval_id, created_at, completed_at, workspace_id)
-      VALUES (?, ?, 'copilot', ?, 'completed', ?, datetime('now'), datetime('now'), ?)
+      VALUES (?, ?, 'copilot', ?, 'completed', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
     `).run(item.module_id, item.action_type, `Approved: ${item.title}`, item.id, wsId);
   });
-  approveItem();
 
-  logActivity(item.module_id, 'approved', item.title, `Approved automation action: ${item.description}`, null, wsId);
+  await logActivity(item.module_id, 'approved', item.title, `Approved automation action: ${item.description}`, null, wsId);
   createNotification('action_completed', `Approved: ${item.title}`, item.description, item.module_id, wsId);
 
   res.json({ success: true, id: Number(req.params.id) });
 });
 
 // POST /approvals/:id/reject
-router.post('/approvals/:id/reject', (req, res) => {
+router.post('/approvals/:id/reject', async (req, res) => {
   const wsId = req.workspace.id;
-  const item = db.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+  const item = await db.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
   if (!item) return res.status(404).json({ error: 'Approval item not found' });
   if (item.status !== 'pending') return res.status(400).json({ error: 'Item is not pending' });
 
   const { notes } = req.body || {};
 
-  const rejectItem = db.transaction(() => {
-    db.prepare(`
-      UPDATE ae_approval_queue SET status = 'rejected', reviewed_at = datetime('now'), reviewed_by = ?, review_notes = ? WHERE id = ? AND workspace_id = ?
+  await db.transaction(async (tx) => {
+    await tx.prepare(`
+      UPDATE ae_approval_queue SET status = 'rejected', reviewed_at = CURRENT_TIMESTAMP, reviewed_by = ?, review_notes = ? WHERE id = ? AND workspace_id = ?
     `).run(req.user?.id || 'system', notes || null, req.params.id, wsId);
 
-    db.prepare(`
+    await tx.prepare(`
       INSERT INTO ae_action_log (module_id, action_type, mode, description, status, approval_id, created_at, completed_at, workspace_id)
-      VALUES (?, ?, 'copilot', ?, 'cancelled', ?, datetime('now'), datetime('now'), ?)
+      VALUES (?, ?, 'copilot', ?, 'cancelled', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
     `).run(item.module_id, item.action_type, `Rejected: ${item.title}`, item.id, wsId);
   });
-  rejectItem();
 
   createNotification('action_failed', `Rejected: ${item.title}`, notes || item.description, item.module_id, wsId);
 
@@ -146,25 +144,24 @@ router.post('/approvals/:id/reject', (req, res) => {
 });
 
 // POST /approvals/:id/edit — edit payload then approve
-router.post('/approvals/:id/edit', (req, res) => {
+router.post('/approvals/:id/edit', async (req, res) => {
   const wsId = req.workspace.id;
-  const item = db.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+  const item = await db.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
   if (!item) return res.status(404).json({ error: 'Approval item not found' });
   if (item.status !== 'pending') return res.status(400).json({ error: 'Item is not pending' });
 
   const { payload } = req.body;
 
-  const editItem = db.transaction(() => {
-    db.prepare(`
-      UPDATE ae_approval_queue SET status = 'approved', payload = ?, reviewed_at = datetime('now'), reviewed_by = ?, review_notes = 'edited' WHERE id = ? AND workspace_id = ?
+  await db.transaction(async (tx) => {
+    await tx.prepare(`
+      UPDATE ae_approval_queue SET status = 'approved', payload = ?, reviewed_at = CURRENT_TIMESTAMP, reviewed_by = ?, review_notes = 'edited' WHERE id = ? AND workspace_id = ?
     `).run(JSON.stringify(payload), req.user?.id || 'system', req.params.id, wsId);
 
-    db.prepare(`
+    await tx.prepare(`
       INSERT INTO ae_action_log (module_id, action_type, mode, description, status, approval_id, created_at, completed_at, workspace_id)
-      VALUES (?, ?, 'copilot', ?, 'completed', ?, datetime('now'), datetime('now'), ?)
+      VALUES (?, ?, 'copilot', ?, 'completed', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
     `).run(item.module_id, item.action_type, `Edited & approved: ${item.title}`, item.id, wsId);
   });
-  editItem();
 
   res.json({ success: true, id: Number(req.params.id) });
 });
@@ -172,7 +169,7 @@ router.post('/approvals/:id/edit', (req, res) => {
 // POST /approvals/:id/generate — generate full content for an approved item
 router.post('/approvals/:id/generate', async (req, res) => {
   const wsId = req.workspace.id;
-  const item = db.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+  const item = await db.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
   if (!item) return res.status(404).json({ error: 'Approval item not found' });
   if (item.status !== 'approved') return res.status(400).json({ error: 'Item must be approved before generating content' });
 
@@ -195,7 +192,7 @@ router.post('/approvals/:id/generate', async (req, res) => {
 
     // Store the generated content back into the payload
     payload.generated_content = text;
-    db.prepare('UPDATE ae_approval_queue SET payload = ? WHERE id = ? AND workspace_id = ?')
+    await db.prepare('UPDATE ae_approval_queue SET payload = ? WHERE id = ? AND workspace_id = ?')
       .run(JSON.stringify(payload), req.params.id, wsId);
 
     res.json({ success: true, content: text });
@@ -284,7 +281,7 @@ Write comprehensive, ready-to-use content based on these details.`;
 }
 
 // POST /approvals/batch — batch approve/reject
-router.post('/approvals/batch', (req, res) => {
+router.post('/approvals/batch', async (req, res) => {
   const wsId = req.workspace.id;
   const { ids, action } = req.body;
   if (!ids || !Array.isArray(ids) || !['approve', 'reject'].includes(action)) {
@@ -295,26 +292,26 @@ router.post('/approvals/batch', (req, res) => {
   const logStatus = action === 'approve' ? 'completed' : 'cancelled';
   const reviewer = req.user?.id || 'system';
 
-  const batchTransaction = db.transaction(() => {
-    const updateStmt = db.prepare(`
-      UPDATE ae_approval_queue SET status = ?, reviewed_at = datetime('now'), reviewed_by = ? WHERE id = ? AND status = 'pending' AND workspace_id = ?
+  const updated = await db.transaction(async (tx) => {
+    const updateStmt = tx.prepare(`
+      UPDATE ae_approval_queue SET status = ?, reviewed_at = CURRENT_TIMESTAMP, reviewed_by = ? WHERE id = ? AND status = 'pending' AND workspace_id = ?
     `);
-    const logStmt = db.prepare(`
+    const logStmt = tx.prepare(`
       INSERT INTO ae_action_log (module_id, action_type, mode, description, status, approval_id, created_at, completed_at, workspace_id)
-      VALUES (?, ?, 'copilot', ?, ?, ?, datetime('now'), datetime('now'), ?)
+      VALUES (?, ?, 'copilot', ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
     `);
 
-    let updated = 0;
+    let count = 0;
     for (const id of ids) {
-      const item = db.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND status = ? AND workspace_id = ?').get(id, 'pending', wsId);
+      const item = await tx.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND status = ? AND workspace_id = ?').get(id, 'pending', wsId);
       if (!item) continue;
 
-      const result = updateStmt.run(newStatus, reviewer, id, wsId);
-      updated += result.changes;
+      const result = await updateStmt.run(newStatus, reviewer, id, wsId);
+      count += result.changes;
 
       if (result.changes > 0) {
         const prefix = action === 'approve' ? 'Approved' : 'Rejected';
-        logStmt.run(item.module_id, item.action_type, `${prefix}: ${item.title}`, logStatus, id, wsId);
+        await logStmt.run(item.module_id, item.action_type, `${prefix}: ${item.title}`, logStatus, id, wsId);
         createNotification(
           action === 'approve' ? 'action_completed' : 'action_failed',
           `${prefix}: ${item.title}`,
@@ -324,10 +321,8 @@ router.post('/approvals/batch', (req, res) => {
         );
       }
     }
-    return updated;
+    return count;
   });
-
-  const updated = batchTransaction();
   res.json({ success: true, updated });
 });
 

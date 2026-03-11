@@ -7,12 +7,12 @@ const { requireAuth } = require('../middleware/requireAuth');
 router.use(requireAuth);
 
 // GET /api/gdpr/export — export all user data as JSON
-router.get('/export', (req, res) => {
+router.get('/export', async (req, res) => {
   try {
     const userId = req.user.id;
 
     // Gather user profile (exclude password_hash)
-    const user = db.prepare(`
+    const user = await db.prepare(`
       SELECT id, email, display_name, avatar_url, role, created_at, updated_at
       FROM users WHERE id = ?
     `).get(userId);
@@ -22,7 +22,7 @@ router.get('/export', (req, res) => {
     }
 
     // Gather workspace memberships
-    const memberships = db.prepare(`
+    const memberships = await db.prepare(`
       SELECT wm.workspace_id, wm.role, wm.joined_at, w.name AS workspace_name, w.slug AS workspace_slug
       FROM workspace_members wm
       JOIN workspaces w ON w.id = wm.workspace_id
@@ -30,7 +30,7 @@ router.get('/export', (req, res) => {
     `).all(userId);
 
     // Gather workspaces owned by user
-    const ownedWorkspaces = db.prepare(`
+    const ownedWorkspaces = await db.prepare(`
       SELECT id, name, slug, created_at, updated_at
       FROM workspaces WHERE owner_id = ?
     `).all(userId);
@@ -39,7 +39,7 @@ router.get('/export', (req, res) => {
     const workspaceIds = memberships.map(m => String(m.workspace_id));
     let activityLog = [];
     for (const wid of workspaceIds) {
-      const rows = db.prepare(`
+      const rows = await db.prepare(`
         SELECT id, module_id, action, title, detail, entity_id, workspace_id, created_at
         FROM activity_log WHERE workspace_id = ?
         ORDER BY created_at DESC LIMIT 1000
@@ -65,41 +65,39 @@ router.get('/export', (req, res) => {
 });
 
 // DELETE /api/gdpr/delete-account — delete user account and all associated data
-router.delete('/delete-account', (req, res) => {
+router.delete('/delete-account', async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const deleteAll = db.transaction(() => {
+    await db.transaction(async (tx) => {
       // 1. Find workspaces owned by this user
-      const ownedWorkspaces = db.prepare(
+      const ownedWorkspaces = await tx.prepare(
         'SELECT id FROM workspaces WHERE owner_id = ?'
       ).all(userId);
       const ownedIds = ownedWorkspaces.map(w => w.id);
 
       // 2. Delete activity log entries for owned workspaces
       for (const wid of ownedIds) {
-        db.prepare('DELETE FROM activity_log WHERE workspace_id = ?').run(wid);
+        await tx.prepare('DELETE FROM activity_log WHERE workspace_id = ?').run(wid);
       }
 
       // 3. Delete workspace members for owned workspaces
       for (const wid of ownedIds) {
-        db.prepare('DELETE FROM workspace_members WHERE workspace_id = ?').run(wid);
+        await tx.prepare('DELETE FROM workspace_members WHERE workspace_id = ?').run(wid);
       }
 
       // 4. Delete all owned workspaces
-      db.prepare('DELETE FROM workspaces WHERE owner_id = ?').run(userId);
+      await tx.prepare('DELETE FROM workspaces WHERE owner_id = ?').run(userId);
 
       // 5. Remove user from any workspaces they are a member of (not owner)
-      db.prepare('DELETE FROM workspace_members WHERE user_id = ?').run(userId);
+      await tx.prepare('DELETE FROM workspace_members WHERE user_id = ?').run(userId);
 
       // 6. Delete refresh tokens for this user
-      db.prepare('DELETE FROM refresh_tokens WHERE user_id = ?').run(userId);
+      await tx.prepare('DELETE FROM refresh_tokens WHERE user_id = ?').run(userId);
 
       // 7. Delete the user record
-      db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+      await tx.prepare('DELETE FROM users WHERE id = ?').run(userId);
     });
-
-    deleteAll();
 
     res.json({ success: true, message: 'Account and all associated data have been permanently deleted.' });
   } catch (error) {
