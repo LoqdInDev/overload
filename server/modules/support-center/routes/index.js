@@ -59,7 +59,7 @@ router.put('/:id', async (req, res) => {
 
     const { subject, description, customer_email, priority, status, assigned_to, ai_response } = req.body;
     db.prepare(
-      'UPDATE sc_tickets SET subject = ?, description = ?, customer_email = ?, priority = ?, status = ?, assigned_to = ?, ai_response = ?, updated_at = datetime(\'now\') WHERE id = ? AND workspace_id = ?'
+      'UPDATE sc_tickets SET subject = ?, description = ?, customer_email = ?, priority = ?, status = ?, assigned_to = ?, ai_response = ?, updated_at = NOW() WHERE id = ? AND workspace_id = ?'
     ).run(
       subject || existing.subject,
       description !== undefined ? description : existing.description,

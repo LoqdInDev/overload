@@ -52,7 +52,7 @@ router.put('/:id', async (req, res) => {
 
     const { name, description, criteria, size } = req.body;
     db.prepare(
-      'UPDATE ci_segments SET name = ?, description = ?, criteria = ?, size = ?, updated_at = datetime(\'now\') WHERE id = ? AND workspace_id = ?'
+      'UPDATE ci_segments SET name = ?, description = ?, criteria = ?, size = ?, updated_at = NOW() WHERE id = ? AND workspace_id = ?'
     ).run(
       name || existing.name,
       description !== undefined ? description : existing.description,

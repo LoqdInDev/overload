@@ -54,7 +54,7 @@ router.put('/:id', async (req, res) => {
 
     const { date, yesterday_summary, today_recommendations, weekly_snapshot } = req.body;
     db.prepare(
-      'UPDATE adv_briefings SET date = ?, yesterday_summary = ?, today_recommendations = ?, weekly_snapshot = ?, generated_at = datetime(\'now\') WHERE id = ? AND workspace_id = ?'
+      'UPDATE adv_briefings SET date = ?, yesterday_summary = ?, today_recommendations = ?, weekly_snapshot = ?, generated_at = NOW() WHERE id = ? AND workspace_id = ?'
     ).run(
       date || existing.date,
       yesterday_summary !== undefined ? yesterday_summary : existing.yesterday_summary,

@@ -11,7 +11,7 @@ async function initDatabase() {
       size INTEGER,
       criteria TEXT,
       status TEXT DEFAULT 'active',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
@@ -23,7 +23,7 @@ async function initDatabase() {
       name TEXT NOT NULL,
       filters TEXT,
       size INTEGER,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (audience_id) REFERENCES ab_audiences(id)
     )
   `);

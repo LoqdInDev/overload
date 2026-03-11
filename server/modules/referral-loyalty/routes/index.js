@@ -103,7 +103,7 @@ router.put('/:id', async (req, res) => {
 
     const { name, type, reward_type, reward_value, rules, status } = req.body;
     db.prepare(
-      'UPDATE rl_programs SET name = ?, type = ?, reward_type = ?, reward_value = ?, rules = ?, status = ?, updated_at = datetime(\'now\') WHERE id = ? AND workspace_id = ?'
+      'UPDATE rl_programs SET name = ?, type = ?, reward_type = ?, reward_value = ?, rules = ?, status = ?, updated_at = NOW() WHERE id = ? AND workspace_id = ?'
     ).run(
       name || existing.name,
       type !== undefined ? type : existing.type,
