@@ -1,7 +1,7 @@
 const express = require('express');
 const { db } = require('../../../db/database');
 
-async function getRouter() {
+function getRouter() {
   const router = express.Router();
 
   // Helper: safely query tables that may not exist
