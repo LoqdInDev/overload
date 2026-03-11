@@ -196,7 +196,7 @@ function Toast({ message, type = 'error', onDismiss }) {
 export default function AdsPage() {
   usePageTitle('Paid Advertising');
   const [activePlatform, setActivePlatform] = useState(null);
-  const [tab, setTab] = useState('builder'); // 'builder' | 'history'
+  const [tab, setTab] = useState('builder'); // 'builder' | 'history' | 'optimizer'
   const [generating, setGenerating] = useState(false);
   const [campaign, setCampaign] = useState({ name: '', objective: 'conversions', budget: '50', audience: '', template: '' });
   const [audiencePreset, setAudiencePreset] = useState(null);
@@ -231,6 +231,12 @@ export default function AdsPage() {
   const [adAccounts, setAdAccounts] = useState(null);
   const [selectedAccount, setSelectedAccount] = useState('');
   const [userPlan, setUserPlan] = useState('free');
+
+  // Optimizer
+  const [optLog, setOptLog] = useState([]);
+  const [optMetrics, setOptMetrics] = useState([]);
+  const [optLoading, setOptLoading] = useState(false);
+  const [optimizing, setOptimizing] = useState(false);
 
   // History
   const [savedCampaigns, setSavedCampaigns] = useState([]);
@@ -402,7 +408,31 @@ export default function AdsPage() {
     } catch {} // silently fail
   };
 
+  const loadOptData = async () => {
+    setOptLoading(true);
+    try {
+      const [logRes, metricsRes] = await Promise.all([
+        fetchJSON('/api/ads/optimize/log').catch(() => []),
+        fetchJSON('/api/ads/optimize/metrics').catch(() => []),
+      ]);
+      setOptLog(Array.isArray(logRes) ? logRes : logRes.log || []);
+      setOptMetrics(Array.isArray(metricsRes) ? metricsRes : metricsRes.metrics || []);
+    } catch {}
+    setOptLoading(false);
+  };
+
+  const runOptimizeNow = async () => {
+    setOptimizing(true);
+    try {
+      const res = await postJSON('/api/ads/optimize', {});
+      showToast(res.message || 'Optimization cycle complete', 'success');
+      loadOptData();
+    } catch (err) { showToast(err.message || 'Optimization failed'); }
+    setOptimizing(false);
+  };
+
   useEffect(() => { fetchAdAccounts(); fetchPlan(); }, []);
+  useEffect(() => { if (tab === 'optimizer') loadOptData(); }, [tab]);
 
   const launchToPlatform = async () => {
     if (!result || !activePlatform) return;
@@ -501,7 +531,146 @@ export default function AdsPage() {
   );
 
   // ── Platform selection screen ────────────────────────────────
-  if (!activePlatform || tab === 'history') {
+  // ── Optimizer Tab Content ───────────────────────────────────
+  const optimizerContent = (
+    <div className="animate-fade-in space-y-4">
+      {/* Plan gate */}
+      {userPlan !== 'autopilot' ? (
+        <div className="panel rounded-2xl p-8 text-center">
+          <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: '#10b98115', border: '1px solid #10b98130' }}>
+            <svg className="w-7 h-7" style={{ color: '#10b981' }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
+          </div>
+          <h3 className="text-lg font-bold text-white mb-2">Autopilot Plan Required</h3>
+          <p className="text-sm text-gray-400 mb-1">AI-powered campaign optimization runs autonomously on Autopilot.</p>
+          <p className="text-xs text-gray-500 mb-5">Your current plan: <span className="font-bold text-gray-300 capitalize">{userPlan}</span></p>
+          <a href="/billing" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all" style={{ background: '#10b981', color: '#fff' }}>
+            Upgrade to Autopilot — $299/mo
+          </a>
+        </div>
+      ) : (
+        <>
+          {/* Controls */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-300 font-semibold">Autonomous Optimizer</p>
+              <p className="text-xs text-gray-500">AI monitors metrics every 6 hours — pauses underperformers, scales winners, suggests new campaigns.</p>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={loadOptData} className="chip text-[10px]">Refresh</button>
+              <button onClick={runOptimizeNow} disabled={optimizing} className="chip text-xs" style={{ background: '#10b98120', borderColor: '#10b98140', color: '#10b981' }}>
+                {optimizing ? <><span className="w-3 h-3 border-2 border-emerald-600 border-t-emerald-300 rounded-full animate-spin inline-block mr-1.5" />Running...</> : 'Run Optimization Now'}
+              </button>
+            </div>
+          </div>
+
+          {optLoading && <div className="panel rounded-2xl p-8 text-center text-sm text-gray-600">Loading optimization data...</div>}
+
+          {/* Latest Metrics */}
+          {!optLoading && optMetrics.length > 0 && (
+            <div className="panel rounded-2xl p-4 sm:p-6">
+              <p className="hud-label text-[11px] mb-4">LIVE CAMPAIGN METRICS</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-gray-500 uppercase text-[10px]">
+                      <th className="text-left py-2 pr-3 font-semibold">Campaign</th>
+                      <th className="text-left py-2 pr-3 font-semibold">Platform</th>
+                      <th className="text-right py-2 pr-3 font-semibold">Spend</th>
+                      <th className="text-right py-2 pr-3 font-semibold">Impressions</th>
+                      <th className="text-right py-2 pr-3 font-semibold">Clicks</th>
+                      <th className="text-right py-2 pr-3 font-semibold">CTR</th>
+                      <th className="text-right py-2 pr-3 font-semibold">CPC</th>
+                      <th className="text-right py-2 pr-3 font-semibold">Conv</th>
+                      <th className="text-right py-2 pr-3 font-semibold">CPA</th>
+                      <th className="text-right py-2 font-semibold">ROAS</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-indigo-500/[0.04]">
+                    {optMetrics.map((m, i) => (
+                      <tr key={i} className="hover:bg-white/[0.01] transition-colors">
+                        <td className="py-2.5 pr-3 text-gray-300 font-semibold truncate max-w-[160px]">{m.campaign_name || m.campaign_id}</td>
+                        <td className="py-2.5 pr-3">
+                          <div className="flex items-center gap-1.5">
+                            <AdPlatformIcon id={m.platform} size={12} />
+                            <span className="text-gray-400 capitalize">{m.platform}</span>
+                          </div>
+                        </td>
+                        <td className="py-2.5 pr-3 text-right text-gray-300 font-mono">${Number(m.spend || 0).toFixed(2)}</td>
+                        <td className="py-2.5 pr-3 text-right text-gray-400 font-mono">{Number(m.impressions || 0).toLocaleString()}</td>
+                        <td className="py-2.5 pr-3 text-right text-gray-400 font-mono">{Number(m.clicks || 0).toLocaleString()}</td>
+                        <td className="py-2.5 pr-3 text-right font-mono" style={{ color: Number(m.ctr) > 2 ? '#22c55e' : '#f59e0b' }}>{Number(m.ctr || 0).toFixed(2)}%</td>
+                        <td className="py-2.5 pr-3 text-right text-gray-400 font-mono">${Number(m.cpc || 0).toFixed(2)}</td>
+                        <td className="py-2.5 pr-3 text-right text-gray-400 font-mono">{Number(m.conversions || 0)}</td>
+                        <td className="py-2.5 pr-3 text-right font-mono" style={{ color: Number(m.cpa) < 20 ? '#22c55e' : Number(m.cpa) > 50 ? '#ef4444' : '#f59e0b' }}>{m.cpa ? `$${Number(m.cpa).toFixed(2)}` : '—'}</td>
+                        <td className="py-2.5 text-right font-mono" style={{ color: Number(m.roas) >= 3 ? '#22c55e' : Number(m.roas) >= 1 ? '#f59e0b' : '#ef4444' }}>{m.roas ? `${Number(m.roas).toFixed(1)}x` : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Optimization Log */}
+          {!optLoading && optLog.length > 0 && (
+            <div className="panel rounded-2xl p-4 sm:p-6">
+              <p className="hud-label text-[11px] mb-4">OPTIMIZATION LOG</p>
+              <div className="space-y-3">
+                {optLog.map((entry, i) => {
+                  let decisions = [];
+                  try { decisions = typeof entry.decisions === 'string' ? JSON.parse(entry.decisions) : (entry.decisions || []); } catch {}
+                  let analysis = '';
+                  try { analysis = typeof entry.ai_analysis === 'string' ? JSON.parse(entry.ai_analysis)?.summary || '' : (entry.ai_analysis?.summary || ''); } catch {}
+                  const actionColors = { pause: '#ef4444', enable: '#22c55e', budget_increase: '#3b82f6', budget_decrease: '#f59e0b', new_campaign: '#8b5cf6' };
+
+                  return (
+                    <div key={i} className="panel rounded-xl p-4">
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{
+                            background: entry.status === 'executed' ? '#22c55e18' : entry.status === 'queued' ? '#f59e0b18' : '#6b728018',
+                            color: entry.status === 'executed' ? '#22c55e' : entry.status === 'queued' ? '#f59e0b' : '#6b7280',
+                          }}>
+                            {entry.status === 'executed' ? 'AUTO-EXECUTED' : entry.status === 'queued' ? 'NEEDS APPROVAL' : (entry.status || 'pending').toUpperCase()}
+                          </span>
+                          <span className="text-[10px] text-gray-600">{entry.created_at ? new Date(entry.created_at).toLocaleString() : ''}</span>
+                        </div>
+                      </div>
+
+                      {analysis && <p className="text-xs text-gray-400 mb-3">{analysis}</p>}
+
+                      {decisions.length > 0 && (
+                        <div className="space-y-1.5">
+                          {decisions.map((d, j) => (
+                            <div key={j} className="flex items-center gap-2 text-xs bg-black/30 rounded-lg px-3 py-2">
+                              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: actionColors[d.action] || '#6b7280' }} />
+                              <span className="font-bold text-gray-300 capitalize">{(d.action || '').replace(/_/g, ' ')}</span>
+                              {d.campaign_id && <span className="text-gray-600 font-mono">{d.campaign_id}</span>}
+                              {d.reason && <span className="text-gray-500 flex-1 truncate">— {d.reason}</span>}
+                              {d.new_budget && <span className="text-blue-400 font-mono">${d.new_budget}/day</span>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {!optLoading && optLog.length === 0 && optMetrics.length === 0 && (
+            <div className="panel rounded-2xl p-8 text-center">
+              <p className="text-sm text-gray-500 mb-2">No optimization data yet.</p>
+              <p className="text-xs text-gray-600">Launch a campaign first, then the optimizer will start monitoring metrics and suggesting improvements automatically every 6 hours.</p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+
+  if (!activePlatform || tab === 'history' || tab === 'optimizer') {
     return (
       <div className="p-4 sm:p-6 lg:p-12">
         {toast && <Toast message={toast.message} type={toast.type} onDismiss={() => setToast(null)} />}
@@ -514,14 +683,14 @@ export default function AdsPage() {
 
           {/* Tabs */}
           <div className="flex gap-1 mb-6">
-            {['builder', 'history'].map(t => (
+            {[['builder', 'Campaign Builder'], ['history', `Saved Campaigns${savedCampaigns.length > 0 ? ` (${savedCampaigns.length})` : ''}`], ['optimizer', 'AI Optimizer']].map(([t, label]) => (
               <button key={t} onClick={() => setTab(t)} className={`chip text-xs ${tab === t ? 'active' : ''}`} style={tab === t ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
-                {t === 'builder' ? 'Campaign Builder' : `Saved Campaigns${savedCampaigns.length > 0 ? ` (${savedCampaigns.length})` : ''}`}
+                {label}
               </button>
             ))}
           </div>
 
-          {tab === 'history' ? historyContent : (
+          {tab === 'optimizer' ? optimizerContent : tab === 'history' ? historyContent : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-5 stagger">
                 {PLATFORMS.map(p => (
@@ -612,16 +781,16 @@ export default function AdsPage() {
             </div>
           </div>
           <div className="ml-auto flex gap-1">
-            {['builder', 'history'].map(t => (
+            {[['builder', 'Builder'], ['history', 'History'], ['optimizer', 'Optimizer']].map(([t, label]) => (
               <button key={t} onClick={() => { if (t === 'history') loadHistory(); setTab(t); }}
                 className={`chip text-[10px] ${tab === t ? 'active' : ''}`} style={tab === t ? { background: `${MODULE_COLOR}20`, borderColor: `${MODULE_COLOR}40`, color: MODULE_COLOR } : {}}>
-                {t === 'builder' ? 'Builder' : 'History'}
+                {label}
               </button>
             ))}
           </div>
         </div>
 
-        {tab === 'history' ? historyContent : (
+        {tab === 'optimizer' ? optimizerContent : tab === 'history' ? historyContent : (
           <>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
               {/* Left: Campaign Config */}

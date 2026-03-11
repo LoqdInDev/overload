@@ -288,6 +288,10 @@ setInterval(() => cleanupOldMedia(7), 24 * 60 * 60 * 1000);
 const { startRuleEngine } = require('./services/ruleEngine');
 startRuleEngine();
 
+// Start the ads optimizer (polls metrics + AI analysis every 6 hours)
+const { startAdsOptimizer } = require('./modules/paid-advertising/services/adsOptimizer');
+startAdsOptimizer();
+
 const server = app.listen(PORT, () => {
   logger.info(`Overload server running on http://localhost:${PORT}`, { modules: loadedModules.length });
 });
