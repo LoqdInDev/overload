@@ -31,7 +31,11 @@ const { db } = require('./db/database');
 
 // ── Production env var validation ─────────────────────────────────
 if (process.env.NODE_ENV === 'production') {
-  const required = ['JWT_SECRET', 'DATABASE_URL'];
+  const required = ['JWT_SECRET'];
+  if (!process.env.DATABASE_URL && !process.env.PGHOST) {
+    console.error('FATAL: Missing DATABASE_URL or PGHOST — cannot connect to database');
+    process.exit(1);
+  }
   const recommended = ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS', 'CORS_ORIGIN'];
   const missing = required.filter(k => !process.env[k]);
   if (missing.length) {

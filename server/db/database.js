@@ -2,20 +2,31 @@ const { Pool } = require('pg');
 const crypto = require('crypto');
 
 // ── PostgreSQL connection pool ────────────────────────────────────
+// Prefer DATABASE_URL, but fall back to individual PG* env vars (Railway provides both)
 const dbUrl = process.env.DATABASE_URL;
-try {
-  const parsed = new URL(dbUrl || '');
-  console.log(`[db] Connecting to PostgreSQL at ${parsed.hostname}:${parsed.port || 5432}/${parsed.pathname?.slice(1)}`);
-} catch {
-  console.error(`[db] DATABASE_URL is missing or invalid: "${dbUrl ? dbUrl.slice(0, 20) + '...' : '(not set)'}"`);
-}
-const pool = new Pool({
-  connectionString: dbUrl,
+const poolConfig = {
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
-});
+};
+
+if (dbUrl) {
+  poolConfig.connectionString = dbUrl;
+  try {
+    const parsed = new URL(dbUrl);
+    console.log(`[db] Connecting to PostgreSQL at ${parsed.hostname}:${parsed.port || 5432}/${parsed.pathname?.slice(1)}`);
+  } catch {
+    console.log(`[db] Connecting via DATABASE_URL`);
+  }
+} else if (process.env.PGHOST) {
+  // pg library auto-reads PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE
+  console.log(`[db] Connecting to PostgreSQL at ${process.env.PGHOST}:${process.env.PGPORT || 5432}/${process.env.PGDATABASE || 'railway'} (via PG* env vars)`);
+} else {
+  console.error('[db] WARNING: No DATABASE_URL or PGHOST set — database connection will fail');
+}
+
+const pool = new Pool(poolConfig);
 
 pool.on('error', (err) => {
   console.error('Unexpected PostgreSQL pool error:', err.message);
