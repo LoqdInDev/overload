@@ -90,11 +90,6 @@ const TABLES = [
   'wf_workflows', 'wf_steps', 'wf_runs',
 ];
 
-async function hasColumn(table, column) {
-  const cols = db.prepare(`PRAGMA table_info(${table})`).all();
-  return cols.some(c => c.name === column);
-}
-
 async function tableExists(table) {
   return !!await db.prepare("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = ?").get(table);
 }
@@ -104,11 +99,10 @@ async function runMigration() {
 
   let migrated = 0;
   for (const table of TABLES) {
-    if (!tableExists(table)) continue;
-    if (hasColumn(table, 'workspace_id')) continue;
+    if (!(await tableExists(table))) continue;
 
     try {
-      await db.exec(`ALTER TABLE ${table} ADD COLUMN workspace_id TEXT`);
+      await db.exec(`ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS workspace_id TEXT`);
       if (defaultWsId) {
         await db.prepare(`UPDATE ${table} SET workspace_id = ? WHERE workspace_id IS NULL`).run(defaultWsId);
       }
@@ -120,10 +114,10 @@ async function runMigration() {
   }
 
   // Fix int_connections: remove old UNIQUE(provider_id), make it UNIQUE(workspace_id, provider_id)
-  fixIntConnections();
+  await fixIntConnections();
 
   // Fix ae_settings: make key workspace-scoped
-  fixAeSettings();
+  await fixAeSettings();
 
   if (migrated > 0) {
     console.log(`  Workspace migration: added workspace_id to ${migrated} table(s)`);
@@ -131,23 +125,22 @@ async function runMigration() {
 }
 
 async function fixIntConnections() {
-  if (!tableExists('int_connections')) return;
-  // Check if the unique index already includes workspace_id
-  const indices = db.prepare("PRAGMA index_list(int_connections)").all();
-  const hasWsUnique = indices.some(idx => {
-    const cols = db.prepare(`PRAGMA index_info(${idx.name})`).all();
-    return cols.some(c => c.name === 'workspace_id') && cols.some(c => c.name === 'provider_id');
-  });
-  if (hasWsUnique) return;
+  if (!(await tableExists('int_connections'))) return;
+  // Check if the composite unique index already exists
+  const existing = await db.prepare(
+    "SELECT 1 FROM pg_indexes WHERE tablename = 'int_connections' AND indexname = 'idx_int_conn_ws_provider'"
+  ).get();
+  if (existing) return;
 
   try {
-    // Drop the old unique index on provider_id if it exists
+    // Drop old unique indexes on just provider_id (find them via pg_indexes)
+    const indices = await db.prepare(
+      "SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'int_connections'"
+    ).all();
     for (const idx of indices) {
-      if (idx.unique) {
-        const cols = db.prepare(`PRAGMA index_info(${idx.name})`).all();
-        if (cols.length === 1 && cols[0].name === 'provider_id') {
-          await db.exec(`DROP INDEX IF EXISTS ${idx.name}`);
-        }
+      // Match indexes that are UNIQUE and only on provider_id
+      if (idx.indexdef && idx.indexdef.includes('UNIQUE') && idx.indexdef.includes('provider_id') && !idx.indexdef.includes('workspace_id')) {
+        await db.exec(`DROP INDEX IF EXISTS ${idx.indexname}`);
       }
     }
     await db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_int_conn_ws_provider ON int_connections(workspace_id, provider_id)');
@@ -157,15 +150,13 @@ async function fixIntConnections() {
 }
 
 async function fixAeSettings() {
-  if (!tableExists('ae_settings')) return;
+  if (!(await tableExists('ae_settings'))) return;
   // ae_settings uses key as PRIMARY KEY. We need workspace-scoped keys.
-  // Since SQLite can't change PKs, we'll create a unique index instead.
-  const indices = db.prepare("PRAGMA index_list(ae_settings)").all();
-  const hasWsKey = indices.some(idx => {
-    const cols = db.prepare(`PRAGMA index_info(${idx.name})`).all();
-    return cols.some(c => c.name === 'workspace_id') && cols.some(c => c.name === 'key');
-  });
-  if (hasWsKey) return;
+  // Check if the composite unique index already exists
+  const existing = await db.prepare(
+    "SELECT 1 FROM pg_indexes WHERE tablename = 'ae_settings' AND indexname = 'idx_ae_settings_ws_key'"
+  ).get();
+  if (existing) return;
 
   try {
     await db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_ae_settings_ws_key ON ae_settings(workspace_id, key)');

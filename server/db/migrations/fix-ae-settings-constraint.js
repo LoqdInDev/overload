@@ -6,7 +6,7 @@ const { db } = require('../database');
  */
 async function runMigration() {
   const tableExists = await db.prepare(
-    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='ae_settings'"
+    "SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'ae_settings'"
   ).get();
 
   if (!tableExists) return;
@@ -24,7 +24,7 @@ async function runMigration() {
 
   // Migrate existing rows — skip rows with NULL workspace_id
   const rows = await db.prepare('SELECT key, workspace_id, value, updated_at FROM ae_settings WHERE workspace_id IS NOT NULL').all();
-  const insert = db.prepare('INSERT OR IGNORE INTO ae_settings_new (key, workspace_id, value, updated_at) VALUES (?, ?, ?, ?)');
+  const insert = db.prepare('INSERT INTO ae_settings_new (key, workspace_id, value, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING');
   for (const row of rows) {
     insert.run(row.key, row.workspace_id, row.value, row.updated_at);
   }

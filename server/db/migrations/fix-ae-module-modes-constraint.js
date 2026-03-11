@@ -35,9 +35,10 @@ async function runMigration() {
 
   // Copy data
   await db.exec(`
-    INSERT OR IGNORE INTO ae_module_modes_new (id, workspace_id, module_id, mode, config, risk_level, updated_at, created_at)
+    INSERT INTO ae_module_modes_new (id, workspace_id, module_id, mode, config, risk_level, updated_at, created_at)
     SELECT id, workspace_id, module_id, mode, config, risk_level, updated_at, created_at
     FROM ae_module_modes
+    ON CONFLICT DO NOTHING
   `);
 
   await db.exec('DROP TABLE ae_module_modes');
