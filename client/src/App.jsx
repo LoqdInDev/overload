@@ -130,7 +130,11 @@ export default function App() {
   const location = useLocation();
   const [navOpen, setNavOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [dark, setDark] = useState(() => localStorage.getItem('overload_theme') === 'dark');
+  const [dark, setDark] = useState(() => {
+    const saved = localStorage.getItem('overload_theme');
+    if (saved) return saved === 'dark';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
   const [pageKey, setPageKey] = useState(location.pathname);
   const [cmdPaletteOpen, setCmdPaletteOpen] = useState(false);
   const navigate = useNavigate();
