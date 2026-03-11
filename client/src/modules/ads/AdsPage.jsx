@@ -230,6 +230,7 @@ export default function AdsPage() {
   const [launchResult, setLaunchResult] = useState(null);
   const [adAccounts, setAdAccounts] = useState(null);
   const [selectedAccount, setSelectedAccount] = useState('');
+  const [userPlan, setUserPlan] = useState('free');
 
   // History
   const [savedCampaigns, setSavedCampaigns] = useState([]);
@@ -394,7 +395,14 @@ export default function AdsPage() {
     } catch {} // silently fail — accounts panel only shows if connected
   };
 
-  useEffect(() => { fetchAdAccounts(); }, []);
+  const fetchPlan = async () => {
+    try {
+      const data = await fetchJSON('/api/billing/subscription');
+      if (data.plan) setUserPlan(data.plan);
+    } catch {} // silently fail
+  };
+
+  useEffect(() => { fetchAdAccounts(); fetchPlan(); }, []);
 
   const launchToPlatform = async () => {
     if (!result || !activePlatform) return;
@@ -774,7 +782,8 @@ export default function AdsPage() {
                       {exportLoading ? 'Exporting...' : exportConfig ? 'Re-export' : `Export for ${platform?.name || 'Platform'}`}
                     </button>
                     <button onClick={() => setLaunchResult(prev => prev ? null : 'show')} className="chip text-xs" style={{ background: '#22c55e15', borderColor: '#22c55e30', color: '#22c55e' }}>
-                      {launchResult?.success ? 'Launched' : `Launch to ${platform?.name || 'Platform'}`}
+                      {launchResult?.success ? 'Launched' : userPlan !== 'autopilot' ? `Launch to ${platform?.name || 'Platform'}` : `Launch to ${platform?.name || 'Platform'}`}
+                      {userPlan !== 'autopilot' && <svg className="w-3 h-3 ml-1 inline-block" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>}
                     </button>
                   </div>
                 </div>
@@ -882,6 +891,26 @@ export default function AdsPage() {
                       <button onClick={() => setLaunchResult(null)} className="text-gray-600 hover:text-gray-400 text-xs">&times;</button>
                     </div>
 
+                    {/* Plan gate — Autopilot required */}
+                    {userPlan !== 'autopilot' && (
+                      <div className="text-center py-6">
+                        <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: '#22c55e15', border: '1px solid #22c55e30' }}>
+                          <svg className="w-7 h-7" style={{ color: '#22c55e' }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
+                        </div>
+                        <h3 className="text-lg font-bold text-white mb-2">Autopilot Plan Required</h3>
+                        <p className="text-sm text-gray-400 mb-1">Launch campaigns directly to {platform?.name} from Overload.</p>
+                        <p className="text-xs text-gray-500 mb-5">Your current plan: <span className="font-bold text-gray-300 capitalize">{userPlan}</span></p>
+                        <div className="flex items-center justify-center gap-3">
+                          <a href="/billing" className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all" style={{ background: '#22c55e', color: '#fff' }}>
+                            Upgrade to Autopilot — $299/mo
+                          </a>
+                        </div>
+                        <p className="text-[10px] text-gray-600 mt-3">Includes: auto-launch ads, full automation engine, AI autopilot across all modules</p>
+                      </div>
+                    )}
+
+                    {userPlan === 'autopilot' && (
+                      <>
                     <p className="text-xs text-gray-400 mb-4">This will create the campaign directly on your {platform?.name} Ads account as <strong className="text-amber-400">PAUSED</strong>. You can review and enable it in your Ads Manager.</p>
 
                     {/* Account selector for Google/Meta */}
@@ -929,6 +958,8 @@ export default function AdsPage() {
                       <div className="mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
                         <p className="text-xs text-red-400">{launchResult.error}</p>
                       </div>
+                    )}
+                      </>
                     )}
                   </div>
                 )}

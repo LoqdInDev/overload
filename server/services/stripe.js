@@ -252,9 +252,37 @@ async function handleWebhookEvent(event) {
   }
 }
 
+// ── Plan hierarchy ──────────────────────────────────────────────────
+const PLAN_LEVEL = { free: 0, manual: 1, copilot: 2, autopilot: 3 };
+
+/**
+ * Express middleware: require a minimum plan level.
+ * Usage: router.post('/launch', requirePlan('autopilot'), handler)
+ */
+function requirePlan(minimumPlan) {
+  const minLevel = PLAN_LEVEL[minimumPlan] || 0;
+  return (req, res, next) => {
+    const sub = getSubscription(req.user?.id, req.workspace?.id);
+    const userPlan = sub?.plan || 'free';
+    const userStatus = sub?.status;
+    const isActive = ['trialing', 'active'].includes(userStatus);
+    const userLevel = isActive ? (PLAN_LEVEL[userPlan] || 0) : 0;
+
+    if (userLevel >= minLevel) return next();
+
+    const planName = PLANS[minimumPlan]?.name || minimumPlan;
+    res.status(403).json({
+      error: `This feature requires the ${planName} plan ($${(PLANS[minimumPlan]?.priceMonthly / 100).toFixed(0)}/mo). Upgrade in Settings → Billing.`,
+      requiredPlan: minimumPlan,
+      currentPlan: isActive ? userPlan : 'free',
+    });
+  };
+}
+
 module.exports = {
   stripe,
   PLANS,
+  PLAN_LEVEL,
   TRIAL_DAYS,
   initBillingTables,
   createCustomer,
@@ -263,5 +291,6 @@ module.exports = {
   createBillingPortalSession,
   upsertSubscription,
   getSubscription,
+  requirePlan,
   handleWebhookEvent,
 };

@@ -6,6 +6,7 @@ const { getQueries } = require('../db/queries');
 const { buildAdCampaignPrompt } = require('../prompts/adGenerator');
 const { setupSSE } = require('../../../services/sse');
 const pm = require('../../../services/platformManager');
+const { requirePlan } = require('../../../services/stripe');
 
 const router = express.Router();
 
@@ -573,8 +574,8 @@ router.post('/export-config', async (req, res) => {
   }
 });
 
-// POST /launch — launch campaign directly to ad platform (PAUSED)
-router.post('/launch', async (req, res) => {
+// POST /launch — launch campaign directly to ad platform (PAUSED) [Autopilot plan required]
+router.post('/launch', requirePlan('autopilot'), async (req, res) => {
   const wsId = req.workspace.id;
   const { campaign_result, platform, budget, objective, account_id } = req.body;
   if (!campaign_result || !platform) return res.status(400).json({ error: 'campaign_result and platform required' });
