@@ -225,6 +225,12 @@ export default function AdsPage() {
   const [exportConfig, setExportConfig] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
 
+  // Launch
+  const [launchLoading, setLaunchLoading] = useState(false);
+  const [launchResult, setLaunchResult] = useState(null);
+  const [adAccounts, setAdAccounts] = useState(null);
+  const [selectedAccount, setSelectedAccount] = useState('');
+
   // History
   const [savedCampaigns, setSavedCampaigns] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -260,6 +266,8 @@ export default function AdsPage() {
     setAdaptResults({});
     setShowPreview(false);
     setExportConfig(null);
+    setLaunchResult(null);
+    setSelectedAccount('');
 
     const platform = PLATFORMS.find(p => p.id === activePlatform);
     const objective = OBJECTIVES.find(o => o.id === campaign.objective);
@@ -377,6 +385,41 @@ export default function AdsPage() {
     a.click();
     URL.revokeObjectURL(url);
     showToast(`Downloaded ${filename}`, 'success');
+  };
+
+  const fetchAdAccounts = async () => {
+    try {
+      const data = await fetchJSON('/api/ads/platforms/accounts');
+      if (data.success) setAdAccounts(data.data);
+    } catch {} // silently fail — accounts panel only shows if connected
+  };
+
+  useEffect(() => { fetchAdAccounts(); }, []);
+
+  const launchToPlatform = async () => {
+    if (!result || !activePlatform) return;
+    const needsAccount = ['google', 'meta'].includes(activePlatform);
+    if (needsAccount && !selectedAccount) {
+      showToast(`Select a ${activePlatform === 'google' ? 'Google Ads Customer' : 'Meta Ad Account'} first`);
+      return;
+    }
+    setLaunchLoading(true);
+    setLaunchResult(null);
+    try {
+      const data = await postJSON('/api/ads/launch', {
+        campaign_result: result,
+        platform: activePlatform,
+        budget: campaign.budget,
+        objective: campaign.objective,
+        account_id: selectedAccount || undefined,
+      });
+      setLaunchResult(data);
+      showToast(data.message || 'Campaign launched!', 'success');
+    } catch (err) {
+      showToast(err.message || 'Launch failed');
+      setLaunchResult({ error: err.message });
+    }
+    setLaunchLoading(false);
   };
 
   const downloadJSON = (filename, obj) => {
@@ -730,6 +773,9 @@ export default function AdsPage() {
                     <button onClick={exportForPlatform} disabled={exportLoading} className="chip text-xs" style={{ background: '#f59e0b15', borderColor: '#f59e0b30', color: '#f59e0b' }}>
                       {exportLoading ? 'Exporting...' : exportConfig ? 'Re-export' : `Export for ${platform?.name || 'Platform'}`}
                     </button>
+                    <button onClick={() => setLaunchResult(prev => prev ? null : 'show')} className="chip text-xs" style={{ background: '#22c55e15', borderColor: '#22c55e30', color: '#22c55e' }}>
+                      {launchResult?.success ? 'Launched' : `Launch to ${platform?.name || 'Platform'}`}
+                    </button>
                   </div>
                 </div>
 
@@ -800,6 +846,88 @@ export default function AdsPage() {
                         <pre className="text-[11px] text-gray-500 bg-black/40 rounded-xl p-4 overflow-x-auto max-h-60 scrollbar-thin font-mono leading-relaxed">
                           {JSON.stringify(exportConfig.api_payload || exportConfig.campaign_setup, null, 2)}
                         </pre>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Launch to Platform */}
+                {launchResult && launchResult !== 'show' && launchResult.success && (
+                  <div className="panel rounded-2xl p-4 sm:p-6 animate-fade-up" style={{ borderColor: '#22c55e20', background: '#22c55e05' }}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#22c55e' }} />
+                        <p className="hud-label text-[11px]" style={{ color: '#22c55e' }}>CAMPAIGN LAUNCHED (PAUSED)</p>
+                      </div>
+                      <button onClick={() => setLaunchResult(null)} className="text-gray-600 hover:text-gray-400 text-xs">&times;</button>
+                    </div>
+                    <p className="text-sm text-gray-300 mb-3">{launchResult.message}</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {launchResult.campaignId && <div className="bg-black/30 rounded-xl p-3"><p className="text-[10px] text-gray-500 uppercase">Campaign ID</p><p className="text-xs text-gray-300 font-mono mt-1">{launchResult.campaignId}</p></div>}
+                      {launchResult.adSetId && <div className="bg-black/30 rounded-xl p-3"><p className="text-[10px] text-gray-500 uppercase">Ad Set ID</p><p className="text-xs text-gray-300 font-mono mt-1">{launchResult.adSetId}</p></div>}
+                      {launchResult.adGroupResource && <div className="bg-black/30 rounded-xl p-3"><p className="text-[10px] text-gray-500 uppercase">Ad Group</p><p className="text-xs text-gray-300 font-mono mt-1 break-all">{launchResult.adGroupResource.split('/').pop()}</p></div>}
+                      {launchResult.adId && <div className="bg-black/30 rounded-xl p-3"><p className="text-[10px] text-gray-500 uppercase">Ad ID</p><p className="text-xs text-gray-300 font-mono mt-1">{launchResult.adId}</p></div>}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-4">Your campaign was created as <strong className="text-amber-400">PAUSED</strong>. Open your {platform?.name} Ads Manager to review targeting, add creative assets, set your landing page URL, and enable it when ready.</p>
+                  </div>
+                )}
+
+                {launchResult === 'show' && (
+                  <div className="panel rounded-2xl p-4 sm:p-6 animate-fade-up" style={{ borderColor: '#22c55e20', background: '#22c55e05' }}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <svg className="w-5 h-5" style={{ color: '#22c55e' }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.841m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" /></svg>
+                        <p className="hud-label text-[11px]" style={{ color: '#22c55e' }}>LAUNCH TO {platform?.name?.toUpperCase()}</p>
+                      </div>
+                      <button onClick={() => setLaunchResult(null)} className="text-gray-600 hover:text-gray-400 text-xs">&times;</button>
+                    </div>
+
+                    <p className="text-xs text-gray-400 mb-4">This will create the campaign directly on your {platform?.name} Ads account as <strong className="text-amber-400">PAUSED</strong>. You can review and enable it in your Ads Manager.</p>
+
+                    {/* Account selector for Google/Meta */}
+                    {['google', 'meta'].includes(activePlatform) && (
+                      <div className="mb-4">
+                        <label className="text-xs text-gray-500 font-semibold uppercase tracking-wider block mb-2">
+                          {activePlatform === 'google' ? 'Google Ads Customer ID' : 'Meta Ad Account ID'}
+                        </label>
+                        {adAccounts?.[activePlatform] && !adAccounts[activePlatform].error ? (
+                          <div className="flex flex-wrap gap-2">
+                            {(Array.isArray(adAccounts[activePlatform]) ? adAccounts[activePlatform] : adAccounts[activePlatform].resourceNames?.map(r => ({ id: r.split('/').pop(), name: r })) || []).map(acc => (
+                              <button key={acc.id} onClick={() => setSelectedAccount(acc.id)} className="chip text-xs" style={selectedAccount === acc.id ? { background: `${platform?.color}20`, borderColor: `${platform?.color}40`, color: platform?.color } : {}}>
+                                {acc.name || acc.id}
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <input type="text" value={selectedAccount} onChange={e => setSelectedAccount(e.target.value)} placeholder={activePlatform === 'google' ? 'e.g. 1234567890' : 'e.g. act_1234567890'} className="w-full bg-black/30 border border-indigo-500/10 rounded-xl px-4 py-2.5 text-sm text-gray-200 placeholder-gray-600 focus:border-emerald-500/30 focus:outline-none" />
+                        )}
+                      </div>
+                    )}
+
+                    {/* TikTok/LinkedIn optional account ID */}
+                    {['tiktok', 'linkedin'].includes(activePlatform) && (
+                      <div className="mb-4">
+                        <label className="text-xs text-gray-500 font-semibold uppercase tracking-wider block mb-2">
+                          {activePlatform === 'tiktok' ? 'Advertiser ID (optional if saved in settings)' : 'Ad Account ID (optional if saved in settings)'}
+                        </label>
+                        <input type="text" value={selectedAccount} onChange={e => setSelectedAccount(e.target.value)} placeholder={activePlatform === 'tiktok' ? 'e.g. 7012345678901234567' : 'e.g. 12345678'} className="w-full bg-black/30 border border-indigo-500/10 rounded-xl px-4 py-2.5 text-sm text-gray-200 placeholder-gray-600 focus:border-emerald-500/30 focus:outline-none" />
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-3">
+                      <button onClick={launchToPlatform} disabled={launchLoading} className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all" style={{ background: launchLoading ? '#22c55e40' : '#22c55e', color: '#fff' }}>
+                        {launchLoading ? (
+                          <><div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> Launching...</>
+                        ) : (
+                          <><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.841m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" /></svg> Launch Campaign</>
+                        )}
+                      </button>
+                      <span className="text-[10px] text-gray-600">Creates as PAUSED</span>
+                    </div>
+
+                    {launchResult?.error && (
+                      <div className="mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
+                        <p className="text-xs text-red-400">{launchResult.error}</p>
                       </div>
                     )}
                   </div>

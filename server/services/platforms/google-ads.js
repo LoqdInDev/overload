@@ -83,4 +83,104 @@ async function enableCampaign(token, customerId, campaignId) {
   return res.json();
 }
 
-module.exports = { listAccessibleCustomers, getCampaigns, getCampaignMetrics, pauseCampaign, enableCampaign, providerId: 'google' };
+// ── Campaign Creation (all resources created as PAUSED) ──────────
+
+async function createCampaignBudget(token, customerId, { name, amountMicros }) {
+  const res = await fetch(`${BASE}/customers/${customerId}/campaignBudgets:mutate`, {
+    method: 'POST', headers: headers(token),
+    body: JSON.stringify({
+      operations: [{ create: { name: `${name} Budget`, amountMicros: String(amountMicros), deliveryMethod: 'STANDARD', explicitlyShared: false } }],
+    }),
+  });
+  if (!res.ok) throw new Error(`Google Ads create budget failed: ${res.status} ${await res.text()}`);
+  const data = await res.json();
+  return data.results[0].resourceName; // customers/{id}/campaignBudgets/{budgetId}
+}
+
+async function createCampaign(token, customerId, { name, objective, budgetMicros, adContent, targeting, strategy }) {
+  // 1. Create budget
+  const budgetResource = await createCampaignBudget(token, customerId, { name, amountMicros: budgetMicros });
+
+  // 2. Create campaign (PAUSED)
+  const objMap = { conversions: 'SEARCH', traffic: 'SEARCH', awareness: 'DISPLAY', leads: 'SEARCH' };
+  const biddingMap = { 'Maximize Conversions': 'MAXIMIZE_CONVERSIONS', 'Maximize Clicks': 'MAXIMIZE_CLICKS', 'Target CPA': 'TARGET_CPA', 'Target ROAS': 'TARGET_ROAS' };
+  const biddingStrategy = biddingMap[strategy?.bidding] || 'MAXIMIZE_CONVERSIONS';
+
+  const campaignRes = await fetch(`${BASE}/customers/${customerId}/campaigns:mutate`, {
+    method: 'POST', headers: headers(token),
+    body: JSON.stringify({
+      operations: [{
+        create: {
+          name, status: 'PAUSED',
+          advertisingChannelType: objMap[objective] || 'SEARCH',
+          campaignBudget: budgetResource,
+          biddingStrategyType: biddingStrategy,
+        },
+      }],
+    }),
+  });
+  if (!campaignRes.ok) throw new Error(`Google Ads create campaign failed: ${campaignRes.status} ${await campaignRes.text()}`);
+  const campaignData = await campaignRes.json();
+  const campaignResource = campaignData.results[0].resourceName;
+
+  // 3. Create ad group
+  const agRes = await fetch(`${BASE}/customers/${customerId}/adGroups:mutate`, {
+    method: 'POST', headers: headers(token),
+    body: JSON.stringify({
+      operations: [{
+        create: {
+          name: `${name} - Ad Group 1`, campaign: campaignResource,
+          status: 'ENABLED', type: 'SEARCH_STANDARD',
+        },
+      }],
+    }),
+  });
+  if (!agRes.ok) throw new Error(`Google Ads create ad group failed: ${agRes.status} ${await agRes.text()}`);
+  const agData = await agRes.json();
+  const adGroupResource = agData.results[0].resourceName;
+
+  // 4. Create responsive search ad
+  const headlines = (adContent?.headlines || []).slice(0, 15).map(text => ({ text }));
+  const descriptions = (adContent?.descriptions || []).slice(0, 4).map(text => ({ text }));
+  if (headlines.length < 3) while (headlines.length < 3) headlines.push({ text: name.substring(0, 30) });
+  if (descriptions.length < 2) while (descriptions.length < 2) descriptions.push({ text: `Learn more about ${name}`.substring(0, 90) });
+
+  const adRes = await fetch(`${BASE}/customers/${customerId}/adGroupAds:mutate`, {
+    method: 'POST', headers: headers(token),
+    body: JSON.stringify({
+      operations: [{
+        create: {
+          adGroup: adGroupResource, status: 'ENABLED',
+          ad: {
+            responsiveSearchAd: { headlines, descriptions },
+            finalUrls: ['https://example.com'], // user must replace
+          },
+        },
+      }],
+    }),
+  });
+  if (!adRes.ok) throw new Error(`Google Ads create ad failed: ${adRes.status} ${await adRes.text()}`);
+
+  // 5. Add keywords if available
+  const keywords = adContent?.extras?.keywords || targeting?.interests || [];
+  if (keywords.length > 0) {
+    const kwOps = keywords.slice(0, 20).map(kw => {
+      const keyword = typeof kw === 'string' ? kw : (kw.keyword || kw.text || '');
+      const matchMap = { Exact: 'EXACT', Phrase: 'PHRASE', Broad: 'BROAD' };
+      const matchType = typeof kw === 'string' ? 'BROAD' : (matchMap[kw.match_type] || 'BROAD');
+      return { create: { adGroup: adGroupResource, keyword: { text: keyword, matchType } } };
+    }).filter(op => op.create.keyword.text);
+
+    if (kwOps.length > 0) {
+      await fetch(`${BASE}/customers/${customerId}/adGroupCriteria:mutate`, {
+        method: 'POST', headers: headers(token),
+        body: JSON.stringify({ operations: kwOps }),
+      });
+    }
+  }
+
+  const campaignId = campaignResource.split('/').pop();
+  return { campaignId, campaignResource, adGroupResource, budgetResource, status: 'PAUSED' };
+}
+
+module.exports = { listAccessibleCustomers, getCampaigns, getCampaignMetrics, pauseCampaign, enableCampaign, createCampaign, providerId: 'google' };

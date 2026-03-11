@@ -573,6 +573,65 @@ router.post('/export-config', async (req, res) => {
   }
 });
 
+// POST /launch — launch campaign directly to ad platform (PAUSED)
+router.post('/launch', async (req, res) => {
+  const wsId = req.workspace.id;
+  const { campaign_result, platform, budget, objective, account_id } = req.body;
+  if (!campaign_result || !platform) return res.status(400).json({ error: 'campaign_result and platform required' });
+  if (!pm.isConnected(platform)) return res.status(400).json({ error: `${platform} not connected. Go to Settings → Integrations to connect your ${platform} account.` });
+
+  try {
+    const ad = campaign_result.ad_content || {};
+    const targeting = campaign_result.targeting || {};
+    const strategy = campaign_result.strategy || {};
+    const name = campaign_result.campaign_name || 'Campaign';
+    const dailyBudget = budget || '50';
+    const budgetMicros = String((Number(dailyBudget) || 50) * 1000000);
+
+    const params = {
+      name, objective: objective || 'conversions',
+      dailyBudget, budgetMicros,
+      adContent: ad, targeting, strategy,
+    };
+
+    // Platform-specific account IDs
+    if (platform === 'google') {
+      if (!account_id) return res.status(400).json({ error: 'Google Ads Customer ID required. Select an account first.' });
+      params.customerId = account_id;
+    } else if (platform === 'meta') {
+      if (!account_id) return res.status(400).json({ error: 'Meta Ad Account ID required. Select an account first.' });
+      params.adAccountId = account_id;
+    } else if (platform === 'tiktok') {
+      params.advertiserId = account_id;
+    } else if (platform === 'linkedin') {
+      params.accountId = account_id;
+    }
+
+    const result = await pm.adsCreate(platform, params);
+
+    // Update saved campaign status
+    const q = getQueries(wsId);
+    const existing = q.getAll().find(c => c.name === name && c.platform === platform);
+    if (existing) {
+      q.update(existing.name, existing.objective, existing.budget, existing.audience, existing.ad_content, 'launched', JSON.stringify({ ...JSON.parse(existing.metadata || '{}'), launch: result }), existing.id);
+    }
+
+    logActivity('ads', 'launch', `Launched ${platform} campaign (PAUSED)`, name, result.campaignId, wsId);
+
+    res.json({
+      success: true,
+      platform,
+      campaign_name: name,
+      status: 'PAUSED',
+      ...result,
+      message: `Campaign "${name}" created on ${platform} as PAUSED. Go to your ${platform} Ads Manager to review and enable it.`,
+    });
+  } catch (err) {
+    console.error(`Launch to ${platform} failed:`, err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /video-script — SSE: generate video ad script for TikTok or YouTube
 router.post('/video-script', async (req, res) => {
   const sse = setupSSE(res);

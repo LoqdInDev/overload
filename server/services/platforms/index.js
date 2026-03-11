@@ -7,12 +7,14 @@ const pinterest = require('./pinterest');
 const tiktok = require('./tiktok');
 const googleAds = require('./google-ads');
 const metaAds = require('./meta-ads');
+const tiktokAds = require('./tiktok-ads');
+const linkedinAds = require('./linkedin-ads');
 const shopify = require('./shopify');
 const mailchimp = require('./mailchimp');
 const klaviyo = require('./klaviyo');
 
 module.exports = {
   twitter, linkedin, facebook, instagram, youtube,
-  pinterest, tiktok, googleAds, metaAds, shopify,
-  mailchimp, klaviyo,
+  pinterest, tiktok, googleAds, metaAds, tiktokAds, linkedinAds,
+  shopify, mailchimp, klaviyo,
 };

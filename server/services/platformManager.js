@@ -28,6 +28,8 @@ const PLATFORM_MAP = {
 const ADS_MAP = {
   google: platforms.googleAds,
   meta: platforms.metaAds,
+  tiktok: platforms.tiktokAds,
+  linkedin: platforms.linkedinAds,
 };
 
 // Email platform wrappers
@@ -217,6 +219,28 @@ async function adsPause(providerId, params = {}) {
   }
 }
 
+async function adsCreate(providerId, params = {}) {
+  const adsPlatform = getAdsPlatform(providerId);
+  const creds = getApiCredentials(providerId);
+
+  switch (providerId) {
+    case 'google': {
+      const token = creds.refresh_token; // Google uses OAuth refresh → we need access token
+      // For Google, getToken handles refresh automatically
+      const accessToken = await getToken(providerId).catch(() => creds.refresh_token);
+      return adsPlatform.createCampaign(accessToken, params.customerId, params);
+    }
+    case 'meta':
+      return adsPlatform.createCampaign(creds.access_token, params.adAccountId, params);
+    case 'tiktok':
+      return adsPlatform.createCampaign(creds.access_token, params.advertiserId || creds.advertiser_id, params);
+    case 'linkedin':
+      return adsPlatform.createCampaign(creds.access_token, params.accountId || creds.organization_id, params);
+    default:
+      throw new Error(`Campaign creation not supported for ${providerId}`);
+  }
+}
+
 async function adsEnable(providerId, params = {}) {
   const adsPlatform = getAdsPlatform(providerId);
   const token = await getToken(providerId);
@@ -288,7 +312,7 @@ module.exports = {
   getToken, getApiCredentials, getConnection, isConnected, getConnectedProviders,
   getPlatform, getAdsPlatform, getEmailPlatform,
   socialPost, socialProfile, socialAnalytics,
-  adsCampaigns, adsMetrics, adsPause, adsEnable,
+  adsCampaigns, adsMetrics, adsPause, adsEnable, adsCreate,
   emailLists, emailCampaigns, emailSend,
   ecommerceProducts, ecommerceOrders,
 };
