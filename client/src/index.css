@@ -2129,47 +2129,49 @@
 /* ── 3D Rotating Card Carousel ── */
 .lp-carousel-wrapper {
   width: 100%;
-  height: 320px;
+  height: 300px;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  overflow: visible;
   margin-top: 48px;
 }
 @media (min-width: 768px) {
   .lp-carousel-wrapper {
-    height: 380px;
+    height: 340px;
     margin-top: 56px;
   }
 }
 .lp-carousel-inner {
-  --w: 180px;
-  --h: 200px;
-  --translateZ: 340px;
-  --rotateX: -12deg;
+  --w: 160px;
+  --h: 170px;
+  --translateZ: 280px;
+  --rotateX: -8deg;
   --perspective: 1200px;
   position: absolute;
   width: var(--w);
   height: var(--h);
-  top: 18%;
-  left: calc(50% - (var(--w) / 2));
+  top: 50%;
+  left: 50%;
+  margin-top: calc(var(--h) / -2);
+  margin-left: calc(var(--w) / -2);
   transform-style: preserve-3d;
   transform: perspective(var(--perspective));
   animation: lp-carousel-spin 24s linear infinite;
 }
 @media (min-width: 768px) {
   .lp-carousel-inner {
-    --w: 220px;
-    --h: 220px;
-    --translateZ: 420px;
+    --w: 200px;
+    --h: 190px;
+    --translateZ: 360px;
   }
 }
 @media (min-width: 1024px) {
   .lp-carousel-inner {
-    --w: 240px;
-    --h: 230px;
-    --translateZ: 480px;
+    --w: 220px;
+    --h: 200px;
+    --translateZ: 420px;
   }
 }
 .lp-carousel-wrapper:hover .lp-carousel-inner {
