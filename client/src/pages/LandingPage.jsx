@@ -525,6 +525,7 @@ export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [email, setEmail] = useState('');
   const [demoToast, setDemoToast] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false);
   const progressRef = useRef(null);
   const [activeSteps, setActiveSteps] = useState(new Set());
   const [activeNav, setActiveNav] = useState(null);
@@ -619,14 +620,48 @@ export default function LandingPage() {
               );
             })}
           </div>
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-4">
             <button onClick={go} className="text-[13px] font-medium hidden sm:block" style={{ color: 'var(--lp-muted)' }}
               onMouseEnter={e => e.target.style.color = 'var(--lp-ink)'}
               onMouseLeave={e => e.target.style.color = 'var(--lp-muted)'}
             >Sign in</button>
-            <button onClick={go} className="lp-cta lp-cta-terra" style={{ padding: '10px 26px', fontSize: 13 }}>Get Started</button>
+            <button onClick={go} className="lp-cta lp-cta-terra hidden sm:inline-flex" style={{ padding: '10px 26px', fontSize: 13 }}>Get Started</button>
+            <button
+              className="md:hidden p-2 rounded-lg"
+              style={{ color: 'var(--lp-ink)' }}
+              onClick={() => setMobileMenu(v => !v)}
+              aria-label="Toggle menu"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                {mobileMenu ? <><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></> : <><line x1="3" y1="7" x2="21" y2="7" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="17" x2="21" y2="17" /></>}
+              </svg>
+            </button>
           </div>
         </div>
+
+        {/* Mobile menu dropdown */}
+        {mobileMenu && (
+          <div className="md:hidden" style={{ background: 'var(--lp-cream)', borderTop: '1px solid var(--lp-sand)', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {['Platform', 'Modules', 'Pricing'].map(l => (
+              <a key={l} href={`#${l.toLowerCase()}`}
+                className="text-[14px] font-medium"
+                style={{ color: 'var(--lp-ink)', padding: '10px 0', borderBottom: '1px solid var(--lp-sand)' }}
+                onClick={e => {
+                  e.preventDefault();
+                  setMobileMenu(false);
+                  const el = document.getElementById(l.toLowerCase());
+                  if (!el) return;
+                  const y = el.getBoundingClientRect().top + window.scrollY - 80;
+                  window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+                }}
+              >{l}</a>
+            ))}
+            <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+              <button onClick={() => { setMobileMenu(false); go(); }} className="text-[13px] font-medium" style={{ color: 'var(--lp-muted)', padding: '10px 0' }}>Sign in</button>
+              <button onClick={() => { setMobileMenu(false); go(); }} className="lp-cta lp-cta-terra" style={{ padding: '10px 26px', fontSize: 13, flex: 1, justifyContent: 'center' }}>Get Started</button>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* ═══════ HERO ═══════ */}
@@ -1294,7 +1329,7 @@ export default function LandingPage() {
       <footer className="lp-footer" style={{ padding: '80px 24px 40px' }}>
         <div className="max-w-5xl mx-auto" style={{ position: 'relative', zIndex: 1 }}>
           {/* Top section: Brand + Link columns */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-12" style={{ marginBottom: 56 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-12" style={{ marginBottom: 56 }}>
             {/* Brand column — spans 2 */}
             <div className="md:col-span-2 lp-footer-brand" style={{ marginBottom: 0 }}>
               <div className="lp-footer-brand-logo">

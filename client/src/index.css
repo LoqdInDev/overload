@@ -2144,9 +2144,9 @@
   }
 }
 .lp-carousel-inner {
-  --w: 160px;
-  --h: 170px;
-  --translateZ: 280px;
+  --w: 140px;
+  --h: 155px;
+  --translateZ: 200px;
   --rotateX: -8deg;
   --perspective: 1200px;
   position: absolute;
@@ -2158,6 +2158,13 @@
   transform-style: preserve-3d;
   transform: perspective(var(--perspective));
   animation: lp-carousel-spin 24s linear infinite;
+}
+@media (min-width: 480px) {
+  .lp-carousel-inner {
+    --w: 170px;
+    --h: 175px;
+    --translateZ: 280px;
+  }
 }
 @media (min-width: 768px) {
   .lp-carousel-inner {
@@ -2401,7 +2408,9 @@
   background: transparent;
   color: #fff;
   outline: none;
-  width: 200px;
+  width: auto;
+  min-width: 120px;
+  flex: 1;
 }
 .lp-footer-newsletter input::placeholder {
   color: rgba(255,255,255,0.25);
