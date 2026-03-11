@@ -128,9 +128,9 @@ app.use((req, res, next) => {
 // ── Async startup ─────────────────────────────────────────────────
 async function startServer() {
 
-// Initialize database tables
-await initSharedTables();
+// Initialize database tables (auth first — users table is referenced by workspace_members)
 await initAuthTables();
+await initSharedTables();
 await initBillingTables();
 
 // Run all database migrations (idempotent — tracked in schema_migrations table)
