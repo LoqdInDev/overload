@@ -7,6 +7,7 @@ const { buildAdCampaignPrompt } = require('../prompts/adGenerator');
 const { setupSSE } = require('../../../services/sse');
 const pm = require('../../../services/platformManager');
 const { requirePlan } = require('../../../services/stripe');
+const { optimizeNow, getMetricsHistory, getOptimizationLog, getLatestMetrics, pollMetrics } = require('../services/adsOptimizer');
 
 const router = express.Router();
 
@@ -629,6 +630,75 @@ router.post('/launch', requirePlan('autopilot'), async (req, res) => {
     });
   } catch (err) {
     console.error(`Launch to ${platform} failed:`, err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ══════════════════════════════════════════════════════
+// Optimization Engine Routes [Autopilot plan required]
+// ══════════════════════════════════════════════════════
+
+// POST /optimize — trigger optimization cycle NOW for this workspace
+router.post('/optimize', requirePlan('autopilot'), async (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    await optimizeNow(wsId);
+    const log = getOptimizationLog(wsId, 1);
+    logActivity('ads', 'optimize', 'Ran manual optimization cycle', null, null, wsId);
+    res.json({ success: true, latest: log[0] || null });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /optimize/log — optimization history
+router.get('/optimize/log', requirePlan('autopilot'), (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const limit = Number(req.query.limit) || 20;
+    const log = getOptimizationLog(wsId, limit);
+    // Parse JSON fields
+    const parsed = log.map(entry => ({
+      ...entry,
+      ai_analysis: entry.ai_analysis ? JSON.parse(entry.ai_analysis) : null,
+      decisions: entry.decisions ? JSON.parse(entry.decisions) : [],
+    }));
+    res.json({ success: true, data: parsed });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /optimize/metrics — latest metrics for all launched campaigns
+router.get('/optimize/metrics', requirePlan('autopilot'), (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const metrics = getLatestMetrics(wsId);
+    res.json({ success: true, data: metrics });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /optimize/metrics/:campaignId — metrics history for a campaign
+router.get('/optimize/metrics/:campaignId', requirePlan('autopilot'), (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const days = Number(req.query.days) || 30;
+    const history = getMetricsHistory(wsId, req.params.campaignId, days);
+    res.json({ success: true, data: history });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /optimize/poll — manually poll latest metrics without running AI analysis
+router.post('/optimize/poll', requirePlan('autopilot'), async (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const snapshots = await pollMetrics(wsId);
+    res.json({ success: true, polled: snapshots.length, campaigns: snapshots.map(s => ({ name: s.campaign.name, platform: s.campaign.platform, metrics: s.metrics })) });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });

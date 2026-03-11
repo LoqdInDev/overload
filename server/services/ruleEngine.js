@@ -77,8 +77,48 @@ function getMinGapMs(frequency) {
 // ── Threshold Evaluation ─────────────────────────────────────────
 
 function shouldThresholdTrigger(rule) {
-  // Since we don't have real platform metrics, threshold rules
-  // trigger on a cooldown basis (once per 24h) to simulate monitoring
+  // Cooldown: don't re-trigger within 6 hours
+  if (rule.last_triggered) {
+    const hoursSince = (Date.now() - new Date(rule.last_triggered).getTime()) / 3600000;
+    if (hoursSince < 6) return false;
+  }
+
+  // For ads module: check real metrics from pa_campaign_metrics
+  if (rule.module_id === 'ads') {
+    try {
+      const config = JSON.parse(rule.trigger_config || '{}');
+      const metric = config.metric; // e.g., 'cpa', 'roas', 'ctr', 'cpc', 'spend'
+      const operator = config.operator; // '>', '<', '>=', '<='
+      const threshold = Number(config.value);
+      if (!metric || !operator || isNaN(threshold)) return true; // fallback to cooldown
+
+      // Get average metric from last 7 days across all launched campaigns
+      const col = { cpa: 'cpa', roas: 'roas', ctr: 'ctr', cpc: 'cpc', spend: 'spend',
+                     impressions: 'impressions', clicks: 'clicks', conversions: 'conversions',
+                     cost_per_acquisition: 'cpa' }[metric];
+      if (!col) return true;
+
+      const row = db.prepare(`
+        SELECT AVG(${col}) as val FROM pa_campaign_metrics
+        WHERE workspace_id = ? AND date >= date('now', '-7 days')
+      `).get(rule.workspace_id);
+
+      if (!row || row.val === null) return true; // no data yet — trigger to collect
+
+      const val = Number(row.val);
+      switch (operator) {
+        case '>':  return val > threshold;
+        case '<':  return val < threshold;
+        case '>=': return val >= threshold;
+        case '<=': return val <= threshold;
+        default:   return true;
+      }
+    } catch {
+      return true; // on error, fall through to trigger
+    }
+  }
+
+  // Non-ads modules: cooldown-based (24h)
   if (rule.last_triggered) {
     const hoursSince = (Date.now() - new Date(rule.last_triggered).getTime()) / 3600000;
     if (hoursSince < 24) return false;
