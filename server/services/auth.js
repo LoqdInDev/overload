@@ -12,8 +12,8 @@ const ACCESS_TOKEN_EXPIRY = '24h';
 const REFRESH_TOKEN_EXPIRY_DAYS = 30;
 const SALT_ROUNDS = 12;
 
-function initAuthTables() {
-  db.exec(`
+async function initAuthTables() {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
@@ -21,15 +21,15 @@ function initAuthTables() {
       display_name TEXT,
       avatar_url TEXT,
       role TEXT DEFAULT 'owner',
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
     CREATE TABLE IF NOT EXISTS refresh_tokens (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       token_hash TEXT NOT NULL,
       expires_at TEXT NOT NULL,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
     CREATE TABLE IF NOT EXISTS password_reset_tokens (
       id TEXT PRIMARY KEY,
@@ -37,7 +37,7 @@ function initAuthTables() {
       token_hash TEXT NOT NULL,
       expires_at TEXT NOT NULL,
       used INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
     CREATE TABLE IF NOT EXISTS email_verification_tokens (
       id TEXT PRIMARY KEY,
@@ -45,20 +45,20 @@ function initAuthTables() {
       token_hash TEXT NOT NULL,
       expires_at TEXT NOT NULL,
       used INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
   `);
 
   // Add email_verified column to users if it doesn't exist
   try {
-    db.exec('ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0');
+    await db.exec('ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0');
   } catch (_) {
     // Column already exists — ignore
   }
 }
 
 async function createUser(email, password, displayName) {
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  const existing = await db.prepare('SELECT id FROM users WHERE email = ?').get(email);
   if (existing) {
     const err = new Error('An account with this email already exists');
     err.status = 409;
@@ -77,7 +77,7 @@ async function createUser(email, password, displayName) {
 }
 
 async function authenticateUser(email, password) {
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase().trim());
+  const user = await db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase().trim());
   if (!user) return null;
 
   const valid = await bcrypt.compare(password, user.password_hash);
@@ -92,7 +92,7 @@ async function authenticateUser(email, password) {
   };
 }
 
-function generateTokenPair(userId) {
+async function generateTokenPair(userId) {
   const accessToken = jwt.sign({ userId }, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
 
   const refreshTokenId = crypto.randomUUID();
@@ -108,7 +108,7 @@ function generateTokenPair(userId) {
   return { accessToken, refreshToken: `${refreshTokenId}:${refreshToken}` };
 }
 
-function verifyAccessToken(token) {
+async function verifyAccessToken(token) {
   try {
     return jwt.verify(token, JWT_SECRET);
   } catch {
@@ -116,18 +116,18 @@ function verifyAccessToken(token) {
   }
 }
 
-function verifyRefreshToken(compositeToken) {
+async function verifyRefreshToken(compositeToken) {
   const [tokenId, rawToken] = compositeToken.split(':');
   if (!tokenId || !rawToken) return null;
 
-  const record = db.prepare(
+  const record = await db.prepare(
     'SELECT * FROM refresh_tokens WHERE id = ?'
   ).get(tokenId);
 
   if (!record) return null;
 
   if (new Date(record.expires_at) < new Date()) {
-    db.prepare('DELETE FROM refresh_tokens WHERE id = ?').run(tokenId);
+    await db.prepare('DELETE FROM refresh_tokens WHERE id = ?').run(tokenId);
     return null;
   }
 
@@ -137,15 +137,15 @@ function verifyRefreshToken(compositeToken) {
   return record.user_id;
 }
 
-function revokeRefreshToken(compositeToken) {
+async function revokeRefreshToken(compositeToken) {
   const [tokenId] = (compositeToken || '').split(':');
   if (tokenId) {
-    db.prepare('DELETE FROM refresh_tokens WHERE id = ?').run(tokenId);
+    await db.prepare('DELETE FROM refresh_tokens WHERE id = ?').run(tokenId);
   }
 }
 
-function getUser(userId) {
-  const user = db.prepare('SELECT id, email, display_name, role, avatar_url, created_at FROM users WHERE id = ?').get(userId);
+async function getUser(userId) {
+  const user = await db.prepare('SELECT id, email, display_name, role, avatar_url, created_at FROM users WHERE id = ?').get(userId);
   if (!user) return null;
   return {
     id: user.id,
@@ -159,12 +159,12 @@ function getUser(userId) {
 
 // ── Password reset ──────────────────────────────────────────────────
 
-function createPasswordResetToken(email) {
-  const user = db.prepare('SELECT id, display_name FROM users WHERE email = ?').get(email.toLowerCase().trim());
+async function createPasswordResetToken(email) {
+  const user = await db.prepare('SELECT id, display_name FROM users WHERE email = ?').get(email.toLowerCase().trim());
   if (!user) return null; // Don't reveal whether email exists
 
   // Invalidate any existing unused tokens for this user
-  db.prepare('UPDATE password_reset_tokens SET used = 1 WHERE user_id = ? AND used = 0').run(user.id);
+  await db.prepare('UPDATE password_reset_tokens SET used = 1 WHERE user_id = ? AND used = 0').run(user.id);
 
   const id = crypto.randomUUID();
   const rawToken = crypto.randomBytes(32).toString('hex');
@@ -181,11 +181,11 @@ function createPasswordResetToken(email) {
   };
 }
 
-function verifyPasswordResetToken(compositeToken) {
+async function verifyPasswordResetToken(compositeToken) {
   const [tokenId, rawToken] = (compositeToken || '').split(':');
   if (!tokenId || !rawToken) return null;
 
-  const record = db.prepare(
+  const record = await db.prepare(
     'SELECT * FROM password_reset_tokens WHERE id = ? AND used = 0'
   ).get(tokenId);
 
@@ -209,26 +209,26 @@ async function resetPassword(compositeToken, newPassword) {
 
   const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
 
-  db.prepare("UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?").run(passwordHash, userId);
+  db.prepare("UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(passwordHash, userId);
 
   // Mark token as used
   const [tokenId] = compositeToken.split(':');
-  db.prepare('UPDATE password_reset_tokens SET used = 1 WHERE id = ?').run(tokenId);
+  await db.prepare('UPDATE password_reset_tokens SET used = 1 WHERE id = ?').run(tokenId);
 
   // Revoke all refresh tokens for this user (force re-login)
-  db.prepare('DELETE FROM refresh_tokens WHERE user_id = ?').run(userId);
+  await db.prepare('DELETE FROM refresh_tokens WHERE user_id = ?').run(userId);
 
   return userId;
 }
 
 // ── Email verification ──────────────────────────────────────────────
 
-function createEmailVerificationToken(userId) {
-  const user = db.prepare('SELECT id, email, display_name FROM users WHERE id = ?').get(userId);
+async function createEmailVerificationToken(userId) {
+  const user = await db.prepare('SELECT id, email, display_name FROM users WHERE id = ?').get(userId);
   if (!user) return null;
 
   // Invalidate any existing unused tokens for this user
-  db.prepare('UPDATE email_verification_tokens SET used = 1 WHERE user_id = ? AND used = 0').run(userId);
+  await db.prepare('UPDATE email_verification_tokens SET used = 1 WHERE user_id = ? AND used = 0').run(userId);
 
   const id = crypto.randomUUID();
   const rawToken = crypto.randomBytes(32).toString('hex');
@@ -245,11 +245,11 @@ function createEmailVerificationToken(userId) {
   };
 }
 
-function verifyEmailToken(compositeToken) {
+async function verifyEmailToken(compositeToken) {
   const [tokenId, rawToken] = (compositeToken || '').split(':');
   if (!tokenId || !rawToken) return null;
 
-  const record = db.prepare(
+  const record = await db.prepare(
     'SELECT * FROM email_verification_tokens WHERE id = ? AND used = 0'
   ).get(tokenId);
 
@@ -260,17 +260,17 @@ function verifyEmailToken(compositeToken) {
   if (hash !== record.token_hash) return null;
 
   // Mark token as used and verify the user's email
-  db.prepare('UPDATE email_verification_tokens SET used = 1 WHERE id = ?').run(tokenId);
-  db.prepare("UPDATE users SET email_verified = 1, updated_at = datetime('now') WHERE id = ?").run(record.user_id);
+  await db.prepare('UPDATE email_verification_tokens SET used = 1 WHERE id = ?').run(tokenId);
+  db.prepare("UPDATE users SET email_verified = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(record.user_id);
 
   return record.user_id;
 }
 
 // Clean up expired tokens periodically
-function cleanExpiredTokens() {
-  db.prepare("DELETE FROM refresh_tokens WHERE expires_at < datetime('now')").run();
-  db.prepare("DELETE FROM password_reset_tokens WHERE expires_at < datetime('now')").run();
-  db.prepare("DELETE FROM email_verification_tokens WHERE expires_at < datetime('now')").run();
+async function cleanExpiredTokens() {
+  await db.prepare("DELETE FROM refresh_tokens WHERE expires_at < CURRENT_TIMESTAMP").run();
+  await db.prepare("DELETE FROM password_reset_tokens WHERE expires_at < CURRENT_TIMESTAMP").run();
+  await db.prepare("DELETE FROM email_verification_tokens WHERE expires_at < CURRENT_TIMESTAMP").run();
 }
 
 module.exports = {

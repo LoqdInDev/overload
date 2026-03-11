@@ -1,9 +1,9 @@
 const { db } = require('../../../db/database');
 
-function initDatabase() {
-  db.exec(`
+async function initDatabase() {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS ab_audiences (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       name TEXT NOT NULL,
       platform TEXT,
@@ -15,9 +15,9 @@ function initDatabase() {
     )
   `);
 
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS ab_segments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       audience_id INTEGER NOT NULL,
       name TEXT NOT NULL,

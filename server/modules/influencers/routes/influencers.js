@@ -47,7 +47,7 @@ Also provide:
       'INSERT INTO inf_searches (niche, platform, criteria, results, workspace_id) VALUES (?, ?, ?, ?, ?)'
     ).run(niche, platform, JSON.stringify({ followerMin, followerMax, engagementRate, budget }), text, wsId);
 
-    logActivity('influencers', 'search', `Searched ${platform || 'Instagram'} influencers`, niche || 'general', null, wsId);
+    await logActivity('influencers', 'search', `Searched ${platform || 'Instagram'} influencers`, niche || 'general', null, wsId);
     sse.sendResult({ content: text, searchId: result.lastInsertRowid });
   } catch (error) {
     console.error('Influencer search error:', error);
@@ -97,7 +97,7 @@ Note: This is an AI-generated guide for manual vetting — you must verify all m
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
-    logActivity('influencers', 'vetting', `Generated vetting checklist for @${handle}`, platform || 'Instagram', null, wsId);
+    await logActivity('influencers', 'vetting', `Generated vetting checklist for @${handle}`, platform || 'Instagram', null, wsId);
     sse.sendResult({ content: text });
   } catch (err) {
     sse.sendError(err);
@@ -151,7 +151,7 @@ Also include:
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
-    logActivity('influencers', 'outreach', `Generated ${templateType || 'outreach'} template`, influencerName || 'general', null, wsId);
+    await logActivity('influencers', 'outreach', `Generated ${templateType || 'outreach'} template`, influencerName || 'general', null, wsId);
     sse.sendResult({ content: text, templateType: templateType || 'initial' });
   } catch (error) {
     console.error('Outreach generation error:', error);
@@ -172,7 +172,7 @@ router.post('/generate', async (req, res) => {
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
-    logActivity('influencers', 'generate', `Generated ${type || 'content'}`, 'AI generation', null, wsId);
+    await logActivity('influencers', 'generate', `Generated ${type || 'content'}`, 'AI generation', null, wsId);
     sse.sendResult({ content: text, type });
   } catch (error) {
     console.error('Influencer generation error:', error);
@@ -181,10 +181,10 @@ router.post('/generate', async (req, res) => {
 });
 
 // GET /campaigns - List all campaigns
-router.get('/campaigns', (req, res) => {
+router.get('/campaigns', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const campaigns = db.prepare('SELECT * FROM inf_campaigns WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
+    const campaigns = await db.prepare('SELECT * FROM inf_campaigns WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(campaigns);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -192,7 +192,7 @@ router.get('/campaigns', (req, res) => {
 });
 
 // POST /campaigns - Create a campaign
-router.post('/campaigns', (req, res) => {
+router.post('/campaigns', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, influencers, budget, status } = req.body;
@@ -201,8 +201,8 @@ router.post('/campaigns', (req, res) => {
       'INSERT INTO inf_campaigns (name, influencers, budget, status, workspace_id) VALUES (?, ?, ?, ?, ?)'
     ).run(name, influencers ? JSON.stringify(influencers) : null, budget || 0, status || 'planning', wsId);
 
-    const campaign = db.prepare('SELECT * FROM inf_campaigns WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
-    logActivity('influencers', 'create', 'Created campaign', name, null, wsId);
+    const campaign = await db.prepare('SELECT * FROM inf_campaigns WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    await logActivity('influencers', 'create', 'Created campaign', name, null, wsId);
     res.status(201).json(campaign);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -210,14 +210,14 @@ router.post('/campaigns', (req, res) => {
 });
 
 // PUT /campaigns/:id - Update a campaign
-router.put('/campaigns/:id', (req, res) => {
+router.put('/campaigns/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, description, budget, status } = req.body;
     db.prepare(
       'UPDATE inf_campaigns SET name = COALESCE(?, name), description = COALESCE(?, description), budget = COALESCE(?, budget), status = COALESCE(?, status) WHERE id = ? AND workspace_id = ?'
     ).run(name, description, budget, status, req.params.id, wsId);
-    const campaign = db.prepare('SELECT * FROM inf_campaigns WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const campaign = await db.prepare('SELECT * FROM inf_campaigns WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     res.json(campaign);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -225,12 +225,12 @@ router.put('/campaigns/:id', (req, res) => {
 });
 
 // DELETE /campaigns/:id - Delete a campaign
-router.delete('/campaigns/:id', (req, res) => {
+router.delete('/campaigns/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    db.prepare('DELETE FROM inf_outreach WHERE campaign_id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    db.prepare('DELETE FROM inf_campaigns WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    logActivity('influencers', 'delete', 'Deleted campaign', req.params.id, null, wsId);
+    await db.prepare('DELETE FROM inf_outreach WHERE campaign_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM inf_campaigns WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await logActivity('influencers', 'delete', 'Deleted campaign', req.params.id, null, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -238,10 +238,10 @@ router.delete('/campaigns/:id', (req, res) => {
 });
 
 // GET /searches - List recent searches
-router.get('/searches', (req, res) => {
+router.get('/searches', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const searches = db.prepare('SELECT * FROM inf_searches WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 20').all(wsId);
+    const searches = await db.prepare('SELECT * FROM inf_searches WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 20').all(wsId);
     res.json(searches);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -249,7 +249,7 @@ router.get('/searches', (req, res) => {
 });
 
 // POST /calculate-roi — calculate influencer ROI
-router.post('/calculate-roi', (req, res) => {
+router.post('/calculate-roi', async (req, res) => {
   const { followers, engagement_rate, fee, avg_order_value, product_margin } = req.body;
   if (!followers || !fee) return res.status(400).json({ error: 'followers and fee required' });
 
@@ -265,7 +265,7 @@ router.post('/calculate-roi', (req, res) => {
 });
 
 // POST /generate-brief — generate influencer campaign brief (SSE)
-router.post('/generate-brief', (req, res) => {
+router.post('/generate-brief', async (req, res) => {
   const { product, goal, influencer_niche, platform } = req.body;
   if (!product) { res.status(400).json({ error: 'product required' }); return; }
 

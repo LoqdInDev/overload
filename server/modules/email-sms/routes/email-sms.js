@@ -19,7 +19,7 @@ router.post('/generate', async (req, res) => {
       const { text } = await generateTextWithClaude(rawPrompt, {
         onChunk: (chunk) => sse.sendChunk(chunk),
       });
-      logActivity('email-sms', 'generate', `Generated ${type || 'email'} content`, 'AI generation', null, wsId);
+      await logActivity('email-sms', 'generate', `Generated ${type || 'email'} content`, 'AI generation', null, wsId);
       sse.sendResult({ content: text, type: type || 'custom' });
       return;
     }
@@ -194,7 +194,7 @@ Format the output cleanly and professionally.`;
       wsId
     );
 
-    logActivity('email-sms', 'generate', `Generated ${type} campaign: ${campaignType || 'general'}`, topic, String(result.lastInsertRowid), wsId);
+    await logActivity('email-sms', 'generate', `Generated ${type} campaign: ${campaignType || 'general'}`, topic, String(result.lastInsertRowid), wsId);
 
     sse.sendResult({ id: result.lastInsertRowid, content: text, type, campaignType });
   } catch (error) {
@@ -204,7 +204,7 @@ Format the output cleanly and professionally.`;
 });
 
 // GET /campaigns - list all campaigns
-router.get('/campaigns', (req, res) => {
+router.get('/campaigns', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { type, status } = req.query;
@@ -226,7 +226,7 @@ router.get('/campaigns', (req, res) => {
     }
     query += ' ORDER BY created_at DESC';
 
-    const campaigns = db.prepare(query).all(...params).map(c => {
+    const campaigns = await db.prepare(query).all(...params).map(c => {
       const meta = c.metadata ? JSON.parse(c.metadata) : {};
       return { ...c, campaign_type: meta.campaign_type || null, tone: meta.tone || null, audience: meta.audience || null, preview_text: meta.preview_text || null, variants: meta.variants || null };
     });
@@ -237,10 +237,10 @@ router.get('/campaigns', (req, res) => {
 });
 
 // GET /campaigns/:id - get single campaign
-router.get('/campaigns/:id', (req, res) => {
+router.get('/campaigns/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const row = db.prepare('SELECT * FROM es_campaigns WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const row = await db.prepare('SELECT * FROM es_campaigns WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!row) return res.status(404).json({ error: 'Campaign not found' });
     const meta = row.metadata ? JSON.parse(row.metadata) : {};
     const campaign = { ...row, campaign_type: meta.campaign_type || null, tone: meta.tone || null, audience: meta.audience || null, preview_text: meta.preview_text || null, variants: meta.variants || null };
@@ -251,7 +251,7 @@ router.get('/campaigns/:id', (req, res) => {
 });
 
 // POST /campaigns - create a campaign
-router.post('/campaigns', (req, res) => {
+router.post('/campaigns', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, type, campaign_type, subject, preview_text, body, content, tone, audience, status, variants, metadata, scheduled_at } = req.body;
@@ -266,8 +266,8 @@ router.post('/campaigns', (req, res) => {
     const result = db.prepare(
       'INSERT INTO es_campaigns (name, type, subject, content, status, metadata, scheduled_at, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(name, type, subject || null, content ?? body ?? null, status || 'draft', mergedMeta, scheduled_at || null, wsId);
-    const campaign = db.prepare('SELECT * FROM es_campaigns WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
-    logActivity('email-sms', 'create', `Created ${type} campaign`, name, String(result.lastInsertRowid), wsId);
+    const campaign = await db.prepare('SELECT * FROM es_campaigns WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    await logActivity('email-sms', 'create', `Created ${type} campaign`, name, String(result.lastInsertRowid), wsId);
     res.status(201).json(campaign);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -275,10 +275,10 @@ router.post('/campaigns', (req, res) => {
 });
 
 // PUT /campaigns/:id - update a campaign
-router.put('/campaigns/:id', (req, res) => {
+router.put('/campaigns/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const existing = db.prepare('SELECT * FROM es_campaigns WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM es_campaigns WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Campaign not found' });
 
     const { name, subject, preview_text, body, content, tone, audience, status, variants, metadata, scheduled_at } = req.body;
@@ -292,7 +292,7 @@ router.put('/campaigns/:id', (req, res) => {
       ...(variants !== undefined ? { variants } : {}),
     });
     db.prepare(
-      `UPDATE es_campaigns SET name = ?, subject = ?, content = ?, status = ?, metadata = ?, scheduled_at = ?, updated_at = datetime('now') WHERE id = ? AND workspace_id = ?`
+      `UPDATE es_campaigns SET name = ?, subject = ?, content = ?, status = ?, metadata = ?, scheduled_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?`
     ).run(
       name || existing.name,
       subject !== undefined ? subject : existing.subject,
@@ -304,7 +304,7 @@ router.put('/campaigns/:id', (req, res) => {
       wsId
     );
 
-    const updated = db.prepare('SELECT * FROM es_campaigns WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const updated = await db.prepare('SELECT * FROM es_campaigns WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -312,13 +312,13 @@ router.put('/campaigns/:id', (req, res) => {
 });
 
 // DELETE /campaigns/:id - delete a campaign
-router.delete('/campaigns/:id', (req, res) => {
+router.delete('/campaigns/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const existing = db.prepare('SELECT * FROM es_campaigns WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM es_campaigns WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Campaign not found' });
-    db.prepare('DELETE FROM es_campaigns WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    logActivity('email-sms', 'delete', `Deleted ${existing.type} campaign`, existing.name, req.params.id, wsId);
+    await db.prepare('DELETE FROM es_campaigns WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await logActivity('email-sms', 'delete', `Deleted ${existing.type} campaign`, existing.name, req.params.id, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -326,15 +326,15 @@ router.delete('/campaigns/:id', (req, res) => {
 });
 
 // GET /templates - list all templates
-router.get('/templates', (req, res) => {
+router.get('/templates', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { type } = req.query;
     let templates;
     if (type) {
-      templates = db.prepare('SELECT * FROM es_templates WHERE type = ? AND workspace_id = ? ORDER BY created_at DESC').all(type, wsId);
+      templates = await db.prepare('SELECT * FROM es_templates WHERE type = ? AND workspace_id = ? ORDER BY created_at DESC').all(type, wsId);
     } else {
-      templates = db.prepare('SELECT * FROM es_templates WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
+      templates = await db.prepare('SELECT * FROM es_templates WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     }
     res.json(templates);
   } catch (error) {
@@ -343,7 +343,7 @@ router.get('/templates', (req, res) => {
 });
 
 // POST /templates - create a template
-router.post('/templates', (req, res) => {
+router.post('/templates', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, type, category, subject, content, body } = req.body;
@@ -351,7 +351,7 @@ router.post('/templates', (req, res) => {
     const result = db.prepare(
       'INSERT INTO es_templates (name, type, category, subject, body, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(name, type, category || null, subject || null, body || content || null, wsId);
-    const template = db.prepare('SELECT * FROM es_templates WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    const template = await db.prepare('SELECT * FROM es_templates WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(template);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -418,7 +418,7 @@ router.post('/platforms/send', async (req, res) => {
       listId, subject, fromName, fromEmail, replyTo, html, name: name || subject,
     });
 
-    logActivity('email-sms', 'send', `Sent campaign via ${provider}`, subject, null, wsId);
+    await logActivity('email-sms', 'send', `Sent campaign via ${provider}`, subject, null, wsId);
     res.json({ success: true, data });
   } catch (error) {
     console.error('Platform send error:', error);
@@ -427,7 +427,7 @@ router.post('/platforms/send', async (req, res) => {
 });
 
 // GET /platforms/connected - check which email providers are connected
-router.get('/platforms/connected', (req, res) => {
+router.get('/platforms/connected', async (req, res) => {
   try {
     const connected = pm.getConnectedProviders()
       .filter(p => ['mailchimp', 'klaviyo'].includes(p.provider_id));

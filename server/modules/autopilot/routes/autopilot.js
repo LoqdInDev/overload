@@ -14,7 +14,7 @@ router.post('/generate', async (req, res) => {
       onChunk: (chunk) => sse.sendChunk(chunk),
       moduleId: 'autopilot',
     });
-    logActivity('autopilot', 'generate', `Generated ${type || 'content'}`, 'AI generation', null, wsId);
+    await logActivity('autopilot', 'generate', `Generated ${type || 'content'}`, 'AI generation', null, wsId);
     sse.sendResult({ content: text, type });
   } catch (error) {
     console.error('Autopilot generation error:', error);

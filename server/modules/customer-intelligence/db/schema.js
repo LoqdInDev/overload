@@ -1,27 +1,27 @@
 const { db } = require('../../../db/database');
 
-function initDatabase() {
-  db.exec(`
+async function initDatabase() {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS ci_segments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       name TEXT NOT NULL,
       description TEXT,
       criteria TEXT,
       size INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS ci_insights (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       segment_id INTEGER,
       type TEXT,
       title TEXT,
       description TEXT,
       confidence REAL DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now')),
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (segment_id) REFERENCES ci_segments(id)
     );
   `);

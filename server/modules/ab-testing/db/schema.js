@@ -1,9 +1,9 @@
 const { db } = require('../../../db/database');
 
-function initDatabase() {
-  db.exec(`
+async function initDatabase() {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS abt_tests (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       name TEXT NOT NULL,
       type TEXT,
@@ -17,9 +17,9 @@ function initDatabase() {
     )
   `);
 
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS abt_variants (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       test_id INTEGER NOT NULL,
       name TEXT NOT NULL,
@@ -32,7 +32,7 @@ function initDatabase() {
     )
   `);
 
-  try { db.exec('ALTER TABLE abt_tests ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP'); } catch {}
+  try { await db.exec('ALTER TABLE abt_tests ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP'); } catch {}
 }
 
 module.exports = { initDatabase };

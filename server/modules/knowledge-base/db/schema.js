@@ -1,9 +1,9 @@
 const { db } = require('../../../db/database');
 
-function initDatabase() {
-  db.exec(`
+async function initDatabase() {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS kb_articles (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       title TEXT NOT NULL,
       slug TEXT,
@@ -12,12 +12,12 @@ function initDatabase() {
       status TEXT DEFAULT 'draft',
       views INTEGER DEFAULT 0,
       helpful_count INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS kb_categories (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       name TEXT NOT NULL,
       description TEXT,
@@ -27,7 +27,7 @@ function initDatabase() {
   `);
 
   // FTS5 full-text search virtual table
-  db.exec(`
+  await db.exec(`
     CREATE VIRTUAL TABLE IF NOT EXISTS kb_fts USING fts5(
       title,
       content,
@@ -39,11 +39,11 @@ function initDatabase() {
 
   // Sync FTS index with existing articles
   try {
-    db.exec(`INSERT INTO kb_fts(kb_fts) VALUES('rebuild')`);
+    await db.exec(`INSERT INTO kb_fts(kb_fts) VALUES('rebuild')`);
   } catch {}
 
   try {
-    db.exec(`
+    await db.exec(`
       CREATE TRIGGER IF NOT EXISTS kb_articles_ai AFTER INSERT ON kb_articles BEGIN
         INSERT INTO kb_fts(rowid, title, content, category) VALUES (new.id, new.title, new.content, new.category);
       END;

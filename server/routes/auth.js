@@ -130,7 +130,7 @@ router.post('/login', authLimiter, validate(schemas.login), async (req, res, nex
 });
 
 // POST /api/auth/refresh
-router.post('/refresh', (req, res) => {
+router.post('/refresh', async (req, res) => {
   const { refreshToken } = req.body;
   if (!refreshToken) {
     return res.status(400).json({ error: 'Refresh token is required', code: 'VALIDATION_ERROR' });
@@ -154,7 +154,7 @@ router.post('/refresh', (req, res) => {
 });
 
 // POST /api/auth/logout
-router.post('/logout', (req, res) => {
+router.post('/logout', async (req, res) => {
   const { refreshToken } = req.body;
   if (refreshToken) {
     revokeRefreshToken(refreshToken);
@@ -169,7 +169,7 @@ router.post('/auto-login', async (req, res, next) => {
   if (process.env.NODE_ENV === 'production') return res.status(404).json({ error: 'Not found' });
   try {
     const { db } = require('../db/database');
-    let user = db.prepare('SELECT * FROM users ORDER BY created_at ASC LIMIT 1').get();
+    let user = await db.prepare('SELECT * FROM users ORDER BY created_at ASC LIMIT 1').get();
 
     if (!user) {
       // Create default owner with random password (dev only)
@@ -191,7 +191,7 @@ router.post('/auto-login', async (req, res, next) => {
 });
 
 // GET /api/auth/me
-router.get('/me', requireAuth, (req, res) => {
+router.get('/me', requireAuth, async (req, res) => {
   res.json({ user: req.user });
 });
 

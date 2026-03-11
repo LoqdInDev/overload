@@ -53,10 +53,10 @@ async function scrapeWebsite(url) {
 }
 
 // GET / - List all competitors
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const competitors = db.prepare('SELECT * FROM ci_competitors WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
+    const competitors = await db.prepare('SELECT * FROM ci_competitors WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(competitors);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -64,7 +64,7 @@ router.get('/', (req, res) => {
 });
 
 // POST / - Create a competitor
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { name, website, industry, description, strengths, weaknesses } = req.body;
@@ -77,8 +77,8 @@ router.post('/', (req, res) => {
       'INSERT INTO ci_competitors (name, website, industry, description, strengths, weaknesses, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(name, website || null, industry || null, description || null, strengths || null, weaknesses || null, wsId);
 
-    const competitor = db.prepare('SELECT * FROM ci_competitors WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
-    logActivity('competitors', 'create', 'Added competitor', name, null, wsId);
+    const competitor = await db.prepare('SELECT * FROM ci_competitors WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    await logActivity('competitors', 'create', 'Added competitor', name, null, wsId);
     res.status(201).json(competitor);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -98,7 +98,7 @@ router.post('/generate', async (req, res) => {
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
-    logActivity('competitors', 'generate', `Generated ${type || 'analysis'}`, 'AI generation', null, wsId);
+    await logActivity('competitors', 'generate', `Generated ${type || 'analysis'}`, 'AI generation', null, wsId);
     sse.sendResult({ content: text, type });
   } catch (error) {
     console.error('Competitor generation error:', error);
@@ -192,7 +192,7 @@ Be specific, data-driven where possible, and provide actionable insights.`;
       wsId
     );
 
-    logActivity('competitors', 'analyze', `Analyzed competitor: ${competitorName || 'Unknown'}`, analysisType || 'comprehensive', null, wsId);
+    await logActivity('competitors', 'analyze', `Analyzed competitor: ${competitorName || 'Unknown'}`, analysisType || 'comprehensive', null, wsId);
     sse.sendResult({ reportId: reportResult.lastInsertRowid, content: text });
   } catch (error) {
     console.error('Competitor analysis error:', error);
@@ -201,18 +201,18 @@ Be specific, data-driven where possible, and provide actionable insights.`;
 });
 
 // GET /reports - List all reports
-router.get('/reports', (req, res) => {
+router.get('/reports', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { competitorId } = req.query;
     let reports;
 
     if (competitorId) {
-      reports = db.prepare(
+      reports = await db.prepare(
         'SELECT r.*, c.name as competitor_name FROM ci_reports r LEFT JOIN ci_competitors c ON r.competitor_id = c.id WHERE r.workspace_id = ? AND r.competitor_id = ? ORDER BY r.created_at DESC'
       ).all(wsId, competitorId);
     } else {
-      reports = db.prepare(
+      reports = await db.prepare(
         'SELECT r.*, c.name as competitor_name FROM ci_reports r LEFT JOIN ci_competitors c ON r.competitor_id = c.id WHERE r.workspace_id = ? ORDER BY r.created_at DESC'
       ).all(wsId);
     }
@@ -224,7 +224,7 @@ router.get('/reports', (req, res) => {
 });
 
 // GET /stats
-router.get('/stats', (req, res) => {
+router.get('/stats', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const totalCompetitors = db.prepare('SELECT COUNT(*) as count FROM ci_competitors WHERE workspace_id = ?').get(wsId).count;
@@ -238,10 +238,10 @@ router.get('/stats', (req, res) => {
 });
 
 // GET /alerts - list recent alerts
-router.get('/alerts', (req, res) => {
+router.get('/alerts', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const alerts = db.prepare('SELECT * FROM ci_alerts WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 20').all(wsId);
+    const alerts = await db.prepare('SELECT * FROM ci_alerts WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 20').all(wsId);
     res.json(alerts);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -249,10 +249,10 @@ router.get('/alerts', (req, res) => {
 });
 
 // DELETE /reports/:id - delete a report
-router.delete('/reports/:id', (req, res) => {
+router.delete('/reports/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    db.prepare('DELETE FROM ci_reports WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM ci_reports WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -260,14 +260,14 @@ router.delete('/reports/:id', (req, res) => {
 });
 
 // PUT /:id - update a competitor
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { name, website, industry, description, strengths, weaknesses } = req.body;
     db.prepare(
       'UPDATE ci_competitors SET name = COALESCE(?, name), website = COALESCE(?, website), industry = COALESCE(?, industry), description = COALESCE(?, description), strengths = COALESCE(?, strengths), weaknesses = COALESCE(?, weaknesses) WHERE id = ? AND workspace_id = ?'
     ).run(name, website, industry, description, strengths, weaknesses, req.params.id, wsId);
-    res.json(db.prepare('SELECT * FROM ci_competitors WHERE id = ?').get(req.params.id));
+    res.json(await db.prepare('SELECT * FROM ci_competitors WHERE id = ?').get(req.params.id));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -301,7 +301,7 @@ router.get('/ads', async (req, res) => {
 });
 
 // POST /content-gap — SSE: analyze content gap vs competitor
-router.post('/content-gap', (req, res) => {
+router.post('/content-gap', async (req, res) => {
   const { your_brand, competitor_name, your_topics } = req.body;
   if (!competitor_name) { res.status(400).json({ error: 'competitor_name required' }); return; }
 
@@ -339,12 +339,12 @@ Be strategic and specific.`;
 });
 
 // DELETE /:id - delete a competitor and cascade its reports and alerts
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    db.prepare('DELETE FROM ci_reports WHERE competitor_id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    db.prepare('DELETE FROM ci_alerts WHERE competitor_id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    db.prepare('DELETE FROM ci_competitors WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM ci_reports WHERE competitor_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM ci_alerts WHERE competitor_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM ci_competitors WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });

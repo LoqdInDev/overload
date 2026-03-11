@@ -1,9 +1,9 @@
 const { db } = require('../../../db/database');
 
-function initDatabase() {
-  db.exec(`
+async function initDatabase() {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS onboarding_state (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       user_id TEXT,
       completed INTEGER DEFAULT 0,
@@ -12,8 +12,8 @@ function initDatabase() {
       brand_done INTEGER DEFAULT 0,
       integration_done INTEGER DEFAULT 0,
       first_content_done INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `);
 }

@@ -7,7 +7,7 @@ const { setupSSE } = require('../../../services/sse');
 const router = express.Router();
 
 // Overview stats — counts per module, optional date range
-router.get('/overview', (req, res) => {
+router.get('/overview', async (req, res) => {
   const wsId = req.workspace.id;
   const { start_date, end_date, days } = req.query;
 
@@ -30,7 +30,7 @@ router.get('/overview', (req, res) => {
 });
 
 // Activity feed with pagination
-router.get('/activity', (req, res) => {
+router.get('/activity', async (req, res) => {
   const wsId = req.workspace.id;
   const limit = Math.min(parseInt(req.query.limit) || 50, 200);
   const offset = parseInt(req.query.offset) || 0;
@@ -47,12 +47,12 @@ router.get('/activity', (req, res) => {
   query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
   params.push(limit, offset);
 
-  const activity = db.prepare(query).all(...params);
+  const activity = await db.prepare(query).all(...params);
   res.json(activity);
 });
 
 // Daily breakdown for charts
-router.get('/daily', (req, res) => {
+router.get('/daily', async (req, res) => {
   const wsId = req.workspace.id;
   const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
   const moduleId = req.query.module;
@@ -71,12 +71,12 @@ router.get('/daily', (req, res) => {
 
   query += ' GROUP BY date(created_at), module_id ORDER BY date ASC';
 
-  const daily = db.prepare(query).all(...params);
+  const daily = await db.prepare(query).all(...params);
   res.json(daily);
 });
 
 // Module-specific stats with optional date range
-router.get('/module/:moduleId', (req, res) => {
+router.get('/module/:moduleId', async (req, res) => {
   const wsId = req.workspace.id;
   const { moduleId } = req.params;
   const { start_date, end_date, days } = req.query;
@@ -100,7 +100,7 @@ router.get('/module/:moduleId', (req, res) => {
     ORDER BY count DESC
   `).all(...baseParams, ...dateParams);
 
-  const recent = db.prepare(`
+  const recent = await db.prepare(`
     SELECT * FROM activity_log
     WHERE module_id = ? AND workspace_id = ?${dateCond}
     ORDER BY created_at DESC
@@ -164,7 +164,7 @@ router.get('/platforms/ads', async (req, res) => {
 });
 
 // GET /platforms/connected - list which platforms are connected
-router.get('/platforms/connected', (req, res) => {
+router.get('/platforms/connected', async (req, res) => {
   try {
     const connected = pm.getConnectedProviders();
     res.json({ success: true, data: connected });
@@ -210,7 +210,7 @@ Only return JSON.`);
 });
 
 // POST /generate-insights — SSE: generate AI insights on analytics data
-router.post('/generate-insights', (req, res) => {
+router.post('/generate-insights', async (req, res) => {
   const { metrics, period } = req.body;
   if (!metrics?.length) { res.status(400).json({ error: 'metrics required' }); return; }
 

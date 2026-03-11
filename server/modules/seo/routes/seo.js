@@ -72,7 +72,7 @@ Be specific and actionable in your recommendations.`;
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
-    logActivity('seo', 'generate', `Generated ${type || 'analysis'}`, null, null, wsId);
+    await logActivity('seo', 'generate', `Generated ${type || 'analysis'}`, null, null, wsId);
     sse.sendResult({ content: text, type: type || 'analysis' });
   } catch (error) {
     console.error('SEO generation error:', error);
@@ -88,7 +88,7 @@ router.post('/audit', async (req, res) => {
     const result = db.prepare(
       'INSERT INTO seo_audits (url, results, score, workspace_id) VALUES (?, ?, ?, ?)'
     ).run(url, results || null, score || null, wsId);
-    const audit = db.prepare('SELECT * FROM seo_audits WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    const audit = await db.prepare('SELECT * FROM seo_audits WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(audit);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -96,10 +96,10 @@ router.post('/audit', async (req, res) => {
 });
 
 // GET /audits - list all audits
-router.get('/audits', (req, res) => {
+router.get('/audits', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const audits = db.prepare('SELECT * FROM seo_audits WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
+    const audits = await db.prepare('SELECT * FROM seo_audits WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(audits);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -107,15 +107,15 @@ router.get('/audits', (req, res) => {
 });
 
 // GET /keywords - list keywords, optionally filtered by audit_id
-router.get('/keywords', (req, res) => {
+router.get('/keywords', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { audit_id } = req.query;
     let keywords;
     if (audit_id) {
-      keywords = db.prepare('SELECT * FROM seo_keywords WHERE project_id = ? AND workspace_id = ? ORDER BY opportunity DESC').all(audit_id, wsId);
+      keywords = await db.prepare('SELECT * FROM seo_keywords WHERE project_id = ? AND workspace_id = ? ORDER BY opportunity DESC').all(audit_id, wsId);
     } else {
-      keywords = db.prepare('SELECT * FROM seo_keywords WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
+      keywords = await db.prepare('SELECT * FROM seo_keywords WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     }
     res.json(keywords);
   } catch (error) {
@@ -124,9 +124,9 @@ router.get('/keywords', (req, res) => {
 });
 
 // DELETE /audits/:id - delete an audit
-router.delete('/audits/:id', (req, res) => {
+router.delete('/audits/:id', async (req, res) => {
   try {
-    db.prepare('DELETE FROM seo_audits WHERE id = ? AND workspace_id = ?').run(req.params.id, req.workspace.id);
+    await db.prepare('DELETE FROM seo_audits WHERE id = ? AND workspace_id = ?').run(req.params.id, req.workspace.id);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -134,9 +134,9 @@ router.delete('/audits/:id', (req, res) => {
 });
 
 // DELETE /keywords/:id - delete a keyword
-router.delete('/keywords/:id', (req, res) => {
+router.delete('/keywords/:id', async (req, res) => {
   try {
-    db.prepare('DELETE FROM seo_keywords WHERE id = ? AND workspace_id = ?').run(req.params.id, req.workspace.id);
+    await db.prepare('DELETE FROM seo_keywords WHERE id = ? AND workspace_id = ?').run(req.params.id, req.workspace.id);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -144,7 +144,7 @@ router.delete('/keywords/:id', (req, res) => {
 });
 
 // PUT /audits/:id - update an audit
-router.put('/audits/:id', (req, res) => {
+router.put('/audits/:id', async (req, res) => {
   try {
     const { score, issues, recommendations } = req.body;
     db.prepare(
@@ -157,7 +157,7 @@ router.put('/audits/:id', (req, res) => {
 });
 
 // POST /keyword-gap — SSE: analyze keyword gaps vs competitor
-router.post('/keyword-gap', (req, res) => {
+router.post('/keyword-gap', async (req, res) => {
   const { your_keywords, competitor_domain, your_domain } = req.body;
   if (!competitor_domain) { res.status(400).json({ error: 'competitor_domain required' }); return; }
 
@@ -205,7 +205,7 @@ router.post('/generate-brief', async (req, res) => {
   // Pull related keywords from DB for context
   let relatedKeywords = [];
   try {
-    relatedKeywords = db.prepare(
+    relatedKeywords = await db.prepare(
       'SELECT keyword, volume, difficulty, intent FROM seo_keywords WHERE workspace_id = ? AND keyword != ? LIMIT 10'
     ).all(wsId, keyword);
   } catch {}

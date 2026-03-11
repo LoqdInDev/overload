@@ -7,10 +7,10 @@ const { buildCrossModuleContext } = require('../../../services/crossModuleData')
 const { getBrandContext, buildBrandSystemPrompt } = require('../../../services/brandContext');
 
 // GET / - list all briefings
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const items = db.prepare('SELECT * FROM adv_briefings WHERE workspace_id = ? ORDER BY date DESC').all(wsId);
+    const items = await db.prepare('SELECT * FROM adv_briefings WHERE workspace_id = ? ORDER BY date DESC').all(wsId);
     res.json(items);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -18,12 +18,12 @@ router.get('/', (req, res) => {
 });
 
 // GET /:id - get a single briefing with its actions
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const item = db.prepare('SELECT * FROM adv_briefings WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const item = await db.prepare('SELECT * FROM adv_briefings WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!item) return res.status(404).json({ error: 'Not found' });
-    const actions = db.prepare('SELECT * FROM adv_actions WHERE briefing_id = ? AND workspace_id = ? ORDER BY created_at DESC').all(req.params.id, wsId);
+    const actions = await db.prepare('SELECT * FROM adv_actions WHERE briefing_id = ? AND workspace_id = ? ORDER BY created_at DESC').all(req.params.id, wsId);
     res.json({ ...item, actions });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -31,14 +31,14 @@ router.get('/:id', (req, res) => {
 });
 
 // POST / - create a briefing
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { date, yesterday_summary, today_recommendations, weekly_snapshot } = req.body;
     const result = db.prepare(
       'INSERT INTO adv_briefings (date, yesterday_summary, today_recommendations, weekly_snapshot, workspace_id) VALUES (?, ?, ?, ?, ?)'
     ).run(date || new Date().toISOString().split('T')[0], yesterday_summary || null, today_recommendations || null, weekly_snapshot || null, wsId);
-    const item = db.prepare('SELECT * FROM adv_briefings WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    const item = await db.prepare('SELECT * FROM adv_briefings WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(item);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -46,10 +46,10 @@ router.post('/', (req, res) => {
 });
 
 // PUT /:id - update a briefing
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const existing = db.prepare('SELECT * FROM adv_briefings WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM adv_briefings WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
     const { date, yesterday_summary, today_recommendations, weekly_snapshot } = req.body;
@@ -63,7 +63,7 @@ router.put('/:id', (req, res) => {
       req.params.id,
       wsId
     );
-    const updated = db.prepare('SELECT * FROM adv_briefings WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const updated = await db.prepare('SELECT * FROM adv_briefings WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -71,13 +71,13 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE /:id - delete a briefing and its actions
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const existing = db.prepare('SELECT * FROM adv_briefings WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM adv_briefings WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Not found' });
-    db.prepare('DELETE FROM adv_actions WHERE briefing_id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    db.prepare('DELETE FROM adv_briefings WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM adv_actions WHERE briefing_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM adv_briefings WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -85,7 +85,7 @@ router.delete('/:id', (req, res) => {
 });
 
 // GET /actions/list - list all actions
-router.get('/actions/list', (req, res) => {
+router.get('/actions/list', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { status, priority } = req.query;
@@ -96,7 +96,7 @@ router.get('/actions/list', (req, res) => {
     if (priority) { conditions.push('a.priority = ?'); params.push(priority); }
     if (conditions.length > 0) query += ' WHERE ' + conditions.join(' AND ');
     query += ' ORDER BY a.created_at DESC';
-    const actions = db.prepare(query).all(...params);
+    const actions = await db.prepare(query).all(...params);
     res.json(actions);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -104,14 +104,14 @@ router.get('/actions/list', (req, res) => {
 });
 
 // POST /actions - create an action
-router.post('/actions', (req, res) => {
+router.post('/actions', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { briefing_id, priority, title, description, module, status } = req.body;
     const result = db.prepare(
       'INSERT INTO adv_actions (briefing_id, priority, title, description, module, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(briefing_id || null, priority || 'medium', title || null, description || null, module || null, status || 'pending', wsId);
-    const item = db.prepare('SELECT * FROM adv_actions WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    const item = await db.prepare('SELECT * FROM adv_actions WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(item);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -119,14 +119,14 @@ router.post('/actions', (req, res) => {
 });
 
 // PUT /actions/:id - update an action status
-router.put('/actions/:id', (req, res) => {
+router.put('/actions/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const existing = db.prepare('SELECT * FROM adv_actions WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM adv_actions WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
     const { priority, title, description, module, status } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE adv_actions SET priority = ?, title = ?, description = ?, module = ?, status = ? WHERE id = ? AND workspace_id = ?'
     ).run(
       priority || existing.priority,
@@ -137,7 +137,7 @@ router.put('/actions/:id', (req, res) => {
       req.params.id,
       wsId
     );
-    const updated = db.prepare('SELECT * FROM adv_actions WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const updated = await db.prepare('SELECT * FROM adv_actions WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });

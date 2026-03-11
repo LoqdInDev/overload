@@ -80,7 +80,7 @@ Be thorough, strategic, and provide ready-to-implement content.`;
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
-    logActivity('brand-strategy', 'generate', 'Generated brand strategy', `${brandName || 'brand'} - ${elementType || 'comprehensive'}`, null, wsId);
+    await logActivity('brand-strategy', 'generate', 'Generated brand strategy', `${brandName || 'brand'} - ${elementType || 'comprehensive'}`, null, wsId);
     sse.sendResult({ content: text });
   } catch (error) {
     console.error('Brand strategy generation error:', error);
@@ -89,10 +89,10 @@ Be thorough, strategic, and provide ready-to-implement content.`;
 });
 
 // GET /brands - List all brands
-router.get('/brands', (req, res) => {
+router.get('/brands', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const brands = db.prepare('SELECT * FROM bs_brands WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
+    const brands = await db.prepare('SELECT * FROM bs_brands WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(brands);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -100,7 +100,7 @@ router.get('/brands', (req, res) => {
 });
 
 // POST /brands - Create a brand
-router.post('/brands', (req, res) => {
+router.post('/brands', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { name, voice, positioning, guidelines, personas } = req.body;
@@ -109,8 +109,8 @@ router.post('/brands', (req, res) => {
       'INSERT INTO bs_brands (name, voice, positioning, guidelines, personas, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(name, voice || null, positioning || null, guidelines || null, personas || null, wsId);
 
-    const brand = db.prepare('SELECT * FROM bs_brands WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
-    logActivity('brand-strategy', 'create', 'Created brand', name, null, wsId);
+    const brand = await db.prepare('SELECT * FROM bs_brands WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    await logActivity('brand-strategy', 'create', 'Created brand', name, null, wsId);
     res.status(201).json(brand);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -118,15 +118,15 @@ router.post('/brands', (req, res) => {
 });
 
 // GET /brands/:id - Get a specific brand with assets
-router.get('/brands/:id', (req, res) => {
+router.get('/brands/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const brand = db.prepare('SELECT * FROM bs_brands WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const brand = await db.prepare('SELECT * FROM bs_brands WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!brand) {
       return res.status(404).json({ error: 'Brand not found' });
     }
 
-    const assets = db.prepare('SELECT * FROM bs_assets WHERE brand_id = ? AND workspace_id = ? ORDER BY created_at DESC').all(req.params.id, wsId);
+    const assets = await db.prepare('SELECT * FROM bs_assets WHERE brand_id = ? AND workspace_id = ? ORDER BY created_at DESC').all(req.params.id, wsId);
     res.json({ ...brand, assets });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -134,10 +134,10 @@ router.get('/brands/:id', (req, res) => {
 });
 
 // PUT /brands/:id - Update a brand
-router.put('/brands/:id', (req, res) => {
+router.put('/brands/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const brand = db.prepare('SELECT * FROM bs_brands WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const brand = await db.prepare('SELECT * FROM bs_brands WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!brand) {
       return res.status(404).json({ error: 'Brand not found' });
     }
@@ -155,8 +155,8 @@ router.put('/brands/:id', (req, res) => {
       req.params.id, wsId
     );
 
-    const updated = db.prepare('SELECT * FROM bs_brands WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
-    logActivity('brand-strategy', 'update', 'Updated brand', updated.name, null, wsId);
+    const updated = await db.prepare('SELECT * FROM bs_brands WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    await logActivity('brand-strategy', 'update', 'Updated brand', updated.name, null, wsId);
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });

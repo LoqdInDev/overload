@@ -153,7 +153,7 @@ function validateField(fieldName, value, allowedValues) {
  * @returns {Function} Express middleware
  *
  * @example
- *   router.post('/', createStatusValidator('status', ['draft', 'active']), (req, res) => { ... });
+ *   router.post('/', createStatusValidator('status', ['draft', 'active']), async (req, res) => { ... });
  */
 function createStatusValidator(fieldName, allowedValues) {
   return (req, res, next) => {

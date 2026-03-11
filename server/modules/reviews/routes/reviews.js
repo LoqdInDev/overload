@@ -21,7 +21,7 @@ router.post('/generate', async (req, res) => {
       const { text } = await generateTextWithClaude(rawPrompt, {
         onChunk: (chunk) => sse.sendChunk(chunk),
       });
-      logActivity('reviews', 'generate', `Generated ${type || 'content'}`, `${platform || 'general'}`, null, wsId);
+      await logActivity('reviews', 'generate', `Generated ${type || 'content'}`, `${platform || 'general'}`, null, wsId);
       sse.sendResult({ content: text, toolType: type });
       return;
     }
@@ -156,7 +156,7 @@ Create a detailed Review Summary Report:
       ).run(wsId, toolType, JSON.stringify({ rating: starRating, reviewText: review?.content || review, businessName }), text, platform || null, tone || null);
     } catch (_) {}
 
-    logActivity('reviews', 'generate', `Generated ${toolType}`, `${platform || 'general'} - ${tone || 'professional'} tone`, null, wsId);
+    await logActivity('reviews', 'generate', `Generated ${toolType}`, `${platform || 'general'} - ${tone || 'professional'} tone`, null, wsId);
     sse.sendResult({ content: text, toolType });
   } catch (error) {
     console.error('Review tool generation error:', error);
@@ -165,7 +165,7 @@ Create a detailed Review Summary Report:
 });
 
 // GET /reviews - List all reviews
-router.get('/reviews', (req, res) => {
+router.get('/reviews', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { source, rating, status } = req.query;
@@ -177,7 +177,7 @@ router.get('/reviews', (req, res) => {
     if (status) { query += ' AND status = ?'; params.push(status); }
 
     query += ' ORDER BY created_at DESC';
-    const reviews = db.prepare(query).all(...params);
+    const reviews = await db.prepare(query).all(...params);
     res.json(reviews);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -185,7 +185,7 @@ router.get('/reviews', (req, res) => {
 });
 
 // POST /reviews - Create a review
-router.post('/reviews', (req, res) => {
+router.post('/reviews', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { source, rating, content, author, sentiment, status } = req.body;
@@ -194,8 +194,8 @@ router.post('/reviews', (req, res) => {
       'INSERT INTO rv_reviews (source, rating, content, author, sentiment, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(source || null, rating || null, content || null, author || null, sentiment || null, status || 'pending', wsId);
 
-    const review = db.prepare('SELECT * FROM rv_reviews WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
-    logActivity('reviews', 'create', 'Added review', `${rating}/5 from ${source || 'direct'}`, null, wsId);
+    const review = await db.prepare('SELECT * FROM rv_reviews WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    await logActivity('reviews', 'create', 'Added review', `${rating}/5 from ${source || 'direct'}`, null, wsId);
     res.status(201).json(review);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -203,10 +203,10 @@ router.post('/reviews', (req, res) => {
 });
 
 // GET /templates - List response templates
-router.get('/templates', (req, res) => {
+router.get('/templates', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const templates = db.prepare('SELECT * FROM rv_templates WHERE workspace_id = ? ORDER BY star_rating ASC, created_at DESC').all(wsId);
+    const templates = await db.prepare('SELECT * FROM rv_templates WHERE workspace_id = ? ORDER BY star_rating ASC, created_at DESC').all(wsId);
     res.json(templates);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -214,7 +214,7 @@ router.get('/templates', (req, res) => {
 });
 
 // POST /templates - Create a response template
-router.post('/templates', (req, res) => {
+router.post('/templates', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, star_rating, tone, content } = req.body;
@@ -223,8 +223,8 @@ router.post('/templates', (req, res) => {
       'INSERT INTO rv_templates (name, star_rating, tone, content, workspace_id) VALUES (?, ?, ?, ?, ?)'
     ).run(name, star_rating || null, tone || null, content, wsId);
 
-    const template = db.prepare('SELECT * FROM rv_templates WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
-    logActivity('reviews', 'create_template', 'Created response template', name, null, wsId);
+    const template = await db.prepare('SELECT * FROM rv_templates WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    await logActivity('reviews', 'create_template', 'Created response template', name, null, wsId);
     res.status(201).json(template);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -237,7 +237,7 @@ router.post('/respond/:id', async (req, res) => {
   const wsId = req.workspace.id;
 
   try {
-    const review = db.prepare('SELECT * FROM rv_reviews WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const review = await db.prepare('SELECT * FROM rv_reviews WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!review) {
       sse.sendError(new Error('Review not found'));
       return;
@@ -261,8 +261,8 @@ Write a response that is sincere, addresses their specific points, and is 2-3 pa
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
-    db.prepare('UPDATE rv_reviews SET response = ?, status = ? WHERE id = ? AND workspace_id = ?').run(text, 'responded', review.id, wsId);
-    logActivity('reviews', 'respond', 'Responded to review', `Review #${review.id}`, null, wsId);
+    await db.prepare('UPDATE rv_reviews SET response = ?, status = ? WHERE id = ? AND workspace_id = ?').run(text, 'responded', review.id, wsId);
+    await logActivity('reviews', 'respond', 'Responded to review', `Review #${review.id}`, null, wsId);
     sse.sendResult({ content: text, reviewId: review.id });
   } catch (error) {
     console.error('Review respond error:', error);
@@ -271,7 +271,7 @@ Write a response that is sincere, addresses their specific points, and is 2-3 pa
 });
 
 // GET /stats - Get review statistics
-router.get('/stats', (req, res) => {
+router.get('/stats', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const total = db.prepare('SELECT COUNT(*) as count FROM rv_reviews WHERE workspace_id = ?').get(wsId).count;
@@ -288,10 +288,10 @@ router.get('/stats', (req, res) => {
 });
 
 // GET /history - Get generation history
-router.get('/history', (req, res) => {
+router.get('/history', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const history = db.prepare('SELECT * FROM rv_generated WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 50').all(wsId);
+    const history = await db.prepare('SELECT * FROM rv_generated WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 50').all(wsId);
     res.json(history);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -332,7 +332,7 @@ Only return JSON.`);
       if (m) { try { res.json(JSON.parse(m[0])); } catch { res.status(500).json({ error: 'Failed to parse sentiment analysis' }); } }
       else res.status(500).json({ error: 'Failed to parse sentiment analysis' });
     }
-    logActivity('reviews', 'analyze', 'Analyzed review sentiment', business_name || 'general', null, wsId);
+    await logActivity('reviews', 'analyze', 'Analyzed review sentiment', business_name || 'general', null, wsId);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -372,7 +372,7 @@ Only return JSON.`);
       if (m) { try { res.json(JSON.parse(m[0])); } catch { res.status(500).json({ error: 'Failed to parse review response' }); } }
       else res.status(500).json({ error: 'Failed to parse review response' });
     }
-    logActivity('reviews', 'generate-response', 'Generated review response', `${rating}-star review`, null, wsId);
+    await logActivity('reviews', 'generate-response', 'Generated review response', `${rating}-star review`, null, wsId);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -435,7 +435,7 @@ Make all copy feel genuine and human, never robotic.`, {
       maxTokens: 4096,
     });
 
-    logActivity('reviews', 'campaign', 'Generated review campaign', `${business_name} - ${platform || 'Google'}`, null, req.workspace.id);
+    await logActivity('reviews', 'campaign', 'Generated review campaign', `${business_name} - ${platform || 'Google'}`, null, req.workspace.id);
     sse.sendResult({ content: text });
   } catch (err) {
     sse.sendError(err);

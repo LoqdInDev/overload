@@ -1,9 +1,9 @@
 const { db } = require('../../../db/database');
 
-function initDatabase() {
-  db.exec(`
+async function initDatabase() {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS rl_programs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       name TEXT NOT NULL,
       type TEXT,
@@ -11,12 +11,12 @@ function initDatabase() {
       reward_value TEXT,
       rules TEXT,
       status TEXT DEFAULT 'active',
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS rl_members (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       program_id INTEGER,
       customer_name TEXT,
@@ -24,7 +24,7 @@ function initDatabase() {
       referrals INTEGER DEFAULT 0,
       points INTEGER DEFAULT 0,
       tier TEXT,
-      joined_at TEXT DEFAULT (datetime('now')),
+      joined_at TEXT DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (program_id) REFERENCES rl_programs(id)
     );
   `);

@@ -1,7 +1,7 @@
 const { db } = require('../../../db/database');
 
-function initDatabase() {
-  db.exec(`
+async function initDatabase() {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS es_campaigns (
       id TEXT PRIMARY KEY,
       workspace_id TEXT,
@@ -12,8 +12,8 @@ function initDatabase() {
       status TEXT DEFAULT 'draft',
       scheduled_at TEXT,
       metadata TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS es_templates (
@@ -25,8 +25,8 @@ function initDatabase() {
       body TEXT,
       category TEXT,
       metadata TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS es_contacts (
@@ -38,8 +38,8 @@ function initDatabase() {
       tags TEXT,
       subscribed INTEGER DEFAULT 1,
       metadata TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
   `);
 }

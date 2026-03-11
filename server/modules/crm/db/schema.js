@@ -1,7 +1,7 @@
 const { db } = require('../../../db/database');
 
-function initDatabase() {
-  db.exec(`
+async function initDatabase() {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS crm_contacts (
       id TEXT PRIMARY KEY,
       workspace_id TEXT,
@@ -14,8 +14,8 @@ function initDatabase() {
       tags TEXT,
       notes TEXT,
       metadata TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS crm_deals (
@@ -29,8 +29,8 @@ function initDatabase() {
       expected_close TEXT,
       notes TEXT,
       metadata TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now')),
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (contact_id) REFERENCES crm_contacts(id)
     );
 
@@ -44,19 +44,19 @@ function initDatabase() {
       scheduled_at TEXT,
       completed_at TEXT,
       metadata TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (contact_id) REFERENCES crm_contacts(id),
       FOREIGN KEY (deal_id) REFERENCES crm_deals(id)
     );
 
     CREATE TABLE IF NOT EXISTS crm_segments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       name TEXT NOT NULL,
       rules TEXT,
       color TEXT,
       count INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
   `);
 
@@ -64,7 +64,7 @@ function initDatabase() {
   try {
     const contactCols = db.prepare('PRAGMA table_info(crm_contacts)').all();
     if (!contactCols.find(c => c.name === 'status')) {
-      db.exec("ALTER TABLE crm_contacts ADD COLUMN status TEXT DEFAULT 'lead'");
+      await db.exec("ALTER TABLE crm_contacts ADD COLUMN status TEXT DEFAULT 'lead'");
     }
   } catch (e) { /* column may already exist */ }
 
@@ -72,7 +72,7 @@ function initDatabase() {
   try {
     const contactCols = db.prepare('PRAGMA table_info(crm_contacts)').all();
     if (!contactCols.find(c => c.name === 'deleted_at')) {
-      db.exec('ALTER TABLE crm_contacts ADD COLUMN deleted_at TEXT DEFAULT NULL');
+      await db.exec('ALTER TABLE crm_contacts ADD COLUMN deleted_at TEXT DEFAULT NULL');
     }
   } catch (e) { /* column may already exist */ }
 
@@ -80,7 +80,7 @@ function initDatabase() {
   try {
     const dealCols = db.prepare('PRAGMA table_info(crm_deals)').all();
     if (!dealCols.find(c => c.name === 'deleted_at')) {
-      db.exec('ALTER TABLE crm_deals ADD COLUMN deleted_at TEXT DEFAULT NULL');
+      await db.exec('ALTER TABLE crm_deals ADD COLUMN deleted_at TEXT DEFAULT NULL');
     }
   } catch (e) { /* column may already exist */ }
 
@@ -90,7 +90,7 @@ function initDatabase() {
     const hasTitle = dealCols.find(c => c.name === 'title');
     const hasName = dealCols.find(c => c.name === 'name');
     if (hasTitle && !hasName) {
-      db.exec('ALTER TABLE crm_deals RENAME COLUMN title TO name');
+      await db.exec('ALTER TABLE crm_deals RENAME COLUMN title TO name');
     }
   } catch (e) { /* column rename may not be supported or already done */ }
 
@@ -98,7 +98,7 @@ function initDatabase() {
   try {
     const dealCols = db.prepare('PRAGMA table_info(crm_deals)').all();
     if (!dealCols.find(c => c.name === 'pipeline')) {
-      db.exec("ALTER TABLE crm_deals ADD COLUMN pipeline TEXT DEFAULT 'default'");
+      await db.exec("ALTER TABLE crm_deals ADD COLUMN pipeline TEXT DEFAULT 'default'");
     }
   } catch (e) { /* column may already exist */ }
 
@@ -106,7 +106,7 @@ function initDatabase() {
   try {
     const contactCols = db.prepare('PRAGMA table_info(crm_contacts)').all();
     if (!contactCols.find(c => c.name === 'score')) {
-      db.exec('ALTER TABLE crm_contacts ADD COLUMN score INTEGER DEFAULT 0');
+      await db.exec('ALTER TABLE crm_contacts ADD COLUMN score INTEGER DEFAULT 0');
     }
   } catch (e) { /* column may already exist */ }
 
@@ -114,7 +114,7 @@ function initDatabase() {
   try {
     const contactCols = db.prepare('PRAGMA table_info(crm_contacts)').all();
     if (!contactCols.find(c => c.name === 'segment')) {
-      db.exec('ALTER TABLE crm_contacts ADD COLUMN segment TEXT DEFAULT NULL');
+      await db.exec('ALTER TABLE crm_contacts ADD COLUMN segment TEXT DEFAULT NULL');
     }
   } catch (e) { /* column may already exist */ }
 
@@ -122,7 +122,7 @@ function initDatabase() {
   try {
     const activityCols = db.prepare('PRAGMA table_info(crm_activities)').all();
     if (!activityCols.find(c => c.name === 'title')) {
-      db.exec('ALTER TABLE crm_activities ADD COLUMN title TEXT DEFAULT NULL');
+      await db.exec('ALTER TABLE crm_activities ADD COLUMN title TEXT DEFAULT NULL');
     }
   } catch (e) { /* column may already exist */ }
 }

@@ -1,7 +1,7 @@
 const { db } = require('../../../db/database');
 
-function initDatabase() {
-  db.exec(`
+async function initDatabase() {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS seo_projects (
       id TEXT PRIMARY KEY,
       workspace_id TEXT,
@@ -9,8 +9,8 @@ function initDatabase() {
       url TEXT,
       description TEXT,
       metadata TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS seo_keywords (
@@ -23,7 +23,7 @@ function initDatabase() {
       intent TEXT,
       suggestions TEXT,
       metadata TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (project_id) REFERENCES seo_projects(id)
     );
 
@@ -36,7 +36,7 @@ function initDatabase() {
       issues TEXT,
       recommendations TEXT,
       metadata TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (project_id) REFERENCES seo_projects(id)
     );
   `);

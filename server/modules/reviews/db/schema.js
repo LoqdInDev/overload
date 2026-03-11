@@ -1,7 +1,7 @@
 const { db } = require('../../../db/database');
 
-function initDatabase() {
-  db.exec(`
+async function initDatabase() {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS rv_reviews (
       id TEXT PRIMARY KEY,
       workspace_id TEXT,
@@ -14,8 +14,8 @@ function initDatabase() {
       response TEXT,
       status TEXT DEFAULT 'new',
       metadata TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS rv_responses (
@@ -26,7 +26,7 @@ function initDatabase() {
       status TEXT DEFAULT 'draft',
       sent_at TEXT,
       metadata TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (review_id) REFERENCES rv_reviews(id)
     );
 
@@ -39,22 +39,22 @@ function initDatabase() {
       api_key TEXT,
       active INTEGER DEFAULT 1,
       metadata TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS rv_templates (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       name TEXT NOT NULL,
       star_rating INTEGER,
       tone TEXT,
       content TEXT NOT NULL,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS rv_generated (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       tool_type TEXT,
       input_data TEXT,
@@ -62,12 +62,12 @@ function initDatabase() {
       platform TEXT,
       tone TEXT,
       rating INTEGER,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
   `);
 
-  try { db.exec("ALTER TABLE rv_reviews ADD COLUMN response TEXT"); } catch {}
-  try { db.exec("ALTER TABLE rv_reviews ADD COLUMN status TEXT DEFAULT 'new'"); } catch {}
+  try { await db.exec("ALTER TABLE rv_reviews ADD COLUMN response TEXT"); } catch {}
+  try { await db.exec("ALTER TABLE rv_reviews ADD COLUMN status TEXT DEFAULT 'new'"); } catch {}
 }
 
 module.exports = { initDatabase };

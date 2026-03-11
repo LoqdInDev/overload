@@ -13,7 +13,7 @@ router.post('/generate', async (req, res) => {
     const { text } = await generateTextWithClaude(prompt || `Generate ${type || 'content'} for Webhooks`, {
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
-    logActivity('webhooks', 'generate', `Generated ${type || 'content'}`, 'AI generation', null, wsId);
+    await logActivity('webhooks', 'generate', `Generated ${type || 'content'}`, 'AI generation', null, wsId);
     sse.sendResult({ content: text, type });
   } catch (error) {
     console.error('Webhooks generation error:', error);
@@ -22,10 +22,10 @@ router.post('/generate', async (req, res) => {
 });
 
 // GET /webhooks - List all webhooks
-router.get('/webhooks', (req, res) => {
+router.get('/webhooks', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const webhooks = db.prepare('SELECT * FROM wh_webhooks WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
+    const webhooks = await db.prepare('SELECT * FROM wh_webhooks WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json({ success: true, data: webhooks });
   } catch (error) {
     console.error('Error fetching webhooks:', error);
@@ -34,15 +34,15 @@ router.get('/webhooks', (req, res) => {
 });
 
 // POST /webhooks - Create a new webhook
-router.post('/webhooks', (req, res) => {
+router.post('/webhooks', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, url, events, secret, status } = req.body;
     const result = db.prepare(
       'INSERT INTO wh_webhooks (name, url, events, secret, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(name, url, events ? JSON.stringify(events) : null, secret, status || 'active', wsId);
-    logActivity('webhooks', 'create', `Created webhook: ${name}`, 'Webhook created', null, wsId);
-    const webhook = db.prepare('SELECT * FROM wh_webhooks WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    await logActivity('webhooks', 'create', `Created webhook: ${name}`, 'Webhook created', null, wsId);
+    const webhook = await db.prepare('SELECT * FROM wh_webhooks WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.json({ success: true, data: webhook });
   } catch (error) {
     console.error('Error creating webhook:', error);
@@ -51,14 +51,14 @@ router.post('/webhooks', (req, res) => {
 });
 
 // GET /webhooks/:id - Get a specific webhook with its logs
-router.get('/webhooks/:id', (req, res) => {
+router.get('/webhooks/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const webhook = db.prepare('SELECT * FROM wh_webhooks WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const webhook = await db.prepare('SELECT * FROM wh_webhooks WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!webhook) {
       return res.status(404).json({ success: false, error: 'Webhook not found' });
     }
-    const logs = db.prepare('SELECT * FROM wh_webhook_logs WHERE webhook_id = ? AND workspace_id = ? ORDER BY created_at DESC LIMIT 50').all(req.params.id, wsId);
+    const logs = await db.prepare('SELECT * FROM wh_webhook_logs WHERE webhook_id = ? AND workspace_id = ? ORDER BY created_at DESC LIMIT 50').all(req.params.id, wsId);
     res.json({ success: true, data: { ...webhook, logs } });
   } catch (error) {
     console.error('Error fetching webhook:', error);
@@ -67,19 +67,19 @@ router.get('/webhooks/:id', (req, res) => {
 });
 
 // PUT /webhooks/:id - Update a webhook
-router.put('/webhooks/:id', (req, res) => {
+router.put('/webhooks/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const existing = db.prepare('SELECT * FROM wh_webhooks WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM wh_webhooks WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ success: false, error: 'Webhook not found' });
 
     const { name, url, events, secret, status } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE wh_webhooks SET name = ?, url = ?, events = ?, secret = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?'
     ).run(name || existing.name, url || existing.url, events ? JSON.stringify(events) : existing.events, secret ?? existing.secret, status || existing.status, req.params.id, wsId);
 
-    const webhook = db.prepare('SELECT * FROM wh_webhooks WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
-    logActivity('webhooks', 'update', `Updated webhook: ${webhook.name}`, 'Webhook updated', null, wsId);
+    const webhook = await db.prepare('SELECT * FROM wh_webhooks WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    await logActivity('webhooks', 'update', `Updated webhook: ${webhook.name}`, 'Webhook updated', null, wsId);
     res.json({ success: true, data: webhook });
   } catch (error) {
     console.error('Error updating webhook:', error);
@@ -88,15 +88,15 @@ router.put('/webhooks/:id', (req, res) => {
 });
 
 // DELETE /webhooks/:id - Delete a webhook
-router.delete('/webhooks/:id', (req, res) => {
+router.delete('/webhooks/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const existing = db.prepare('SELECT * FROM wh_webhooks WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM wh_webhooks WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ success: false, error: 'Webhook not found' });
 
-    db.prepare('DELETE FROM wh_webhook_logs WHERE webhook_id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    db.prepare('DELETE FROM wh_webhooks WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    logActivity('webhooks', 'delete', `Deleted webhook: ${existing.name}`, 'Webhook deleted', null, wsId);
+    await db.prepare('DELETE FROM wh_webhook_logs WHERE webhook_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM wh_webhooks WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await logActivity('webhooks', 'delete', `Deleted webhook: ${existing.name}`, 'Webhook deleted', null, wsId);
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting webhook:', error);
@@ -105,7 +105,7 @@ router.delete('/webhooks/:id', (req, res) => {
 });
 
 // GET /logs - List webhook delivery logs
-router.get('/logs', (req, res) => {
+router.get('/logs', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { webhook_id, limit } = req.query;
@@ -117,7 +117,7 @@ router.get('/logs', (req, res) => {
     }
     query += ' ORDER BY created_at DESC LIMIT ?';
     params.push(parseInt(limit) || 100);
-    const logs = db.prepare(query).all(...params);
+    const logs = await db.prepare(query).all(...params);
     res.json({ success: true, data: logs });
   } catch (error) {
     console.error('Error fetching webhook logs:', error);
@@ -155,10 +155,10 @@ router.post('/test-webhook', async (req, res) => {
 });
 
 // GET /delivery-log — get webhook delivery history
-router.get('/delivery-log', (req, res) => {
+router.get('/delivery-log', async (req, res) => {
   const workspace_id = req.workspace.id;
   try {
-    const logs = db.prepare(`
+    const logs = await db.prepare(`
       SELECT * FROM wh_webhook_logs WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 50
     `).all(workspace_id);
     res.json({ logs: logs || [] });
@@ -168,15 +168,15 @@ router.get('/delivery-log', (req, res) => {
 });
 
 // POST /delivery-log — get delivery log for a specific webhook
-router.post('/delivery-log', (req, res) => {
+router.post('/delivery-log', async (req, res) => {
   const workspace_id = req.workspace.id;
   const { webhook_id } = req.body;
   try {
     let logs;
     if (webhook_id) {
-      logs = db.prepare(`SELECT * FROM wh_webhook_logs WHERE workspace_id = ? AND webhook_id = ? ORDER BY created_at DESC LIMIT 20`).all(workspace_id, webhook_id);
+      logs = await db.prepare(`SELECT * FROM wh_webhook_logs WHERE workspace_id = ? AND webhook_id = ? ORDER BY created_at DESC LIMIT 20`).all(workspace_id, webhook_id);
     } else {
-      logs = db.prepare(`SELECT * FROM wh_webhook_logs WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 50`).all(workspace_id);
+      logs = await db.prepare(`SELECT * FROM wh_webhook_logs WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 50`).all(workspace_id);
     }
     res.json({ logs: logs || [] });
   } catch {

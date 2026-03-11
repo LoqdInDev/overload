@@ -8,7 +8,7 @@ function safeParse(str) {
 }
 
 // GET /activity-log — merged, filtered, paginated log
-router.get('/activity-log', (req, res) => {
+router.get('/activity-log', async (req, res) => {
   const wsId = req.workspace.id;
   const { module: moduleId, status, dateFrom, dateTo, limit = 20, offset = 0 } = req.query;
 
@@ -40,7 +40,7 @@ router.get('/activity-log', (req, res) => {
   const countParams = [...params];
   params.push(Number(limit), Number(offset));
 
-  const rows = db.prepare(sql).all(...params);
+  const rows = await db.prepare(sql).all(...params);
   const total = db.prepare(
     `SELECT COUNT(*) as count FROM ae_action_log ${where}`
   ).get(...countParams);
@@ -56,7 +56,7 @@ router.get('/activity-log', (req, res) => {
 });
 
 // GET /activity-log/stats — summary statistics
-router.get('/activity-log/stats', (req, res) => {
+router.get('/activity-log/stats', async (req, res) => {
   const wsId = req.workspace.id;
   const total = db.prepare('SELECT COUNT(*) as count FROM ae_action_log WHERE workspace_id = ?').get(wsId);
   const completed = db.prepare("SELECT COUNT(*) as count FROM ae_action_log WHERE status = 'completed' AND workspace_id = ?").get(wsId);

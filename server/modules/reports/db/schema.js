@@ -1,9 +1,9 @@
 const { db } = require('../../../db/database');
 
-function initDatabase() {
-  db.exec(`
+async function initDatabase() {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS cr_reports (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       name TEXT NOT NULL,
       client_name TEXT,
@@ -13,32 +13,32 @@ function initDatabase() {
       template TEXT,
       branding TEXT DEFAULT '{}',
       status TEXT DEFAULT 'draft' CHECK(status IN ('draft', 'published')),
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS cr_templates (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       name TEXT NOT NULL,
       layout TEXT DEFAULT '{}',
       sections TEXT DEFAULT '[]',
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS cr_schedules (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       report_id INTEGER NOT NULL,
       frequency TEXT NOT NULL CHECK(frequency IN ('weekly', 'monthly', 'quarterly')),
       next_run TEXT,
       recipients TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (report_id) REFERENCES cr_reports(id) ON DELETE CASCADE
     );
   `);
 
-  try { db.exec("ALTER TABLE cr_reports ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))"); } catch {}
+  try { await db.exec("ALTER TABLE cr_reports ADD COLUMN updated_at TEXT DEFAULT CURRENT_TIMESTAMP"); } catch {}
 }
 
 module.exports = { initDatabase };

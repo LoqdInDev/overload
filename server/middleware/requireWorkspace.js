@@ -1,11 +1,11 @@
 const { db } = require('../db/database');
 
-function requireWorkspace(req, res, next) {
+async function requireWorkspace(req, res, next) {
   const workspaceId = req.headers['x-workspace-id'];
 
   if (!workspaceId) {
     // Fallback: use the user's first workspace
-    const membership = db.prepare(
+    const membership = await db.prepare(
       'SELECT workspace_id, role FROM workspace_members WHERE user_id = ? ORDER BY joined_at ASC LIMIT 1'
     ).get(req.user.id);
 
@@ -21,7 +21,7 @@ function requireWorkspace(req, res, next) {
   }
 
   // Validate user is a member of this workspace
-  const membership = db.prepare(
+  const membership = await db.prepare(
     'SELECT role FROM workspace_members WHERE workspace_id = ? AND user_id = ?'
   ).get(workspaceId, req.user.id);
 

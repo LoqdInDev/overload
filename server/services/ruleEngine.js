@@ -128,7 +128,7 @@ function shouldThresholdTrigger(rule) {
 
 // ── Safety Checks ────────────────────────────────────────────────
 
-function checkSafetyLimits(wsId) {
+async function checkSafetyLimits(wsId) {
   const settings = loadSettings(wsId);
   if (settings.pauseAll === 'true') return { allowed: false, reason: 'All automation paused' };
 
@@ -149,11 +149,11 @@ function checkSafetyLimits(wsId) {
   return { allowed: true };
 }
 
-function loadSettings(wsId) {
+async function loadSettings(wsId) {
   const DEFAULTS = {
     pauseAll: 'false', maxActionsPerDay: '50', maxActionsPerHour: '10', confidenceThreshold: '70',
   };
-  const rows = db.prepare('SELECT key, value FROM ae_settings WHERE workspace_id = ?').all(wsId);
+  const rows = await db.prepare('SELECT key, value FROM ae_settings WHERE workspace_id = ?').all(wsId);
   const result = { ...DEFAULTS };
   for (const r of rows) result[r.key] = r.value;
   return result;
@@ -296,7 +296,7 @@ async function executeAction(rule, wsId) {
     // Log the completed action
     const result = db.prepare(`
       INSERT INTO ae_action_log (module_id, action_type, mode, description, output_data, status, duration_ms, created_at, completed_at, workspace_id)
-      VALUES (?, ?, 'autopilot', ?, ?, 'completed', ?, datetime('now'), datetime('now'), ?)
+      VALUES (?, ?, 'autopilot', ?, ?, 'completed', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
     `).run(rule.module_id, rule.action_type, `Auto: ${rule.name}`, text, durationMs, wsId);
 
     // Save generated content as draft in the target module's database
@@ -310,7 +310,7 @@ async function executeAction(rule, wsId) {
 
     db.prepare(`
       INSERT INTO ae_action_log (module_id, action_type, mode, description, error, status, duration_ms, created_at, completed_at, workspace_id)
-      VALUES (?, ?, 'autopilot', ?, ?, 'failed', ?, datetime('now'), datetime('now'), ?)
+      VALUES (?, ?, 'autopilot', ?, ?, 'failed', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
     `).run(rule.module_id, rule.action_type, `Auto: ${rule.name}`, err.message, durationMs, wsId);
 
     createNotification('action_failed', `Auto: ${rule.name} failed`, err.message, rule.module_id, wsId);
@@ -327,7 +327,7 @@ function queueForApproval(rule, wsId) {
 
   db.prepare(`
     INSERT INTO ae_approval_queue (module_id, action_type, title, description, payload, ai_confidence, priority, status, source, created_at, workspace_id)
-    VALUES (?, ?, ?, ?, ?, ?, 'medium', 'pending', 'rule', datetime('now'), ?)
+    VALUES (?, ?, ?, ?, ?, ?, 'medium', 'pending', 'rule', CURRENT_TIMESTAMP, ?)
   `).run(
     rule.module_id,
     rule.action_type,
@@ -342,7 +342,7 @@ function queueForApproval(rule, wsId) {
 }
 
 function markRuleTriggered(ruleId) {
-  db.prepare("UPDATE ae_rules SET last_triggered = datetime('now'), run_count = run_count + 1 WHERE id = ?").run(ruleId);
+  db.prepare("UPDATE ae_rules SET last_triggered = CURRENT_TIMESTAMP, run_count = run_count + 1 WHERE id = ?").run(ruleId);
 }
 
 // ── Main Engine Loop ─────────────────────────────────────────────
@@ -350,18 +350,18 @@ function markRuleTriggered(ruleId) {
 async function tick() {
   try {
     // Get all workspaces
-    const workspaces = db.prepare('SELECT id FROM workspaces').all();
+    const workspaces = await db.prepare('SELECT id FROM workspaces').all();
 
     for (const ws of workspaces) {
       const wsId = ws.id;
 
       // Get module modes for this workspace
-      const modeRows = db.prepare('SELECT module_id, mode FROM ae_module_modes WHERE workspace_id = ?').all(wsId);
+      const modeRows = await db.prepare('SELECT module_id, mode FROM ae_module_modes WHERE workspace_id = ?').all(wsId);
       const modes = {};
       for (const m of modeRows) modes[m.module_id] = m.mode;
 
       // Get active rules for this workspace
-      const rules = db.prepare("SELECT * FROM ae_rules WHERE status = 'active' AND workspace_id = ?").all(wsId);
+      const rules = await db.prepare("SELECT * FROM ae_rules WHERE status = 'active' AND workspace_id = ?").all(wsId);
       if (rules.length === 0) continue;
 
       for (const rule of rules) {
@@ -436,7 +436,7 @@ function stopRuleEngine() {
  * Called by POST /api/automation/rules/trigger-event
  */
 async function triggerEvent(eventType, moduleId, wsId, eventData = {}) {
-  const rules = db.prepare(
+  const rules = await db.prepare(
     "SELECT * FROM ae_rules WHERE status = 'active' AND trigger_type = 'event' AND module_id = ? AND workspace_id = ?"
   ).all(moduleId, wsId);
 
@@ -454,7 +454,7 @@ async function triggerEvent(eventType, moduleId, wsId, eventData = {}) {
     const safety = checkSafetyLimits(wsId);
     if (!safety.allowed) continue;
 
-    const modeRow = db.prepare('SELECT mode FROM ae_module_modes WHERE module_id = ? AND workspace_id = ?').get(moduleId, wsId);
+    const modeRow = await db.prepare('SELECT mode FROM ae_module_modes WHERE module_id = ? AND workspace_id = ?').get(moduleId, wsId);
     const mode = modeRow?.mode || 'manual';
     if (mode === 'manual') continue;
 

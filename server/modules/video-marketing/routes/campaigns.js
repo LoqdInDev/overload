@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const { getQueries } = require('../db/queries');
 const { logActivity } = require('../../../db/database');
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
   const { productName, productData } = req.body;
@@ -16,18 +16,18 @@ router.post('/', (req, res) => {
   const id = uuidv4();
   q.createCampaign(id, productName, JSON.stringify(productData || {}));
   const campaign = q.getCampaign(id);
-  logActivity('video-marketing', 'create', `New campaign: ${productName}`, null, id, wsId);
+  await logActivity('video-marketing', 'create', `New campaign: ${productName}`, null, id, wsId);
   res.json(campaign);
 });
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
   const campaigns = q.getAllCampaigns();
   res.json(campaigns);
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
   const campaign = q.getCampaign(req.params.id);
@@ -49,7 +49,7 @@ router.get('/:id', (req, res) => {
   });
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
   const { productName, productData } = req.body;
@@ -68,14 +68,14 @@ router.put('/:id', (req, res) => {
   res.json(updated);
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
   q.deleteCampaign(req.params.id);
   res.json({ success: true });
 });
 
-router.post('/:id/favorite', (req, res) => {
+router.post('/:id/favorite', async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
   const { generationId, itemIndex } = req.body;
@@ -84,7 +84,7 @@ router.post('/:id/favorite', (req, res) => {
   res.json({ id });
 });
 
-router.delete('/:id/favorite/:favId', (req, res) => {
+router.delete('/:id/favorite/:favId', async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
   q.removeFavorite(req.params.favId);

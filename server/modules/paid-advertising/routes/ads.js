@@ -36,7 +36,7 @@ router.post('/generate', async (req, res) => {
     const parsed = parseAdJSON(text) || { campaign_name: name, platform, ad_content: {}, targeting: {}, strategy: {} };
     const id = uuid();
     q.create(id, platform, name, objective || 'conversions', budget || '', audience || '', JSON.stringify(parsed.ad_content || {}), JSON.stringify(parsed));
-    logActivity('ads', 'generate', `Generated ${platform} ad campaign`, name, id, wsId);
+    await logActivity('ads', 'generate', `Generated ${platform} ad campaign`, name, id, wsId);
     sse.sendResult({ id, ...parsed });
   } catch (err) {
     console.error('Ad generation error:', err);
@@ -45,7 +45,7 @@ router.post('/generate', async (req, res) => {
 });
 
 // GET /campaigns — list all campaigns
-router.get('/campaigns', (req, res) => {
+router.get('/campaigns', async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
   const platform = req.query.platform;
@@ -54,7 +54,7 @@ router.get('/campaigns', (req, res) => {
 });
 
 // GET /campaigns/:id — get campaign by ID
-router.get('/campaigns/:id', (req, res) => {
+router.get('/campaigns/:id', async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
   const campaign = q.getById(req.params.id);
@@ -65,7 +65,7 @@ router.get('/campaigns/:id', (req, res) => {
 });
 
 // PUT /campaigns/:id — update campaign
-router.put('/campaigns/:id', (req, res) => {
+router.put('/campaigns/:id', async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
   const existing = q.getById(req.params.id);
@@ -85,11 +85,11 @@ router.put('/campaigns/:id', (req, res) => {
 });
 
 // DELETE /campaigns/:id — delete campaign
-router.delete('/campaigns/:id', (req, res) => {
+router.delete('/campaigns/:id', async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
   q.delete(req.params.id);
-  logActivity('ads', 'delete', 'Deleted ad campaign', null, req.params.id, wsId);
+  await logActivity('ads', 'delete', 'Deleted ad campaign', null, req.params.id, wsId);
   res.json({ success: true });
 });
 
@@ -136,7 +136,7 @@ router.post('/platforms/campaigns/:campaignId/pause', async (req, res) => {
     if (!provider) return res.status(400).json({ success: false, error: 'provider required' });
     if (!pm.isConnected(provider)) return res.status(400).json({ success: false, error: `${provider} not connected` });
     const data = await pm.adsPause(provider, { campaignId: req.params.campaignId, customerId });
-    logActivity('ads', 'pause', `Paused ${provider} campaign`, req.params.campaignId, null, wsId);
+    await logActivity('ads', 'pause', `Paused ${provider} campaign`, req.params.campaignId, null, wsId);
     res.json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -150,7 +150,7 @@ router.post('/platforms/campaigns/:campaignId/enable', async (req, res) => {
     if (!provider) return res.status(400).json({ success: false, error: 'provider required' });
     if (!pm.isConnected(provider)) return res.status(400).json({ success: false, error: `${provider} not connected` });
     const data = await pm.adsEnable(provider, { campaignId: req.params.campaignId, customerId });
-    logActivity('ads', 'enable', `Enabled ${provider} campaign`, req.params.campaignId, null, wsId);
+    await logActivity('ads', 'enable', `Enabled ${provider} campaign`, req.params.campaignId, null, wsId);
     res.json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -618,7 +618,7 @@ router.post('/launch', requirePlan('autopilot'), async (req, res) => {
       q.update(existing.name, existing.objective, existing.budget, existing.audience, existing.ad_content, 'launched', JSON.stringify({ ...JSON.parse(existing.metadata || '{}'), launch: result }), existing.id);
     }
 
-    logActivity('ads', 'launch', `Launched ${platform} campaign (PAUSED)`, name, result.campaignId, wsId);
+    await logActivity('ads', 'launch', `Launched ${platform} campaign (PAUSED)`, name, result.campaignId, wsId);
 
     res.json({
       success: true,
@@ -644,7 +644,7 @@ router.post('/optimize', requirePlan('autopilot'), async (req, res) => {
     const wsId = req.workspace.id;
     await optimizeNow(wsId);
     const log = getOptimizationLog(wsId, 1);
-    logActivity('ads', 'optimize', 'Ran manual optimization cycle', null, null, wsId);
+    await logActivity('ads', 'optimize', 'Ran manual optimization cycle', null, null, wsId);
     res.json({ success: true, latest: log[0] || null });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -652,7 +652,7 @@ router.post('/optimize', requirePlan('autopilot'), async (req, res) => {
 });
 
 // GET /optimize/log — optimization history
-router.get('/optimize/log', requirePlan('autopilot'), (req, res) => {
+router.get('/optimize/log', requirePlan('autopilot'), async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const limit = Number(req.query.limit) || 20;
@@ -670,7 +670,7 @@ router.get('/optimize/log', requirePlan('autopilot'), (req, res) => {
 });
 
 // GET /optimize/metrics — latest metrics for all launched campaigns
-router.get('/optimize/metrics', requirePlan('autopilot'), (req, res) => {
+router.get('/optimize/metrics', requirePlan('autopilot'), async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const metrics = getLatestMetrics(wsId);
@@ -681,7 +681,7 @@ router.get('/optimize/metrics', requirePlan('autopilot'), (req, res) => {
 });
 
 // GET /optimize/metrics/:campaignId — metrics history for a campaign
-router.get('/optimize/metrics/:campaignId', requirePlan('autopilot'), (req, res) => {
+router.get('/optimize/metrics/:campaignId', requirePlan('autopilot'), async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const days = Number(req.query.days) || 30;

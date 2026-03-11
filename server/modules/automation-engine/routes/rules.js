@@ -3,7 +3,7 @@ const router = express.Router();
 const { db, logActivity } = require('../../../db/database');
 
 // GET /rules — list all rules
-router.get('/rules', (req, res) => {
+router.get('/rules', async (req, res) => {
   const wsId = req.workspace.id;
   const { module: moduleId } = req.query;
   let sql = 'SELECT * FROM ae_rules WHERE workspace_id = ?';
@@ -13,7 +13,7 @@ router.get('/rules', (req, res) => {
     params.push(moduleId);
   }
   sql += ' ORDER BY module_id, created_at DESC';
-  const rows = db.prepare(sql).all(...params);
+  const rows = await db.prepare(sql).all(...params);
   res.json(rows.map(r => ({
     ...r,
     trigger_config: r.trigger_config ? JSON.parse(r.trigger_config) : null,
@@ -23,7 +23,7 @@ router.get('/rules', (req, res) => {
 });
 
 // POST /rules — create rule
-router.post('/rules', (req, res) => {
+router.post('/rules', async (req, res) => {
   const wsId = req.workspace.id;
   const { module_id, name, trigger_type, trigger_config, action_type, action_config, requires_approval } = req.body;
   if (!module_id || !name || !trigger_type || !trigger_config || !action_type) {
@@ -40,14 +40,14 @@ router.post('/rules', (req, res) => {
     requires_approval ? 1 : 0,
     wsId
   );
-  logActivity(module_id, 'rule_created', name, `Created automation rule: ${name}`, null, wsId);
+  await logActivity(module_id, 'rule_created', name, `Created automation rule: ${name}`, null, wsId);
   res.json({ success: true, id: result.lastInsertRowid });
 });
 
 // PUT /rules/:id — update rule
-router.put('/rules/:id', (req, res) => {
+router.put('/rules/:id', async (req, res) => {
   const wsId = req.workspace.id;
-  const rule = db.prepare('SELECT * FROM ae_rules WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+  const rule = await db.prepare('SELECT * FROM ae_rules WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
   if (!rule) return res.status(404).json({ error: 'Rule not found' });
 
   const fields = [];
@@ -76,12 +76,12 @@ router.put('/rules/:id', (req, res) => {
 });
 
 // DELETE /rules/:id — delete rule
-router.delete('/rules/:id', (req, res) => {
+router.delete('/rules/:id', async (req, res) => {
   const wsId = req.workspace.id;
-  const rule = db.prepare('SELECT * FROM ae_rules WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+  const rule = await db.prepare('SELECT * FROM ae_rules WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
   if (!rule) return res.status(404).json({ error: 'Rule not found' });
-  db.prepare('DELETE FROM ae_rules WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
-  logActivity(rule.module_id, 'rule_deleted', rule.name, `Deleted automation rule: ${rule.name}`, null, wsId);
+  await db.prepare('DELETE FROM ae_rules WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+  await logActivity(rule.module_id, 'rule_deleted', rule.name, `Deleted automation rule: ${rule.name}`, null, wsId);
   res.json({ success: true });
 });
 

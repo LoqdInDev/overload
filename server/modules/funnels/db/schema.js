@@ -1,7 +1,7 @@
 const { db } = require('../../../db/database');
 
-function initDatabase() {
-  db.exec(`
+async function initDatabase() {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS fn_funnels (
       id TEXT PRIMARY KEY,
       workspace_id TEXT,
@@ -11,8 +11,8 @@ function initDatabase() {
       status TEXT DEFAULT 'draft',
       stages TEXT,
       metadata TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS fn_pages (
@@ -24,8 +24,8 @@ function initDatabase() {
       content TEXT,
       position INTEGER DEFAULT 0,
       metadata TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now')),
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (funnel_id) REFERENCES fn_funnels(id)
     );
 
@@ -37,7 +37,7 @@ function initDatabase() {
       event TEXT NOT NULL,
       value REAL,
       metadata TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (funnel_id) REFERENCES fn_funnels(id),
       FOREIGN KEY (page_id) REFERENCES fn_pages(id)
     );
@@ -46,11 +46,11 @@ function initDatabase() {
   // Safe migrations for existing DBs
   const funnelCols = ['stages TEXT', 'product TEXT', 'audience TEXT', 'industry TEXT'];
   for (const col of funnelCols) {
-    try { db.exec(`ALTER TABLE fn_funnels ADD COLUMN ${col}`); } catch {}
+    try { await db.exec(`ALTER TABLE fn_funnels ADD COLUMN ${col}`); } catch {}
   }
   const pageCols = ['stage_name TEXT', 'generated_content TEXT'];
   for (const col of pageCols) {
-    try { db.exec(`ALTER TABLE fn_pages ADD COLUMN ${col}`); } catch {}
+    try { await db.exec(`ALTER TABLE fn_pages ADD COLUMN ${col}`); } catch {}
   }
 }
 

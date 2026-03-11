@@ -5,7 +5,7 @@ const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
 
 // GET / - list all clients
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { status } = req.query;
@@ -16,7 +16,7 @@ router.get('/', (req, res) => {
       params.push(status);
     }
     query += ' ORDER BY created_at DESC';
-    const items = db.prepare(query).all(...params);
+    const items = await db.prepare(query).all(...params);
     res.json(items);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -24,12 +24,12 @@ router.get('/', (req, res) => {
 });
 
 // GET /:id - get a single client with their projects
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const item = db.prepare('SELECT * FROM cm_clients WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const item = await db.prepare('SELECT * FROM cm_clients WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!item) return res.status(404).json({ error: 'Not found' });
-    const projects = db.prepare('SELECT * FROM cm_projects WHERE client_id = ? AND workspace_id = ? ORDER BY created_at DESC').all(req.params.id, wsId);
+    const projects = await db.prepare('SELECT * FROM cm_projects WHERE client_id = ? AND workspace_id = ? ORDER BY created_at DESC').all(req.params.id, wsId);
     res.json({ ...item, projects });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -37,14 +37,14 @@ router.get('/:id', (req, res) => {
 });
 
 // POST / - create a client
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { name, company, email, phone, status, notes } = req.body;
     const result = db.prepare(
       'INSERT INTO cm_clients (name, company, email, phone, status, notes, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(name, company || null, email || null, phone || null, status || 'active', notes || null, wsId);
-    const item = db.prepare('SELECT * FROM cm_clients WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    const item = await db.prepare('SELECT * FROM cm_clients WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(item);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -52,10 +52,10 @@ router.post('/', (req, res) => {
 });
 
 // PUT /:id - update a client
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const existing = db.prepare('SELECT * FROM cm_clients WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM cm_clients WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
     const { name, company, email, phone, status, notes } = req.body;
@@ -70,7 +70,7 @@ router.put('/:id', (req, res) => {
       notes !== undefined ? notes : existing.notes,
       req.params.id, wsId
     );
-    const updated = db.prepare('SELECT * FROM cm_clients WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const updated = await db.prepare('SELECT * FROM cm_clients WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -78,13 +78,13 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE /:id - delete a client and their projects
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const existing = db.prepare('SELECT * FROM cm_clients WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM cm_clients WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Not found' });
-    db.prepare('DELETE FROM cm_projects WHERE client_id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    db.prepare('DELETE FROM cm_clients WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM cm_projects WHERE client_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM cm_clients WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -92,7 +92,7 @@ router.delete('/:id', (req, res) => {
 });
 
 // GET /projects/list - list all projects
-router.get('/projects/list', (req, res) => {
+router.get('/projects/list', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { client_id, status } = req.query;
@@ -103,7 +103,7 @@ router.get('/projects/list', (req, res) => {
     if (status) { conditions.push('p.status = ?'); params.push(status); }
     if (conditions.length > 0) query += ' WHERE ' + conditions.join(' AND ');
     query += ' ORDER BY p.created_at DESC';
-    const projects = db.prepare(query).all(...params);
+    const projects = await db.prepare(query).all(...params);
     res.json(projects);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -111,14 +111,14 @@ router.get('/projects/list', (req, res) => {
 });
 
 // POST /projects - create a project
-router.post('/projects', (req, res) => {
+router.post('/projects', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { client_id, name, description, modules, status } = req.body;
     const result = db.prepare(
       'INSERT INTO cm_projects (client_id, name, description, modules, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(client_id || null, name, description || null, modules || null, status || 'active', wsId);
-    const item = db.prepare('SELECT * FROM cm_projects WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    const item = await db.prepare('SELECT * FROM cm_projects WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(item);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -126,14 +126,14 @@ router.post('/projects', (req, res) => {
 });
 
 // PUT /projects/:id - update a project
-router.put('/projects/:id', (req, res) => {
+router.put('/projects/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const existing = db.prepare('SELECT * FROM cm_projects WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM cm_projects WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
     const { name, description, modules, status } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE cm_projects SET name = ?, description = ?, modules = ?, status = ? WHERE id = ? AND workspace_id = ?'
     ).run(
       name || existing.name,
@@ -142,7 +142,7 @@ router.put('/projects/:id', (req, res) => {
       status || existing.status,
       req.params.id, wsId
     );
-    const updated = db.prepare('SELECT * FROM cm_projects WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const updated = await db.prepare('SELECT * FROM cm_projects WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -150,10 +150,10 @@ router.put('/projects/:id', (req, res) => {
 });
 
 // DELETE /projects/:id - delete a project
-router.delete('/projects/:id', (req, res) => {
+router.delete('/projects/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    db.prepare('DELETE FROM cm_projects WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM cm_projects WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });

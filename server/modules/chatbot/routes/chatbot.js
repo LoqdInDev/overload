@@ -186,7 +186,7 @@ router.post('/assistant', async (req, res) => {
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
-    logActivity('chatbot', 'assistant', 'Assistant query', message.slice(0, 60), null, wsId);
+    await logActivity('chatbot', 'assistant', 'Assistant query', message.slice(0, 60), null, wsId);
     sse.sendResult({ text });
   } catch (error) {
     console.error('Overload Assistant error:', error);
@@ -207,7 +207,7 @@ router.post('/generate', async (req, res) => {
       const { text } = await generateTextWithClaude(rawPrompt, {
         onChunk: (chunk) => sse.sendChunk(chunk),
       });
-      logActivity('chatbot', 'generate', `Generated ${type || 'chatbot'} content`, 'AI generation', null, wsId);
+      await logActivity('chatbot', 'generate', `Generated ${type || 'chatbot'} content`, 'AI generation', null, wsId);
       sse.sendResult({ content: text, type: type || 'custom' });
       return;
     }
@@ -293,7 +293,7 @@ Return a JSON object:
       onChunk: (text) => sse.sendChunk(text),
     });
 
-    logActivity('chatbot', 'generate', `Generated bot ${type || 'personality'}`, botName || 'AI Chatbot', null, wsId);
+    await logActivity('chatbot', 'generate', `Generated bot ${type || 'personality'}`, botName || 'AI Chatbot', null, wsId);
     sse.sendResult(parsed);
   } catch (error) {
     console.error('Chatbot generation error:', error);
@@ -302,10 +302,10 @@ Return a JSON object:
 });
 
 // GET /bots
-router.get('/bots', (req, res) => {
+router.get('/bots', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const bots = db.prepare('SELECT * FROM cb_bots WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
+    const bots = await db.prepare('SELECT * FROM cb_bots WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(bots);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -313,7 +313,7 @@ router.get('/bots', (req, res) => {
 });
 
 // POST /bots
-router.post('/bots', (req, res) => {
+router.post('/bots', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { name, description, personality, knowledge_base, welcome_message, channels, status } = req.body;
@@ -335,8 +335,8 @@ router.post('/bots', (req, res) => {
       wsId
     );
 
-    const bot = db.prepare('SELECT * FROM cb_bots WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
-    logActivity('chatbot', 'create', 'Created chatbot', name, null, wsId);
+    const bot = await db.prepare('SELECT * FROM cb_bots WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    await logActivity('chatbot', 'create', 'Created chatbot', name, null, wsId);
     res.status(201).json(bot);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -344,15 +344,15 @@ router.post('/bots', (req, res) => {
 });
 
 // GET /bots/:id
-router.get('/bots/:id', (req, res) => {
+router.get('/bots/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const bot = db.prepare('SELECT * FROM cb_bots WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const bot = await db.prepare('SELECT * FROM cb_bots WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!bot) {
       return res.status(404).json({ error: 'Bot not found' });
     }
 
-    const flows = db.prepare('SELECT * FROM cb_flows WHERE bot_id = ? AND workspace_id = ? ORDER BY created_at ASC').all(req.params.id, wsId);
+    const flows = await db.prepare('SELECT * FROM cb_flows WHERE bot_id = ? AND workspace_id = ? ORDER BY created_at ASC').all(req.params.id, wsId);
     const conversationCount = db.prepare('SELECT COUNT(*) as count FROM cb_conversations WHERE bot_id = ? AND workspace_id = ?').get(req.params.id, wsId);
 
     res.json({ ...bot, flows, conversationCount: conversationCount.count });
@@ -371,7 +371,7 @@ router.post('/test', async (req, res) => {
 
     let botContext = '';
     if (bot_id) {
-      const bot = db.prepare('SELECT * FROM cb_bots WHERE id = ? AND workspace_id = ?').get(bot_id, wsId);
+      const bot = await db.prepare('SELECT * FROM cb_bots WHERE id = ? AND workspace_id = ?').get(bot_id, wsId);
       if (bot) {
         botContext = `
 Bot Name: ${bot.name}
@@ -414,7 +414,7 @@ Return a JSON object: { "response": "your response text", "confidence": 0.95, "i
 });
 
 // GET /conversations
-router.get('/conversations', (req, res) => {
+router.get('/conversations', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { bot_id, limit = 50 } = req.query;
@@ -429,7 +429,7 @@ router.get('/conversations', (req, res) => {
     sql += ' ORDER BY c.created_at DESC LIMIT ?';
     params.push(parseInt(limit));
 
-    const conversations = db.prepare(sql).all(...params);
+    const conversations = await db.prepare(sql).all(...params);
     res.json(conversations);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -437,10 +437,10 @@ router.get('/conversations', (req, res) => {
 });
 
 // GET /bots/:id/embed — returns JS embed snippet for the bot
-router.get('/bots/:id/embed', (req, res) => {
+router.get('/bots/:id/embed', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const bot = db.prepare('SELECT * FROM cb_bots WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const bot = await db.prepare('SELECT * FROM cb_bots WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!bot) return res.status(404).json({ error: 'Bot not found' });
 
     const API_BASE = process.env.API_URL || 'http://localhost:3000';

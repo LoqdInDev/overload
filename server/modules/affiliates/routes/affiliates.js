@@ -17,7 +17,7 @@ router.post('/generate', async (req, res) => {
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
-    logActivity('affiliates', 'generate', `Generated ${type || 'content'}`, 'AI generation', null, wsId);
+    await logActivity('affiliates', 'generate', `Generated ${type || 'content'}`, 'AI generation', null, wsId);
     sse.sendResult({ content: text, type });
   } catch (error) {
     console.error('Affiliate generation error:', error);
@@ -26,10 +26,10 @@ router.post('/generate', async (req, res) => {
 });
 
 // GET /programs - List all programs
-router.get('/programs', (req, res) => {
+router.get('/programs', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const programs = db.prepare('SELECT * FROM af_programs WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
+    const programs = await db.prepare('SELECT * FROM af_programs WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(programs);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -37,7 +37,7 @@ router.get('/programs', (req, res) => {
 });
 
 // POST /programs - Create a program
-router.post('/programs', (req, res) => {
+router.post('/programs', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { name, description, commissionRate, commissionType, cookieDuration, terms } = req.body;
@@ -50,8 +50,8 @@ router.post('/programs', (req, res) => {
       'INSERT INTO af_programs (name, description, commission_rate, commission_type, cookie_duration, terms, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(name, description || null, commissionRate || 0, commissionType || 'percentage', cookieDuration || 30, terms || null, wsId);
 
-    const program = db.prepare('SELECT * FROM af_programs WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
-    logActivity('affiliates', 'create', `Created program: ${name}`, null, null, wsId);
+    const program = await db.prepare('SELECT * FROM af_programs WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    await logActivity('affiliates', 'create', `Created program: ${name}`, null, null, wsId);
     res.status(201).json(program);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -59,18 +59,18 @@ router.post('/programs', (req, res) => {
 });
 
 // GET /affiliates - List all affiliates
-router.get('/affiliates', (req, res) => {
+router.get('/affiliates', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { programId } = req.query;
     let affiliates;
 
     if (programId) {
-      affiliates = db.prepare(
+      affiliates = await db.prepare(
         'SELECT a.*, p.name as program_name FROM af_affiliates a LEFT JOIN af_programs p ON a.program_id = p.id WHERE a.workspace_id = ? AND a.program_id = ? ORDER BY a.created_at DESC'
       ).all(wsId, programId);
     } else {
-      affiliates = db.prepare(
+      affiliates = await db.prepare(
         'SELECT a.*, p.name as program_name FROM af_affiliates a LEFT JOIN af_programs p ON a.program_id = p.id WHERE a.workspace_id = ? ORDER BY a.created_at DESC'
       ).all(wsId);
     }
@@ -82,7 +82,7 @@ router.get('/affiliates', (req, res) => {
 });
 
 // POST /affiliates - Create an affiliate
-router.post('/affiliates', (req, res) => {
+router.post('/affiliates', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { programId, name, email, website } = req.body;
@@ -97,8 +97,8 @@ router.post('/affiliates', (req, res) => {
       'INSERT INTO af_affiliates (program_id, name, email, website, affiliate_code, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(programId, name, email || null, website || null, affiliateCode, wsId);
 
-    const affiliate = db.prepare('SELECT * FROM af_affiliates WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
-    logActivity('affiliates', 'create', `Added affiliate: ${name}`, affiliateCode, null, wsId);
+    const affiliate = await db.prepare('SELECT * FROM af_affiliates WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    await logActivity('affiliates', 'create', `Added affiliate: ${name}`, affiliateCode, null, wsId);
     res.status(201).json(affiliate);
   } catch (error) {
     if (error.message.includes('UNIQUE constraint')) {
@@ -109,7 +109,7 @@ router.post('/affiliates', (req, res) => {
 });
 
 // GET /commissions - List commissions
-router.get('/commissions', (req, res) => {
+router.get('/commissions', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { affiliateId, programId, status } = req.query;
@@ -130,7 +130,7 @@ router.get('/commissions', (req, res) => {
     }
 
     query += ' ORDER BY c.created_at DESC';
-    const commissions = db.prepare(query).all(...params);
+    const commissions = await db.prepare(query).all(...params);
     res.json(commissions);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -138,19 +138,19 @@ router.get('/commissions', (req, res) => {
 });
 
 // PUT /programs/:id - Update a program
-router.put('/programs/:id', (req, res) => {
+router.put('/programs/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const existing = db.prepare('SELECT * FROM af_programs WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM af_programs WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Program not found' });
 
     const { name, description, commissionRate, commissionType, cookieDuration, terms, status } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE af_programs SET name = ?, description = ?, commission_rate = ?, commission_type = ?, cookie_duration = ?, terms = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?'
     ).run(name || existing.name, description ?? existing.description, commissionRate ?? existing.commission_rate, commissionType || existing.commission_type, cookieDuration ?? existing.cookie_duration, terms ?? existing.terms, status || existing.status, req.params.id, wsId);
 
-    const program = db.prepare('SELECT * FROM af_programs WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
-    logActivity('affiliates', 'update', `Updated program: ${program.name}`, null, null, wsId);
+    const program = await db.prepare('SELECT * FROM af_programs WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    await logActivity('affiliates', 'update', `Updated program: ${program.name}`, null, null, wsId);
     res.json(program);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -158,14 +158,14 @@ router.put('/programs/:id', (req, res) => {
 });
 
 // DELETE /programs/:id - Delete a program
-router.delete('/programs/:id', (req, res) => {
+router.delete('/programs/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const existing = db.prepare('SELECT * FROM af_programs WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM af_programs WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Program not found' });
 
-    db.prepare('DELETE FROM af_programs WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    logActivity('affiliates', 'delete', `Deleted program: ${existing.name}`, null, null, wsId);
+    await db.prepare('DELETE FROM af_programs WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await logActivity('affiliates', 'delete', `Deleted program: ${existing.name}`, null, null, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -173,19 +173,19 @@ router.delete('/programs/:id', (req, res) => {
 });
 
 // PUT /affiliates/:id - Update an affiliate
-router.put('/affiliates/:id', (req, res) => {
+router.put('/affiliates/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const existing = db.prepare('SELECT * FROM af_affiliates WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM af_affiliates WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Affiliate not found' });
 
     const { name, email, website, status } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE af_affiliates SET name = ?, email = ?, website = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?'
     ).run(name || existing.name, email ?? existing.email, website ?? existing.website, status || existing.status, req.params.id, wsId);
 
-    const affiliate = db.prepare('SELECT * FROM af_affiliates WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
-    logActivity('affiliates', 'update', `Updated affiliate: ${affiliate.name}`, null, null, wsId);
+    const affiliate = await db.prepare('SELECT * FROM af_affiliates WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    await logActivity('affiliates', 'update', `Updated affiliate: ${affiliate.name}`, null, null, wsId);
     res.json(affiliate);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -193,14 +193,14 @@ router.put('/affiliates/:id', (req, res) => {
 });
 
 // DELETE /affiliates/:id - Delete an affiliate
-router.delete('/affiliates/:id', (req, res) => {
+router.delete('/affiliates/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const existing = db.prepare('SELECT * FROM af_affiliates WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM af_affiliates WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Affiliate not found' });
 
-    db.prepare('DELETE FROM af_affiliates WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    logActivity('affiliates', 'delete', `Deleted affiliate: ${existing.name}`, null, null, wsId);
+    await db.prepare('DELETE FROM af_affiliates WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await logActivity('affiliates', 'delete', `Deleted affiliate: ${existing.name}`, null, null, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -210,7 +210,7 @@ router.delete('/affiliates/:id', (req, res) => {
 // ─── PAYOUTS ─────────────────────────────────────────────────────────────────
 
 // GET /payouts — list all payouts with affiliate info
-router.get('/payouts', (req, res) => {
+router.get('/payouts', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { affiliate_id, status } = req.query;
@@ -226,14 +226,14 @@ router.get('/payouts', (req, res) => {
     if (affiliate_id) { sql += ' AND p.affiliate_id = ?'; params.push(affiliate_id); }
     if (status) { sql += ' AND p.status = ?'; params.push(status); }
     sql += ' ORDER BY p.created_at DESC';
-    res.json(db.prepare(sql).all(...params));
+    res.json(await db.prepare(sql).all(...params));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 // GET /payouts/summary — total owed, paid, pending per affiliate
-router.get('/payouts/summary', (req, res) => {
+router.get('/payouts/summary', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const summary = db.prepare(`
@@ -256,21 +256,21 @@ router.get('/payouts/summary', (req, res) => {
 });
 
 // POST /payouts — create a payout record
-router.post('/payouts', (req, res) => {
+router.post('/payouts', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { affiliate_id, program_id, amount, period, notes } = req.body;
     if (!affiliate_id || !amount) return res.status(400).json({ error: 'affiliate_id and amount are required' });
 
-    const affiliate = db.prepare('SELECT * FROM af_affiliates WHERE id = ? AND workspace_id = ?').get(affiliate_id, wsId);
+    const affiliate = await db.prepare('SELECT * FROM af_affiliates WHERE id = ? AND workspace_id = ?').get(affiliate_id, wsId);
     if (!affiliate) return res.status(404).json({ error: 'Affiliate not found' });
 
     const result = db.prepare(
       'INSERT INTO af_payouts (affiliate_id, program_id, amount, status, period, notes, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(affiliate_id, program_id || null, amount, 'pending', period || null, notes || null, wsId);
 
-    const payout = db.prepare('SELECT * FROM af_payouts WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
-    logActivity('affiliates', 'create', 'Created payout', `$${amount} for ${affiliate.name}`, null, wsId);
+    const payout = await db.prepare('SELECT * FROM af_payouts WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    await logActivity('affiliates', 'create', 'Created payout', `$${amount} for ${affiliate.name}`, null, wsId);
     res.status(201).json(payout);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -278,17 +278,17 @@ router.post('/payouts', (req, res) => {
 });
 
 // PUT /payouts/:id/mark-paid — mark a payout as paid
-router.put('/payouts/:id/mark-paid', (req, res) => {
+router.put('/payouts/:id/mark-paid', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const payout = db.prepare('SELECT * FROM af_payouts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const payout = await db.prepare('SELECT * FROM af_payouts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!payout) return res.status(404).json({ error: 'Payout not found' });
 
     db.prepare('UPDATE af_payouts SET status = ?, paid_at = datetime(\'now\') WHERE id = ? AND workspace_id = ?')
       .run('paid', req.params.id, wsId);
 
-    const updated = db.prepare('SELECT * FROM af_payouts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
-    logActivity('affiliates', 'update', 'Marked payout paid', `$${payout.amount}`, null, wsId);
+    const updated = await db.prepare('SELECT * FROM af_payouts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    await logActivity('affiliates', 'update', 'Marked payout paid', `$${payout.amount}`, null, wsId);
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -296,14 +296,14 @@ router.put('/payouts/:id/mark-paid', (req, res) => {
 });
 
 // DELETE /payouts/:id — cancel/delete a payout
-router.delete('/payouts/:id', (req, res) => {
+router.delete('/payouts/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const payout = db.prepare('SELECT * FROM af_payouts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const payout = await db.prepare('SELECT * FROM af_payouts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!payout) return res.status(404).json({ error: 'Payout not found' });
     if (payout.status === 'paid') return res.status(400).json({ error: 'Cannot delete a paid payout' });
 
-    db.prepare('DELETE FROM af_payouts WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM af_payouts WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

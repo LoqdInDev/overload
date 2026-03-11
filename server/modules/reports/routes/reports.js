@@ -22,7 +22,7 @@ router.post('/generate', async (req, res) => {
         onChunk: (chunk) => sse.sendChunk(chunk),
         maxTokens: 8192,
       });
-      logActivity('reports', 'generate', 'Generated report content', 'AI generation', null, wsId);
+      await logActivity('reports', 'generate', 'Generated report content', 'AI generation', null, wsId);
       sse.sendResult({ content: text });
       return;
     }
@@ -53,7 +53,7 @@ Use professional language. Format tables in markdown. Use bullet points for reco
       maxTokens: 8192,
     });
 
-    logActivity('reports', 'generate', 'Generated client report', client_name || 'AI Report', null, wsId);
+    await logActivity('reports', 'generate', 'Generated client report', client_name || 'AI Report', null, wsId);
     sse.sendResult({ content: text, client_name, dateRange });
   } catch (error) {
     console.error('Report generation error:', error);
@@ -62,7 +62,7 @@ Use professional language. Format tables in markdown. Use bullet points for reco
 });
 
 // GET /data-summary — returns the current cross-module data snapshot for display
-router.get('/data-summary', (req, res) => {
+router.get('/data-summary', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const summary = getAllModuleSummary(wsId);
@@ -73,7 +73,7 @@ router.get('/data-summary', (req, res) => {
 });
 
 // GET /reports
-router.get('/reports', (req, res) => {
+router.get('/reports', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { client_name, status } = req.query;
@@ -84,7 +84,7 @@ router.get('/reports', (req, res) => {
     if (status) { sql += ' AND status = ?'; params.push(status); }
 
     sql += ' ORDER BY created_at DESC';
-    const reports = db.prepare(sql).all(...params);
+    const reports = await db.prepare(sql).all(...params);
     res.json(reports);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -92,7 +92,7 @@ router.get('/reports', (req, res) => {
 });
 
 // POST /reports
-router.post('/reports', (req, res) => {
+router.post('/reports', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, client_name, date_range, modules, content, template, branding, status } = req.body;
@@ -115,8 +115,8 @@ router.post('/reports', (req, res) => {
       wsId
     );
 
-    const report = db.prepare('SELECT * FROM cr_reports WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
-    logActivity('reports', 'create', 'Created report', `${name} for ${client_name || 'unknown client'}`, null, wsId);
+    const report = await db.prepare('SELECT * FROM cr_reports WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    await logActivity('reports', 'create', 'Created report', `${name} for ${client_name || 'unknown client'}`, null, wsId);
     res.status(201).json(report);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -124,15 +124,15 @@ router.post('/reports', (req, res) => {
 });
 
 // GET /reports/:id
-router.get('/reports/:id', (req, res) => {
+router.get('/reports/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const report = db.prepare('SELECT * FROM cr_reports WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const report = await db.prepare('SELECT * FROM cr_reports WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!report) {
       return res.status(404).json({ error: 'Report not found' });
     }
 
-    const schedules = db.prepare('SELECT * FROM cr_schedules WHERE report_id = ? AND workspace_id = ?').all(req.params.id, wsId);
+    const schedules = await db.prepare('SELECT * FROM cr_schedules WHERE report_id = ? AND workspace_id = ?').all(req.params.id, wsId);
     res.json({ ...report, schedules });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -140,17 +140,17 @@ router.get('/reports/:id', (req, res) => {
 });
 
 // PUT /reports/:id
-router.put('/reports/:id', (req, res) => {
+router.put('/reports/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const existing = db.prepare('SELECT * FROM cr_reports WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM cr_reports WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) {
       return res.status(404).json({ error: 'Report not found' });
     }
 
     const { name, status, content, branding, client_name, date_range, modules, template } = req.body;
 
-    db.prepare(
+    await db.prepare(
       `UPDATE cr_reports
        SET name = ?, status = ?, content = ?, branding = ?,
            client_name = ?, date_range = ?, modules = ?, template = ?,
@@ -169,8 +169,8 @@ router.put('/reports/:id', (req, res) => {
       wsId
     );
 
-    const report = db.prepare('SELECT * FROM cr_reports WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
-    logActivity('reports', 'update', 'Updated report', report.name, null, wsId);
+    const report = await db.prepare('SELECT * FROM cr_reports WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    await logActivity('reports', 'update', 'Updated report', report.name, null, wsId);
     res.json(report);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -178,18 +178,18 @@ router.put('/reports/:id', (req, res) => {
 });
 
 // DELETE /reports/:id — also cascade-deletes associated schedules
-router.delete('/reports/:id', (req, res) => {
+router.delete('/reports/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const existing = db.prepare('SELECT * FROM cr_reports WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM cr_reports WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) {
       return res.status(404).json({ error: 'Report not found' });
     }
 
-    db.prepare('DELETE FROM cr_schedules WHERE report_id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    db.prepare('DELETE FROM cr_reports WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM cr_schedules WHERE report_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM cr_reports WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
 
-    logActivity('reports', 'delete', 'Deleted report', existing.name, null, wsId);
+    await logActivity('reports', 'delete', 'Deleted report', existing.name, null, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -197,10 +197,10 @@ router.delete('/reports/:id', (req, res) => {
 });
 
 // GET /templates
-router.get('/templates', (req, res) => {
+router.get('/templates', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const templates = db.prepare('SELECT * FROM cr_templates WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
+    const templates = await db.prepare('SELECT * FROM cr_templates WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(templates);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -208,7 +208,7 @@ router.get('/templates', (req, res) => {
 });
 
 // POST /schedules
-router.post('/schedules', (req, res) => {
+router.post('/schedules', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { report_id, frequency, next_run, recipients } = req.body;
@@ -217,7 +217,7 @@ router.post('/schedules', (req, res) => {
       return res.status(400).json({ error: 'report_id and frequency are required' });
     }
 
-    const report = db.prepare('SELECT * FROM cr_reports WHERE id = ? AND workspace_id = ?').get(report_id, wsId);
+    const report = await db.prepare('SELECT * FROM cr_reports WHERE id = ? AND workspace_id = ?').get(report_id, wsId);
     if (!report) {
       return res.status(404).json({ error: 'Report not found' });
     }
@@ -226,8 +226,8 @@ router.post('/schedules', (req, res) => {
       'INSERT INTO cr_schedules (report_id, frequency, next_run, recipients, workspace_id) VALUES (?, ?, ?, ?, ?)'
     ).run(report_id, frequency, next_run || null, recipients || null, wsId);
 
-    const schedule = db.prepare('SELECT * FROM cr_schedules WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
-    logActivity('reports', 'create', 'Scheduled report', `${report.name} - ${frequency}`, null, wsId);
+    const schedule = await db.prepare('SELECT * FROM cr_schedules WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    await logActivity('reports', 'create', 'Scheduled report', `${report.name} - ${frequency}`, null, wsId);
     res.status(201).json(schedule);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -235,7 +235,7 @@ router.post('/schedules', (req, res) => {
 });
 
 // POST /generate-executive-summary — SSE: generate executive summary with live data
-router.post('/generate-executive-summary', (req, res) => {
+router.post('/generate-executive-summary', async (req, res) => {
   const { report_name, period, metrics, business_name } = req.body;
   if (!metrics?.length) { res.status(400).json({ error: 'metrics required' }); return; }
 

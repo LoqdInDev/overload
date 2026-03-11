@@ -51,8 +51,8 @@ async function getToken(providerId) {
 /**
  * Get API key credentials for an api_key provider.
  */
-function getApiCredentials(providerId) {
-  const conn = db.prepare('SELECT * FROM int_connections WHERE provider_id = ? AND status = ?').get(providerId, 'connected');
+async function getApiCredentials(providerId) {
+  const conn = await db.prepare('SELECT * FROM int_connections WHERE provider_id = ? AND status = ?').get(providerId, 'connected');
   if (!conn || !conn.credentials_enc) throw new Error(`No valid connection for ${providerId}. Please connect first.`);
   return JSON.parse(decrypt(conn.credentials_enc));
 }
@@ -60,23 +60,23 @@ function getApiCredentials(providerId) {
 /**
  * Get connection info for a provider (without decrypting tokens).
  */
-function getConnection(providerId) {
-  return db.prepare('SELECT * FROM int_connections WHERE provider_id = ?').get(providerId);
+async function getConnection(providerId) {
+  return await db.prepare('SELECT * FROM int_connections WHERE provider_id = ?').get(providerId);
 }
 
 /**
  * Check if a provider is connected.
  */
-function isConnected(providerId) {
-  const conn = db.prepare('SELECT status FROM int_connections WHERE provider_id = ?').get(providerId);
+async function isConnected(providerId) {
+  const conn = await db.prepare('SELECT status FROM int_connections WHERE provider_id = ?').get(providerId);
   return conn?.status === 'connected';
 }
 
 /**
  * Get all connected providers.
  */
-function getConnectedProviders() {
-  return db.prepare("SELECT provider_id, display_name, auth_type, status, account_name, account_id, connected_at FROM int_connections WHERE status = 'connected'").all();
+async function getConnectedProviders() {
+  return await db.prepare("SELECT provider_id, display_name, auth_type, status, account_name, account_id, connected_at FROM int_connections WHERE status = 'connected'").all();
 }
 
 /**

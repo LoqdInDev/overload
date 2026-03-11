@@ -1,7 +1,7 @@
 const { db } = require('../../../db/database');
 
-function initDatabase() {
-  db.exec(`
+async function initDatabase() {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS inf_influencers (
       id TEXT PRIMARY KEY,
       workspace_id TEXT,
@@ -14,8 +14,8 @@ function initDatabase() {
       contact_email TEXT,
       notes TEXT,
       metadata TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS inf_campaigns (
@@ -28,8 +28,8 @@ function initDatabase() {
       start_date TEXT,
       end_date TEXT,
       metadata TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS inf_outreach (
@@ -42,7 +42,7 @@ function initDatabase() {
       sent_at TEXT,
       responded_at TEXT,
       metadata TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (influencer_id) REFERENCES inf_influencers(id),
       FOREIGN KEY (campaign_id) REFERENCES inf_campaigns(id)
     );

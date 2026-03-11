@@ -25,7 +25,7 @@ router.post('/generate', async (req, res) => {
     // Pull top SEO keywords for context
     let seoContext = '';
     try {
-      const seoKeywords = db.prepare(
+      const seoKeywords = await db.prepare(
         'SELECT keyword, volume, difficulty, intent FROM seo_keywords WHERE workspace_id = ? ORDER BY volume DESC LIMIT 8'
       ).all(wsId);
       if (seoKeywords.length > 0) {
@@ -47,7 +47,7 @@ router.post('/generate', async (req, res) => {
     const title = prompt.slice(0, 100);
     q.create(id, type, title, prompt, text, null);
 
-    logActivity('content', 'generate', `Generated ${type} content`, title, id, wsId);
+    await logActivity('content', 'generate', `Generated ${type} content`, title, id, wsId);
 
     sse.sendResult({ id, content: text, type });
   } catch (err) {
@@ -57,7 +57,7 @@ router.post('/generate', async (req, res) => {
 });
 
 // List all projects
-router.get('/projects', (req, res) => {
+router.get('/projects', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const q = getQueries(wsId);
@@ -70,7 +70,7 @@ router.get('/projects', (req, res) => {
 });
 
 // Get project by ID
-router.get('/projects/:id', (req, res) => {
+router.get('/projects/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const q = getQueries(wsId);
@@ -83,7 +83,7 @@ router.get('/projects/:id', (req, res) => {
 });
 
 // Update project
-router.put('/projects/:id', (req, res) => {
+router.put('/projects/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const q = getQueries(wsId);
@@ -104,12 +104,12 @@ router.put('/projects/:id', (req, res) => {
 });
 
 // Delete project
-router.delete('/projects/:id', (req, res) => {
+router.delete('/projects/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const q = getQueries(wsId);
     q.delete(req.params.id);
-    logActivity('content', 'delete', 'Deleted content project', null, req.params.id, wsId);
+    await logActivity('content', 'delete', 'Deleted content project', null, req.params.id, wsId);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -117,7 +117,7 @@ router.delete('/projects/:id', (req, res) => {
 });
 
 // GET /suggestions - Cross-module content suggestions
-router.get('/suggestions', (req, res) => {
+router.get('/suggestions', async (req, res) => {
   const wsId = req.workspace.id;
   try {
   const seoKeywords = getSeoKeywordsForContent(wsId);
@@ -189,7 +189,7 @@ Only return JSON.`);
 });
 
 // POST /repurpose — SSE: repurpose content into other formats
-router.post('/repurpose', (req, res) => {
+router.post('/repurpose', async (req, res) => {
   const { content, original_type } = req.body;
   if (!content) { res.status(400).json({ error: 'content required' }); return; }
 

@@ -6,10 +6,10 @@ const { getAuthorizationUrl, exchangeCode, fetchProfile, storeTokens, refreshAcc
 const { PROVIDERS } = require('../providers');
 
 // GET /providers — list all platforms with live connection status
-router.get('/providers', (req, res) => {
+router.get('/providers', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const connections = db.prepare('SELECT * FROM int_connections WHERE workspace_id = ?').all(wsId);
+    const connections = await db.prepare('SELECT * FROM int_connections WHERE workspace_id = ?').all(wsId);
     const connMap = {};
     for (const c of connections) connMap[c.provider_id] = c;
 
@@ -44,7 +44,7 @@ router.get('/providers', (req, res) => {
 });
 
 // GET /oauth/authorize/:providerId — generate auth URL
-router.get('/oauth/authorize/:providerId', (req, res) => {
+router.get('/oauth/authorize/:providerId', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { providerId } = req.params;
@@ -64,7 +64,7 @@ router.get('/oauth/authorize/:providerId', (req, res) => {
     if (result.codeVerifier) {
       const stateParam = new URL(result.url).searchParams.get('state');
       if (stateParam) {
-        db.prepare('UPDATE int_oauth_states SET extra_params = ? WHERE state = ?')
+        await db.prepare('UPDATE int_oauth_states SET extra_params = ? WHERE state = ?')
           .run(JSON.stringify({ ...extraParams, codeVerifier: result.codeVerifier }), stateParam);
       }
     }
@@ -99,7 +99,7 @@ router.get('/oauth/callback', async (req, res) => {
     const tokenData = await exchangeCode(providerId, code, extraParams);
     const profile = await fetchProfile(providerId, tokenData.access_token);
     storeTokens(providerId, tokenData, profile);
-    logActivity('integrations', 'connect', `Connected ${PROVIDERS[providerId].name}`, profile?.name || 'OAuth');
+    await logActivity('integrations', 'connect', `Connected ${PROVIDERS[providerId].name}`, profile?.name || 'OAuth');
     res.send(callbackHTML(providerId, true));
   } catch (error) {
     console.error('OAuth callback error:', error);
@@ -142,23 +142,23 @@ router.post('/connections/api-key', async (req, res) => {
     }
 
     const encryptedCreds = encrypt(JSON.stringify(credentials));
-    const existing = db.prepare('SELECT id FROM int_connections WHERE provider_id = ? AND workspace_id = ?').get(providerId, wsId);
+    const existing = await db.prepare('SELECT id FROM int_connections WHERE provider_id = ? AND workspace_id = ?').get(providerId, wsId);
 
     if (existing) {
       db.prepare(`
         UPDATE int_connections SET
           status = 'connected', credentials_enc = ?, error_message = NULL,
-          connected_at = datetime('now'), updated_at = datetime('now')
+          connected_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
         WHERE provider_id = ? AND workspace_id = ?
       `).run(encryptedCreds, providerId, wsId);
     } else {
       db.prepare(`
         INSERT INTO int_connections (provider_id, display_name, auth_type, status, credentials_enc, connected_at, workspace_id)
-        VALUES (?, ?, 'api_key', 'connected', ?, datetime('now'), ?)
+        VALUES (?, ?, 'api_key', 'connected', ?, CURRENT_TIMESTAMP, ?)
       `).run(providerId, provider.name, encryptedCreds, wsId);
     }
 
-    logActivity('integrations', 'connect', `Connected ${provider.name}`, 'API Key', null, wsId);
+    await logActivity('integrations', 'connect', `Connected ${provider.name}`, 'API Key', null, wsId);
     res.json({ success: true });
   } catch (error) {
     console.error('API key save error:', error);
@@ -167,7 +167,7 @@ router.post('/connections/api-key', async (req, res) => {
 });
 
 // DELETE /connections/:providerId — disconnect
-router.delete('/connections/:providerId', (req, res) => {
+router.delete('/connections/:providerId', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { providerId } = req.params;
@@ -182,11 +182,11 @@ router.delete('/connections/:providerId', (req, res) => {
         credentials_enc = NULL,
         account_name = NULL, account_id = NULL,
         error_message = NULL, connected_at = NULL,
-        updated_at = datetime('now')
+        updated_at = CURRENT_TIMESTAMP
       WHERE provider_id = ? AND workspace_id = ?
     `).run(providerId, wsId);
 
-    logActivity('integrations', 'disconnect', `Disconnected ${provider.name}`, '', null, wsId);
+    await logActivity('integrations', 'disconnect', `Disconnected ${provider.name}`, '', null, wsId);
     res.json({ success: true });
   } catch (error) {
     console.error('Disconnect error:', error);
@@ -199,7 +199,7 @@ router.post('/connections/:providerId/test', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { providerId } = req.params;
-    const conn = db.prepare('SELECT * FROM int_connections WHERE provider_id = ? AND workspace_id = ?').get(providerId, wsId);
+    const conn = await db.prepare('SELECT * FROM int_connections WHERE provider_id = ? AND workspace_id = ?').get(providerId, wsId);
     if (!conn || conn.status === 'disconnected') {
       return res.json({ success: true, valid: false, error: 'Not connected' });
     }

@@ -8,7 +8,7 @@ function safeParse(str) {
 }
 
 // GET /actions — action log
-router.get('/actions', (req, res) => {
+router.get('/actions', async (req, res) => {
   const wsId = req.workspace.id;
   const { module: moduleId, status, limit = 30, offset = 0 } = req.query;
 
@@ -27,7 +27,7 @@ router.get('/actions', (req, res) => {
   sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
   params.push(Number(limit), Number(offset));
 
-  const rows = db.prepare(sql).all(...params);
+  const rows = await db.prepare(sql).all(...params);
   res.json(rows.map(r => ({
     ...r,
     input_data: safeParse(r.input_data),
@@ -36,7 +36,7 @@ router.get('/actions', (req, res) => {
 });
 
 // GET /actions/stats/:moduleId — per-module stats
-router.get('/actions/stats/:moduleId', (req, res) => {
+router.get('/actions/stats/:moduleId', async (req, res) => {
   const wsId = req.workspace.id;
   const { moduleId } = req.params;
   const today = new Date().toISOString().split('T')[0];
@@ -61,7 +61,7 @@ router.get('/actions/stats/:moduleId', (req, res) => {
 });
 
 // GET /actions/stats — summary counts
-router.get('/actions/stats', (req, res) => {
+router.get('/actions/stats', async (req, res) => {
   const wsId = req.workspace.id;
   const today = new Date().toISOString().split('T')[0];
 
@@ -93,9 +93,9 @@ router.get('/actions/stats', (req, res) => {
 });
 
 // GET /status — global automation status for Command Center
-router.get('/status', (req, res) => {
+router.get('/status', async (req, res) => {
   const wsId = req.workspace.id;
-  const modes = db.prepare('SELECT module_id, mode FROM ae_module_modes WHERE workspace_id = ?').all(wsId);
+  const modes = await db.prepare('SELECT module_id, mode FROM ae_module_modes WHERE workspace_id = ?').all(wsId);
   const modeDistribution = { manual: 0, copilot: 0, autopilot: 0 };
   const moduleStatuses = {};
   for (const row of modes) {
@@ -112,7 +112,7 @@ router.get('/status', (req, res) => {
     'SELECT COUNT(*) as count FROM ae_action_log WHERE date(created_at) = ? AND workspace_id = ?'
   ).get(today, wsId);
 
-  const recentActions = db.prepare(
+  const recentActions = await db.prepare(
     'SELECT * FROM ae_action_log WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 15'
   ).all(wsId);
 
@@ -130,7 +130,7 @@ router.get('/status', (req, res) => {
 });
 
 // GET /overview — combined stats for Autopilot dashboard
-router.get('/overview', (req, res) => {
+router.get('/overview', async (req, res) => {
   const wsId = req.workspace.id;
   const today = new Date().toISOString().split('T')[0];
 
@@ -160,7 +160,7 @@ router.get('/overview', (req, res) => {
     "SELECT COUNT(*) as count FROM ae_rules WHERE status = 'active' AND workspace_id = ?"
   ).get(wsId)?.count || 0;
 
-  const modes = db.prepare('SELECT module_id, mode FROM ae_module_modes WHERE workspace_id = ?').all(wsId);
+  const modes = await db.prepare('SELECT module_id, mode FROM ae_module_modes WHERE workspace_id = ?').all(wsId);
   const autopilotModules = modes.filter(m => m.mode === 'autopilot').length;
   const copilotModules = modes.filter(m => m.mode === 'copilot').length;
 

@@ -4,9 +4,9 @@ const { db } = require('../../../db/database');
 const { AUTOMATABLE_MODULES } = require('../db/schema');
 
 // GET /modes — all module modes
-router.get('/modes', (req, res) => {
+router.get('/modes', async (req, res) => {
   const wsId = req.workspace.id;
-  const rows = db.prepare('SELECT module_id, mode, config, risk_level, updated_at FROM ae_module_modes WHERE workspace_id = ?').all(wsId);
+  const rows = await db.prepare('SELECT module_id, mode, config, risk_level, updated_at FROM ae_module_modes WHERE workspace_id = ?').all(wsId);
   const modes = {};
   for (const row of rows) {
     modes[row.module_id] = {
@@ -26,9 +26,9 @@ router.get('/modes', (req, res) => {
 });
 
 // GET /modes/:moduleId — single module mode
-router.get('/modes/:moduleId', (req, res) => {
+router.get('/modes/:moduleId', async (req, res) => {
   const wsId = req.workspace.id;
-  const row = db.prepare('SELECT module_id, mode, config, risk_level, updated_at FROM ae_module_modes WHERE module_id = ? AND workspace_id = ?').get(req.params.moduleId, wsId);
+  const row = await db.prepare('SELECT module_id, mode, config, risk_level, updated_at FROM ae_module_modes WHERE module_id = ? AND workspace_id = ?').get(req.params.moduleId, wsId);
   if (!row) {
     return res.json({ mode: 'manual', config: null, riskLevel: 'conservative', updatedAt: null });
   }
@@ -41,7 +41,7 @@ router.get('/modes/:moduleId', (req, res) => {
 });
 
 // PUT /modes/:moduleId — set mode
-router.put('/modes/:moduleId', (req, res) => {
+router.put('/modes/:moduleId', async (req, res) => {
   const wsId = req.workspace.id;
   const { moduleId } = req.params;
   const { mode, config, riskLevel } = req.body;
@@ -52,18 +52,18 @@ router.put('/modes/:moduleId', (req, res) => {
 
   db.prepare(`
     INSERT INTO ae_module_modes (module_id, mode, config, risk_level, updated_at, workspace_id)
-    VALUES (?, ?, ?, ?, datetime('now'), ?)
+    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
     ON CONFLICT(module_id, workspace_id) DO UPDATE SET
       mode = excluded.mode,
       config = excluded.config,
       risk_level = excluded.risk_level,
-      updated_at = datetime('now')
+      updated_at = CURRENT_TIMESTAMP
   `).run(moduleId, mode, config ? JSON.stringify(config) : null, riskLevel || 'conservative', wsId);
 
   // Log the mode change
   db.prepare(`
     INSERT INTO ae_action_log (module_id, action_type, mode, description, status, created_at, completed_at, workspace_id)
-    VALUES (?, 'mode_change', ?, ?, 'completed', datetime('now'), datetime('now'), ?)
+    VALUES (?, 'mode_change', ?, ?, 'completed', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
   `).run(moduleId, mode, `Mode changed to ${mode}`, wsId);
 
   res.json({ success: true, moduleId, mode });

@@ -29,8 +29,8 @@ const PLANS = {
 const TRIAL_DAYS = 14;
 
 // ── Database initialization ─────────────────────────────────────────
-function initBillingTables() {
-  db.exec(`
+async function initBillingTables() {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS subscriptions (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id),
@@ -42,8 +42,8 @@ function initBillingTables() {
       trial_ends_at TEXT,
       current_period_end TEXT,
       cancel_at_period_end INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
   `);
 }
@@ -60,7 +60,7 @@ async function createCustomer(userId, email, name) {
 
 async function getOrCreateCustomer(userId, email, name) {
   // Check if we already have a Stripe customer for this user
-  const existing = db.prepare(
+  const existing = await db.prepare(
     'SELECT stripe_customer_id FROM subscriptions WHERE user_id = ? AND stripe_customer_id IS NOT NULL LIMIT 1'
   ).get(userId);
 
@@ -120,8 +120,8 @@ async function createBillingPortalSession(customerId, returnUrl) {
 }
 
 // ── Subscription helpers ────────────────────────────────────────────
-function upsertSubscription({ userId, workspaceId, stripeCustomerId, stripeSubscriptionId, plan, status, trialEndsAt, currentPeriodEnd, cancelAtPeriodEnd }) {
-  const existing = db.prepare(
+async function upsertSubscription({ userId, workspaceId, stripeCustomerId, stripeSubscriptionId, plan, status, trialEndsAt, currentPeriodEnd, cancelAtPeriodEnd }) {
+  const existing = await db.prepare(
     'SELECT id FROM subscriptions WHERE stripe_subscription_id = ?'
   ).get(stripeSubscriptionId);
 
@@ -129,7 +129,7 @@ function upsertSubscription({ userId, workspaceId, stripeCustomerId, stripeSubsc
     db.prepare(`
       UPDATE subscriptions SET
         plan = ?, status = ?, trial_ends_at = ?, current_period_end = ?,
-        cancel_at_period_end = ?, updated_at = datetime('now')
+        cancel_at_period_end = ?, updated_at = CURRENT_TIMESTAMP
       WHERE stripe_subscription_id = ?
     `).run(plan, status, trialEndsAt || null, currentPeriodEnd || null, cancelAtPeriodEnd ? 1 : 0, stripeSubscriptionId);
     return existing.id;
@@ -143,13 +143,13 @@ function upsertSubscription({ userId, workspaceId, stripeCustomerId, stripeSubsc
   return id;
 }
 
-function getSubscription(userId, workspaceId) {
+async function getSubscription(userId, workspaceId) {
   if (workspaceId) {
-    return db.prepare(
+    return await db.prepare(
       'SELECT * FROM subscriptions WHERE user_id = ? AND workspace_id = ? ORDER BY created_at DESC LIMIT 1'
     ).get(userId, workspaceId);
   }
-  return db.prepare(
+  return await db.prepare(
     'SELECT * FROM subscriptions WHERE user_id = ? ORDER BY created_at DESC LIMIT 1'
   ).get(userId);
 }
@@ -199,13 +199,13 @@ async function handleWebhookEvent(event) {
 
     case 'customer.subscription.deleted': {
       const subscription = event.data.object;
-      const existing = db.prepare(
+      const existing = await db.prepare(
         'SELECT id FROM subscriptions WHERE stripe_subscription_id = ?'
       ).get(subscription.id);
 
       if (existing) {
         db.prepare(`
-          UPDATE subscriptions SET status = 'canceled', cancel_at_period_end = 0, updated_at = datetime('now')
+          UPDATE subscriptions SET status = 'canceled', cancel_at_period_end = 0, updated_at = CURRENT_TIMESTAMP
           WHERE stripe_subscription_id = ?
         `).run(subscription.id);
       }
@@ -216,13 +216,13 @@ async function handleWebhookEvent(event) {
       const invoice = event.data.object;
       if (invoice.subscription) {
         const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
-        const sub = db.prepare(
+        const sub = await db.prepare(
           'SELECT s.id, s.plan, u.email, u.display_name FROM subscriptions s JOIN users u ON u.id = s.user_id WHERE s.stripe_subscription_id = ?'
         ).get(subscription.id);
 
         if (sub) {
           db.prepare(`
-            UPDATE subscriptions SET status = 'active', current_period_end = ?, updated_at = datetime('now')
+            UPDATE subscriptions SET status = 'active', current_period_end = ?, updated_at = CURRENT_TIMESTAMP
             WHERE stripe_subscription_id = ?
           `).run(new Date(subscription.current_period_end * 1000).toISOString(), subscription.id);
 
@@ -239,7 +239,7 @@ async function handleWebhookEvent(event) {
       const invoice = event.data.object;
       if (invoice.subscription) {
         db.prepare(`
-          UPDATE subscriptions SET status = 'past_due', updated_at = datetime('now')
+          UPDATE subscriptions SET status = 'past_due', updated_at = CURRENT_TIMESTAMP
           WHERE stripe_subscription_id = ?
         `).run(invoice.subscription);
       }

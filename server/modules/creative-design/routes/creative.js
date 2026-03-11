@@ -77,7 +77,7 @@ router.post('/generate', async (req, res) => {
         q.createImage(imgId, projectId, null, p.alt, 'pending', 'prompt_ready', JSON.stringify(p));
         return { id: imgId, prompt: p.prompt, alt: p.alt, style_notes: p.style_notes, status: 'prompt_ready', url: null };
       });
-      logActivity('creative', 'generate', `Generated ${type} creative (prompts only)`, title, projectId, wsId);
+      await logActivity('creative', 'generate', `Generated ${type} creative (prompts only)`, title, projectId, wsId);
       return res.json({ projectId, images, prompts: parsed.prompts, warning: genErr.message });
     }
 
@@ -91,7 +91,7 @@ router.post('/generate', async (req, res) => {
       return { id: imgId, prompt: p.prompt, alt: p.alt, style_notes: p.style_notes, status, url, dataUrl: genResult?.dataUrl || null, error: genResult?.error };
     });
 
-    logActivity('creative', 'generate', `Generated ${type} creative`, title, projectId, wsId);
+    await logActivity('creative', 'generate', `Generated ${type} creative`, title, projectId, wsId);
     res.json({ projectId, images, prompts: parsed.prompts });
   } catch (err) {
     console.error('Creative generation error:', err);
@@ -100,7 +100,7 @@ router.post('/generate', async (req, res) => {
 });
 
 // List all projects (with image URLs joined)
-router.get('/projects', (req, res) => {
+router.get('/projects', async (req, res) => {
   const wsId = req.workspace.id;
   const projects = db.prepare(
     `SELECT p.*, GROUP_CONCAT(i.url) as image_urls FROM cd_projects p
@@ -111,7 +111,7 @@ router.get('/projects', (req, res) => {
 });
 
 // Create project (with optional image URLs)
-router.post('/projects', (req, res) => {
+router.post('/projects', async (req, res) => {
   const { type, title, prompt, urls, metadata } = req.body;
   const wsId = req.workspace.id;
   const projectId = uuid();
@@ -124,12 +124,12 @@ router.post('/projects', (req, res) => {
     );
     urls.forEach(url => insertImg.run(uuid(), wsId, projectId, url, 'gemini', 'completed'));
   }
-  logActivity('creative', 'create', `Saved ${type || 'creative'} project`, title || 'Untitled', projectId, wsId);
+  await logActivity('creative', 'create', `Saved ${type || 'creative'} project`, title || 'Untitled', projectId, wsId);
   res.json({ id: projectId, success: true });
 });
 
 // Get project with images
-router.get('/projects/:id', (req, res) => {
+router.get('/projects/:id', async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
   const project = q.getProjectById(req.params.id);
@@ -139,7 +139,7 @@ router.get('/projects/:id', (req, res) => {
 });
 
 // Delete project — also removes image files from disk to free storage
-router.delete('/projects/:id', (req, res) => {
+router.delete('/projects/:id', async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
 
@@ -153,7 +153,7 @@ router.delete('/projects/:id', (req, res) => {
   }
 
   q.deleteProject(req.params.id);
-  logActivity('creative', 'delete', 'Deleted creative project', null, req.params.id, wsId);
+  await logActivity('creative', 'delete', 'Deleted creative project', null, req.params.id, wsId);
   res.json({ success: true });
 });
 
@@ -207,7 +207,7 @@ router.post('/generate-stream', async (req, res) => {
       })
     );
 
-    logActivity('creative', 'generate', `Generated ${type} creative`, title, projectId, wsId);
+    await logActivity('creative', 'generate', `Generated ${type} creative`, title, projectId, wsId);
     sse.sendResult({ step: 'done', projectId });
   } catch (err) {
     sse.sendError(err);
@@ -329,7 +329,7 @@ router.post('/generate-from-image-stream', async (req, res) => {
       })
     );
 
-    logActivity('creative', 'generate', `Generated ${type} variations from reference image`, title, projectId, wsId);
+    await logActivity('creative', 'generate', `Generated ${type} variations from reference image`, title, projectId, wsId);
     sse.sendResult({ step: 'done', projectId });
   } catch (err) {
     sse.sendError(err);

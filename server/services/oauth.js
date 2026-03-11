@@ -5,7 +5,7 @@ const { db } = require('../db/database');
 
 const CALLBACK_BASE = () => process.env.OAUTH_CALLBACK_URL || 'http://localhost:3000';
 
-function generateState(providerId, extraParams) {
+async function generateState(providerId, extraParams) {
   const state = crypto.randomUUID();
   db.prepare(
     'INSERT INTO int_oauth_states (state, provider_id, extra_params) VALUES (?, ?, ?)'
@@ -17,10 +17,10 @@ function generateState(providerId, extraParams) {
   return state;
 }
 
-function validateState(state) {
-  const row = db.prepare('SELECT * FROM int_oauth_states WHERE state = ?').get(state);
+async function validateState(state) {
+  const row = await db.prepare('SELECT * FROM int_oauth_states WHERE state = ?').get(state);
   if (!row) return null;
-  db.prepare('DELETE FROM int_oauth_states WHERE state = ?').run(state);
+  await db.prepare('DELETE FROM int_oauth_states WHERE state = ?').run(state);
   return {
     providerId: row.provider_id,
     extraParams: row.extra_params ? JSON.parse(row.extra_params) : {},
@@ -124,13 +124,13 @@ async function fetchProfile(providerId, accessToken) {
   }
 }
 
-function storeTokens(providerId, tokenData, profile) {
+async function storeTokens(providerId, tokenData, profile) {
   const provider = PROVIDERS[providerId];
   const expiresAt = tokenData.expires_in
     ? Math.floor(Date.now() / 1000) + tokenData.expires_in
     : null;
 
-  const existing = db.prepare('SELECT id FROM int_connections WHERE provider_id = ?').get(providerId);
+  const existing = await db.prepare('SELECT id FROM int_connections WHERE provider_id = ?').get(providerId);
 
   if (existing) {
     db.prepare(`
@@ -143,8 +143,8 @@ function storeTokens(providerId, tokenData, profile) {
         account_name = COALESCE(?, account_name),
         account_id = COALESCE(?, account_id),
         error_message = NULL,
-        connected_at = datetime('now'),
-        updated_at = datetime('now')
+        connected_at = CURRENT_TIMESTAMP,
+        updated_at = CURRENT_TIMESTAMP
       WHERE provider_id = ?
     `).run(
       encrypt(tokenData.access_token),
@@ -158,7 +158,7 @@ function storeTokens(providerId, tokenData, profile) {
   } else {
     db.prepare(`
       INSERT INTO int_connections (provider_id, display_name, auth_type, status, access_token_enc, refresh_token_enc, token_expires_at, token_scope, account_name, account_id, connected_at)
-      VALUES (?, ?, ?, 'connected', ?, ?, ?, ?, ?, ?, datetime('now'))
+      VALUES (?, ?, ?, 'connected', ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `).run(
       providerId,
       provider.name,
@@ -177,7 +177,7 @@ async function refreshAccessToken(providerId) {
   const provider = PROVIDERS[providerId];
   if (!provider || provider.authType !== 'oauth2') return null;
 
-  const conn = db.prepare('SELECT * FROM int_connections WHERE provider_id = ?').get(providerId);
+  const conn = await db.prepare('SELECT * FROM int_connections WHERE provider_id = ?').get(providerId);
   if (!conn || !conn.refresh_token_enc) return null;
 
   const refreshToken = decrypt(conn.refresh_token_enc);
@@ -199,7 +199,7 @@ async function refreshAccessToken(providerId) {
   const data = await response.json();
 
   if (data.error) {
-    db.prepare("UPDATE int_connections SET status = 'expired', error_message = ? WHERE provider_id = ?")
+    await db.prepare("UPDATE int_connections SET status = 'expired', error_message = ? WHERE provider_id = ?")
       .run(data.error_description || data.error, providerId);
     throw new Error(data.error_description || data.error);
   }
@@ -212,7 +212,7 @@ async function refreshAccessToken(providerId) {
       token_expires_at = ?,
       status = 'connected',
       error_message = NULL,
-      updated_at = datetime('now')
+      updated_at = CURRENT_TIMESTAMP
     WHERE provider_id = ?
   `).run(
     encrypt(data.access_token),
@@ -225,7 +225,7 @@ async function refreshAccessToken(providerId) {
 }
 
 async function getValidToken(providerId) {
-  const conn = db.prepare('SELECT * FROM int_connections WHERE provider_id = ?').get(providerId);
+  const conn = await db.prepare('SELECT * FROM int_connections WHERE provider_id = ?').get(providerId);
   if (!conn || conn.status === 'disconnected') return null;
 
   if (conn.token_expires_at && conn.token_expires_at < Math.floor(Date.now() / 1000) + 300) {

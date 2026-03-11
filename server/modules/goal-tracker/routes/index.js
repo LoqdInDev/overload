@@ -5,10 +5,10 @@ const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
 
 // GET / - list all goals
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const items = db.prepare('SELECT * FROM gt_goals WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
+    const items = await db.prepare('SELECT * FROM gt_goals WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(items);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -16,12 +16,12 @@ router.get('/', (req, res) => {
 });
 
 // GET /:id - get a single goal with milestones
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const item = db.prepare('SELECT * FROM gt_goals WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const item = await db.prepare('SELECT * FROM gt_goals WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!item) return res.status(404).json({ error: 'Not found' });
-    const milestones = db.prepare('SELECT * FROM gt_milestones WHERE goal_id = ? AND workspace_id = ? ORDER BY value ASC').all(req.params.id, wsId);
+    const milestones = await db.prepare('SELECT * FROM gt_milestones WHERE goal_id = ? AND workspace_id = ? ORDER BY value ASC').all(req.params.id, wsId);
     res.json({ ...item, milestones });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -29,14 +29,14 @@ router.get('/:id', (req, res) => {
 });
 
 // POST / - create a goal
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, metric, target_value, current_value, deadline, status, notes } = req.body;
     const result = db.prepare(
       'INSERT INTO gt_goals (name, metric, target_value, current_value, deadline, status, notes, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(name, metric || null, target_value || 0, current_value || 0, deadline || null, status || 'active', notes || null, wsId);
-    const item = db.prepare('SELECT * FROM gt_goals WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    const item = await db.prepare('SELECT * FROM gt_goals WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(item);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -44,10 +44,10 @@ router.post('/', (req, res) => {
 });
 
 // PUT /:id - update a goal
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const existing = db.prepare('SELECT * FROM gt_goals WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM gt_goals WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
     const { name, metric, target_value, current_value, deadline, status, notes } = req.body;
@@ -64,7 +64,7 @@ router.put('/:id', (req, res) => {
       req.params.id,
       wsId
     );
-    const updated = db.prepare('SELECT * FROM gt_goals WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const updated = await db.prepare('SELECT * FROM gt_goals WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -72,13 +72,13 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE /:id - delete a goal and its milestones
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const existing = db.prepare('SELECT * FROM gt_goals WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM gt_goals WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Not found' });
-    db.prepare('DELETE FROM gt_milestones WHERE goal_id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    db.prepare('DELETE FROM gt_goals WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM gt_milestones WHERE goal_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM gt_goals WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -86,14 +86,14 @@ router.delete('/:id', (req, res) => {
 });
 
 // POST /milestones - add a milestone to a goal
-router.post('/milestones', (req, res) => {
+router.post('/milestones', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { goal_id, value, label, reached_at } = req.body;
     const result = db.prepare(
       'INSERT INTO gt_milestones (goal_id, value, label, reached_at, workspace_id) VALUES (?, ?, ?, ?, ?)'
     ).run(goal_id, value || 0, label || null, reached_at || null, wsId);
-    const item = db.prepare('SELECT * FROM gt_milestones WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    const item = await db.prepare('SELECT * FROM gt_milestones WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(item);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -101,10 +101,10 @@ router.post('/milestones', (req, res) => {
 });
 
 // DELETE /milestones/:id - delete a milestone
-router.delete('/milestones/:id', (req, res) => {
+router.delete('/milestones/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    db.prepare('DELETE FROM gt_milestones WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM gt_milestones WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -112,7 +112,7 @@ router.delete('/milestones/:id', (req, res) => {
 });
 
 // POST /forecast — forecast goal achievement
-router.post('/forecast', (req, res) => {
+router.post('/forecast', async (req, res) => {
   const { goal_name, target_value, current_value, start_date, target_date } = req.body;
   if (!target_value || !current_value) return res.status(400).json({ error: 'target_value and current_value required' });
 

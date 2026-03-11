@@ -1,25 +1,25 @@
 const { db } = require('../db/database');
 
 // Helper: safely query tables that may not exist, with optional workspace scoping
-function safeQuery(sql, params = [], workspaceId) {
+async function safeQuery(sql, params = [], workspaceId) {
   try {
     if (workspaceId) {
       const scoped = injectWhere(sql, 'workspace_id = ?');
-      return db.prepare(scoped).all(...[...(Array.isArray(params) ? params : [params]), workspaceId]);
+      return await db.prepare(scoped).all(...[...(Array.isArray(params) ? params : [params]), workspaceId]);
     }
-    return db.prepare(sql).all(...(Array.isArray(params) ? params : [params]));
+    return await db.prepare(sql).all(...(Array.isArray(params) ? params : [params]));
   } catch {
     return [];
   }
 }
 
-function safeGet(sql, params = [], workspaceId) {
+async function safeGet(sql, params = [], workspaceId) {
   try {
     if (workspaceId) {
       const scoped = injectWhere(sql, 'workspace_id = ?');
-      return db.prepare(scoped).get(...[...(Array.isArray(params) ? params : [params]), workspaceId]);
+      return await db.prepare(scoped).get(...[...(Array.isArray(params) ? params : [params]), workspaceId]);
     }
-    return db.prepare(sql).get(...(Array.isArray(params) ? params : [params]));
+    return await db.prepare(sql).get(...(Array.isArray(params) ? params : [params]));
   } catch {
     return null;
   }

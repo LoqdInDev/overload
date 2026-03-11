@@ -4,7 +4,7 @@ const { db } = require('../db/database');
 const _cache = new Map(); // workspaceId -> { data, time }
 const CACHE_TTL = 60000; // 60 seconds
 
-function getBrandContext(workspaceId) {
+async function getBrandContext(workspaceId) {
   const cacheKey = workspaceId || '__global__';
   const now = Date.now();
   const cached = _cache.get(cacheKey);
@@ -13,11 +13,11 @@ function getBrandContext(workspaceId) {
   try {
     let profile;
     if (workspaceId) {
-      profile = db.prepare(
+      profile = await db.prepare(
         'SELECT * FROM bp_profiles WHERE workspace_id = ? ORDER BY updated_at DESC LIMIT 1'
       ).get(workspaceId);
     } else {
-      profile = db.prepare(
+      profile = await db.prepare(
         'SELECT * FROM bp_profiles ORDER BY updated_at DESC LIMIT 1'
       ).get();
     }

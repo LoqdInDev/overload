@@ -288,13 +288,13 @@ const RECIPES = [
 ];
 
 // GET /marketplace/recipes — list all recipes with install status
-router.get('/recipes', (req, res) => {
+router.get('/recipes', async (req, res) => {
   const wsId = req.workspace.id;
   const { category, search } = req.query;
 
   let installedIds = new Set();
   try {
-    const installed = db.prepare(
+    const installed = await db.prepare(
       "SELECT trigger_config FROM ae_rules WHERE workspace_id = ? AND trigger_config LIKE '%marketplace_recipe_id%'"
     ).all(wsId);
     for (const row of installed) {
@@ -322,7 +322,7 @@ router.get('/recipes', (req, res) => {
 });
 
 // POST /marketplace/install/:recipeId — install a recipe as an automation rule
-router.post('/install/:recipeId', (req, res) => {
+router.post('/install/:recipeId', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { recipeId } = req.params;
@@ -333,7 +333,7 @@ router.post('/install/:recipeId', (req, res) => {
     if (!recipe) return res.status(404).json({ error: 'Recipe not found' });
 
     try {
-      const existing = db.prepare(
+      const existing = await db.prepare(
         "SELECT id FROM ae_rules WHERE workspace_id = ? AND trigger_config LIKE ?"
       ).get(wsId, `%"marketplace_recipe_id":"${recipeId}"%`);
       if (existing) return res.status(409).json({ error: 'Recipe already installed' });
@@ -347,7 +347,7 @@ router.post('/install/:recipeId', (req, res) => {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')`
     ).run(wsId, recipe.modules[0], recipe.name, recipe.trigger.type, triggerConfig, recipe.action.type, actionConfig, recipe.requires_approval ? 1 : 0);
 
-    try { logActivity('automation-engine', 'install_recipe', `Installed recipe: ${recipe.name}`, recipe.name, result.lastInsertRowid, wsId); } catch {}
+    try { await logActivity('automation-engine', 'install_recipe', `Installed recipe: ${recipe.name}`, recipe.name, result.lastInsertRowid, wsId); } catch {}
 
     res.json({ success: true, rule_id: result.lastInsertRowid });
   } catch (err) {
@@ -357,17 +357,17 @@ router.post('/install/:recipeId', (req, res) => {
 });
 
 // DELETE /marketplace/uninstall/:recipeId — uninstall (delete the created rule)
-router.delete('/uninstall/:recipeId', (req, res) => {
+router.delete('/uninstall/:recipeId', async (req, res) => {
   const wsId = req.workspace.id;
   const { recipeId } = req.params;
 
   if (!VALID_RECIPE_ID.test(recipeId)) return res.status(400).json({ error: 'Invalid recipe ID' });
 
-  db.prepare(
+  await db.prepare(
     "DELETE FROM ae_rules WHERE workspace_id = ? AND trigger_config LIKE ?"
   ).run(wsId, `%"marketplace_recipe_id":"${recipeId}"%`);
 
-  logActivity('automation-engine', 'uninstall_recipe', `Uninstalled recipe: ${recipeId}`, null, null, wsId);
+  await logActivity('automation-engine', 'uninstall_recipe', `Uninstalled recipe: ${recipeId}`, null, null, wsId);
   res.json({ success: true });
 });
 

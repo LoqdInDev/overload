@@ -1,5 +1,15 @@
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 
+// ── Sentry error monitoring (must init before everything else) ────
+const Sentry = require('@sentry/node');
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || 'development',
+    tracesSampleRate: 0.1,
+  });
+}
+
 const express = require('express');
 const compression = require('compression');
 const cors = require('cors');
@@ -18,6 +28,16 @@ const { apiResponse } = require('./middleware/apiResponse');
 const { pagination } = require('./middleware/pagination');
 const { requireRole } = require('./middleware/requireRole');
 const { db } = require('./db/database');
+
+// ── Production env var validation ─────────────────────────────────
+if (process.env.NODE_ENV === 'production') {
+  const required = ['JWT_SECRET', 'DATABASE_URL', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS', 'CORS_ORIGIN'];
+  const missing = required.filter(k => !process.env[k]);
+  if (missing.length) {
+    console.error(`FATAL: Missing required env vars in production: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+}
 
 const app = express();
 
@@ -51,11 +71,13 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "blob:", "https:"],
       connectSrc: ["'self'", ...corsOrigins],
+      mediaSrc: ["'self'", "blob:", "https:"],
+      workerSrc: ["'self'", "blob:"],
     },
   },
 }));
@@ -94,14 +116,17 @@ app.use((req, res, next) => {
   next();
 });
 
+// ── Async startup ─────────────────────────────────────────────────
+async function startServer() {
+
 // Initialize database tables
-initSharedTables();
-initAuthTables();
-initBillingTables();
+await initSharedTables();
+await initAuthTables();
+await initBillingTables();
 
 // Run all database migrations (idempotent — tracked in schema_migrations table)
 const { runAllMigrations } = require('./db/migrations/runner');
-runAllMigrations();
+await runAllMigrations();
 
 // Auth routes (public — no auth required)
 app.use('/api/auth', require('./routes/auth'));
@@ -117,7 +142,7 @@ const scrapeRoutes = require('./services/scraper').router;
 app.use('/api/scrape', requireAuth, scrapeRoutes);
 
 // Protect all other API routes with auth + workspace
-app.use('/api', (req, res, next) => {
+app.use('/api', async (req, res, next) => {
   // Allow unauthenticated access to auth routes (already handled above)
   // and to the modules registry (used by landing page)
   if (req.path === '/modules' || req.path === '/health') return next();
@@ -144,7 +169,7 @@ for (const moduleName of moduleEntries) {
 
   try {
     const mod = require(manifestPath);
-    if (mod.initDatabase) mod.initDatabase();
+    if (mod.initDatabase) await mod.initDatabase();
     if (mod.getRouter) {
       const prefix = mod.apiPrefix || `/api/${moduleName}`;
       if (ADMIN_MODULES.has(moduleName)) {
@@ -161,19 +186,19 @@ for (const moduleName of moduleEntries) {
 }
 
 // Module registry endpoint
-app.get('/api/modules', (req, res) => {
+app.get('/api/modules', async (req, res) => {
   res.json(loadedModules);
 });
 
 // Activity log endpoint
 const { getRecentActivity } = require('./db/database');
-app.get('/api/activity', (req, res) => {
+app.get('/api/activity', async (req, res) => {
   const limit = parseInt(req.query.limit) || 20;
-  res.json(getRecentActivity(limit, req.workspace?.id));
+  res.json(await getRecentActivity(limit, req.workspace?.id));
 });
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
   res.json({
     status: 'ok',
     uptime: process.uptime(),
@@ -183,14 +208,14 @@ app.get('/api/health', (req, res) => {
 });
 
 // Admin cleanup endpoint — POST /api/admin/cleanup-storage
-app.post('/api/admin/cleanup-storage', requireAuth, (req, res) => {
+app.post('/api/admin/cleanup-storage', requireAuth, async (req, res) => {
   const maxAgeDays = req.query.days !== undefined ? parseInt(req.query.days) : 7;
   const result = cleanupOldMedia(maxAgeDays);
   res.json({ ok: true, ...result, freedMB: (result.freed / 1024 / 1024).toFixed(1) });
 });
 
 // Catch-all 404 for unmatched /api/* routes
-app.all('/api/*', (req, res) => {
+app.all('/api/*', async (req, res) => {
   res.status(404).json({ error: 'Not found', code: 'NOT_FOUND' });
 });
 
@@ -209,11 +234,16 @@ app.use('/uploads/creatives', setCors, express.static(path.join(dataDir, 'upload
 if (!process.env.RAILWAY_ENVIRONMENT) {
   const clientDist = path.join(__dirname, '..', 'client', 'dist');
   app.use(express.static(clientDist, { maxAge: '1y', immutable: true }));
-  app.get('*', (req, res) => {
+  app.get('*', async (req, res) => {
     if (!req.path.startsWith('/api')) {
       res.sendFile(path.join(clientDist, 'index.html'));
     }
   });
+}
+
+// Sentry error handler (must be before custom error handler)
+if (process.env.SENTRY_DSN) {
+  Sentry.setupExpressErrorHandler(app);
 }
 
 // Global error handler (must be last)
@@ -224,9 +254,9 @@ setInterval(cleanExpiredTokens, 60 * 60 * 1000);
 
 // Send trial expiration reminder emails (runs daily)
 const { sendTrialExpiring } = require('./services/email');
-function checkTrialExpirations() {
+async function checkTrialExpirations() {
   try {
-    const rows = db.prepare(`
+    const rows = await db.prepare(`
       SELECT s.user_id, s.trial_ends_at, u.email, u.display_name
       FROM subscriptions s
       JOIN users u ON u.id = s.user_id
@@ -296,12 +326,23 @@ const server = app.listen(PORT, () => {
   logger.info(`Overload server running on http://localhost:${PORT}`, { modules: loadedModules.length });
 });
 
+return server;
+} // end startServer()
+
+let server;
+startServer()
+  .then(s => { server = s; })
+  .catch(err => {
+    console.error('Fatal startup error:', err);
+    process.exit(1);
+  });
+
 // ── Graceful shutdown ──────────────────────────────────────────────
 function shutdown(signal) {
   logger.info(`Received ${signal}. Shutting down gracefully...`);
-  server.close(() => {
+  if (server) server.close(() => {
     logger.info('HTTP server closed');
-    try { db.close(); } catch (_) { /* already closed */ }
+    db.close().catch(() => {});
     logger.info('Database connection closed');
     process.exit(0);
   });
@@ -315,7 +356,7 @@ process.on('SIGINT', () => shutdown('SIGINT'));
 // ── Process-level error safety nets ────────────────────────────────
 process.on('uncaughtException', (err) => {
   logger.error('Uncaught exception — shutting down', { stack: err.stack, message: err.message });
-  try { db.close(); } catch (_) { /* ignore */ }
+  db.close().catch(() => {})
   process.exit(1);
 });
 

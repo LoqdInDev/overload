@@ -139,14 +139,14 @@ router.post('/optimize-prompt', async (req, res) => {
   }
 });
 
-router.get('/history', (req, res) => {
+router.get('/history', async (req, res) => {
   const wsId = req.workspace.id;
   const videoQueries = getVideoQueries(wsId);
   const jobs = videoQueries.getAllVideoJobs();
   res.json(jobs.map((j) => ({ ...j, result: safeParse(j.result) })));
 });
 
-router.get('/status/:jobId', (req, res) => {
+router.get('/status/:jobId', async (req, res) => {
   const wsId = req.workspace.id;
   const videoQueries = getVideoQueries(wsId);
   const job = videoQueries.getVideoJob(Number(req.params.jobId));
@@ -154,7 +154,7 @@ router.get('/status/:jobId', (req, res) => {
   res.json({ ...job, result: safeParse(job.result) });
 });
 
-router.get('/campaign/:campaignId', (req, res) => {
+router.get('/campaign/:campaignId', async (req, res) => {
   const wsId = req.workspace.id;
   const videoQueries = getVideoQueries(wsId);
   const jobs = videoQueries.getVideoJobs(req.params.campaignId);
@@ -163,7 +163,7 @@ router.get('/campaign/:campaignId', (req, res) => {
   );
 });
 
-router.get('/download/:filename', (req, res) => {
+router.get('/download/:filename', async (req, res) => {
   const filename = path.basename(req.params.filename);
   const filepath = path.join(videosDir, filename);
   if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'File not found' });
@@ -197,7 +197,7 @@ router.get('/download/:filename', (req, res) => {
   }
 });
 
-router.get('/download-all/:campaignId', (req, res) => {
+router.get('/download-all/:campaignId', async (req, res) => {
   const wsId = req.workspace.id;
   const videoQueries = getVideoQueries(wsId);
   const jobs = videoQueries
@@ -229,7 +229,7 @@ router.get('/download-all/:campaignId', (req, res) => {
   archive.finalize();
 });
 
-router.delete('/all', (req, res) => {
+router.delete('/all', async (req, res) => {
   const wsId = req.workspace.id;
   const videoQueries = getVideoQueries(wsId);
   const jobs = videoQueries.getAllVideoJobs();
@@ -247,7 +247,7 @@ router.delete('/all', (req, res) => {
   res.json({ deleted: jobs.length, filesDeleted });
 });
 
-router.delete('/:jobId', (req, res) => {
+router.delete('/:jobId', async (req, res) => {
   const wsId = req.workspace.id;
   const videoQueries = getVideoQueries(wsId);
   const job = videoQueries.getVideoJob(Number(req.params.jobId));

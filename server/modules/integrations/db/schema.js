@@ -1,9 +1,9 @@
 const { db } = require('../../../db/database');
 
-function initDatabase() {
-  db.exec(`
+async function initDatabase() {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS int_connections (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       provider_id TEXT NOT NULL UNIQUE,
       display_name TEXT NOT NULL,
@@ -25,9 +25,9 @@ function initDatabase() {
     )
   `);
 
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS int_sync_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       connection_id INTEGER NOT NULL,
       provider_id TEXT NOT NULL,
@@ -39,7 +39,7 @@ function initDatabase() {
     )
   `);
 
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS int_oauth_states (
       state TEXT PRIMARY KEY,
       workspace_id TEXT,

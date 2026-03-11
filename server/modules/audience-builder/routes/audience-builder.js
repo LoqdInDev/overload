@@ -13,7 +13,7 @@ router.post('/generate', async (req, res) => {
     const { text } = await generateTextWithClaude(prompt || `Generate ${type || 'content'} for Audience Builder`, {
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
-    logActivity('audience-builder', 'generate', `Generated ${type || 'content'}`, 'AI generation', null, wsId);
+    await logActivity('audience-builder', 'generate', `Generated ${type || 'content'}`, 'AI generation', null, wsId);
     sse.sendResult({ content: text, type });
   } catch (error) {
     console.error('Audience Builder generation error:', error);
@@ -22,10 +22,10 @@ router.post('/generate', async (req, res) => {
 });
 
 // GET /audiences - List all audiences
-router.get('/audiences', (req, res) => {
+router.get('/audiences', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const audiences = db.prepare('SELECT * FROM ab_audiences WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
+    const audiences = await db.prepare('SELECT * FROM ab_audiences WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json({ success: true, data: audiences });
   } catch (error) {
     console.error('Error fetching audiences:', error);
@@ -34,15 +34,15 @@ router.get('/audiences', (req, res) => {
 });
 
 // POST /audiences - Create a new audience
-router.post('/audiences', (req, res) => {
+router.post('/audiences', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { name, platform, type, size, criteria, status } = req.body;
     const result = db.prepare(
       'INSERT INTO ab_audiences (name, platform, type, size, criteria, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(name, platform, type, size, criteria ? JSON.stringify(criteria) : null, status || 'active', wsId);
-    logActivity('audience-builder', 'create', `Created audience: ${name}`, 'Audience created', null, wsId);
-    const audience = db.prepare('SELECT * FROM ab_audiences WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    await logActivity('audience-builder', 'create', `Created audience: ${name}`, 'Audience created', null, wsId);
+    const audience = await db.prepare('SELECT * FROM ab_audiences WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.json({ success: true, data: audience });
   } catch (error) {
     console.error('Error creating audience:', error);
@@ -51,14 +51,14 @@ router.post('/audiences', (req, res) => {
 });
 
 // GET /audiences/:id - Get a specific audience with its segments
-router.get('/audiences/:id', (req, res) => {
+router.get('/audiences/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const audience = db.prepare('SELECT * FROM ab_audiences WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const audience = await db.prepare('SELECT * FROM ab_audiences WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!audience) {
       return res.status(404).json({ success: false, error: 'Audience not found' });
     }
-    const segments = db.prepare('SELECT * FROM ab_segments WHERE audience_id = ? AND workspace_id = ? ORDER BY created_at ASC').all(req.params.id, wsId);
+    const segments = await db.prepare('SELECT * FROM ab_segments WHERE audience_id = ? AND workspace_id = ? ORDER BY created_at ASC').all(req.params.id, wsId);
     res.json({ success: true, data: { ...audience, segments } });
   } catch (error) {
     console.error('Error fetching audience:', error);
@@ -67,19 +67,19 @@ router.get('/audiences/:id', (req, res) => {
 });
 
 // PUT /audiences/:id - Update an audience
-router.put('/audiences/:id', (req, res) => {
+router.put('/audiences/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const existing = db.prepare('SELECT * FROM ab_audiences WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM ab_audiences WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ success: false, error: 'Audience not found' });
 
     const { name, platform, type, size, criteria, status } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE ab_audiences SET name = ?, platform = ?, type = ?, size = ?, criteria = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?'
     ).run(name || existing.name, platform || existing.platform, type || existing.type, size ?? existing.size, criteria ? JSON.stringify(criteria) : existing.criteria, status || existing.status, req.params.id, wsId);
 
-    const audience = db.prepare('SELECT * FROM ab_audiences WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
-    logActivity('audience-builder', 'update', `Updated audience: ${audience.name}`, 'Audience updated', null, wsId);
+    const audience = await db.prepare('SELECT * FROM ab_audiences WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    await logActivity('audience-builder', 'update', `Updated audience: ${audience.name}`, 'Audience updated', null, wsId);
     res.json({ success: true, data: audience });
   } catch (error) {
     console.error('Error updating audience:', error);
@@ -88,15 +88,15 @@ router.put('/audiences/:id', (req, res) => {
 });
 
 // DELETE /audiences/:id - Delete an audience
-router.delete('/audiences/:id', (req, res) => {
+router.delete('/audiences/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const existing = db.prepare('SELECT * FROM ab_audiences WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM ab_audiences WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ success: false, error: 'Audience not found' });
 
-    db.prepare('DELETE FROM ab_segments WHERE audience_id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    db.prepare('DELETE FROM ab_audiences WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    logActivity('audience-builder', 'delete', `Deleted audience: ${existing.name}`, 'Audience deleted', null, wsId);
+    await db.prepare('DELETE FROM ab_segments WHERE audience_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM ab_audiences WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await logActivity('audience-builder', 'delete', `Deleted audience: ${existing.name}`, 'Audience deleted', null, wsId);
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting audience:', error);
@@ -105,7 +105,7 @@ router.delete('/audiences/:id', (req, res) => {
 });
 
 // POST /build-lookalike — SSE: build a lookalike audience spec
-router.post('/build-lookalike', (req, res) => {
+router.post('/build-lookalike', async (req, res) => {
   const { seed_description, platforms } = req.body;
   if (!seed_description) { res.status(400).json({ error: 'seed_description required' }); return; }
 

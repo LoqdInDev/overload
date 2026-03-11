@@ -90,16 +90,16 @@ const TABLES = [
   'wf_workflows', 'wf_steps', 'wf_runs',
 ];
 
-function hasColumn(table, column) {
+async function hasColumn(table, column) {
   const cols = db.prepare(`PRAGMA table_info(${table})`).all();
   return cols.some(c => c.name === column);
 }
 
-function tableExists(table) {
-  return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(table);
+async function tableExists(table) {
+  return !!await db.prepare("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = ?").get(table);
 }
 
-function runMigration() {
+async function runMigration() {
   const defaultWsId = getDefaultWorkspaceId();
 
   let migrated = 0;
@@ -108,11 +108,11 @@ function runMigration() {
     if (hasColumn(table, 'workspace_id')) continue;
 
     try {
-      db.exec(`ALTER TABLE ${table} ADD COLUMN workspace_id TEXT`);
+      await db.exec(`ALTER TABLE ${table} ADD COLUMN workspace_id TEXT`);
       if (defaultWsId) {
-        db.prepare(`UPDATE ${table} SET workspace_id = ? WHERE workspace_id IS NULL`).run(defaultWsId);
+        await db.prepare(`UPDATE ${table} SET workspace_id = ? WHERE workspace_id IS NULL`).run(defaultWsId);
       }
-      db.exec(`CREATE INDEX IF NOT EXISTS idx_${table}_ws ON ${table}(workspace_id)`);
+      await db.exec(`CREATE INDEX IF NOT EXISTS idx_${table}_ws ON ${table}(workspace_id)`);
       migrated++;
     } catch (err) {
       console.error(`  Migration warning for ${table}:`, err.message);
@@ -130,7 +130,7 @@ function runMigration() {
   }
 }
 
-function fixIntConnections() {
+async function fixIntConnections() {
   if (!tableExists('int_connections')) return;
   // Check if the unique index already includes workspace_id
   const indices = db.prepare("PRAGMA index_list(int_connections)").all();
@@ -146,17 +146,17 @@ function fixIntConnections() {
       if (idx.unique) {
         const cols = db.prepare(`PRAGMA index_info(${idx.name})`).all();
         if (cols.length === 1 && cols[0].name === 'provider_id') {
-          db.exec(`DROP INDEX IF EXISTS ${idx.name}`);
+          await db.exec(`DROP INDEX IF EXISTS ${idx.name}`);
         }
       }
     }
-    db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_int_conn_ws_provider ON int_connections(workspace_id, provider_id)');
+    await db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_int_conn_ws_provider ON int_connections(workspace_id, provider_id)');
   } catch (err) {
     console.error('  Migration warning for int_connections unique index:', err.message);
   }
 }
 
-function fixAeSettings() {
+async function fixAeSettings() {
   if (!tableExists('ae_settings')) return;
   // ae_settings uses key as PRIMARY KEY. We need workspace-scoped keys.
   // Since SQLite can't change PKs, we'll create a unique index instead.
@@ -168,7 +168,7 @@ function fixAeSettings() {
   if (hasWsKey) return;
 
   try {
-    db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_ae_settings_ws_key ON ae_settings(workspace_id, key)');
+    await db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_ae_settings_ws_key ON ae_settings(workspace_id, key)');
   } catch (err) {
     console.error('  Migration warning for ae_settings unique index:', err.message);
   }

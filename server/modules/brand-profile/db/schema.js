@@ -1,8 +1,8 @@
 const { db } = require('../../../db/database');
 
-function initDatabase() {
-  db.exec(`CREATE TABLE IF NOT EXISTS bp_profiles (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+async function initDatabase() {
+  await db.exec(`CREATE TABLE IF NOT EXISTS bp_profiles (
+    id SERIAL PRIMARY KEY,
     workspace_id TEXT,
     brand_name TEXT,
     tagline TEXT,
@@ -23,25 +23,25 @@ function initDatabase() {
     social_links TEXT,
     words_to_use TEXT,
     words_to_avoid TEXT,
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now'))
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
   )`);
 
   // Media assets table
-  db.exec(`CREATE TABLE IF NOT EXISTS bp_media (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+  await db.exec(`CREATE TABLE IF NOT EXISTS bp_media (
+    id SERIAL PRIMARY KEY,
     workspace_id TEXT,
     filename TEXT NOT NULL,
     original_name TEXT NOT NULL,
     category TEXT DEFAULT 'other',
     mimetype TEXT,
     size INTEGER,
-    created_at TEXT DEFAULT (datetime('now'))
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
   )`);
 
   // Migration for existing databases
-  try { db.exec('ALTER TABLE bp_profiles ADD COLUMN words_to_use TEXT'); } catch (e) { /* already exists */ }
-  try { db.exec('ALTER TABLE bp_profiles ADD COLUMN words_to_avoid TEXT'); } catch (e) { /* already exists */ }
+  try { await db.exec('ALTER TABLE bp_profiles ADD COLUMN words_to_use TEXT'); } catch (e) { /* already exists */ }
+  try { await db.exec('ALTER TABLE bp_profiles ADD COLUMN words_to_avoid TEXT'); } catch (e) { /* already exists */ }
 }
 
 module.exports = { initDatabase };

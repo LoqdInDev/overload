@@ -13,7 +13,7 @@ router.post('/generate', async (req, res) => {
     const { text } = await generateTextWithClaude(prompt || `Generate ${type || 'content'} for A/B Testing`, {
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
-    logActivity('ab-testing', 'generate', `Generated ${type || 'content'}`, 'AI generation', null, wsId);
+    await logActivity('ab-testing', 'generate', `Generated ${type || 'content'}`, 'AI generation', null, wsId);
     sse.sendResult({ content: text, type });
   } catch (error) {
     console.error('A/B Testing generation error:', error);
@@ -22,10 +22,10 @@ router.post('/generate', async (req, res) => {
 });
 
 // GET /tests - List all A/B tests
-router.get('/tests', (req, res) => {
+router.get('/tests', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const tests = db.prepare('SELECT * FROM abt_tests WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
+    const tests = await db.prepare('SELECT * FROM abt_tests WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json({ success: true, data: tests });
   } catch (error) {
     console.error('Error fetching tests:', error);
@@ -34,15 +34,15 @@ router.get('/tests', (req, res) => {
 });
 
 // POST /tests - Create a new A/B test
-router.post('/tests', (req, res) => {
+router.post('/tests', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { name, type, status, variants, start_date, end_date } = req.body;
     const result = db.prepare(
       'INSERT INTO abt_tests (name, type, status, variants, start_date, end_date, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(name, type, status || 'draft', variants ? JSON.stringify(variants) : null, start_date, end_date, wsId);
-    logActivity('ab-testing', 'create', `Created test: ${name}`, 'Test created', null, wsId);
-    const test = db.prepare('SELECT * FROM abt_tests WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    await logActivity('ab-testing', 'create', `Created test: ${name}`, 'Test created', null, wsId);
+    const test = await db.prepare('SELECT * FROM abt_tests WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.json({ success: true, data: test });
   } catch (error) {
     console.error('Error creating test:', error);
@@ -51,14 +51,14 @@ router.post('/tests', (req, res) => {
 });
 
 // GET /tests/:id - Get a specific A/B test with its variants
-router.get('/tests/:id', (req, res) => {
+router.get('/tests/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const test = db.prepare('SELECT * FROM abt_tests WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const test = await db.prepare('SELECT * FROM abt_tests WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!test) {
       return res.status(404).json({ success: false, error: 'Test not found' });
     }
-    const variants = db.prepare('SELECT * FROM abt_variants WHERE test_id = ? AND workspace_id = ? ORDER BY created_at ASC').all(req.params.id, wsId);
+    const variants = await db.prepare('SELECT * FROM abt_variants WHERE test_id = ? AND workspace_id = ? ORDER BY created_at ASC').all(req.params.id, wsId);
     res.json({ success: true, data: { ...test, variant_list: variants } });
   } catch (error) {
     console.error('Error fetching test:', error);
@@ -67,19 +67,19 @@ router.get('/tests/:id', (req, res) => {
 });
 
 // PUT /tests/:id - Update an A/B test
-router.put('/tests/:id', (req, res) => {
+router.put('/tests/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const existing = db.prepare('SELECT * FROM abt_tests WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM abt_tests WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ success: false, error: 'Test not found' });
 
     const { name, type, status, variants, start_date, end_date } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE abt_tests SET name = ?, type = ?, status = ?, variants = ?, start_date = ?, end_date = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?'
     ).run(name || existing.name, type || existing.type, status || existing.status, variants ? JSON.stringify(variants) : existing.variants, start_date || existing.start_date, end_date || existing.end_date, req.params.id, wsId);
 
-    const test = db.prepare('SELECT * FROM abt_tests WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
-    logActivity('ab-testing', 'update', `Updated test: ${test.name}`, 'Test updated', null, wsId);
+    const test = await db.prepare('SELECT * FROM abt_tests WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    await logActivity('ab-testing', 'update', `Updated test: ${test.name}`, 'Test updated', null, wsId);
     res.json({ success: true, data: test });
   } catch (error) {
     console.error('Error updating test:', error);
@@ -88,15 +88,15 @@ router.put('/tests/:id', (req, res) => {
 });
 
 // DELETE /tests/:id - Delete an A/B test
-router.delete('/tests/:id', (req, res) => {
+router.delete('/tests/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const existing = db.prepare('SELECT * FROM abt_tests WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM abt_tests WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ success: false, error: 'Test not found' });
 
-    db.prepare('DELETE FROM abt_variants WHERE test_id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    db.prepare('DELETE FROM abt_tests WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    logActivity('ab-testing', 'delete', `Deleted test: ${existing.name}`, 'Test deleted', null, wsId);
+    await db.prepare('DELETE FROM abt_variants WHERE test_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM abt_tests WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await logActivity('ab-testing', 'delete', `Deleted test: ${existing.name}`, 'Test deleted', null, wsId);
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting test:', error);
@@ -105,7 +105,7 @@ router.delete('/tests/:id', (req, res) => {
 });
 
 // POST /calculate-significance — calculate statistical significance
-router.post('/calculate-significance', (req, res) => {
+router.post('/calculate-significance', async (req, res) => {
   const { control_visitors, control_conversions, variant_visitors, variant_conversions } = req.body;
 
   const cv = parseInt(control_visitors) || 1;

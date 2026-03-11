@@ -6,10 +6,10 @@ const { setupSSE } = require('../../../services/sse');
 const pm = require('../../../services/platformManager');
 
 // GET / - list all stores
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const items = db.prepare('SELECT * FROM eh_stores WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
+    const items = await db.prepare('SELECT * FROM eh_stores WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(items);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -17,13 +17,13 @@ router.get('/', (req, res) => {
 });
 
 // GET /:id - get a single store with orders and products
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const item = db.prepare('SELECT * FROM eh_stores WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const item = await db.prepare('SELECT * FROM eh_stores WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!item) return res.status(404).json({ error: 'Not found' });
-    const orders = db.prepare('SELECT * FROM eh_orders WHERE store_id = ? AND workspace_id = ? ORDER BY created_at DESC LIMIT 50').all(req.params.id, wsId);
-    const products = db.prepare('SELECT * FROM eh_products WHERE store_id = ? AND workspace_id = ? ORDER BY created_at DESC').all(req.params.id, wsId);
+    const orders = await db.prepare('SELECT * FROM eh_orders WHERE store_id = ? AND workspace_id = ? ORDER BY created_at DESC LIMIT 50').all(req.params.id, wsId);
+    const products = await db.prepare('SELECT * FROM eh_products WHERE store_id = ? AND workspace_id = ? ORDER BY created_at DESC').all(req.params.id, wsId);
     res.json({ ...item, orders, products });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -31,14 +31,14 @@ router.get('/:id', (req, res) => {
 });
 
 // POST / - create a store
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { platform, store_name, store_url, api_key, status } = req.body;
     const result = db.prepare(
       'INSERT INTO eh_stores (platform, store_name, store_url, api_key, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(platform || null, store_name, store_url || null, api_key || null, status || 'connected', wsId);
-    const item = db.prepare('SELECT * FROM eh_stores WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    const item = await db.prepare('SELECT * FROM eh_stores WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(item);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -46,14 +46,14 @@ router.post('/', (req, res) => {
 });
 
 // PUT /:id - update a store
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const existing = db.prepare('SELECT * FROM eh_stores WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM eh_stores WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
     const { platform, store_name, store_url, api_key, status, last_sync } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE eh_stores SET platform = ?, store_name = ?, store_url = ?, api_key = ?, status = ?, last_sync = ? WHERE id = ? AND workspace_id = ?'
     ).run(
       platform !== undefined ? platform : existing.platform,
@@ -64,7 +64,7 @@ router.put('/:id', (req, res) => {
       last_sync !== undefined ? last_sync : existing.last_sync,
       req.params.id, wsId
     );
-    const updated = db.prepare('SELECT * FROM eh_stores WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const updated = await db.prepare('SELECT * FROM eh_stores WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -72,14 +72,14 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE /:id - delete a store and related data
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const existing = db.prepare('SELECT * FROM eh_stores WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM eh_stores WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Not found' });
-    db.prepare('DELETE FROM eh_orders WHERE store_id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    db.prepare('DELETE FROM eh_products WHERE store_id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    db.prepare('DELETE FROM eh_stores WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM eh_orders WHERE store_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM eh_products WHERE store_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM eh_stores WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -87,7 +87,7 @@ router.delete('/:id', (req, res) => {
 });
 
 // GET /orders/list - list all orders
-router.get('/orders/list', (req, res) => {
+router.get('/orders/list', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { store_id, status } = req.query;
@@ -98,7 +98,7 @@ router.get('/orders/list', (req, res) => {
     if (status) { conditions.push('o.status = ?'); params.push(status); }
     if (conditions.length > 0) query += ' WHERE ' + conditions.join(' AND ');
     query += ' ORDER BY o.created_at DESC';
-    const orders = db.prepare(query).all(...params);
+    const orders = await db.prepare(query).all(...params);
     res.json(orders);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -106,14 +106,14 @@ router.get('/orders/list', (req, res) => {
 });
 
 // POST /orders - create an order
-router.post('/orders', (req, res) => {
+router.post('/orders', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { store_id, order_number, customer, total, status, platform } = req.body;
     const result = db.prepare(
       'INSERT INTO eh_orders (store_id, order_number, customer, total, status, platform, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(store_id || null, order_number || null, customer || null, total || 0, status || 'pending', platform || null, wsId);
-    const item = db.prepare('SELECT * FROM eh_orders WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    const item = await db.prepare('SELECT * FROM eh_orders WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(item);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -121,7 +121,7 @@ router.post('/orders', (req, res) => {
 });
 
 // GET /products/list - list all products
-router.get('/products/list', (req, res) => {
+router.get('/products/list', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { store_id, status } = req.query;
@@ -132,7 +132,7 @@ router.get('/products/list', (req, res) => {
     if (status) { conditions.push('p.status = ?'); params.push(status); }
     if (conditions.length > 0) query += ' WHERE ' + conditions.join(' AND ');
     query += ' ORDER BY p.created_at DESC';
-    const products = db.prepare(query).all(...params);
+    const products = await db.prepare(query).all(...params);
     res.json(products);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -140,14 +140,14 @@ router.get('/products/list', (req, res) => {
 });
 
 // POST /products - create a product
-router.post('/products', (req, res) => {
+router.post('/products', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { store_id, name, sku, price, stock, status } = req.body;
     const result = db.prepare(
       'INSERT INTO eh_products (store_id, name, sku, price, stock, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(store_id || null, name, sku || null, price || 0, stock || 0, status || 'active', wsId);
-    const item = db.prepare('SELECT * FROM eh_products WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    const item = await db.prepare('SELECT * FROM eh_products WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(item);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -227,18 +227,18 @@ router.post('/platforms/sync', async (req, res) => {
     const shop = conn?.account_id || req.body.shop;
 
     // Find or create the store record
-    let store = db.prepare("SELECT * FROM eh_stores WHERE platform = 'shopify' AND store_name = ? AND workspace_id = ?").get(shop || 'Shopify', wsId);
+    let store = await db.prepare("SELECT * FROM eh_stores WHERE platform = 'shopify' AND store_name = ? AND workspace_id = ?").get(shop || 'Shopify', wsId);
     if (!store) {
       const r = db.prepare("INSERT INTO eh_stores (platform, store_name, status, workspace_id) VALUES ('shopify', ?, 'connected', ?)").run(shop || 'Shopify', wsId);
-      store = db.prepare('SELECT * FROM eh_stores WHERE id = ? AND workspace_id = ?').get(r.lastInsertRowid, wsId);
+      store = await db.prepare('SELECT * FROM eh_stores WHERE id = ? AND workspace_id = ?').get(r.lastInsertRowid, wsId);
     }
 
     // Sync products
     const products = await pm.ecommerceProducts('shopify', { limit: 50 });
     for (const p of products) {
-      const existing = db.prepare('SELECT id FROM eh_products WHERE store_id = ? AND sku = ? AND workspace_id = ?').get(store.id, String(p.id), wsId);
+      const existing = await db.prepare('SELECT id FROM eh_products WHERE store_id = ? AND sku = ? AND workspace_id = ?').get(store.id, String(p.id), wsId);
       if (existing) {
-        db.prepare('UPDATE eh_products SET name = ?, price = ?, stock = ?, status = ? WHERE id = ? AND workspace_id = ?')
+        await db.prepare('UPDATE eh_products SET name = ?, price = ?, stock = ?, status = ? WHERE id = ? AND workspace_id = ?')
           .run(p.title, p.price || 0, p.inventory || 0, p.status || 'active', existing.id, wsId);
       } else {
         db.prepare('INSERT INTO eh_products (store_id, name, sku, price, stock, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)')
@@ -249,9 +249,9 @@ router.post('/platforms/sync', async (req, res) => {
     // Sync orders
     const orders = await pm.ecommerceOrders('shopify', { limit: 50 });
     for (const o of orders) {
-      const existing = db.prepare('SELECT id FROM eh_orders WHERE store_id = ? AND order_number = ? AND workspace_id = ?').get(store.id, String(o.orderNumber), wsId);
+      const existing = await db.prepare('SELECT id FROM eh_orders WHERE store_id = ? AND order_number = ? AND workspace_id = ?').get(store.id, String(o.orderNumber), wsId);
       if (existing) {
-        db.prepare('UPDATE eh_orders SET customer = ?, total = ?, status = ? WHERE id = ? AND workspace_id = ?')
+        await db.prepare('UPDATE eh_orders SET customer = ?, total = ?, status = ? WHERE id = ? AND workspace_id = ?')
           .run(o.customerName, o.totalPrice, o.financialStatus || 'pending', existing.id, wsId);
       } else {
         db.prepare('INSERT INTO eh_orders (store_id, order_number, customer, total, status, platform, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)')
@@ -259,7 +259,7 @@ router.post('/platforms/sync', async (req, res) => {
       }
     }
 
-    db.prepare("UPDATE eh_stores SET last_sync = datetime('now') WHERE id = ? AND workspace_id = ?").run(store.id, wsId);
+    db.prepare("UPDATE eh_stores SET last_sync = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?").run(store.id, wsId);
 
     res.json({ success: true, synced: { products: products.length, orders: orders.length } });
   } catch (error) {
@@ -269,7 +269,7 @@ router.post('/platforms/sync', async (req, res) => {
 });
 
 // GET /platforms/connected - check if Shopify is connected
-router.get('/platforms/connected', (req, res) => {
+router.get('/platforms/connected', async (req, res) => {
   try {
     const connected = pm.getConnectedProviders()
       .filter(p => ['shopify', 'bigcommerce', 'amazon'].includes(p.provider_id));
@@ -280,7 +280,7 @@ router.get('/platforms/connected', (req, res) => {
 });
 
 // POST /forecast-inventory — forecast inventory needs
-router.post('/forecast-inventory', (req, res) => {
+router.post('/forecast-inventory', async (req, res) => {
   const { product_name, current_stock, avg_daily_sales, lead_time_days } = req.body;
   if (!current_stock || !avg_daily_sales) return res.status(400).json({ error: 'current_stock and avg_daily_sales required' });
 

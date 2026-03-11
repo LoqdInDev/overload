@@ -1,21 +1,21 @@
 const express = require('express');
 const { db } = require('../../../db/database');
 
-function getRouter() {
+async function getRouter() {
   const router = express.Router();
 
   // Helper: safely query a table that may not exist yet
-  function safeQuery(sql, params = []) {
+  async function safeQuery(sql, params = []) {
     try {
-      return db.prepare(sql).all(...(Array.isArray(params) ? params : [params]));
+      return await db.prepare(sql).all(...(Array.isArray(params) ? params : [params]));
     } catch {
       return [];
     }
   }
 
-  function safeGet(sql, params = []) {
+  async function safeGet(sql, params = []) {
     try {
-      return db.prepare(sql).get(...(Array.isArray(params) ? params : [params]));
+      return await db.prepare(sql).get(...(Array.isArray(params) ? params : [params]));
     } catch {
       return null;
     }
@@ -23,7 +23,7 @@ function getRouter() {
 
   // ─── GET /api/dashboard/summary ───
   // Aggregates key metrics from across all modules
-  router.get('/summary', (req, res) => {
+  router.get('/summary', async (req, res) => {
     const wsId = req.workspace.id;
 
     // Activity counts
@@ -181,7 +181,7 @@ function getRouter() {
 
   // ─── GET /api/dashboard/feed ───
   // Real activity feed with module metadata
-  router.get('/feed', (req, res) => {
+  router.get('/feed', async (req, res) => {
     const wsId = req.workspace.id;
     const limit = Math.min(parseInt(req.query.limit) || 20, 100);
     const activities = safeQuery(
@@ -256,7 +256,7 @@ function getRouter() {
 
   // ─── GET /api/dashboard/actions ───
   // Smart priority actions based on system state
-  router.get('/actions', (req, res) => {
+  router.get('/actions', async (req, res) => {
     const wsId = req.workspace.id;
     const actions = [];
 
@@ -363,7 +363,7 @@ function getRouter() {
 
   // ─── GET /api/dashboard/channels ───
   // Channel distribution from integrations & campaigns
-  router.get('/channels', (req, res) => {
+  router.get('/channels', async (req, res) => {
     const wsId = req.workspace.id;
     const channels = [];
 
@@ -445,7 +445,7 @@ function getRouter() {
 
   // ─── GET /api/dashboard/weekly ───
   // Weekly revenue/activity data for chart
-  router.get('/weekly', (req, res) => {
+  router.get('/weekly', async (req, res) => {
     const wsId = req.workspace.id;
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const weekData = [];

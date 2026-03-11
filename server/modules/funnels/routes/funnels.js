@@ -22,7 +22,7 @@ router.post('/generate', async (req, res) => {
       const { text } = await generateTextWithClaude(rawPrompt, {
         onChunk: (chunk) => sse.sendChunk(chunk),
       });
-      logActivity('funnels', 'generate', `Generated ${type || 'funnel'} copy`, 'raw prompt', null, wsId);
+      await logActivity('funnels', 'generate', `Generated ${type || 'funnel'} copy`, 'raw prompt', null, wsId);
       sse.sendResult({ content: text, type: type || 'custom' });
       return;
     }
@@ -59,7 +59,7 @@ Also provide:
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
-    logActivity('funnels', 'generate', `Generated ${type || 'Product Launch'} funnel`, product || 'No product', null, wsId);
+    await logActivity('funnels', 'generate', `Generated ${type || 'Product Launch'} funnel`, product || 'No product', null, wsId);
     sse.sendResult({ content: text, type: type || 'Product Launch' });
   } catch (error) {
     console.error('Funnel generation error:', error);
@@ -118,7 +118,7 @@ Write complete copy for the ${stageName} page including:
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
-    logActivity('funnels', 'generate-stage', `Generated ${stageName} copy`, funnelType, null, wsId);
+    await logActivity('funnels', 'generate-stage', `Generated ${stageName} copy`, funnelType, null, wsId);
     sse.sendResult({ content: text, stageName });
   } catch (error) {
     console.error('Stage generation error:', error);
@@ -187,7 +187,7 @@ Only return JSON.`, {
     }
     if (!parsed) return sse.sendError(new Error('Failed to parse variants'));
 
-    logActivity('funnels', 'ab-variants', `Generated A/B variants for ${stageName}`, funnelType, null, wsId);
+    await logActivity('funnels', 'ab-variants', `Generated A/B variants for ${stageName}`, funnelType, null, wsId);
     sse.sendResult(parsed);
   } catch (error) {
     console.error('A/B variants error:', error);
@@ -264,7 +264,7 @@ Only return JSON.`, {
     }
     if (!parsed) return sse.sendError(new Error('Failed to parse email sequence'));
 
-    logActivity('funnels', 'email-sequence', `Generated email sequence for ${fromStage}`, funnelType, null, wsId);
+    await logActivity('funnels', 'email-sequence', `Generated email sequence for ${fromStage}`, funnelType, null, wsId);
     sse.sendResult(parsed);
   } catch (error) {
     console.error('Email sequence error:', error);
@@ -317,10 +317,10 @@ Only return JSON.`);
 // ══════════════════════════════════════════════════════
 
 // GET /funnels — list all funnels
-router.get('/funnels', (req, res) => {
+router.get('/funnels', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const funnels = db.prepare('SELECT * FROM fn_funnels WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
+    const funnels = await db.prepare('SELECT * FROM fn_funnels WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(funnels);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -328,7 +328,7 @@ router.get('/funnels', (req, res) => {
 });
 
 // POST /funnels — create a funnel
-router.post('/funnels', (req, res) => {
+router.post('/funnels', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, type, stages, status, description, product, audience, industry } = req.body;
@@ -343,8 +343,8 @@ router.post('/funnels', (req, res) => {
       product || null, audience || null, industry || null,
       wsId
     );
-    const funnel = db.prepare('SELECT * FROM fn_funnels WHERE id = ? AND workspace_id = ?').get(id, wsId);
-    logActivity('funnels', 'create', `Created funnel: ${name}`, type, id, wsId);
+    const funnel = await db.prepare('SELECT * FROM fn_funnels WHERE id = ? AND workspace_id = ?').get(id, wsId);
+    await logActivity('funnels', 'create', `Created funnel: ${name}`, type, id, wsId);
     res.status(201).json(funnel);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -352,7 +352,7 @@ router.post('/funnels', (req, res) => {
 });
 
 // PUT /funnels/:id — update a funnel
-router.put('/funnels/:id', (req, res) => {
+router.put('/funnels/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, type, description, status, stages, product, audience, industry } = req.body;
@@ -369,7 +369,7 @@ router.put('/funnels/:id', (req, res) => {
         updated_at = CURRENT_TIMESTAMP
        WHERE id = ? AND workspace_id = ?`
     ).run(name, type, description, status, stages ? JSON.stringify(stages) : null, product, audience, industry, req.params.id, wsId);
-    const funnel = db.prepare('SELECT * FROM fn_funnels WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const funnel = await db.prepare('SELECT * FROM fn_funnels WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     res.json(funnel || { error: 'not found' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -377,13 +377,13 @@ router.put('/funnels/:id', (req, res) => {
 });
 
 // GET /funnels/:id — get a single funnel with its pages
-router.get('/funnels/:id', (req, res) => {
+router.get('/funnels/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { id } = req.params;
-    const funnel = db.prepare('SELECT * FROM fn_funnels WHERE id = ? AND workspace_id = ?').get(id, wsId);
+    const funnel = await db.prepare('SELECT * FROM fn_funnels WHERE id = ? AND workspace_id = ?').get(id, wsId);
     if (!funnel) return res.status(404).json({ error: 'Funnel not found' });
-    const pages = db.prepare('SELECT * FROM fn_pages WHERE funnel_id = ? AND workspace_id = ? ORDER BY position ASC').all(id, wsId);
+    const pages = await db.prepare('SELECT * FROM fn_pages WHERE funnel_id = ? AND workspace_id = ? ORDER BY position ASC').all(id, wsId);
     res.json({ ...funnel, pages });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -391,15 +391,15 @@ router.get('/funnels/:id', (req, res) => {
 });
 
 // DELETE /funnels/:id — delete a funnel
-router.delete('/funnels/:id', (req, res) => {
+router.delete('/funnels/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { id } = req.params;
-    const existing = db.prepare('SELECT * FROM fn_funnels WHERE id = ? AND workspace_id = ?').get(id, wsId);
+    const existing = await db.prepare('SELECT * FROM fn_funnels WHERE id = ? AND workspace_id = ?').get(id, wsId);
     if (!existing) return res.status(404).json({ error: 'Funnel not found' });
-    db.prepare('DELETE FROM fn_pages WHERE funnel_id = ? AND workspace_id = ?').run(id, wsId);
-    db.prepare('DELETE FROM fn_funnels WHERE id = ? AND workspace_id = ?').run(id, wsId);
-    logActivity('funnels', 'delete', 'Deleted funnel', existing.name, id, wsId);
+    await db.prepare('DELETE FROM fn_pages WHERE funnel_id = ? AND workspace_id = ?').run(id, wsId);
+    await db.prepare('DELETE FROM fn_funnels WHERE id = ? AND workspace_id = ?').run(id, wsId);
+    await logActivity('funnels', 'delete', 'Deleted funnel', existing.name, id, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -407,11 +407,11 @@ router.delete('/funnels/:id', (req, res) => {
 });
 
 // POST /funnels/:id/pages — save generated page content
-router.post('/funnels/:id/pages', (req, res) => {
+router.post('/funnels/:id/pages', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { id: funnelId } = req.params;
-    const funnel = db.prepare('SELECT * FROM fn_funnels WHERE id = ? AND workspace_id = ?').get(funnelId, wsId);
+    const funnel = await db.prepare('SELECT * FROM fn_funnels WHERE id = ? AND workspace_id = ?').get(funnelId, wsId);
     if (!funnel) return res.status(404).json({ error: 'Funnel not found' });
 
     const { name, stage_name, content, position, type } = req.body;
@@ -419,14 +419,14 @@ router.post('/funnels/:id/pages', (req, res) => {
 
     // Delete existing page for this stage if it exists
     if (stage_name) {
-      db.prepare('DELETE FROM fn_pages WHERE funnel_id = ? AND workspace_id = ? AND stage_name = ?').run(funnelId, wsId, stage_name);
+      await db.prepare('DELETE FROM fn_pages WHERE funnel_id = ? AND workspace_id = ? AND stage_name = ?').run(funnelId, wsId, stage_name);
     }
 
     db.prepare(
       'INSERT INTO fn_pages (id, funnel_id, workspace_id, name, stage_name, type, content, generated_content, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(pageId, funnelId, wsId, name || stage_name, stage_name || null, type || 'landing', null, content, position || 0);
 
-    const page = db.prepare('SELECT * FROM fn_pages WHERE id = ?').get(pageId);
+    const page = await db.prepare('SELECT * FROM fn_pages WHERE id = ?').get(pageId);
     res.status(201).json(page);
   } catch (error) {
     res.status(500).json({ error: error.message });

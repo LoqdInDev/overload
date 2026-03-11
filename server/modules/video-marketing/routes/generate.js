@@ -32,7 +32,7 @@ router.post('/angles', async (req, res) => {
     const genId = uuidv4();
     const angles = parsed || [];
     q.createGeneration(genId, campaignId, 'angles', JSON.stringify(angles), raw);
-    logActivity('video-marketing', 'generate', 'Generated ad angles', `${angles.length} angles`, campaignId, wsId);
+    await logActivity('video-marketing', 'generate', 'Generated ad angles', `${angles.length} angles`, campaignId, wsId);
     sse.sendResult({ generationId: genId, data: parsed });
   } catch (error) {
     console.error('Angle generation error:', error);
@@ -61,7 +61,7 @@ router.post('/scripts', async (req, res) => {
     const genId = uuidv4();
     const safeScripts = scripts.map(s => s || {});
     q.createGeneration(genId, campaignId, 'scripts', JSON.stringify(safeScripts), JSON.stringify(safeScripts));
-    logActivity('video-marketing', 'generate', 'Generated scripts', `${safeScripts.length} scripts`, campaignId, wsId);
+    await logActivity('video-marketing', 'generate', 'Generated scripts', `${safeScripts.length} scripts`, campaignId, wsId);
     sse.sendResult({ generationId: genId, data: safeScripts });
   } catch (error) {
     console.error('Script generation error:', error);
@@ -87,7 +87,7 @@ router.post('/hooks', async (req, res) => {
     const genId = uuidv4();
     const hooks = parsed || [];
     q.createGeneration(genId, campaignId, 'hooks', JSON.stringify(hooks), raw);
-    logActivity('video-marketing', 'generate', 'Generated hooks', `${hooks.length} hooks`, campaignId, wsId);
+    await logActivity('video-marketing', 'generate', 'Generated hooks', `${hooks.length} hooks`, campaignId, wsId);
     sse.sendResult({ generationId: genId, data: parsed });
   } catch (error) {
     console.error('Hook generation error:', error);
@@ -117,7 +117,7 @@ router.post('/storyboard', async (req, res) => {
     const genId = uuidv4();
     const safeBoards = storyboards.map(s => s || {});
     q.createGeneration(genId, campaignId, 'storyboard', JSON.stringify(safeBoards), JSON.stringify(safeBoards));
-    logActivity('video-marketing', 'generate', 'Generated storyboards', `${safeBoards.length} storyboards`, campaignId, wsId);
+    await logActivity('video-marketing', 'generate', 'Generated storyboards', `${safeBoards.length} storyboards`, campaignId, wsId);
     sse.sendResult({ generationId: genId, data: storyboards });
   } catch (error) {
     console.error('Storyboard generation error:', error);
@@ -143,7 +143,7 @@ router.post('/ugc', async (req, res) => {
     const genId = uuidv4();
     const ugcBriefs = parsed || [];
     q.createGeneration(genId, campaignId, 'ugc', JSON.stringify(ugcBriefs), raw);
-    logActivity('video-marketing', 'generate', 'Generated UGC briefs', `${ugcBriefs.length} briefs`, campaignId, wsId);
+    await logActivity('video-marketing', 'generate', 'Generated UGC briefs', `${ugcBriefs.length} briefs`, campaignId, wsId);
     sse.sendResult({ generationId: genId, data: parsed });
   } catch (error) {
     console.error('UGC generation error:', error);
@@ -169,7 +169,7 @@ router.post('/iterate', async (req, res) => {
     const genId = uuidv4();
     const iterations = parsed || [];
     q.createGeneration(genId, campaignId, 'iteration', JSON.stringify(iterations), raw);
-    logActivity('video-marketing', 'generate', 'Iterated on winners', `${iterations.length} variations`, campaignId, wsId);
+    await logActivity('video-marketing', 'generate', 'Iterated on winners', `${iterations.length} variations`, campaignId, wsId);
     sse.sendResult({ generationId: genId, data: parsed });
   } catch (error) {
     console.error('Iteration error:', error);

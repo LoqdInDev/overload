@@ -31,7 +31,7 @@ let optimizerTimer = null;
 // ── Metric Polling ──────────────────────────────────────────────
 
 async function pollMetrics(wsId) {
-  const campaigns = db.prepare(
+  const campaigns = await db.prepare(
     "SELECT * FROM pa_campaigns WHERE workspace_id = ? AND status = 'launched'"
   ).all(wsId);
 
@@ -207,7 +207,7 @@ async function executeDecision(decision, campaign, wsId) {
             campaignId: launch.campaignId,
             customerId: launch.customerId,
           });
-          db.prepare("UPDATE pa_campaigns SET status = 'paused', updated_at = datetime('now') WHERE id = ?").run(campaign.id);
+          db.prepare("UPDATE pa_campaigns SET status = 'paused', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(campaign.id);
         }
         break;
       }
@@ -217,7 +217,7 @@ async function executeDecision(decision, campaign, wsId) {
             campaignId: launch.campaignId,
             customerId: launch.customerId,
           });
-          db.prepare("UPDATE pa_campaigns SET status = 'launched', updated_at = datetime('now') WHERE id = ?").run(campaign.id);
+          db.prepare("UPDATE pa_campaigns SET status = 'launched', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(campaign.id);
         }
         break;
       }
@@ -232,7 +232,7 @@ async function executeDecision(decision, campaign, wsId) {
           const safeBudget = Math.min(newBudget, maxAllowed);
 
           // Update local record
-          db.prepare("UPDATE pa_campaigns SET budget = ?, updated_at = datetime('now') WHERE id = ?")
+          db.prepare("UPDATE pa_campaigns SET budget = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
             .run(String(safeBudget), campaign.id);
 
           // Platform budget update would go here when APIs support it
@@ -260,7 +260,7 @@ function queueOptimizationForApproval(decision, campaign, wsId, analysis) {
 
   db.prepare(`
     INSERT INTO ae_approval_queue (module_id, action_type, title, description, payload, ai_confidence, priority, status, source, created_at, workspace_id)
-    VALUES ('ads', ?, ?, ?, ?, ?, ?, 'pending', 'ai', datetime('now'), ?)
+    VALUES ('ads', ?, ?, ?, ?, ?, ?, 'pending', 'ai', CURRENT_TIMESTAMP, ?)
   `).run(
     decision.action,
     `${decision.action.replace(/_/g, ' ')}: ${campaign.name}`,
@@ -291,7 +291,7 @@ function queueOptimizationForApproval(decision, campaign, wsId, analysis) {
 function queueNewCampaignSuggestion(suggestion, wsId, analysis) {
   db.prepare(`
     INSERT INTO ae_approval_queue (module_id, action_type, title, description, payload, ai_confidence, priority, status, source, created_at, workspace_id)
-    VALUES ('ads', 'new_campaign', ?, ?, ?, ?, 'medium', 'pending', 'ai', datetime('now'), ?)
+    VALUES ('ads', 'new_campaign', ?, ?, ?, ?, 'medium', 'pending', 'ai', CURRENT_TIMESTAMP, ?)
   `).run(
     `New campaign: ${suggestion.name}`,
     suggestion.reason,
@@ -316,7 +316,7 @@ function queueNewCampaignSuggestion(suggestion, wsId, analysis) {
 
 async function optimizeWorkspace(wsId) {
   // 1. Check if ads module is in copilot or autopilot mode
-  const modeRow = db.prepare('SELECT mode FROM ae_module_modes WHERE module_id = ? AND workspace_id = ?').get('ads', wsId);
+  const modeRow = await db.prepare('SELECT mode FROM ae_module_modes WHERE module_id = ? AND workspace_id = ?').get('ads', wsId);
   const mode = modeRow?.mode || 'manual';
   if (mode === 'manual') return; // skip — user hasn't opted in
 
@@ -390,7 +390,7 @@ async function optimizeWorkspace(wsId) {
 
 async function runOptimizationCycle() {
   try {
-    const workspaces = db.prepare('SELECT id FROM workspaces').all();
+    const workspaces = await db.prepare('SELECT id FROM workspaces').all();
     for (const ws of workspaces) {
       await optimizeWorkspace(ws.id);
     }
@@ -427,7 +427,7 @@ async function optimizeNow(wsId) {
 /**
  * Get metrics history for a campaign
  */
-function getMetricsHistory(wsId, campaignId, days = 30) {
+async function getMetricsHistory(wsId, campaignId, days = 30) {
   return db.prepare(
     'SELECT * FROM pa_campaign_metrics WHERE workspace_id = ? AND campaign_id = ? AND date >= date(?, ?) ORDER BY date ASC'
   ).all(wsId, campaignId, 'now', `-${days} days`);
@@ -436,8 +436,8 @@ function getMetricsHistory(wsId, campaignId, days = 30) {
 /**
  * Get optimization log
  */
-function getOptimizationLog(wsId, limit = 20) {
-  return db.prepare(
+async function getOptimizationLog(wsId, limit = 20) {
+  return await db.prepare(
     'SELECT * FROM pa_optimization_log WHERE workspace_id = ? ORDER BY created_at DESC LIMIT ?'
   ).all(wsId, limit);
 }

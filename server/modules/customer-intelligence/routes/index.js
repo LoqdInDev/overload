@@ -5,10 +5,10 @@ const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
 
 // GET / - list all segments
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const items = db.prepare('SELECT * FROM ci_segments WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
+    const items = await db.prepare('SELECT * FROM ci_segments WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json(items);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -16,12 +16,12 @@ router.get('/', (req, res) => {
 });
 
 // GET /:id - get a single segment with its insights
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const item = db.prepare('SELECT * FROM ci_segments WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const item = await db.prepare('SELECT * FROM ci_segments WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!item) return res.status(404).json({ error: 'Not found' });
-    const insights = db.prepare('SELECT * FROM ci_insights WHERE segment_id = ? AND workspace_id = ? ORDER BY created_at DESC').all(req.params.id, wsId);
+    const insights = await db.prepare('SELECT * FROM ci_insights WHERE segment_id = ? AND workspace_id = ? ORDER BY created_at DESC').all(req.params.id, wsId);
     res.json({ ...item, insights });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -29,14 +29,14 @@ router.get('/:id', (req, res) => {
 });
 
 // POST / - create a segment
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { name, description, criteria, size } = req.body;
     const result = db.prepare(
       'INSERT INTO ci_segments (name, description, criteria, size, workspace_id) VALUES (?, ?, ?, ?, ?)'
     ).run(name, description || null, criteria || null, size || 0, wsId);
-    const item = db.prepare('SELECT * FROM ci_segments WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    const item = await db.prepare('SELECT * FROM ci_segments WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(item);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -44,10 +44,10 @@ router.post('/', (req, res) => {
 });
 
 // PUT /:id - update a segment
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const existing = db.prepare('SELECT * FROM ci_segments WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM ci_segments WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
     const { name, description, criteria, size } = req.body;
@@ -60,7 +60,7 @@ router.put('/:id', (req, res) => {
       size !== undefined ? size : existing.size,
       req.params.id, wsId
     );
-    const updated = db.prepare('SELECT * FROM ci_segments WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const updated = await db.prepare('SELECT * FROM ci_segments WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -68,13 +68,13 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE /:id - delete a segment and its insights
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const existing = db.prepare('SELECT * FROM ci_segments WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM ci_segments WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Not found' });
-    db.prepare('DELETE FROM ci_insights WHERE segment_id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    db.prepare('DELETE FROM ci_segments WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM ci_insights WHERE segment_id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM ci_segments WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -82,10 +82,10 @@ router.delete('/:id', (req, res) => {
 });
 
 // GET /insights/list - list all insights
-router.get('/insights/list', (req, res) => {
+router.get('/insights/list', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const insights = db.prepare('SELECT i.*, s.name as segment_name FROM ci_insights i LEFT JOIN ci_segments s ON i.segment_id = s.id WHERE i.workspace_id = ? ORDER BY i.created_at DESC').all(wsId);
+    const insights = await db.prepare('SELECT i.*, s.name as segment_name FROM ci_insights i LEFT JOIN ci_segments s ON i.segment_id = s.id WHERE i.workspace_id = ? ORDER BY i.created_at DESC').all(wsId);
     res.json(insights);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -93,14 +93,14 @@ router.get('/insights/list', (req, res) => {
 });
 
 // POST /insights - create an insight
-router.post('/insights', (req, res) => {
+router.post('/insights', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { segment_id, type, title, description, confidence } = req.body;
     const result = db.prepare(
       'INSERT INTO ci_insights (segment_id, type, title, description, confidence, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(segment_id || null, type || null, title || null, description || null, confidence || 0, wsId);
-    const item = db.prepare('SELECT * FROM ci_insights WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    const item = await db.prepare('SELECT * FROM ci_insights WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(item);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -131,7 +131,7 @@ router.post('/generate', async (req, res) => {
 });
 
 // POST /predict-churn — predict customer churn risk
-router.post('/predict-churn', (req, res) => {
+router.post('/predict-churn', async (req, res) => {
   const { customer_name, days_since_purchase, purchase_frequency, avg_order_value, support_tickets, email_open_rate } = req.body;
 
   const days = parseInt(days_since_purchase) || 30;

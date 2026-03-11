@@ -12,7 +12,7 @@ function getCampaignData(wsId, campaignId) {
   return { campaign, generations };
 }
 
-router.get('/:campaignId/json', (req, res) => {
+router.get('/:campaignId/json', async (req, res) => {
   const wsId = req.workspace.id;
   const data = getCampaignData(wsId, req.params.campaignId);
   if (!data) return res.status(404).json({ error: 'Campaign not found' });
@@ -23,7 +23,7 @@ router.get('/:campaignId/json', (req, res) => {
   res.send(json);
 });
 
-router.get('/:campaignId/markdown', (req, res) => {
+router.get('/:campaignId/markdown', async (req, res) => {
   const wsId = req.workspace.id;
   const data = getCampaignData(wsId, req.params.campaignId);
   if (!data) return res.status(404).json({ error: 'Campaign not found' });
@@ -34,7 +34,7 @@ router.get('/:campaignId/markdown', (req, res) => {
   res.send(md);
 });
 
-router.get('/:campaignId/pdf', (req, res) => {
+router.get('/:campaignId/pdf', async (req, res) => {
   const wsId = req.workspace.id;
   const data = getCampaignData(wsId, req.params.campaignId);
   if (!data) return res.status(404).json({ error: 'Campaign not found' });

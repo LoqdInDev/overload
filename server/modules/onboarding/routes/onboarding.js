@@ -1,13 +1,13 @@
 const express = require('express');
 const { db } = require('../../../db/database');
 
-function getRouter() {
+async function getRouter() {
   const router = express.Router();
 
   // Helper: safely query tables that may not exist
-  function safeGet(sql, params = []) {
+  async function safeGet(sql, params = []) {
     try {
-      return db.prepare(sql).get(...(Array.isArray(params) ? params : [params]));
+      return await db.prepare(sql).get(...(Array.isArray(params) ? params : [params]));
     } catch {
       return null;
     }
@@ -15,11 +15,11 @@ function getRouter() {
 
   // GET /api/onboarding/state
   // Auto-detects completion from other tables
-  router.get('/state', (req, res) => {
+  router.get('/state', async (req, res) => {
     const wsId = req.workspace.id;
     const userId = req.user?.id || 'default';
 
-    let state = db.prepare(
+    let state = await db.prepare(
       'SELECT * FROM onboarding_state WHERE user_id = ? AND workspace_id = ? ORDER BY id DESC LIMIT 1'
     ).get(userId, wsId);
 
@@ -28,7 +28,7 @@ function getRouter() {
       db.prepare(
         'INSERT INTO onboarding_state (user_id, workspace_id) VALUES (?, ?)'
       ).run(userId, wsId);
-      state = db.prepare(
+      state = await db.prepare(
         'SELECT * FROM onboarding_state WHERE user_id = ? AND workspace_id = ? ORDER BY id DESC LIMIT 1'
       ).get(userId, wsId);
     }
@@ -48,7 +48,7 @@ function getRouter() {
     // Update auto-detected fields
     if (brandDone !== !!state.brand_done || integrationDone !== !!state.integration_done || firstContentDone !== !!state.first_content_done) {
       db.prepare(
-        `UPDATE onboarding_state SET brand_done = ?, integration_done = ?, first_content_done = ?, updated_at = datetime('now')
+        `UPDATE onboarding_state SET brand_done = ?, integration_done = ?, first_content_done = ?, updated_at = CURRENT_TIMESTAMP
          WHERE id = ? AND workspace_id = ?`
       ).run(brandDone ? 1 : 0, integrationDone ? 1 : 0, firstContentDone ? 1 : 0, state.id, wsId);
     }
@@ -57,7 +57,7 @@ function getRouter() {
     const allDone = brandDone && integrationDone && firstContentDone;
     if (allDone && !state.completed) {
       db.prepare(
-        "UPDATE onboarding_state SET completed = 1, updated_at = datetime('now') WHERE id = ? AND workspace_id = ?"
+        "UPDATE onboarding_state SET completed = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?"
       ).run(state.id, wsId);
     }
 
@@ -74,7 +74,7 @@ function getRouter() {
   });
 
   // PUT /api/onboarding/step
-  router.put('/step', (req, res) => {
+  router.put('/step', async (req, res) => {
     const wsId = req.workspace.id;
     const userId = req.user?.id || 'default';
     const { step } = req.body;
@@ -84,31 +84,31 @@ function getRouter() {
     }
 
     db.prepare(
-      "UPDATE onboarding_state SET current_step = ?, updated_at = datetime('now') WHERE user_id = ? AND workspace_id = ?"
+      "UPDATE onboarding_state SET current_step = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND workspace_id = ?"
     ).run(step, userId, wsId);
 
     res.json({ ok: true, currentStep: step });
   });
 
   // PUT /api/onboarding/dismiss
-  router.put('/dismiss', (req, res) => {
+  router.put('/dismiss', async (req, res) => {
     const wsId = req.workspace.id;
     const userId = req.user?.id || 'default';
 
     db.prepare(
-      "UPDATE onboarding_state SET dismissed = 1, updated_at = datetime('now') WHERE user_id = ? AND workspace_id = ?"
+      "UPDATE onboarding_state SET dismissed = 1, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND workspace_id = ?"
     ).run(userId, wsId);
 
     res.json({ ok: true });
   });
 
   // PUT /api/onboarding/complete
-  router.put('/complete', (req, res) => {
+  router.put('/complete', async (req, res) => {
     const wsId = req.workspace.id;
     const userId = req.user?.id || 'default';
 
     db.prepare(
-      "UPDATE onboarding_state SET completed = 1, updated_at = datetime('now') WHERE user_id = ? AND workspace_id = ?"
+      "UPDATE onboarding_state SET completed = 1, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND workspace_id = ?"
     ).run(userId, wsId);
 
     res.json({ ok: true });

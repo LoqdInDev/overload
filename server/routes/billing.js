@@ -63,7 +63,7 @@ router.post('/portal', async (req, res, next) => {
 });
 
 // GET /api/billing/subscription — get current subscription status
-router.get('/subscription', (req, res) => {
+router.get('/subscription', async (req, res) => {
   const sub = getSubscription(req.user.id, req.workspace?.id);
 
   if (!sub) {
@@ -108,7 +108,7 @@ router.post('/cancel', async (req, res, next) => {
     // Update local record
     const { db } = require('../db/database');
     db.prepare(`
-      UPDATE subscriptions SET cancel_at_period_end = 1, updated_at = datetime('now')
+      UPDATE subscriptions SET cancel_at_period_end = 1, updated_at = CURRENT_TIMESTAMP
       WHERE stripe_subscription_id = ?
     `).run(sub.stripe_subscription_id);
 

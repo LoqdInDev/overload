@@ -1,9 +1,9 @@
 const { db } = require('../../../db/database');
 
-function initDatabase() {
-  db.exec(`
+async function initDatabase() {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS pf_feeds (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       name TEXT NOT NULL,
       channel TEXT NOT NULL,
@@ -11,11 +11,11 @@ function initDatabase() {
       product_count INTEGER DEFAULT 0,
       status TEXT DEFAULT 'active',
       last_sync TEXT,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS pf_products (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       feed_id INTEGER NOT NULL,
       title TEXT NOT NULL,
@@ -27,18 +27,18 @@ function initDatabase() {
       brand TEXT,
       sku TEXT,
       availability TEXT DEFAULT 'in_stock',
-      created_at TEXT DEFAULT (datetime('now')),
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (feed_id) REFERENCES pf_feeds(id) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS pf_rules (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       workspace_id TEXT,
       feed_id INTEGER NOT NULL,
       field TEXT NOT NULL,
       rule_type TEXT NOT NULL CHECK(rule_type IN ('replace', 'prefix', 'suffix', 'remove')),
       value TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (feed_id) REFERENCES pf_feeds(id) ON DELETE CASCADE
     );
   `);

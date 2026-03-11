@@ -13,7 +13,7 @@ router.post('/generate', async (req, res) => {
     const { text } = await generateTextWithClaude(prompt || `Generate ${type || 'content'} for API Manager`, {
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
-    logActivity('api-manager', 'generate', `Generated ${type || 'content'}`, 'AI generation', null, wsId);
+    await logActivity('api-manager', 'generate', `Generated ${type || 'content'}`, 'AI generation', null, wsId);
     sse.sendResult({ content: text, type });
   } catch (error) {
     console.error('API Manager generation error:', error);
@@ -22,10 +22,10 @@ router.post('/generate', async (req, res) => {
 });
 
 // GET /keys - List all API keys
-router.get('/keys', (req, res) => {
+router.get('/keys', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const keys = db.prepare('SELECT id, name, permissions, rate_limit, usage_count, status, last_used, created_at FROM api_keys WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
+    const keys = await db.prepare('SELECT id, name, permissions, rate_limit, usage_count, status, last_used, created_at FROM api_keys WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
     res.json({ success: true, data: keys });
   } catch (error) {
     console.error('Error fetching API keys:', error);
@@ -34,15 +34,15 @@ router.get('/keys', (req, res) => {
 });
 
 // POST /keys - Create a new API key
-router.post('/keys', (req, res) => {
+router.post('/keys', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { name, key_hash, permissions, rate_limit } = req.body;
     const result = db.prepare(
       'INSERT INTO api_keys (name, key_hash, permissions, rate_limit, workspace_id) VALUES (?, ?, ?, ?, ?)'
     ).run(name, key_hash, permissions ? JSON.stringify(permissions) : null, rate_limit || 100, wsId);
-    logActivity('api-manager', 'create', `Created API key: ${name}`, 'API key created', null, wsId);
-    const key = db.prepare('SELECT id, name, permissions, rate_limit, usage_count, status, last_used, created_at FROM api_keys WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    await logActivity('api-manager', 'create', `Created API key: ${name}`, 'API key created', null, wsId);
+    const key = await db.prepare('SELECT id, name, permissions, rate_limit, usage_count, status, last_used, created_at FROM api_keys WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.json({ success: true, data: key });
   } catch (error) {
     console.error('Error creating API key:', error);
@@ -51,10 +51,10 @@ router.post('/keys', (req, res) => {
 });
 
 // GET /keys/:id - Get a specific API key details
-router.get('/keys/:id', (req, res) => {
+router.get('/keys/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const key = db.prepare('SELECT id, name, permissions, rate_limit, usage_count, status, last_used, created_at FROM api_keys WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const key = await db.prepare('SELECT id, name, permissions, rate_limit, usage_count, status, last_used, created_at FROM api_keys WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!key) {
       return res.status(404).json({ success: false, error: 'API key not found' });
     }
@@ -66,7 +66,7 @@ router.get('/keys/:id', (req, res) => {
 });
 
 // GET /logs - List API usage logs
-router.get('/logs', (req, res) => {
+router.get('/logs', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { key_id, limit } = req.query;
@@ -78,7 +78,7 @@ router.get('/logs', (req, res) => {
     }
     query += ' ORDER BY created_at DESC LIMIT ?';
     params.push(parseInt(limit) || 100);
-    const logs = db.prepare(query).all(...params);
+    const logs = await db.prepare(query).all(...params);
     res.json({ success: true, data: logs });
   } catch (error) {
     console.error('Error fetching API logs:', error);
@@ -87,19 +87,19 @@ router.get('/logs', (req, res) => {
 });
 
 // PUT /keys/:id - Update an API key
-router.put('/keys/:id', (req, res) => {
+router.put('/keys/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const existing = db.prepare('SELECT * FROM api_keys WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM api_keys WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ success: false, error: 'API key not found' });
 
     const { name, permissions, rate_limit, status } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE api_keys SET name = ?, permissions = ?, rate_limit = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?'
     ).run(name || existing.name, permissions ? JSON.stringify(permissions) : existing.permissions, rate_limit ?? existing.rate_limit, status || existing.status, req.params.id, wsId);
 
-    const key = db.prepare('SELECT id, name, permissions, rate_limit, usage_count, status, last_used, created_at FROM api_keys WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
-    logActivity('api-manager', 'update', `Updated API key: ${key.name}`, 'API key updated', null, wsId);
+    const key = await db.prepare('SELECT id, name, permissions, rate_limit, usage_count, status, last_used, created_at FROM api_keys WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    await logActivity('api-manager', 'update', `Updated API key: ${key.name}`, 'API key updated', null, wsId);
     res.json({ success: true, data: key });
   } catch (error) {
     console.error('Error updating API key:', error);
@@ -108,14 +108,14 @@ router.put('/keys/:id', (req, res) => {
 });
 
 // DELETE /keys/:id - Revoke/delete an API key
-router.delete('/keys/:id', (req, res) => {
+router.delete('/keys/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const existing = db.prepare('SELECT * FROM api_keys WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM api_keys WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ success: false, error: 'API key not found' });
 
-    db.prepare('DELETE FROM api_keys WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    logActivity('api-manager', 'delete', `Deleted API key: ${existing.name}`, 'API key revoked', null, wsId);
+    await db.prepare('DELETE FROM api_keys WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await logActivity('api-manager', 'delete', `Deleted API key: ${existing.name}`, 'API key revoked', null, wsId);
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting API key:', error);

@@ -10,25 +10,25 @@ const fs = require('fs');
  * Each migration only runs once (idempotent).
  */
 
-function ensureMigrationsTable() {
-  db.exec(`
+async function ensureMigrationsTable() {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
       name TEXT PRIMARY KEY,
-      applied_at TEXT DEFAULT (datetime('now'))
+      applied_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     )
   `);
 }
 
-function hasRun(name) {
-  return !!db.prepare('SELECT 1 FROM schema_migrations WHERE name = ?').get(name);
+async function hasRun(name) {
+  return !!await db.prepare('SELECT 1 FROM schema_migrations WHERE name = ?').get(name);
 }
 
-function markRun(name) {
-  db.prepare('INSERT INTO schema_migrations (name) VALUES (?)').run(name);
+async function markRun(name) {
+  await db.prepare('INSERT INTO schema_migrations (name) VALUES (?)').run(name);
 }
 
-function runAllMigrations() {
-  ensureMigrationsTable();
+async function runAllMigrations() {
+  await ensureMigrationsTable();
 
   const migrationsDir = __dirname;
   const files = fs.readdirSync(migrationsDir)
@@ -39,19 +39,18 @@ function runAllMigrations() {
   for (const file of files) {
     const name = path.basename(file, '.js');
 
-    if (hasRun(name)) continue;
+    if (await hasRun(name)) continue;
 
     try {
       const migration = require(path.join(migrationsDir, file));
       if (typeof migration.runMigration === 'function') {
-        migration.runMigration();
-        markRun(name);
+        await migration.runMigration();
+        await markRun(name);
         applied++;
         console.log(`  Migration applied: ${name}`);
       }
     } catch (err) {
       console.error(`  Migration failed [${name}]:`, err.message);
-      // Don't mark as run — allow retry on next startup
     }
   }
 

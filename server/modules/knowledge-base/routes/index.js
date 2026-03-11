@@ -5,7 +5,7 @@ const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
 
 // GET / - list all articles
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { category, status } = req.query;
@@ -16,7 +16,7 @@ router.get('/', (req, res) => {
     if (status) { conditions.push('status = ?'); params.push(status); }
     if (conditions.length > 0) query += ' WHERE ' + conditions.join(' AND ');
     query += ' ORDER BY created_at DESC';
-    const items = db.prepare(query).all(...params);
+    const items = await db.prepare(query).all(...params);
     res.json(items);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -24,7 +24,7 @@ router.get('/', (req, res) => {
 });
 
 // GET /search?q= — FTS5 full-text search across articles
-router.get('/search', (req, res) => {
+router.get('/search', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { q } = req.query;
@@ -59,13 +59,13 @@ router.get('/search', (req, res) => {
 });
 
 // GET /:id - get a single article
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const item = db.prepare('SELECT * FROM kb_articles WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const item = await db.prepare('SELECT * FROM kb_articles WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!item) return res.status(404).json({ error: 'Not found' });
     // Increment view count
-    db.prepare('UPDATE kb_articles SET views = views + 1 WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('UPDATE kb_articles SET views = views + 1 WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
     res.json({ ...item, views: item.views + 1 });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -73,7 +73,7 @@ router.get('/:id', (req, res) => {
 });
 
 // POST / - create an article
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { title, slug, content, category, status } = req.body;
@@ -81,7 +81,7 @@ router.post('/', (req, res) => {
     const result = db.prepare(
       'INSERT INTO kb_articles (title, slug, content, category, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(title, articleSlug, content || null, category || null, status || 'draft', wsId);
-    const item = db.prepare('SELECT * FROM kb_articles WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    const item = await db.prepare('SELECT * FROM kb_articles WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(item);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -89,10 +89,10 @@ router.post('/', (req, res) => {
 });
 
 // PUT /:id - update an article
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const existing = db.prepare('SELECT * FROM kb_articles WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM kb_articles WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
     const { title, slug, content, category, status } = req.body;
@@ -107,7 +107,7 @@ router.put('/:id', (req, res) => {
       req.params.id,
       wsId
     );
-    const updated = db.prepare('SELECT * FROM kb_articles WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const updated = await db.prepare('SELECT * FROM kb_articles WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -115,12 +115,12 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE /:id - delete an article
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const existing = db.prepare('SELECT * FROM kb_articles WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const existing = await db.prepare('SELECT * FROM kb_articles WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!existing) return res.status(404).json({ error: 'Not found' });
-    db.prepare('DELETE FROM kb_articles WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM kb_articles WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -128,11 +128,11 @@ router.delete('/:id', (req, res) => {
 });
 
 // POST /helpful/:id - mark an article as helpful
-router.post('/helpful/:id', (req, res) => {
+router.post('/helpful/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    db.prepare('UPDATE kb_articles SET helpful_count = helpful_count + 1 WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
-    const item = db.prepare('SELECT * FROM kb_articles WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    await db.prepare('UPDATE kb_articles SET helpful_count = helpful_count + 1 WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    const item = await db.prepare('SELECT * FROM kb_articles WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     res.json(item);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -140,10 +140,10 @@ router.post('/helpful/:id', (req, res) => {
 });
 
 // GET /categories/list - list all categories
-router.get('/categories/list', (req, res) => {
+router.get('/categories/list', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const categories = db.prepare('SELECT * FROM kb_categories WHERE workspace_id = ? ORDER BY sort_order ASC, name ASC').all(wsId);
+    const categories = await db.prepare('SELECT * FROM kb_categories WHERE workspace_id = ? ORDER BY sort_order ASC, name ASC').all(wsId);
     res.json(categories);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -151,14 +151,14 @@ router.get('/categories/list', (req, res) => {
 });
 
 // POST /categories - create a category
-router.post('/categories', (req, res) => {
+router.post('/categories', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, description, icon, sort_order } = req.body;
     const result = db.prepare(
       'INSERT INTO kb_categories (name, description, icon, sort_order, workspace_id) VALUES (?, ?, ?, ?, ?)'
     ).run(name, description || null, icon || null, sort_order || 0, wsId);
-    const item = db.prepare('SELECT * FROM kb_categories WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    const item = await db.prepare('SELECT * FROM kb_categories WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
     res.status(201).json(item);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -166,10 +166,10 @@ router.post('/categories', (req, res) => {
 });
 
 // DELETE /categories/:id - delete a category
-router.delete('/categories/:id', (req, res) => {
+router.delete('/categories/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    db.prepare('DELETE FROM kb_categories WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
+    await db.prepare('DELETE FROM kb_categories WHERE id = ? AND workspace_id = ?').run(req.params.id, wsId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -193,7 +193,7 @@ router.post('/generate', async (req, res) => {
       onChunk: (chunk) => sse.sendChunk(chunk),
     });
 
-    logActivity('knowledge-base', 'generate', `Generated ${type || 'article'}`, null, null, wsId);
+    await logActivity('knowledge-base', 'generate', `Generated ${type || 'article'}`, null, null, wsId);
     sse.sendResult({ content: text, type: type || 'article' });
   } catch (error) {
     console.error('Knowledge Base generation error:', error);
