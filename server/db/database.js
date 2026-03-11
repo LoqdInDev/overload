@@ -2,8 +2,15 @@ const { Pool } = require('pg');
 const crypto = require('crypto');
 
 // ── PostgreSQL connection pool ────────────────────────────────────
+const dbUrl = process.env.DATABASE_URL;
+try {
+  const parsed = new URL(dbUrl || '');
+  console.log(`[db] Connecting to PostgreSQL at ${parsed.hostname}:${parsed.port || 5432}/${parsed.pathname?.slice(1)}`);
+} catch {
+  console.error(`[db] DATABASE_URL is missing or invalid: "${dbUrl ? dbUrl.slice(0, 20) + '...' : '(not set)'}"`);
+}
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: dbUrl,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   max: 20,
   idleTimeoutMillis: 30000,
