@@ -52,7 +52,7 @@ router.put('/:id', async (req, res) => {
 
     const { name, metric, target_value, current_value, deadline, status, notes } = req.body;
     db.prepare(
-      'UPDATE gt_goals SET name = ?, metric = ?, target_value = ?, current_value = ?, deadline = ?, status = ?, notes = ?, updated_at = datetime(\'now\') WHERE id = ? AND workspace_id = ?'
+      'UPDATE gt_goals SET name = ?, metric = ?, target_value = ?, current_value = ?, deadline = ?, status = ?, notes = ?, updated_at = NOW() WHERE id = ? AND workspace_id = ?'
     ).run(
       name || existing.name,
       metric !== undefined ? metric : existing.metric,

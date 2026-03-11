@@ -284,7 +284,7 @@ router.put('/payouts/:id/mark-paid', async (req, res) => {
     const payout = await db.prepare('SELECT * FROM af_payouts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!payout) return res.status(404).json({ error: 'Payout not found' });
 
-    db.prepare('UPDATE af_payouts SET status = ?, paid_at = datetime(\'now\') WHERE id = ? AND workspace_id = ?')
+    db.prepare('UPDATE af_payouts SET status = ?, paid_at = NOW() WHERE id = ? AND workspace_id = ?')
       .run('paid', req.params.id, wsId);
 
     const updated = await db.prepare('SELECT * FROM af_payouts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);

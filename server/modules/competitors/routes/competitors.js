@@ -230,7 +230,7 @@ router.get('/stats', async (req, res) => {
     const totalCompetitors = db.prepare('SELECT COUNT(*) as count FROM ci_competitors WHERE workspace_id = ?').get(wsId).count;
     const totalReports = db.prepare('SELECT COUNT(*) as count FROM ci_reports WHERE workspace_id = ?').get(wsId).count;
     const byType = db.prepare('SELECT type, COUNT(*) as count FROM ci_reports WHERE workspace_id = ? GROUP BY type').all(wsId);
-    const recentReports = db.prepare('SELECT COUNT(*) as count FROM ci_reports WHERE workspace_id = ? AND created_at > datetime("now", "-30 days")').get(wsId).count;
+    const recentReports = db.prepare("SELECT COUNT(*) as count FROM ci_reports WHERE workspace_id = ? AND created_at > NOW() - INTERVAL '30 days'").get(wsId).count;
     res.json({ totalCompetitors, totalReports, byType, recentReports });
   } catch (error) {
     res.status(500).json({ error: error.message });

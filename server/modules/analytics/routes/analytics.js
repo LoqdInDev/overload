@@ -14,7 +14,7 @@ router.get('/overview', async (req, res) => {
   let dateCond = '';
   const params = [wsId];
   if (start_date) { dateCond += ' AND created_at >= ?'; params.push(start_date); }
-  else if (days) { const safeDays = Math.min(Math.max(parseInt(days) || 7, 1), 365); dateCond += ` AND created_at >= datetime('now', '-${safeDays} days')`; }
+  else if (days) { const safeDays = Math.min(Math.max(parseInt(days) || 7, 1), 365); dateCond += ` AND created_at >= NOW() - INTERVAL '${safeDays} days'`; }
   if (end_date) { dateCond += ' AND created_at <= ?'; params.push(end_date); }
 
   const stats = db.prepare(`
@@ -60,7 +60,7 @@ router.get('/daily', async (req, res) => {
   let query = `
     SELECT date(created_at) as date, module_id, COUNT(*) as count
     FROM activity_log
-    WHERE created_at >= datetime('now', '-' || ? || ' days') AND workspace_id = ?
+    WHERE created_at >= NOW() - (? || ' days')::INTERVAL AND workspace_id = ?
   `;
 
   const params = [days, wsId];
@@ -85,7 +85,7 @@ router.get('/module/:moduleId', async (req, res) => {
   const baseParams = [moduleId, wsId];
   const dateParams = [];
   if (start_date) { dateCond += ' AND created_at >= ?'; dateParams.push(start_date); }
-  else if (days) { const safeDays = Math.min(Math.max(parseInt(days) || 7, 1), 365); dateCond += ` AND created_at >= datetime('now', '-${safeDays} days')`; }
+  else if (days) { const safeDays = Math.min(Math.max(parseInt(days) || 7, 1), 365); dateCond += ` AND created_at >= NOW() - INTERVAL '${safeDays} days'`; }
   if (end_date) { dateCond += ' AND created_at <= ?'; dateParams.push(end_date); }
 
   const total = db.prepare(

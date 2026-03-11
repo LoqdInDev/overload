@@ -51,7 +51,7 @@ router.put('/:id', async (req, res) => {
 
     const { title, content, status, target_date, distribution_list } = req.body;
     db.prepare(
-      'UPDATE pp_releases SET title = ?, content = ?, status = ?, target_date = ?, distribution_list = ?, updated_at = datetime(\'now\') WHERE id = ? AND workspace_id = ?'
+      'UPDATE pp_releases SET title = ?, content = ?, status = ?, target_date = ?, distribution_list = ?, updated_at = NOW() WHERE id = ? AND workspace_id = ?'
     ).run(
       title || existing.title,
       content !== undefined ? content : existing.content,

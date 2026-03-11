@@ -145,7 +145,7 @@ router.put('/brands/:id', async (req, res) => {
     const { name, voice, positioning, guidelines, personas } = req.body;
 
     db.prepare(
-      'UPDATE bs_brands SET name = ?, voice = ?, positioning = ?, guidelines = ?, personas = ?, updated_at = datetime(\'now\') WHERE id = ? AND workspace_id = ?'
+      'UPDATE bs_brands SET name = ?, voice = ?, positioning = ?, guidelines = ?, personas = ?, updated_at = NOW() WHERE id = ? AND workspace_id = ?'
     ).run(
       name || brand.name,
       voice !== undefined ? voice : brand.voice,
