@@ -17,7 +17,7 @@ async function initAuthTables() {
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
+      password_hash TEXT,
       display_name TEXT,
       avatar_url TEXT,
       role TEXT DEFAULT 'owner',
@@ -79,6 +79,9 @@ async function createUser(email, password, displayName) {
 async function authenticateUser(email, password) {
   const user = await db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase().trim());
   if (!user) return null;
+
+  // Google-only accounts have no password — can't log in with email/password
+  if (!user.password_hash) return null;
 
   const valid = await bcrypt.compare(password, user.password_hash);
   if (!valid) return null;
@@ -273,6 +276,36 @@ async function cleanExpiredTokens() {
   await db.prepare("DELETE FROM email_verification_tokens WHERE expires_at < CURRENT_TIMESTAMP").run();
 }
 
+// ── Google OAuth ─────────────────────────────────────────────────────
+async function findOrCreateGoogleUser(googleProfile) {
+  const { email, name, picture } = googleProfile;
+  const normalizedEmail = email.toLowerCase().trim();
+
+  // Check if user already exists
+  const existing = await db.prepare('SELECT * FROM users WHERE email = ?').get(normalizedEmail);
+  if (existing) {
+    // Update avatar if not set
+    if (!existing.avatar_url && picture) {
+      await db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').run(picture, existing.id);
+    }
+    return {
+      id: existing.id,
+      email: existing.email,
+      displayName: existing.display_name,
+      role: existing.role,
+      avatarUrl: existing.avatar_url || picture,
+    };
+  }
+
+  // Create new user (no password — Google-only)
+  const id = crypto.randomUUID();
+  await db.prepare(
+    'INSERT INTO users (id, email, password_hash, display_name, avatar_url, email_verified) VALUES (?, ?, NULL, ?, ?, 1)'
+  ).run(id, normalizedEmail, name || null, picture || null);
+
+  return { id, email: normalizedEmail, displayName: name, role: 'owner', avatarUrl: picture };
+}
+
 module.exports = {
   initAuthTables,
   createUser,
@@ -288,4 +321,5 @@ module.exports = {
   resetPassword,
   createEmailVerificationToken,
   verifyEmailToken,
+  findOrCreateGoogleUser,
 };

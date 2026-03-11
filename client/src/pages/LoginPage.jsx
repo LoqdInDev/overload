@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../hooks/usePageTitle';
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export default function LoginPage() {
   const [mode, setMode] = useState('login');
@@ -12,10 +14,50 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const { login, signup } = useAuth();
+  const { login, signup, loginWithGoogle } = useAuth();
   const { dark, toggle } = useTheme();
   const navigate = useNavigate();
+  const googleBtnRef = useRef(null);
   usePageTitle(mode === 'login' ? 'Log In' : 'Sign Up');
+
+  const handleGoogleResponse = useCallback(async (response) => {
+    setError('');
+    setLoading(true);
+    try {
+      await loginWithGoogle(response.credential);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [loginWithGoogle, navigate]);
+
+  // Load Google Identity Services
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return;
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.onload = () => {
+      window.google?.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleResponse,
+      });
+      if (googleBtnRef.current) {
+        window.google?.accounts.id.renderButton(googleBtnRef.current, {
+          type: 'standard',
+          theme: dark ? 'filled_black' : 'outline',
+          size: 'large',
+          width: googleBtnRef.current.offsetWidth,
+          text: 'continue_with',
+          shape: 'pill',
+        });
+      }
+    };
+    document.head.appendChild(script);
+    return () => { document.head.removeChild(script); };
+  }, [dark, handleGoogleResponse]);
 
   const bg = dark ? '#1A1816' : '#FBF7F0';
   const cardBg = dark ? '#1E1B18' : '#FFFFFF';
@@ -236,6 +278,17 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+
+          {GOOGLE_CLIENT_ID && (
+            <>
+              <div className="flex items-center gap-3 my-5">
+                <div className="flex-1 h-px" style={{ background: border }} />
+                <span className="text-[11px] font-medium" style={{ color: muted }}>or</span>
+                <div className="flex-1 h-px" style={{ background: border }} />
+              </div>
+              <div ref={googleBtnRef} className="w-full flex justify-center" />
+            </>
+          )}
         </div>
 
         <p className="text-center text-[11px] mt-4" style={{ color: muted }}>

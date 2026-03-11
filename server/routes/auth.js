@@ -11,6 +11,7 @@ const {
   resetPassword,
   createEmailVerificationToken,
   verifyEmailToken,
+  findOrCreateGoogleUser,
 } = require('../services/auth');
 const { requireAuth } = require('../middleware/requireAuth');
 const { validate, schemas } = require('../middleware/validate');
@@ -118,6 +119,50 @@ router.post('/login', authLimiter, validate(schemas.login), async (req, res, nex
     clearFailedLogins(email.toLowerCase());
 
     const tokens = generateTokenPair(user.id);
+
+    res.json({
+      user: { id: user.id, email: user.email, displayName: user.displayName, role: user.role, avatarUrl: user.avatarUrl },
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/auth/google — Google Sign-In with ID token
+router.post('/google', authLimiter, async (req, res, next) => {
+  try {
+    const { credential } = req.body;
+    if (!credential) {
+      return res.status(400).json({ error: 'Google credential is required', code: 'VALIDATION_ERROR' });
+    }
+
+    // Verify the Google ID token by calling Google's tokeninfo endpoint
+    const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
+    if (!googleRes.ok) {
+      return res.status(401).json({ error: 'Invalid Google credential', code: 'GOOGLE_AUTH_FAILED' });
+    }
+
+    const payload = await googleRes.json();
+
+    // Verify the audience matches our client ID
+    const expectedClientId = process.env.GOOGLE_CLIENT_ID;
+    if (expectedClientId && payload.aud !== expectedClientId) {
+      return res.status(401).json({ error: 'Google token audience mismatch', code: 'GOOGLE_AUTH_FAILED' });
+    }
+
+    if (!payload.email) {
+      return res.status(401).json({ error: 'No email in Google profile', code: 'GOOGLE_AUTH_FAILED' });
+    }
+
+    const user = await findOrCreateGoogleUser({
+      email: payload.email,
+      name: payload.name || payload.given_name,
+      picture: payload.picture,
+    });
+
+    const tokens = await generateTokenPair(user.id);
 
     res.json({
       user: { id: user.id, email: user.email, displayName: user.displayName, role: user.role, avatarUrl: user.avatarUrl },
