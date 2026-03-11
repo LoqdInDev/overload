@@ -8,9 +8,9 @@ const { requireAuth } = require('../middleware/requireAuth');
 router.use(requireAuth);
 
 // GET / — list workspaces the user belongs to
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const workspaces = db.prepare(`
+    const workspaces = await db.prepare(`
       SELECT w.*, wm.role
       FROM workspaces w
       JOIN workspace_members wm ON w.id = wm.workspace_id
@@ -24,19 +24,7 @@ router.get('/', (req, res) => {
 });
 
 // POST / — create a new workspace
-const createWorkspaceTxn = db.transaction((id, name, slug, userId) => {
-  db.prepare(
-    'INSERT INTO workspaces (id, name, slug, owner_id) VALUES (?, ?, ?, ?)'
-  ).run(id, name, slug, userId);
-
-  db.prepare(
-    'INSERT INTO workspace_members (id, workspace_id, user_id, role) VALUES (?, ?, ?, ?)'
-  ).run(crypto.randomUUID(), id, userId, 'owner');
-
-  return db.prepare('SELECT * FROM workspaces WHERE id = ?').get(id);
-});
-
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { name } = req.body;
     if (!name || !name.trim()) {
@@ -46,7 +34,18 @@ router.post('/', (req, res) => {
     const id = crypto.randomUUID();
     const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + id.slice(0, 8);
 
-    const workspace = createWorkspaceTxn(id, name.trim(), slug, req.user.id);
+    const workspace = await db.transaction(async () => {
+      await db.prepare(
+        'INSERT INTO workspaces (id, name, slug, owner_id) VALUES (?, ?, ?, ?)'
+      ).run(id, name.trim(), slug, req.user.id);
+
+      await db.prepare(
+        'INSERT INTO workspace_members (id, workspace_id, user_id, role) VALUES (?, ?, ?, ?)'
+      ).run(crypto.randomUUID(), id, req.user.id, 'owner');
+
+      return await db.prepare('SELECT * FROM workspaces WHERE id = ?').get(id);
+    });
+
     res.status(201).json({ ...workspace, role: 'owner' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -54,10 +53,10 @@ router.post('/', (req, res) => {
 });
 
 // GET /:id — get workspace details
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const membership = db.prepare(
+    const membership = await db.prepare(
       'SELECT role FROM workspace_members WHERE workspace_id = ? AND user_id = ?'
     ).get(id, req.user.id);
 
@@ -65,7 +64,7 @@ router.get('/:id', (req, res) => {
       return res.status(403).json({ error: 'You do not have access to this workspace' });
     }
 
-    const workspace = db.prepare('SELECT * FROM workspaces WHERE id = ?').get(id);
+    const workspace = await db.prepare('SELECT * FROM workspaces WHERE id = ?').get(id);
     if (!workspace) {
       return res.status(404).json({ error: 'Workspace not found' });
     }
@@ -77,10 +76,10 @@ router.get('/:id', (req, res) => {
 });
 
 // PUT /:id — update workspace (owner only)
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const membership = db.prepare(
+    const membership = await db.prepare(
       'SELECT role FROM workspace_members WHERE workspace_id = ? AND user_id = ?'
     ).get(id, req.user.id);
 
@@ -91,11 +90,11 @@ router.put('/:id', (req, res) => {
     const { name } = req.body;
     if (name && name.trim()) {
       db.prepare(
-        "UPDATE workspaces SET name = ?, updated_at = datetime('now') WHERE id = ?"
+        "UPDATE workspaces SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
       ).run(name.trim(), id);
     }
 
-    const workspace = db.prepare('SELECT * FROM workspaces WHERE id = ?').get(id);
+    const workspace = await db.prepare('SELECT * FROM workspaces WHERE id = ?').get(id);
     res.json({ ...workspace, role: 'owner' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -103,10 +102,10 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE /:id — delete workspace (owner only, cannot delete last workspace)
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const membership = db.prepare(
+    const membership = await db.prepare(
       'SELECT role FROM workspace_members WHERE workspace_id = ? AND user_id = ?'
     ).get(id, req.user.id);
 
@@ -123,7 +122,7 @@ router.delete('/:id', (req, res) => {
       return res.status(400).json({ error: 'Cannot delete your only workspace' });
     }
 
-    db.prepare('DELETE FROM workspaces WHERE id = ?').run(id);
+    await db.prepare('DELETE FROM workspaces WHERE id = ?').run(id);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -131,10 +130,10 @@ router.delete('/:id', (req, res) => {
 });
 
 // GET /:id/members — list workspace members
-router.get('/:id/members', (req, res) => {
+router.get('/:id/members', async (req, res) => {
   try {
     const { id } = req.params;
-    const membership = db.prepare(
+    const membership = await db.prepare(
       'SELECT role FROM workspace_members WHERE workspace_id = ? AND user_id = ?'
     ).get(id, req.user.id);
 
@@ -142,7 +141,7 @@ router.get('/:id/members', (req, res) => {
       return res.status(403).json({ error: 'You do not have access to this workspace' });
     }
 
-    const members = db.prepare(`
+    const members = await db.prepare(`
       SELECT wm.id, wm.role, wm.joined_at, u.id as user_id, u.email, u.display_name, u.avatar_url
       FROM workspace_members wm
       JOIN users u ON wm.user_id = u.id
@@ -157,10 +156,10 @@ router.get('/:id/members', (req, res) => {
 });
 
 // POST /:id/members — invite a member (owner only)
-router.post('/:id/members', (req, res) => {
+router.post('/:id/members', async (req, res) => {
   try {
     const { id } = req.params;
-    const membership = db.prepare(
+    const membership = await db.prepare(
       'SELECT role FROM workspace_members WHERE workspace_id = ? AND user_id = ?'
     ).get(id, req.user.id);
 
@@ -175,13 +174,13 @@ router.post('/:id/members', (req, res) => {
     const memberRole = validRoles.includes(role) ? role : 'editor';
 
     // Find user by email
-    const user = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    const user = await db.prepare('SELECT id FROM users WHERE email = ?').get(email);
     if (!user) {
       return res.status(404).json({ error: 'No user found with that email. They must sign up first.' });
     }
 
     // Check if already a member
-    const existing = db.prepare(
+    const existing = await db.prepare(
       'SELECT 1 FROM workspace_members WHERE workspace_id = ? AND user_id = ?'
     ).get(id, user.id);
 
@@ -200,10 +199,10 @@ router.post('/:id/members', (req, res) => {
 });
 
 // PUT /:id/members/:userId — update member role (owner only)
-router.put('/:id/members/:userId', (req, res) => {
+router.put('/:id/members/:userId', async (req, res) => {
   try {
     const { id, userId } = req.params;
-    const membership = db.prepare(
+    const membership = await db.prepare(
       'SELECT role FROM workspace_members WHERE workspace_id = ? AND user_id = ?'
     ).get(id, req.user.id);
 
@@ -221,7 +220,7 @@ router.put('/:id/members/:userId', (req, res) => {
       return res.status(400).json({ error: 'Invalid role. Must be editor or viewer.' });
     }
 
-    db.prepare(
+    await db.prepare(
       'UPDATE workspace_members SET role = ? WHERE workspace_id = ? AND user_id = ?'
     ).run(role, id, userId);
 
@@ -232,10 +231,10 @@ router.put('/:id/members/:userId', (req, res) => {
 });
 
 // DELETE /:id/members/:userId — remove member (owner only)
-router.delete('/:id/members/:userId', (req, res) => {
+router.delete('/:id/members/:userId', async (req, res) => {
   try {
     const { id, userId } = req.params;
-    const membership = db.prepare(
+    const membership = await db.prepare(
       'SELECT role FROM workspace_members WHERE workspace_id = ? AND user_id = ?'
     ).get(id, req.user.id);
 
@@ -247,7 +246,7 @@ router.delete('/:id/members/:userId', (req, res) => {
       return res.status(400).json({ error: 'Cannot remove yourself. Transfer ownership or delete the workspace.' });
     }
 
-    db.prepare(
+    await db.prepare(
       'DELETE FROM workspace_members WHERE workspace_id = ? AND user_id = ?'
     ).run(id, userId);
 

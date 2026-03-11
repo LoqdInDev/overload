@@ -13,11 +13,11 @@ module.exports = {
 
   apiPrefix: '/api/crm',
 
-  initDatabase() {
+  async initDatabase() {
     initDatabase();
     // Add soft delete columns to critical CRM tables
-    addSoftDeleteColumns(db, 'crm_contacts');
-    addSoftDeleteColumns(db, 'crm_deals');
+    await addSoftDeleteColumns(db, 'crm_contacts');
+    await addSoftDeleteColumns(db, 'crm_deals');
   },
 
   getRouter() {

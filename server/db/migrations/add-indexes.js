@@ -12,7 +12,7 @@ const { db } = require('../database');
  *
  * All statements use IF NOT EXISTS so they are idempotent.
  */
-function runMigration() {
+async function runMigration() {
   const statements = [
     // ========================
     // Auth tables (server/services/auth.js)
@@ -424,12 +424,12 @@ function runMigration() {
       const tableMatch = sql.match(/ON (\w+)\(/);
       if (tableMatch) {
         const table = tableMatch[1];
-        const exists = db.prepare(
-          "SELECT name FROM sqlite_master WHERE type='table' AND name=?"
+        const exists = await db.prepare(
+          "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = ?"
         ).get(table);
         if (!exists) continue;
       }
-      db.exec(sql);
+      await db.exec(sql);
       created++;
     } catch (err) {
       // Log but don't fail — column may not exist yet on a fresh DB
