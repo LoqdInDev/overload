@@ -100,7 +100,7 @@ function shouldThresholdTrigger(rule) {
 
       const row = db.prepare(`
         SELECT AVG(${col}) as val FROM pa_campaign_metrics
-        WHERE workspace_id = ? AND date >= NOW() - INTERVAL '7 days'
+        WHERE workspace_id = ? AND date::timestamptz >= NOW() - INTERVAL '7 days'
       `).get(rule.workspace_id);
 
       if (!row || row.val === null) return true; // no data yet — trigger to collect
@@ -136,11 +136,11 @@ async function checkSafetyLimits(wsId) {
   const maxHour = Number(settings.maxActionsPerHour) || 10;
 
   const todayCount = db.prepare(
-    "SELECT COUNT(*) as c FROM ae_action_log WHERE workspace_id = ? AND created_at >= DATE_TRUNC('day', NOW()) AND mode = 'autopilot'"
+    "SELECT COUNT(*) as c FROM ae_action_log WHERE workspace_id = ? AND created_at::timestamptz >= DATE_TRUNC('day', NOW()) AND mode = 'autopilot'"
   ).get(wsId)?.c || 0;
 
   const hourCount = db.prepare(
-    "SELECT COUNT(*) as c FROM ae_action_log WHERE workspace_id = ? AND created_at >= NOW() - INTERVAL '1 hour' AND mode = 'autopilot'"
+    "SELECT COUNT(*) as c FROM ae_action_log WHERE workspace_id = ? AND created_at::timestamptz >= NOW() - INTERVAL '1 hour' AND mode = 'autopilot'"
   ).get(wsId)?.c || 0;
 
   if (todayCount >= maxDay) return { allowed: false, reason: `Daily limit reached (${maxDay})` };

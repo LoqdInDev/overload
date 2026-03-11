@@ -143,7 +143,7 @@ router.get('/overview', async (req, res) => {
   ).get(today, wsId)?.count || 0;
 
   const actionsThisWeek = db.prepare(
-    "SELECT COUNT(*) as count FROM ae_action_log WHERE created_at >= NOW() - INTERVAL '7 days' AND workspace_id = ?"
+    "SELECT COUNT(*) as count FROM ae_action_log WHERE created_at::timestamptz >= NOW() - INTERVAL '7 days' AND workspace_id = ?"
   ).get(wsId)?.count || 0;
 
   const completedAll = db.prepare(

@@ -41,7 +41,7 @@ async function getRouter() {
     // Content pieces created
     const contentCount = safeGet('SELECT COUNT(*) as count FROM cc_projects WHERE workspace_id = ?', [wsId])?.count || 0;
     const weekContent = safeGet(
-      "SELECT COUNT(*) as count FROM cc_projects WHERE workspace_id = ? AND created_at >= NOW() - INTERVAL '7 days'", [wsId]
+      "SELECT COUNT(*) as count FROM cc_projects WHERE workspace_id = ? AND created_at::timestamptz >= NOW() - INTERVAL '7 days'", [wsId]
     )?.count || 0;
 
     // Connected integrations
@@ -72,7 +72,7 @@ async function getRouter() {
     // E-commerce revenue (total order value)
     const totalRevenue = safeGet('SELECT COALESCE(SUM(total), 0) as total FROM eh_orders WHERE workspace_id = ?', [wsId])?.total || 0;
     const weekRevenue = safeGet(
-      "SELECT COALESCE(SUM(total), 0) as total FROM eh_orders WHERE workspace_id = ? AND created_at >= NOW() - INTERVAL '7 days'", [wsId]
+      "SELECT COALESCE(SUM(total), 0) as total FROM eh_orders WHERE workspace_id = ? AND created_at::timestamptz >= NOW() - INTERVAL '7 days'", [wsId]
     )?.total || 0;
 
     // Campaigns (paid ads + email)
@@ -97,7 +97,7 @@ async function getRouter() {
     const dailyRevenue = safeQuery(
       `SELECT date(created_at) as day, COALESCE(SUM(total), 0) as total
        FROM eh_orders
-       WHERE workspace_id = ? AND created_at >= NOW() - INTERVAL '7 days'
+       WHERE workspace_id = ? AND created_at::timestamptz >= NOW() - INTERVAL '7 days'
        GROUP BY date(created_at)
        ORDER BY day ASC`, [wsId]
     );
