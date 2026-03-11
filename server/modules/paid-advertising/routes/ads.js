@@ -308,6 +308,271 @@ Only return JSON.`, {
   }
 });
 
+// POST /export-config — generate platform-specific importable campaign config
+router.post('/export-config', async (req, res) => {
+  const { campaign_result, platform, budget, objective } = req.body;
+  if (!campaign_result || !platform) return res.status(400).json({ error: 'campaign_result and platform required' });
+
+  const ad = campaign_result.ad_content || {};
+  const targeting = campaign_result.targeting || {};
+  const strategy = campaign_result.strategy || {};
+  const name = campaign_result.campaign_name || 'Campaign';
+
+  try {
+    if (platform === 'google') {
+      // Google Ads Editor CSV format — directly importable
+      const rows = [['Campaign', 'Ad Group', 'Headline 1', 'Headline 2', 'Headline 3', 'Description 1', 'Description 2', 'Final URL', 'Campaign Status', 'Campaign Type', 'Campaign Daily Budget', 'Bid Strategy Type']];
+      const h = ad.headlines || [];
+      const d = ad.descriptions || [];
+      rows.push([
+        name, `${name} - Ad Group 1`,
+        h[0] || '', h[1] || '', h[2] || '',
+        d[0] || '', d[1] || '',
+        '{YOUR_LANDING_PAGE_URL}',
+        'Paused', 'Search', budget || '50',
+        strategy.bidding || 'Maximize Conversions',
+      ]);
+      // Additional RSA variations if available
+      if (h.length > 3) {
+        rows.push([
+          name, `${name} - Ad Group 1`,
+          h[3] || '', h[4] || h[0] || '', h[1] || '',
+          d[1] || d[0] || '', d[2] || d[0] || '',
+          '{YOUR_LANDING_PAGE_URL}',
+          'Paused', 'Search', budget || '50',
+          strategy.bidding || 'Maximize Conversions',
+        ]);
+      }
+
+      // Keywords sheet
+      const kwRows = [['Campaign', 'Ad Group', 'Keyword', 'Match Type', 'Max CPC']];
+      const keywords = ad.extras?.keywords || targeting.interests || [];
+      keywords.forEach(kw => {
+        const keyword = typeof kw === 'string' ? kw : (kw.keyword || kw.text || '');
+        const match = typeof kw === 'string' ? 'Broad' : (kw.match_type || 'Broad');
+        if (keyword) kwRows.push([name, `${name} - Ad Group 1`, keyword, match, '']);
+      });
+
+      // Sitelinks
+      const slRows = [['Campaign', 'Sitelink Text', 'Sitelink Description Line 1', 'Sitelink Description Line 2', 'Sitelink Final URL']];
+      const sitelinks = ad.extras?.sitelinks || [];
+      sitelinks.forEach(sl => {
+        slRows.push([name, sl.title || '', sl.description1 || sl.desc1 || '', sl.description2 || sl.desc2 || '', '{YOUR_URL}']);
+      });
+
+      const toCsv = (rows) => rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+
+      return res.json({
+        format: 'google_ads_editor',
+        instructions: [
+          '1. Open Google Ads Editor (free desktop app from Google)',
+          '2. Go to Account → Import → Paste text',
+          '3. Paste the Ads CSV content below',
+          '4. Repeat for Keywords if needed',
+          '5. Replace {YOUR_LANDING_PAGE_URL} with your actual URL',
+          '6. Review settings, then Post changes to your account',
+          '7. Campaign starts PAUSED — enable when ready',
+        ],
+        files: {
+          'ads.csv': toCsv(rows),
+          'keywords.csv': kwRows.length > 1 ? toCsv(kwRows) : null,
+          'sitelinks.csv': slRows.length > 1 ? toCsv(slRows) : null,
+        },
+        api_payload: {
+          campaign: {
+            name, status: 'PAUSED',
+            advertisingChannelType: 'SEARCH',
+            biddingStrategyType: strategy.bidding || 'MAXIMIZE_CONVERSIONS',
+            campaignBudget: { amountMicros: String((Number(budget) || 50) * 1000000), deliveryMethod: 'STANDARD' },
+          },
+          adGroup: { name: `${name} - Ad Group 1`, status: 'ENABLED', type: 'SEARCH_STANDARD' },
+          responsiveSearchAd: {
+            headlines: (h.slice(0, 15)).map(text => ({ text })),
+            descriptions: (d.slice(0, 4)).map(text => ({ text })),
+            finalUrls: ['{YOUR_LANDING_PAGE_URL}'],
+          },
+        },
+      });
+    }
+
+    if (platform === 'meta') {
+      // Meta Ads Manager bulk import format
+      const rows = [['Campaign Name', 'Campaign Objective', 'Campaign Budget', 'Budget Type', 'Ad Set Name', 'Optimization Goal', 'Targeting - Interests', 'Targeting - Age Min', 'Targeting - Age Max', 'Placements', 'Ad Name', 'Primary Text', 'Headline', 'Description', 'Call to Action', 'Website URL', 'Status']];
+
+      const h = ad.headlines || [];
+      const pt = ad.primary_texts || [];
+      const d = ad.descriptions || [];
+      const interests = (targeting.interests || []).join('; ');
+      const placements = (targeting.placements || []).join('; ');
+      const demographics = targeting.demographics || '';
+      const ageMatch = demographics.match(/(\d{2})\s*[-–]\s*(\d{2})/);
+      const ageMin = ageMatch ? ageMatch[1] : '18';
+      const ageMax = ageMatch ? ageMatch[2] : '65';
+      const objMap = { conversions: 'OUTCOME_SALES', traffic: 'OUTCOME_TRAFFIC', awareness: 'OUTCOME_AWARENESS', leads: 'OUTCOME_LEADS' };
+
+      // Create rows for each primary text + headline combo (up to 3)
+      const count = Math.max(1, Math.min(3, h.length, pt.length));
+      for (let i = 0; i < count; i++) {
+        rows.push([
+          name, objMap[objective] || 'OUTCOME_SALES',
+          budget || '50', 'DAILY',
+          `${name} - Ad Set 1`,
+          objective === 'traffic' ? 'LINK_CLICKS' : 'OFFSITE_CONVERSIONS',
+          interests, ageMin, ageMax, placements || 'Automatic',
+          `${name} - Ad ${i + 1}`,
+          pt[i] || pt[0] || '', h[i] || h[0] || '', d[i] || d[0] || '',
+          ad.cta || 'LEARN_MORE',
+          '{YOUR_LANDING_PAGE_URL}', 'PAUSED',
+        ]);
+      }
+
+      const toCsv = (rows) => rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+
+      return res.json({
+        format: 'meta_ads_manager',
+        instructions: [
+          '1. Open Meta Ads Manager (business.facebook.com)',
+          '2. Use the campaign data below to set up your campaign',
+          '3. Campaign Name, Objective, Budget → Campaign level',
+          '4. Targeting, Placements, Optimization → Ad Set level',
+          '5. Primary Text, Headline, Description, CTA → Ad level',
+          '6. Replace {YOUR_LANDING_PAGE_URL} with your actual URL',
+          '7. Add your image/video creative in Ads Manager',
+          '8. Campaign starts PAUSED — enable when ready',
+        ],
+        files: {
+          'campaign.csv': toCsv(rows),
+        },
+        api_payload: {
+          campaign: {
+            name, objective: objMap[objective] || 'OUTCOME_SALES', status: 'PAUSED',
+            special_ad_categories: [],
+            daily_budget: String((Number(budget) || 50) * 100),
+          },
+          adSet: {
+            name: `${name} - Ad Set 1`,
+            optimization_goal: objective === 'traffic' ? 'LINK_CLICKS' : 'OFFSITE_CONVERSIONS',
+            billing_event: 'IMPRESSIONS',
+            targeting: {
+              age_min: Number(ageMin), age_max: Number(ageMax),
+              interests: (targeting.interests || []).map(i => ({ name: i })),
+              publisher_platforms: placements ? undefined : ['facebook', 'instagram'],
+            },
+          },
+          adCreative: {
+            name: `${name} - Creative`,
+            object_story_spec: {
+              link_data: {
+                message: pt[0] || '',
+                name: h[0] || '',
+                description: d[0] || '',
+                call_to_action: { type: ad.cta?.toUpperCase().replace(/\s+/g, '_') || 'LEARN_MORE' },
+                link: '{YOUR_LANDING_PAGE_URL}',
+              },
+            },
+          },
+        },
+      });
+    }
+
+    if (platform === 'tiktok') {
+      const h = ad.headlines || [];
+      const texts = ad.primary_texts || ad.descriptions || [];
+      const hashtags = ad.extras?.hashtags || [];
+
+      return res.json({
+        format: 'tiktok_ads_manager',
+        instructions: [
+          '1. Open TikTok Ads Manager (ads.tiktok.com)',
+          '2. Create Campaign → set objective and budget',
+          '3. Create Ad Group → set targeting and placements',
+          '4. Create Ad → paste text, upload video creative',
+          '5. Use the hashtags and hook suggestions in your video',
+          '6. Campaign starts PAUSED — enable when ready',
+        ],
+        files: null,
+        campaign_setup: {
+          campaign: { name, objective: objective || 'conversions', budget_mode: 'BUDGET_MODE_DAY', budget: budget || '50', status: 'CAMPAIGN_STATUS_DISABLE' },
+          adGroup: {
+            name: `${name} - Ad Group`,
+            placement_type: 'PLACEMENT_TYPE_NORMAL',
+            placements: (targeting.placements || []).length > 0 ? targeting.placements : ['TikTok'],
+            audience: targeting.audience_segments || [],
+            interests: targeting.interests || [],
+            age_groups: targeting.demographics || '18-55',
+            optimization_goal: objective === 'traffic' ? 'CLICK' : 'CONVERT',
+          },
+          ads: texts.slice(0, 3).map((text, i) => ({
+            name: `${name} - Ad ${i + 1}`,
+            text,
+            headline: h[i] || h[0] || '',
+            call_to_action: ad.cta || 'LEARN_MORE',
+            hashtags: hashtags.slice(0, 5),
+            landing_page: '{YOUR_LANDING_PAGE_URL}',
+          })),
+          hooks: ad.extras?.hooks || [],
+          music_suggestions: ad.extras?.music || [],
+        },
+        api_payload: {
+          campaign: {
+            campaign_name: name,
+            objective_type: objective === 'traffic' ? 'TRAFFIC' : objective === 'awareness' ? 'REACH' : 'CONVERSIONS',
+            budget_mode: 'BUDGET_MODE_DAY',
+            budget: (Number(budget) || 50).toFixed(2),
+            operation_status: 'DISABLE',
+          },
+        },
+      });
+    }
+
+    if (platform === 'linkedin') {
+      const h = ad.headlines || [];
+      const texts = ad.primary_texts || [];
+      const d = ad.descriptions || [];
+      const objMap = { conversions: 'WEBSITE_CONVERSIONS', traffic: 'WEBSITE_VISITS', awareness: 'BRAND_AWARENESS', leads: 'LEAD_GENERATION' };
+
+      return res.json({
+        format: 'linkedin_campaign_manager',
+        instructions: [
+          '1. Open LinkedIn Campaign Manager (linkedin.com/campaignmanager)',
+          '2. Create Campaign Group → set budget',
+          '3. Create Campaign → set objective, audience, format',
+          '4. Create Ads → paste introductory text, headline, description',
+          '5. Add your image/video creative',
+          '6. Campaign starts PAUSED — enable when ready',
+        ],
+        files: null,
+        campaign_setup: {
+          campaign: {
+            name, objective: objMap[objective] || 'WEBSITE_CONVERSIONS',
+            dailyBudget: { amount: budget || '50', currencyCode: 'USD' },
+            status: 'PAUSED',
+            type: 'SPONSORED_UPDATES',
+          },
+          targeting: {
+            jobTitles: targeting.audience_segments || [],
+            industries: targeting.interests || [],
+            seniority: targeting.demographics || '',
+          },
+          ads: h.slice(0, 3).map((headline, i) => ({
+            name: `${name} - Ad ${i + 1}`,
+            introductoryText: texts[i] || texts[0] || '',
+            headline,
+            description: d[i] || d[0] || '',
+            callToAction: ad.cta?.toUpperCase().replace(/\s+/g, '_') || 'LEARN_MORE',
+            landingPageUrl: '{YOUR_LANDING_PAGE_URL}',
+          })),
+        },
+      });
+    }
+
+    return res.status(400).json({ error: `Unsupported platform: ${platform}` });
+  } catch (err) {
+    console.error('Export config error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /video-script — SSE: generate video ad script for TikTok or YouTube
 router.post('/video-script', async (req, res) => {
   const sse = setupSSE(res);

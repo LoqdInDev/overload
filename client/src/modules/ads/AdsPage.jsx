@@ -221,6 +221,10 @@ export default function AdsPage() {
   const [scriptDuration, setScriptDuration] = useState('30');
   const [copied, setCopied] = useState(false);
 
+  // Export
+  const [exportConfig, setExportConfig] = useState(null);
+  const [exportLoading, setExportLoading] = useState(false);
+
   // History
   const [savedCampaigns, setSavedCampaigns] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -255,6 +259,7 @@ export default function AdsPage() {
     setVideoScript(null);
     setAdaptResults({});
     setShowPreview(false);
+    setExportConfig(null);
 
     const platform = PLATFORMS.find(p => p.id === activePlatform);
     const objective = OBJECTIVES.find(o => o.id === campaign.objective);
@@ -346,6 +351,43 @@ export default function AdsPage() {
     navigator.clipboard.writeText(JSON.stringify(result, null, 2));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const exportForPlatform = async () => {
+    if (!result || !activePlatform) return;
+    setExportLoading(true);
+    try {
+      const data = await postJSON('/api/ads/export-config', {
+        campaign_result: result,
+        platform: activePlatform,
+        budget: campaign.budget,
+        objective: campaign.objective,
+      });
+      setExportConfig(data);
+    } catch (err) { showToast(err.message || 'Export failed'); }
+    setExportLoading(false);
+  };
+
+  const downloadFile = (filename, content) => {
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(`Downloaded ${filename}`, 'success');
+  };
+
+  const downloadJSON = (filename, obj) => {
+    const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(`Downloaded ${filename}`, 'success');
   };
 
   const deleteCampaign = async (id) => {
@@ -685,6 +727,9 @@ export default function AdsPage() {
                     <button onClick={() => setShowPreview(p => !p)} className="chip text-xs" style={showPreview ? { background: `${platform?.color}20`, borderColor: `${platform?.color}40`, color: platform?.color } : {}}>
                       {showPreview ? 'Hide Preview' : 'Ad Preview'}
                     </button>
+                    <button onClick={exportForPlatform} disabled={exportLoading} className="chip text-xs" style={{ background: '#f59e0b15', borderColor: '#f59e0b30', color: '#f59e0b' }}>
+                      {exportLoading ? 'Exporting...' : exportConfig ? 'Re-export' : `Export for ${platform?.name || 'Platform'}`}
+                    </button>
                   </div>
                 </div>
 
@@ -695,6 +740,68 @@ export default function AdsPage() {
                     <div className="flex justify-center">
                       <AdPreview platform={activePlatform} adContent={result.ad_content} />
                     </div>
+                  </div>
+                )}
+
+                {/* Export Config */}
+                {exportConfig && (
+                  <div className="panel rounded-2xl p-4 sm:p-6 animate-fade-up" style={{ borderColor: '#f59e0b20', background: '#f59e0b05' }}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#f59e0b' }} />
+                        <p className="hud-label text-[11px]" style={{ color: '#f59e0b' }}>
+                          {(exportConfig.format || '').replace(/_/g, ' ').toUpperCase()} — READY TO IMPORT
+                        </p>
+                      </div>
+                      <button onClick={() => setExportConfig(null)} className="text-gray-600 hover:text-gray-400 text-xs">&times;</button>
+                    </div>
+
+                    {/* Step-by-step instructions */}
+                    <div className="mb-5">
+                      <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-3">How to Import</p>
+                      <ol className="space-y-1.5">
+                        {(exportConfig.instructions || []).map((step, i) => (
+                          <li key={i} className="flex items-start gap-2.5 text-xs text-gray-400">
+                            <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold" style={{ background: '#f59e0b18', color: '#f59e0b' }}>{i + 1}</span>
+                            {step.replace(/^\d+\.\s*/, '')}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+
+                    {/* Downloadable CSV files */}
+                    {exportConfig.files && Object.entries(exportConfig.files).some(([, v]) => v) && (
+                      <div className="mb-5">
+                        <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-3">Download CSV Files</p>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(exportConfig.files).map(([name, content]) => content && (
+                            <button key={name} onClick={() => downloadFile(`${slugify(campaign.name || 'campaign')}-${name}`, content)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-indigo-500/8 bg-white/[0.01] hover:border-amber-500/30 hover:bg-amber-500/5 text-gray-400 hover:text-amber-400 transition-all text-sm">
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                              {name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* API-ready payload */}
+                    {(exportConfig.api_payload || exportConfig.campaign_setup) && (
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">API-Ready Payload</p>
+                          <div className="flex gap-2">
+                            <button onClick={() => {
+                              navigator.clipboard.writeText(JSON.stringify(exportConfig.api_payload || exportConfig.campaign_setup, null, 2));
+                              showToast('API payload copied!', 'success');
+                            }} className="chip text-[10px]">Copy JSON</button>
+                            <button onClick={() => downloadJSON(`${slugify(campaign.name || 'campaign')}-${activePlatform}-api-payload.json`, exportConfig.api_payload || exportConfig.campaign_setup)} className="chip text-[10px]">Download</button>
+                          </div>
+                        </div>
+                        <pre className="text-[11px] text-gray-500 bg-black/40 rounded-xl p-4 overflow-x-auto max-h-60 scrollbar-thin font-mono leading-relaxed">
+                          {JSON.stringify(exportConfig.api_payload || exportConfig.campaign_setup, null, 2)}
+                        </pre>
+                      </div>
+                    )}
                   </div>
                 )}
 
