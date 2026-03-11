@@ -2126,6 +2126,102 @@
   width: 48px;
 }
 
+/* ── 3D Rotating Card Carousel ── */
+.lp-carousel-wrapper {
+  width: 100%;
+  height: 320px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-top: 48px;
+}
+@media (min-width: 768px) {
+  .lp-carousel-wrapper {
+    height: 380px;
+    margin-top: 56px;
+  }
+}
+.lp-carousel-inner {
+  --w: 180px;
+  --h: 200px;
+  --translateZ: 340px;
+  --rotateX: -12deg;
+  --perspective: 1200px;
+  position: absolute;
+  width: var(--w);
+  height: var(--h);
+  top: 18%;
+  left: calc(50% - (var(--w) / 2));
+  transform-style: preserve-3d;
+  transform: perspective(var(--perspective));
+  animation: lp-carousel-spin 24s linear infinite;
+}
+@media (min-width: 768px) {
+  .lp-carousel-inner {
+    --w: 220px;
+    --h: 220px;
+    --translateZ: 420px;
+  }
+}
+@media (min-width: 1024px) {
+  .lp-carousel-inner {
+    --w: 240px;
+    --h: 230px;
+    --translateZ: 480px;
+  }
+}
+.lp-carousel-wrapper:hover .lp-carousel-inner {
+  animation-play-state: paused;
+}
+@keyframes lp-carousel-spin {
+  from {
+    transform: perspective(var(--perspective)) rotateX(var(--rotateX)) rotateY(0);
+  }
+  to {
+    transform: perspective(var(--perspective)) rotateX(var(--rotateX)) rotateY(1turn);
+  }
+}
+.lp-carousel-card {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  transform: rotateY(calc((360deg / var(--quantity)) * var(--index))) translateZ(var(--translateZ));
+  backface-visibility: hidden;
+}
+.lp-carousel-card-inner {
+  width: 100%;
+  height: 100%;
+  background: #1E1B18;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  box-shadow:
+    0 4px 24px rgba(0,0,0,0.3),
+    0 0 0 1px rgba(255,255,255,0.02) inset,
+    0 0 20px -4px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+.lp-carousel-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 8px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.02em;
+}
+.lp-carousel-card-body {
+  flex: 1;
+  min-height: 0;
+}
+
 /* ── Social proof logo bar ── */
 .lp-logo-bar {
   display: flex;

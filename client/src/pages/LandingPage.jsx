@@ -96,9 +96,170 @@ function AnimatedNumber({ value, suffix = '' }) {
 }
 
 /* ═══════════════════════════════════════════
-   HERO DASHBOARD MOCKUP
-   Pure CSS/JSX product preview
+   3D Rotating Card Carousel — Dashboard Previews
    ═══════════════════════════════════════════ */
+const CAROUSEL_CARDS = [
+  { title: 'Command Center', accent: '#C45D3E', content: (
+    <>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginBottom: 6 }}>
+        {[{ l: 'Revenue', v: '$24.8K', c: '#5E8E6E' }, { l: 'ROAS', v: '4.2x', c: '#5E8E6E' }, { l: 'Campaigns', v: '12', c: '#D4A017' }, { l: 'AI Actions', v: '847', c: '#C45D3E' }].map((s, i) => (
+          <div key={i} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 6, padding: '6px 8px' }}>
+            <div style={{ fontSize: 6, color: 'rgba(255,255,255,0.3)', marginBottom: 2 }}>{s.l}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: s.c }}>{s.v}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 40 }}>
+        {[28,35,32,45,42,55,48,62,58,72,68,78].map((h, j) => (
+          <div key={j} style={{ flex: 1, borderRadius: 2, height: `${h}%`, background: j >= 8 ? '#C45D3E' : 'rgba(255,255,255,0.08)' }} />
+        ))}
+      </div>
+    </>
+  )},
+  { title: 'Creative & Design', accent: '#8b5cf6', content: (
+    <>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
+        {['Product Shot', 'Ad Creative', 'Social Post', 'Banner'].map((t, i) => (
+          <div key={i} style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.15)', borderRadius: 6, padding: '10px 8px', textAlign: 'center' }}>
+            <div style={{ width: 20, height: 20, borderRadius: 4, background: 'rgba(139,92,246,0.15)', margin: '0 auto 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>
+              {['🖼', '📐', '📱', '🎨'][i]}
+            </div>
+            <div style={{ fontSize: 6.5, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>{t}</div>
+          </div>
+        ))}
+      </div>
+    </>
+  )},
+  { title: 'Paid Advertising', accent: '#10b981', content: (
+    <>
+      {[{ platform: 'Google Ads', spend: '$1,240', roas: '4.8x' }, { platform: 'Meta Ads', spend: '$860', roas: '3.2x' }, { platform: 'TikTok Ads', spend: '$420', roas: '5.1x' }].map((c, i) => (
+        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+          <div style={{ fontSize: 7, color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>{c.platform}</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.3)' }}>{c.spend}</span>
+            <span style={{ fontSize: 7, color: '#10b981', fontWeight: 600 }}>{c.roas}</span>
+          </div>
+        </div>
+      ))}
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 32, marginTop: 8 }}>
+        {[40,55,45,65,50,70,60,80,75,85].map((h, j) => (
+          <div key={j} style={{ flex: 1, borderRadius: 2, height: `${h}%`, background: j >= 7 ? '#10b981' : 'rgba(16,185,129,0.15)' }} />
+        ))}
+      </div>
+    </>
+  )},
+  { title: 'Analytics', accent: '#f43f5e', content: (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 55, position: 'relative' }}>
+        <svg viewBox="0 0 60 60" width="55" height="55">
+          <circle cx="30" cy="30" r="24" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="6" />
+          <circle cx="30" cy="30" r="24" fill="none" stroke="#f43f5e" strokeWidth="6" strokeDasharray="100 51" strokeLinecap="round" transform="rotate(-90 30 30)" />
+          <circle cx="30" cy="30" r="24" fill="none" stroke="#10b981" strokeWidth="6" strokeDasharray="35 116" strokeDashoffset="-100" strokeLinecap="round" transform="rotate(-90 30 30)" />
+        </svg>
+        <div style={{ position: 'absolute', textAlign: 'center' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#E8E4DE' }}>66%</div>
+          <div style={{ fontSize: 5, color: 'rgba(255,255,255,0.3)' }}>Conv. Rate</div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 4 }}>
+        {[{ c: '#f43f5e', l: 'Organic' }, { c: '#10b981', l: 'Paid' }, { c: 'rgba(255,255,255,0.15)', l: 'Other' }].map((x, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <div style={{ width: 5, height: 5, borderRadius: 2, background: x.c }} />
+            <span style={{ fontSize: 6, color: 'rgba(255,255,255,0.35)' }}>{x.l}</span>
+          </div>
+        ))}
+      </div>
+    </>
+  )},
+  { title: 'Video Marketing', accent: '#C45D3E', content: (
+    <>
+      <div style={{ display: 'flex', gap: 5 }}>
+        {[1,2,3].map(i => (
+          <div key={i} style={{ flex: 1, aspectRatio: '9/16', borderRadius: 6, background: `linear-gradient(135deg, rgba(196,93,62,${0.08 + i*0.06}), rgba(30,27,24,0.9))`, border: '1px solid rgba(196,93,62,0.12)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+            <div style={{ width: 14, height: 14, borderRadius: '50%', background: 'rgba(196,93,62,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 0, height: 0, borderLeft: '5px solid #C45D3E', borderTop: '3px solid transparent', borderBottom: '3px solid transparent', marginLeft: 1 }} />
+            </div>
+            <div style={{ fontSize: 5.5, color: 'rgba(255,255,255,0.3)' }}>Scene {i}</div>
+          </div>
+        ))}
+      </div>
+    </>
+  )},
+  { title: 'AI Content', accent: '#D4A017', content: (
+    <>
+      {['Blog: 10 SEO Tips for 2026', 'Ad Copy: Summer Sale Campaign', 'Email: Welcome Sequence #3'].map((t, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+          <div style={{ width: 16, height: 16, borderRadius: 4, background: 'rgba(212,160,23,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span style={{ fontSize: 7 }}>{['📝', '📣', '✉️'][i]}</span>
+          </div>
+          <div style={{ fontSize: 6.5, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>{t}</div>
+          <div style={{ marginLeft: 'auto', fontSize: 6, color: '#5E8E6E', fontWeight: 600, flexShrink: 0 }}>Done</div>
+        </div>
+      ))}
+      <div style={{ display: 'flex', gap: 3, marginTop: 6 }}>
+        {['SEO', 'Email', 'Social', 'Ads'].map((tag, i) => (
+          <span key={i} style={{ fontSize: 5.5, padding: '2px 6px', borderRadius: 4, background: 'rgba(212,160,23,0.08)', color: '#D4A017', fontWeight: 500 }}>{tag}</span>
+        ))}
+      </div>
+    </>
+  )},
+  { title: 'Social Media', accent: '#6366f1', content: (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: 8 }}>
+        {[{ p: 'Instagram', n: '12.4K', c: '#E1306C' }, { p: 'Twitter', n: '8.2K', c: '#1DA1F2' }, { p: 'LinkedIn', n: '5.1K', c: '#0A66C2' }].map((s, i) => (
+          <div key={i} style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: s.c }}>{s.n}</div>
+            <div style={{ fontSize: 5.5, color: 'rgba(255,255,255,0.3)', marginTop: 1 }}>{s.p}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 28 }}>
+        {[30,45,35,55,50,65,60,72,58,80].map((h, j) => (
+          <div key={j} style={{ flex: 1, borderRadius: 2, height: `${h}%`, background: j >= 7 ? '#6366f1' : 'rgba(99,102,241,0.15)' }} />
+        ))}
+      </div>
+    </>
+  )},
+  { title: 'The Advisor', accent: '#5E8E6E', content: (
+    <>
+      <div style={{ background: 'rgba(94,142,110,0.06)', border: '1px solid rgba(94,142,110,0.12)', borderRadius: 6, padding: '6px 8px', marginBottom: 6 }}>
+        <div style={{ fontSize: 6, color: '#5E8E6E', fontWeight: 600, marginBottom: 3 }}>Daily Briefing</div>
+        <div style={{ fontSize: 6, color: 'rgba(255,255,255,0.4)', lineHeight: 1.4 }}>Revenue up 18% vs last week. Meta ROAS dropped — suggest reallocating $200 to Google.</div>
+      </div>
+      {[{ text: 'Pause underperforming Meta ad set', priority: 'High' }, { text: 'Scale Google brand campaign +15%', priority: 'Med' }].map((a, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 0', borderBottom: i === 0 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+          <div style={{ width: 4, height: 4, borderRadius: 2, background: a.priority === 'High' ? '#C45D3E' : '#D4A017', flexShrink: 0 }} />
+          <span style={{ fontSize: 6, color: 'rgba(255,255,255,0.45)', flex: 1 }}>{a.text}</span>
+          <span style={{ fontSize: 5.5, color: a.priority === 'High' ? '#C45D3E' : '#D4A017', fontWeight: 600 }}>{a.priority}</span>
+        </div>
+      ))}
+    </>
+  )},
+];
+
+function HeroCarousel() {
+  const quantity = CAROUSEL_CARDS.length;
+  return (
+    <div className="lp-carousel-wrapper">
+      <div className="lp-carousel-inner" style={{ '--quantity': quantity }}>
+        {CAROUSEL_CARDS.map((card, i) => (
+          <div key={i} className="lp-carousel-card" style={{ '--index': i }}>
+            <div className="lp-carousel-card-inner" style={{ '--accent': card.accent }}>
+              <div className="lp-carousel-card-header">
+                <div style={{ width: 5, height: 5, borderRadius: 2, background: card.accent, flexShrink: 0 }} />
+                <span>{card.title}</span>
+              </div>
+              <div className="lp-carousel-card-body">
+                {card.content}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function HeroDashboard() {
   return (
     <div className="lp-hero-mockup">
@@ -558,13 +719,9 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Hero product mockup — elevated with gradient border */}
-        <div className="lp-hero-mockup-wrap lp-hero-anim">
-          <div style={{ opacity: 0, animation: 'lp-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.8s forwards' }}>
-            <div className="lp-hero-mockup-border">
-              <HeroDashboard />
-            </div>
-          </div>
+        {/* Hero 3D carousel */}
+        <div className="lp-hero-anim" style={{ opacity: 0, animation: 'lp-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.8s forwards' }}>
+          <HeroCarousel />
         </div>
       </section>
 
