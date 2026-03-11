@@ -26,34 +26,11 @@ async function initDatabase() {
     );
   `);
 
-  // FTS5 full-text search virtual table
-  await db.exec(`
-    CREATE VIRTUAL TABLE IF NOT EXISTS kb_fts USING fts5(
-      title,
-      content,
-      category,
-      content='kb_articles',
-      content_rowid='id'
-    );
-  `);
-
-  // Sync FTS index with existing articles
-  try {
-    await db.exec(`INSERT INTO kb_fts(kb_fts) VALUES('rebuild')`);
-  } catch {}
-
+  // PostgreSQL full-text search index (GIN on tsvector)
   try {
     await db.exec(`
-      CREATE TRIGGER IF NOT EXISTS kb_articles_ai AFTER INSERT ON kb_articles BEGIN
-        INSERT INTO kb_fts(rowid, title, content, category) VALUES (new.id, new.title, new.content, new.category);
-      END;
-      CREATE TRIGGER IF NOT EXISTS kb_articles_ad AFTER DELETE ON kb_articles BEGIN
-        INSERT INTO kb_fts(kb_fts, rowid, title, content, category) VALUES('delete', old.id, old.title, old.content, old.category);
-      END;
-      CREATE TRIGGER IF NOT EXISTS kb_articles_au AFTER UPDATE ON kb_articles BEGIN
-        INSERT INTO kb_fts(kb_fts, rowid, title, content, category) VALUES('delete', old.id, old.title, old.content, old.category);
-        INSERT INTO kb_fts(rowid, title, content, category) VALUES (new.id, new.title, new.content, new.category);
-      END;
+      CREATE INDEX IF NOT EXISTS idx_kb_articles_search
+      ON kb_articles USING gin(to_tsvector('english', COALESCE(title,'') || ' ' || COALESCE(content,'')));
     `);
   } catch {}
 }

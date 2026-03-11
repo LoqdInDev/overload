@@ -23,38 +23,41 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /search?q= — FTS5 full-text search across articles
+// GET /search?q= — full-text search across articles (PostgreSQL tsvector/tsquery with ILIKE fallback)
 router.get('/search', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { q } = req.query;
     if (!q || q.trim().length < 2) return res.json([]);
 
-    // FTS5 search with snippet highlighting
-    const results = db.prepare(`
-      SELECT a.*, snippet(kb_fts, 1, '<mark>', '</mark>', '...', 32) as excerpt
-      FROM kb_fts
-      JOIN kb_articles a ON a.id = kb_fts.rowid
-      WHERE kb_fts MATCH ? AND a.workspace_id = ? AND (a.status = 'published' OR a.status IS NULL OR a.status = 'draft')
-      ORDER BY rank
-      LIMIT 20
-    `).all(`${q.trim()}*`, wsId);
+    const term = q.trim();
+
+    // Try PostgreSQL full-text search first, fall back to ILIKE
+    let results;
+    try {
+      results = await db.prepare(`
+        SELECT *, ts_headline('english', COALESCE(content,''), plainto_tsquery('english', $1),
+          'StartSel=<mark>, StopSel=</mark>, MaxFragments=1, MaxWords=32') as excerpt
+        FROM kb_articles
+        WHERE workspace_id = $2
+          AND (status = 'published' OR status IS NULL OR status = 'draft')
+          AND to_tsvector('english', COALESCE(title,'') || ' ' || COALESCE(content,'')) @@ plainto_tsquery('english', $1)
+        ORDER BY ts_rank(to_tsvector('english', COALESCE(title,'') || ' ' || COALESCE(content,'')), plainto_tsquery('english', $1)) DESC
+        LIMIT 20
+      `).all(term, wsId);
+    } catch {
+      // Fallback to ILIKE search
+      results = await db.prepare(`
+        SELECT * FROM kb_articles
+        WHERE workspace_id = $1 AND (title ILIKE $2 OR content ILIKE $2)
+          AND (status = 'published' OR status IS NULL OR status = 'draft')
+        LIMIT 20
+      `).all(wsId, `%${term}%`);
+    }
 
     res.json(results);
   } catch (err) {
-    // Fallback to LIKE search if FTS fails
-    try {
-      const wsId = req.workspace.id;
-      const { q } = req.query;
-      const results = db.prepare(`
-        SELECT * FROM kb_articles
-        WHERE workspace_id = ? AND (title LIKE ? OR content LIKE ?)
-        LIMIT 20
-      `).all(wsId, `%${q}%`, `%${q}%`);
-      res.json(results);
-    } catch (e2) {
-      res.status(500).json({ error: err.message });
-    }
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -97,7 +100,7 @@ router.put('/:id', async (req, res) => {
 
     const { title, slug, content, category, status } = req.body;
     db.prepare(
-      'UPDATE kb_articles SET title = ?, slug = ?, content = ?, category = ?, status = ?, updated_at = datetime(\'now\') WHERE id = ? AND workspace_id = ?'
+      'UPDATE kb_articles SET title = ?, slug = ?, content = ?, category = ?, status = ?, updated_at = NOW() WHERE id = ? AND workspace_id = ?'
     ).run(
       title || existing.title,
       slug !== undefined ? slug : existing.slug,
