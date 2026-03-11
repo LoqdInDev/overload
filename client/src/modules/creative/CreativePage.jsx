@@ -134,28 +134,28 @@ const DIMENSIONS = {
 
 const TEMPLATES = {
   'ad-creative': [
-    { name: 'Product Showcase', prompt: 'Create a clean product showcase ad featuring the product centered on a gradient background with bold headline text and a clear CTA button' },
-    { name: 'Before & After', prompt: 'Design a split-screen before/after comparison ad showing transformation results with compelling stats overlay' },
-    { name: 'Social Proof', prompt: 'Create a testimonial-style ad with a customer quote, star rating, product image, and trust badges' },
-    { name: 'Limited Offer', prompt: 'Design an urgency-driven flash sale ad with countdown timer visual, discount badge, and product hero shot' },
+    { name: 'Product Showcase', subject: 'product showcase ad', builder: { vibe: 'clean', composition: 'centered', background: 'gradient', lighting: 'studio' } },
+    { name: 'Before & After', subject: 'before & after comparison ad', builder: { composition: 'split', vibe: 'bold', lighting: 'studio' } },
+    { name: 'Social Proof', subject: 'testimonial-style ad with social proof', builder: { vibe: 'clean', composition: 'centered', lighting: 'natural' } },
+    { name: 'Limited Offer', subject: 'flash sale ad with urgency', builder: { vibe: 'bold', composition: 'centered', lighting: 'dramatic' } },
   ],
   'product-photo': [
-    { name: 'Studio White', prompt: 'Professional product photo on pure white background with soft studio lighting, subtle shadows, and clean reflections' },
-    { name: 'Lifestyle Scene', prompt: 'Product placed in a natural lifestyle setting that matches the brand aesthetic — warm lighting, styled environment' },
-    { name: 'Flat Lay', prompt: 'Top-down flat lay arrangement with the product surrounded by complementary props and texture elements' },
-    { name: 'Close-Up Detail', prompt: 'Macro close-up shot highlighting product texture, material quality, and craftsmanship details' },
+    { name: 'Studio White', subject: 'professional product photo', builder: { setting: 'studio', background: 'white', lighting: 'studio', composition: 'centered' } },
+    { name: 'Lifestyle Scene', subject: 'lifestyle product photo', builder: { setting: 'home', vibe: 'natural', lighting: 'natural', background: 'location' } },
+    { name: 'Flat Lay', subject: 'flat lay product arrangement', builder: { composition: 'flatlay', lighting: 'natural', background: 'white' } },
+    { name: 'Close-Up Detail', subject: 'macro close-up product detail', builder: { composition: 'closeup', lighting: 'studio', vibe: 'clean' } },
   ],
   'social-graphic': [
-    { name: 'Quote Card', prompt: 'Create an elegant quote card with typography, brand colors, subtle background pattern, and logo placement' },
-    { name: 'Infographic', prompt: 'Design a data-driven infographic with charts, icons, key stats, and a visual hierarchy for easy scanning' },
-    { name: 'Announcement', prompt: 'Bold announcement graphic with large text, decorative elements, and exciting visual treatment' },
-    { name: 'Carousel Slide', prompt: 'Design a swipeable carousel slide with consistent branding, numbered sequence, and educational content' },
+    { name: 'Quote Card', subject: 'elegant quote card', builder: { vibe: 'luxury', composition: 'centered', background: 'gradient' } },
+    { name: 'Infographic', subject: 'data-driven infographic', builder: { vibe: 'clean', composition: 'centered', background: 'white' } },
+    { name: 'Announcement', subject: 'bold announcement graphic', builder: { vibe: 'bold', composition: 'centered', lighting: 'dramatic' } },
+    { name: 'Carousel Slide', subject: 'carousel slide with branding', builder: { vibe: 'clean', composition: 'centered', background: 'gradient' } },
   ],
   'banner': [
-    { name: 'Hero CTA', prompt: 'Create a hero banner with headline, subtext, product image, and prominent call-to-action button' },
-    { name: 'Event Promo', prompt: 'Design an event promotion banner with date, venue details, speaker photos, and registration CTA' },
-    { name: 'Sale Banner', prompt: 'Bold sale banner with percentage off, product thumbnails, and urgency messaging' },
-    { name: 'Newsletter Header', prompt: 'Clean email newsletter header banner with logo, tagline, and subtle branding elements' },
+    { name: 'Hero CTA', subject: 'hero banner with CTA', builder: { composition: 'centered', background: 'gradient', lighting: 'studio' } },
+    { name: 'Event Promo', subject: 'event promotion banner', builder: { vibe: 'bold', composition: 'centered', lighting: 'dramatic' } },
+    { name: 'Sale Banner', subject: 'sale banner with discount', builder: { vibe: 'bold', composition: 'centered', background: 'gradient' } },
+    { name: 'Newsletter Header', subject: 'email newsletter header', builder: { vibe: 'clean', composition: 'centered', background: 'white' } },
   ],
 };
 
@@ -500,6 +500,18 @@ export default function CreativePage() {
   const [expandedAttr, setExpandedAttr] = useState(null);
   const pickAttr = (setter, id, current, attr) => { setter(id === current ? '' : id); setExpandedAttr(null); };
 
+  const applyTemplate = (t) => {
+    setBuilderSubject(t.subject);
+    setPromptMode('builder');
+    const b = t.builder || {};
+    if (b.vibe) setBuilderVibe(b.vibe);
+    if (b.setting) setBuilderSetting(b.setting);
+    if (b.composition) setBuilderComposition(b.composition);
+    if (b.lighting) setBuilderLighting(b.lighting);
+    if (b.background) setBuilderBackground(b.background);
+    if (b.colorGrade) setBuilderColorGrade(b.colorGrade);
+  };
+
   const loadHistory = useCallback(async () => {
     setHistoryLoading(true);
     try {
@@ -802,14 +814,14 @@ export default function CreativePage() {
               tmpls.slice(0, 1).map(t => {
                 const ct = CREATIVE_TYPES.find(c => c.id === type);
                 return (
-                  <button key={`${type}-${t.name}`} onClick={() => { setActiveType(type); setPrompt(t.prompt); setPromptMode('manual'); setDimension(DIMENSIONS[type]?.[0]?.id || null); setActiveTab('generate'); setShowInput(true); }}
+                  <button key={`${type}-${t.name}`} onClick={() => { setActiveType(type); applyTemplate(t); setDimension(DIMENSIONS[type]?.[0]?.id || null); setActiveTab('generate'); setShowInput(true); }}
                     className="panel-interactive rounded-xl p-4 sm:p-5 text-left group">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-lg">{ct?.emoji}</span>
                       <p className="hud-label text-[10px]" style={{ color: ct?.accent || '#06b6d4' }}>{ct?.name}</p>
                     </div>
                     <p className="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">{t.name}</p>
-                    <p className="text-[11px] text-gray-600 mt-1 line-clamp-2 leading-relaxed">{t.prompt}</p>
+                    <p className="text-[11px] text-gray-600 mt-1 line-clamp-2 leading-relaxed">{t.subject}</p>
                   </button>
                 );
               })
@@ -1335,7 +1347,7 @@ export default function CreativePage() {
                               placeholder="e.g. a luxury skincare serum, a minimalist sneaker, a coffee brand..." />
                             <div className="flex flex-wrap gap-1.5">
                               {templates.map(t => (
-                                <button key={t.name} onClick={() => { setBuilderSubject(t.prompt.split(',')[0]); setPromptMode('manual'); setPrompt(t.prompt); }}
+                                <button key={t.name} onClick={() => applyTemplate(t)}
                                   className="chip text-[10px]">
                                   {t.name}
                                 </button>
@@ -1708,9 +1720,9 @@ export default function CreativePage() {
                       <div>
                         <div className="flex flex-wrap gap-1.5 mb-3">
                           {templates.map(t => (
-                            <button key={t.name} onClick={() => setPrompt(t.prompt)}
-                              className={`chip text-[10px] ${prompt === t.prompt ? 'active' : ''}`}
-                              style={prompt === t.prompt ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                            <button key={t.name} onClick={() => setPrompt(t.subject)}
+                              className={`chip text-[10px] ${prompt === t.subject ? 'active' : ''}`}
+                              style={prompt === t.subject ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
                               {t.name}
                             </button>
                           ))}
