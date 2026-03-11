@@ -31,11 +31,16 @@ const { db } = require('./db/database');
 
 // ── Production env var validation ─────────────────────────────────
 if (process.env.NODE_ENV === 'production') {
-  const required = ['JWT_SECRET', 'DATABASE_URL', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS', 'CORS_ORIGIN'];
+  const required = ['JWT_SECRET', 'DATABASE_URL'];
+  const recommended = ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS', 'CORS_ORIGIN'];
   const missing = required.filter(k => !process.env[k]);
   if (missing.length) {
     console.error(`FATAL: Missing required env vars in production: ${missing.join(', ')}`);
     process.exit(1);
+  }
+  const missingRec = recommended.filter(k => !process.env[k]);
+  if (missingRec.length) {
+    console.warn(`WARNING: Missing recommended env vars: ${missingRec.join(', ')}`);
   }
 }
 

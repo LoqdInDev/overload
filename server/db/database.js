@@ -15,7 +15,7 @@ pool.on('error', (err) => {
 });
 
 // ── Placeholder conversion: ? → $1, $2, ... ──────────────────────
-async function convertPlaceholders(sql) {
+function convertPlaceholders(sql) {
   let i = 0;
   // Don't replace ? inside string literals
   return sql.replace(/\?/g, () => `$${++i}`);
