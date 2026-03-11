@@ -106,73 +106,6 @@ function getGreeting() {
   return 'Good evening';
 }
 
-/* ─── Back to Top Button ─── */
-function BackToTop({ dark }) {
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const scroller = document.querySelector('[class*="overflow-y-auto"][class*="flex-1"]') || window;
-    const target = scroller === window ? document.documentElement : scroller;
-    const onScroll = () => setVisible((target.scrollTop || window.scrollY) > 400);
-    (scroller === window ? window : scroller).addEventListener('scroll', onScroll, { passive: true });
-    return () => (scroller === window ? window : scroller).removeEventListener('scroll', onScroll);
-  }, []);
-
-  const scrollUp = () => {
-    const scroller = document.querySelector('[class*="overflow-y-auto"][class*="flex-1"]');
-    if (scroller) scroller.scrollTo({ top: 0, behavior: 'smooth' });
-    else window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  return (
-    <button
-      onClick={scrollUp}
-      className="btt-btn"
-      style={{
-        position: 'fixed', bottom: 32, right: 32, zIndex: 50,
-        width: 50, height: 50, borderRadius: '50%',
-        background: dark ? 'rgb(30,27,24)' : 'rgb(20,20,20)',
-        border: 'none', cursor: 'pointer',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: '0 0 0 4px rgba(196,93,62,0.25)',
-        transition: 'all 0.3s ease',
-        overflow: 'hidden',
-        opacity: visible ? 1 : 0,
-        pointerEvents: visible ? 'auto' : 'none',
-        transform: visible ? 'translateY(0)' : 'translateY(20px)',
-      }}
-    >
-      <svg className="btt-icon" width="12" height="12" viewBox="0 0 384 512" fill="white" style={{ transition: 'transform 0.3s' }}>
-        <path d="M214.6 41.4c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 109.3 329.4 246.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-160-160z" />
-      </svg>
-      <style>{`
-        .btt-btn:hover {
-          width: 140px !important;
-          border-radius: 50px !important;
-          background-color: #C45D3E !important;
-        }
-        .btt-btn:hover .btt-icon {
-          transform: translateY(-200%);
-        }
-        .btt-btn::before {
-          position: absolute;
-          bottom: -20px;
-          content: "Back to Top";
-          color: white;
-          font-size: 0px;
-          font-weight: 600;
-          white-space: nowrap;
-        }
-        .btt-btn:hover::before {
-          font-size: 13px;
-          opacity: 1;
-          bottom: unset;
-          transition: 0.3s;
-        }
-      `}</style>
-    </button>
-  );
-}
-
 /* ═══════════════════════════════════════════
    COMMAND CENTER — Automation Mission Control
    ═══════════════════════════════════════════ */
@@ -855,9 +788,6 @@ export default function HomePage() {
           ))
         )}
       </div>
-
-      {/* ═══ BACK TO TOP ═══ */}
-      <BackToTop dark={dark} />
 
       {/* Breathing pulse keyframe */}
       <style>{`
