@@ -174,22 +174,77 @@ router.delete('/connections/:id', (req, res) => {
 });
 
 // POST /test-connection — test an integration connection
-router.post('/test-connection', (req, res) => {
-  const { integration_name, integration, integration_type } = req.body;
-  const effectiveName = integration_name || integration;
-  if (!effectiveName) return res.status(400).json({ error: 'integration required' });
+router.post('/test-connection', async (req, res) => {
+  const { platformId, integration_name, integration } = req.body;
+  const effectiveId = platformId || integration_name || integration;
+  if (!effectiveId) return res.status(400).json({ success: false, error: 'platformId required' });
 
-  // Simulate a connection test
-  const latency = Math.floor(Math.random() * 200) + 50;
-  const success = Math.random() > 0.1; // 90% success rate for demo
+  const wsId = req.workspace.id;
 
-  res.json({
-    integration: effectiveName,
-    status: success ? 'connected' : 'error',
-    latency_ms: latency,
-    message: success ? `Connected successfully (${latency}ms)` : 'Connection failed — check credentials',
-    tested_at: new Date().toISOString()
-  });
+  try {
+    // Look up the integration record from the database
+    const conn = db.prepare(
+      'SELECT * FROM int_connections WHERE provider_id = ? AND workspace_id = ?'
+    ).get(effectiveId, wsId);
+
+    if (!conn || !conn.credentials_enc) {
+      return res.json({ success: false, error: 'Not connected' });
+    }
+
+    const creds = conn.credentials_enc;
+    let config = {};
+    try { config = conn.config ? JSON.parse(conn.config) : {}; } catch { /* ignore */ }
+
+    const start = Date.now();
+    const provider = (conn.provider_id || '').toLowerCase();
+
+    if (provider === 'shopify') {
+      // Shopify: needs shop domain from config and the API token as credentials
+      const shop = config.shop || config.store || config.domain;
+      if (!shop) {
+        return res.json({ success: false, latency: Date.now() - start, error: 'Missing shop domain in config' });
+      }
+      const r = await fetch(`https://${shop}.myshopify.com/admin/api/2024-01/shop.json`, {
+        headers: { 'X-Shopify-Access-Token': creds },
+      });
+      const latency = Date.now() - start;
+      if (r.ok) {
+        return res.json({ success: true, latency });
+      }
+      return res.json({ success: false, latency, error: `Shopify returned ${r.status}` });
+
+    } else if (provider === 'google') {
+      const r = await fetch(`https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${creds}`);
+      const latency = Date.now() - start;
+      if (r.ok) {
+        return res.json({ success: true, latency });
+      }
+      return res.json({ success: false, latency, error: `Google returned ${r.status}` });
+
+    } else if (provider === 'meta' || provider === 'facebook') {
+      const r = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${creds}`);
+      const latency = Date.now() - start;
+      if (r.ok) {
+        return res.json({ success: true, latency });
+      }
+      return res.json({ success: false, latency, error: `Meta returned ${r.status}` });
+
+    } else {
+      // Generic: check if token is expired via expires_at
+      const latency = Date.now() - start;
+      if (config.expires_at) {
+        const expired = new Date(config.expires_at).getTime() < Date.now();
+        if (expired) {
+          return res.json({ success: false, latency, error: 'Token expired' });
+        }
+      }
+      // Credentials exist and are not expired — consider it valid
+      return res.json({ success: true, latency });
+    }
+  } catch (error) {
+    console.error('Test connection error:', error);
+    res.json({ success: false, error: error.message });
+  }
 });
 
 // GET /sync-health — get sync health for all integrations
