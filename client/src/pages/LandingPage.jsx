@@ -409,7 +409,7 @@ export default function LandingPage() {
     return () => observer.disconnect();
   }, []);
 
-  const go = () => navigate('/dashboard');
+  const go = () => navigate('/login');
 
   return (
     <div className="lp">
