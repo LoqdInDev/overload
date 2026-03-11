@@ -67,7 +67,7 @@ function getAllModuleSummary(workspaceId) {
 
   // Activity overview
   const weekActivity = safeGet(
-    "SELECT COUNT(*) as count FROM activity_log WHERE created_at >= datetime('now', '-7 days')",
+    "SELECT COUNT(*) as count FROM activity_log WHERE created_at >= NOW() - INTERVAL '7 days'",
     [], workspaceId
   );
   const recentActions = safeQuery(

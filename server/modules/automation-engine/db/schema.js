@@ -105,7 +105,7 @@ async function initDatabase() {
     )
   `);
 
-  // Add indexes for query performance (IF NOT EXISTS is implicit — SQLite ignores duplicates)
+  // Add indexes for query performance
   await db.exec(`CREATE INDEX IF NOT EXISTS idx_ae_approval_queue_ws_status ON ae_approval_queue(workspace_id, status)`);
   await db.exec(`CREATE INDEX IF NOT EXISTS idx_ae_action_log_ws_created ON ae_action_log(workspace_id, created_at DESC)`);
   await db.exec(`CREATE INDEX IF NOT EXISTS idx_ae_action_log_ws_module ON ae_action_log(workspace_id, module_id)`);
@@ -119,7 +119,7 @@ async function initDatabase() {
     for (const ws of workspaces) {
       for (const moduleId of AUTOMATABLE_MODULES) {
         await tx.prepare(
-          'INSERT OR IGNORE INTO ae_module_modes (module_id, mode, workspace_id) VALUES (?, ?, ?)'
+          'INSERT INTO ae_module_modes (module_id, mode, workspace_id) VALUES (?, ?, ?) ON CONFLICT DO NOTHING'
         ).run(moduleId, 'manual', ws.id);
       }
     }
@@ -160,7 +160,7 @@ async function _seedDemoDataInner(tx, wsId) {
   // --- Approval Queue (7 pending items) ---
   const insertApproval = tx.prepare(`
     INSERT INTO ae_approval_queue (module_id, action_type, title, description, payload, ai_confidence, priority, status, source, created_at, workspace_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 'ai', datetime('now', ?), ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 'ai', NOW() + CAST(? AS INTERVAL), ?)
   `);
 
   await insertApproval.run('content', 'publish_blog',
@@ -208,7 +208,7 @@ async function _seedDemoDataInner(tx, wsId) {
   // --- Action Log (25 entries across 3 days) ---
   const insertAction = tx.prepare(`
     INSERT INTO ae_action_log (module_id, action_type, mode, description, status, duration_ms, created_at, completed_at, workspace_id)
-    VALUES (?, ?, ?, ?, ?, ?, datetime('now', ?), datetime('now', ?, '+' || ? || ' seconds'), ?)
+    VALUES (?, ?, ?, ?, ?, ?, NOW() + CAST(? AS INTERVAL), NOW() + CAST(? AS INTERVAL) + CAST(? || ' seconds' AS INTERVAL), ?)
   `);
 
   const actions = [
@@ -246,7 +246,7 @@ async function _seedDemoDataInner(tx, wsId) {
   // --- Rules (10 automation rules) ---
   const insertRule = tx.prepare(`
     INSERT INTO ae_rules (module_id, name, trigger_type, trigger_config, action_type, action_config, requires_approval, status, last_triggered, run_count, created_at, workspace_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now', ?), ?, datetime('now', '-30 days'), ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW() + CAST(? AS INTERVAL), ?, NOW() - INTERVAL '30 days', ?)
   `);
 
   await insertRule.run('content', 'Weekly Blog Post Generator', 'schedule',
@@ -302,7 +302,7 @@ async function _seedDemoDataInner(tx, wsId) {
   // --- Notifications (15 demo notifications) ---
   const insertNotif = tx.prepare(`
     INSERT INTO ae_notifications (type, title, message, module_id, read, created_at, workspace_id)
-    VALUES (?, ?, ?, ?, ?, datetime('now', ?), ?)
+    VALUES (?, ?, ?, ?, ?, NOW() + CAST(? AS INTERVAL), ?)
   `);
 
   await insertNotif.run('action_completed', 'Newsletter sent successfully', 'Weekly newsletter "This Week in E-commerce" sent to 4,218 subscribers', 'email-sms', 0, '-1 hours', wsId);

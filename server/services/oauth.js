@@ -12,7 +12,7 @@ async function generateState(providerId, extraParams) {
   ).run(state, providerId, extraParams ? JSON.stringify(extraParams) : null);
   // Clean up states older than 10 minutes
   db.prepare(
-    "DELETE FROM int_oauth_states WHERE created_at < datetime('now', '-10 minutes')"
+    "DELETE FROM int_oauth_states WHERE created_at < NOW() - INTERVAL '10 minutes'"
   ).run();
   return state;
 }

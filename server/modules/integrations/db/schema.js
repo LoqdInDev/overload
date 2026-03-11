@@ -20,8 +20,8 @@ async function initDatabase() {
       last_sync TEXT,
       error_message TEXT,
       connected_at TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
@@ -34,7 +34,7 @@ async function initDatabase() {
       action TEXT,
       status TEXT,
       details TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (connection_id) REFERENCES int_connections(id) ON DELETE CASCADE
     )
   `);
@@ -45,7 +45,7 @@ async function initDatabase() {
       workspace_id TEXT,
       provider_id TEXT NOT NULL,
       extra_params TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     )
   `);
 }

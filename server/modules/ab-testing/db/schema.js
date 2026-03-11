@@ -12,8 +12,8 @@ async function initDatabase() {
       winner_variant TEXT,
       start_date TEXT,
       end_date TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
@@ -27,12 +27,12 @@ async function initDatabase() {
       impressions INTEGER DEFAULT 0,
       conversions INTEGER DEFAULT 0,
       click_rate REAL DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (test_id) REFERENCES abt_tests(id)
     )
   `);
 
-  try { await db.exec('ALTER TABLE abt_tests ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP'); } catch {}
+  try { await db.exec('ALTER TABLE abt_tests ADD COLUMN updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP'); } catch {}
 }
 
 module.exports = { initDatabase };

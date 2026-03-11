@@ -11,7 +11,7 @@ async function initDatabase() {
       secret TEXT,
       status TEXT DEFAULT 'active',
       last_triggered TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
@@ -24,7 +24,7 @@ async function initDatabase() {
       payload TEXT,
       response_status INTEGER,
       response_body TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (webhook_id) REFERENCES wh_webhooks(id)
     )
   `);

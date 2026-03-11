@@ -56,10 +56,10 @@ async function initDatabase() {
       const count = db.prepare('SELECT COUNT(*) as c FROM vm_campaigns').get().c;
       if (count === 0) {
         await db.exec(`
-          INSERT OR IGNORE INTO vm_campaigns SELECT * FROM campaigns;
-          INSERT OR IGNORE INTO vm_generations SELECT * FROM generations;
-          INSERT OR IGNORE INTO vm_favorites SELECT * FROM favorites;
-          INSERT OR IGNORE INTO vm_video_jobs SELECT * FROM video_jobs;
+          INSERT INTO vm_campaigns SELECT * FROM campaigns ON CONFLICT DO NOTHING;
+          INSERT INTO vm_generations SELECT * FROM generations ON CONFLICT DO NOTHING;
+          INSERT INTO vm_favorites SELECT * FROM favorites ON CONFLICT DO NOTHING;
+          INSERT INTO vm_video_jobs SELECT * FROM video_jobs ON CONFLICT DO NOTHING;
         `);
         console.log('  Migrated AdForge data to video-marketing module tables');
       }

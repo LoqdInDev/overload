@@ -9,7 +9,7 @@ async function initDatabase() {
       total_budget REAL,
       period TEXT,
       status TEXT DEFAULT 'active',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
@@ -22,8 +22,8 @@ async function initDatabase() {
       amount REAL,
       roas REAL,
       status TEXT DEFAULT 'active',
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (budget_id) REFERENCES bo_budgets(id)
     )
   `);

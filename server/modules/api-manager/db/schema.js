@@ -12,7 +12,7 @@ async function initDatabase() {
       usage_count INTEGER DEFAULT 0,
       status TEXT DEFAULT 'active',
       last_used TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
@@ -25,7 +25,7 @@ async function initDatabase() {
       method TEXT,
       status_code INTEGER,
       response_time INTEGER,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (key_id) REFERENCES api_keys(id)
     )
   `);
