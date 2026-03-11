@@ -534,20 +534,13 @@ export default function AdsPage() {
   // ── Optimizer Tab Content ───────────────────────────────────
   const optimizerContent = (
     <div className="animate-fade-in space-y-4">
-      {/* Plan gate */}
-      {userPlan !== 'autopilot' ? (
-        <div className="panel rounded-2xl p-8 text-center">
-          <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: '#10b98115', border: '1px solid #10b98130' }}>
-            <svg className="w-7 h-7" style={{ color: '#10b981' }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
-          </div>
-          <h3 className="text-lg font-bold text-white mb-2">Autopilot Plan Required</h3>
-          <p className="text-sm text-gray-400 mb-1">AI-powered campaign optimization runs autonomously on Autopilot.</p>
-          <p className="text-xs text-gray-500 mb-5">Your current plan: <span className="font-bold text-gray-300 capitalize">{userPlan}</span></p>
-          <a href="/billing" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all" style={{ background: '#10b981', color: '#fff' }}>
-            Upgrade to Autopilot — $299/mo
-          </a>
+      {/* Plan notice — visible but not blocking */}
+      {userPlan !== 'autopilot' && (
+        <div className="panel rounded-xl p-3 flex items-center gap-3" style={{ borderColor: '#f59e0b25', background: '#f59e0b08' }}>
+          <svg className="w-4 h-4 flex-shrink-0" style={{ color: '#f59e0b' }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+          <p className="text-xs text-gray-400">Autonomous optimization requires the <strong className="text-amber-400">Autopilot plan</strong>. You can preview the dashboard, but actions won't execute on a free plan.</p>
         </div>
-      ) : (
+      )}
         <>
           {/* Controls */}
           <div className="flex items-center justify-between">
@@ -666,7 +659,6 @@ export default function AdsPage() {
             </div>
           )}
         </>
-      )}
     </div>
   );
 
