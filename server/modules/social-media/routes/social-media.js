@@ -154,7 +154,7 @@ Make each post feel authentic and native to the platform, not like AI-generated 
     });
 
     // Save to database
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO sm_posts (platform, post_type, caption, hashtags, metadata, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(
       platform || 'multi',
@@ -164,10 +164,11 @@ Make each post feel authentic and native to the platform, not like AI-generated 
       JSON.stringify({ topic, tone, count, template, brand }),
       wsId
     );
+    const generateId = result.lastInsertRowid;
 
-    await logActivity('social', 'generate', `Generated ${platform || 'multi-platform'} ${postType || 'feed'} content`, topic, String(result.lastInsertRowid), wsId);
+    await logActivity('social', 'generate', `Generated ${platform || 'multi-platform'} ${postType || 'feed'} content`, topic, String(generateId), wsId);
 
-    sse.sendResult({ id: result.lastInsertRowid, content: text, platform, postType });
+    sse.sendResult({ id: generateId, content: text, platform, postType });
   } catch (error) {
     console.error('Social media generation error:', error);
     sse.sendError(error);
@@ -225,11 +226,12 @@ router.post('/posts', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { platform, post_type, caption, hashtags, media_notes, best_time, scheduled_at, status, metadata } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO sm_posts (platform, post_type, caption, hashtags, media_notes, best_time, scheduled_at, status, metadata, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(platform, post_type || 'feed', caption || null, hashtags || null, media_notes || null, best_time || null, scheduled_at || null, status || 'draft', metadata ? JSON.stringify(metadata) : null, wsId);
-    const post = await db.prepare('SELECT * FROM sm_posts WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
-    await logActivity('social', 'create', `Created ${platform} post`, caption?.slice(0, 80), String(result.lastInsertRowid), wsId);
+    const newPostId = result.lastInsertRowid;
+    const post = await db.prepare('SELECT * FROM sm_posts WHERE id = ? AND workspace_id = ?').get(newPostId, wsId);
+    await logActivity('social', 'create', `Created ${platform} post`, caption?.slice(0, 80), String(newPostId), wsId);
     res.status(201).json(post);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -244,7 +246,7 @@ router.put('/posts/:id', async (req, res) => {
     if (!existing) return res.status(404).json({ error: 'Post not found' });
 
     const { platform, post_type, caption, hashtags, media_notes, best_time, scheduled_at, status } = req.body;
-    db.prepare(
+    await db.prepare(
       `UPDATE sm_posts SET platform = ?, post_type = ?, caption = ?, hashtags = ?, media_notes = ?, best_time = ?, scheduled_at = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?`
     ).run(
       platform || existing.platform,
@@ -315,10 +317,11 @@ router.post('/calendar', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { title, platform, post_type, content_summary, scheduled_date, scheduled_time, status, post_id } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO sm_calendar (title, platform, post_type, content_summary, scheduled_date, scheduled_time, status, post_id, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(title, platform || null, post_type || null, content_summary || null, scheduled_date, scheduled_time || null, status || 'planned', post_id || null, wsId);
-    const entry = await db.prepare('SELECT * FROM sm_calendar WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    const newEntryId = result.lastInsertRowid;
+    const entry = await db.prepare('SELECT * FROM sm_calendar WHERE id = ? AND workspace_id = ?').get(newEntryId, wsId);
     res.status(201).json(entry);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -385,10 +388,10 @@ router.post('/accounts/:providerId/sync', async (req, res) => {
 
     const existing = await db.prepare('SELECT id FROM sm_accounts WHERE provider_id = ? AND workspace_id = ?').get(providerId, wsId);
     if (existing) {
-      db.prepare(`UPDATE sm_accounts SET username = ?, display_name = ?, avatar_url = ?, followers = ?, account_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?`)
+      await db.prepare(`UPDATE sm_accounts SET username = ?, display_name = ?, avatar_url = ?, followers = ?, account_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?`)
         .run(profile.username || profile.name, profile.name, profile.avatar || null, profile.followers || 0, profile.id, existing.id, wsId);
     } else {
-      db.prepare('INSERT INTO sm_accounts (provider_id, platform, account_id, username, display_name, avatar_url, followers, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      await db.prepare('INSERT INTO sm_accounts (provider_id, platform, account_id, username, display_name, avatar_url, followers, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
         .run(providerId, providerId, profile.id, profile.username || profile.name, profile.name, profile.avatar || null, profile.followers || 0, wsId);
     }
 
@@ -460,7 +463,7 @@ router.post('/publish', async (req, res) => {
 
     // Update post status in DB if postId provided
     if (postId) {
-      db.prepare("UPDATE sm_posts SET status = 'published', published_at = CURRENT_TIMESTAMP, external_post_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?")
+      await db.prepare("UPDATE sm_posts SET status = 'published', published_at = CURRENT_TIMESTAMP, external_post_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?")
         .run(result?.data?.id || result?.id || null, postId, wsId);
     }
 
@@ -593,10 +596,11 @@ Separate each platform with "---". Make each feel completely native.`;
     const { text } = await generateTextWithClaude(prompt, {
       onChunk: (c) => sse.sendChunk(c), maxTokens: 4096, temperature: 0.85,
     });
-    const result = db.prepare('INSERT INTO sm_posts (platform, post_type, caption, metadata, workspace_id) VALUES (?, ?, ?, ?, ?)')
+    const result = await db.prepare('INSERT INTO sm_posts (platform, post_type, caption, metadata, workspace_id) VALUES (?, ?, ?, ?, ?)')
       .run('multi', 'cross-platform', text, JSON.stringify({ brief, platforms: targetPlatforms }), wsId);
-    await logActivity('social', 'cross-platform', 'Generated cross-platform posts', brief.slice(0, 80), String(result.lastInsertRowid), wsId);
-    sse.sendResult({ id: result.lastInsertRowid, content: text });
+    const crossPlatformId = result.lastInsertRowid;
+    await logActivity('social', 'cross-platform', 'Generated cross-platform posts', brief.slice(0, 80), String(crossPlatformId), wsId);
+    sse.sendResult({ id: crossPlatformId, content: text });
   } catch (error) {
     console.error('Cross-platform error:', error);
     sse.sendError(error);
