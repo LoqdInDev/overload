@@ -713,6 +713,14 @@ export default function LandingPage() {
                 }}
               >{l}</a>
             ))}
+            <button
+              onClick={() => { setMobileMenu(false); setShowDemo(true); }}
+              className="text-[14px] font-medium flex items-center gap-2"
+              style={{ color: 'var(--lp-terra)', padding: '10px 0', borderBottom: '1px solid var(--lp-sand)' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ opacity: 0.7 }}><path d="M8 5v14l11-7z" /></svg>
+              Watch demo
+            </button>
             <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
               <button onClick={() => { setMobileMenu(false); go(); }} className="text-[13px] font-medium" style={{ color: 'var(--lp-muted)', padding: '10px 0' }}>Sign in</button>
               <button onClick={() => { setMobileMenu(false); go(); }} className="lp-cta lp-cta-terra" style={{ padding: '10px 26px', fontSize: 13, flex: 1, justifyContent: 'center' }}>Get Started</button>
