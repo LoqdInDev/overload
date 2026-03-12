@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import { fetchJSON, connectSSE, postJSON } from '../../lib/api';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
@@ -22,6 +22,19 @@ const TEMPLATES = [
   { name: '1-Star Crisis', prompt: 'Write a professional crisis response to a 1-star very negative review', stars: 1 },
 ];
 
+const SOURCE_COLORS = {
+  Google: '#3b82f6',
+  Yelp: '#ef4444',
+  Trustpilot: '#22c55e',
+  Amazon: '#f97316',
+  G2: '#e11d48',
+  'App Store': '#a855f7',
+  Facebook: '#2563eb',
+  BBB: '#16a34a',
+};
+
+const REVIEW_FILTERS = ['All', '5 Star', '4 Star', '3 Star', '2 Star', '1 Star', 'Needs Response', 'Has Response'];
+
 export default function ReviewsPage() {
   usePageTitle('Reviews & Reputation');
   const [activeTool, setActiveTool] = useState(null);
@@ -42,6 +55,9 @@ export default function ReviewsPage() {
   const [campaignType, setCampaignType] = useState('');
   const [campaignOutput, setCampaignOutput] = useState('');
   const [campaignLoading, setCampaignLoading] = useState(false);
+  const [reviewFilter, setReviewFilter] = useState('All');
+  const [bulkGenerating, setBulkGenerating] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
 
   useEffect(() => {
     fetchJSON('/api/reviews/stats')
@@ -52,6 +68,52 @@ export default function ReviewsPage() {
       .then(data => setReviews(Array.isArray(data) ? data : []))
       .catch(() => {});
   }, []);
+
+  /* Rating distribution: count reviews per star rating */
+  const ratingDistribution = useMemo(() => {
+    const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    reviews.forEach(r => { if (r.rating >= 1 && r.rating <= 5) counts[r.rating]++; });
+    const max = Math.max(...Object.values(counts), 1);
+    return [5, 4, 3, 2, 1].map(star => ({ star, count: counts[star], pct: (counts[star] / max) * 100 }));
+  }, [reviews]);
+
+  /* Source breakdown: count reviews per source */
+  const sourceBreakdown = useMemo(() => {
+    const map = {};
+    reviews.forEach(r => { const src = r.source || 'Unknown'; map[src] = (map[src] || 0) + 1; });
+    return Object.entries(map).sort((a, b) => b[1] - a[1]).map(([source, count]) => ({ source, count, color: SOURCE_COLORS[source] || '#6b7280' }));
+  }, [reviews]);
+
+  /* Filtered reviews */
+  const filteredReviews = useMemo(() => {
+    if (reviewFilter === 'All') return reviews;
+    if (reviewFilter === 'Needs Response') return reviews.filter(r => !responseData[r.id]);
+    if (reviewFilter === 'Has Response') return reviews.filter(r => !!responseData[r.id]);
+    const starVal = parseInt(reviewFilter);
+    if (!isNaN(starVal)) return reviews.filter(r => r.rating === starVal);
+    return reviews;
+  }, [reviews, reviewFilter, responseData]);
+
+  /* Bulk generate responses */
+  const handleBulkGenerate = async () => {
+    const needsResponse = reviews.filter(r => !responseData[r.id]).slice(0, 5);
+    if (needsResponse.length === 0) return;
+    setBulkGenerating(true);
+    setBulkProgress({ current: 0, total: needsResponse.length });
+    for (let i = 0; i < needsResponse.length; i++) {
+      const r = needsResponse[i];
+      setBulkProgress({ current: i + 1, total: needsResponse.length });
+      try {
+        const result = await postJSON('/api/reviews/generate-response', {
+          review_text: r.content,
+          rating: r.rating,
+          business_name: ''
+        });
+        setResponseData(prev => ({ ...prev, [r.id]: result }));
+      } catch {}
+    }
+    setBulkGenerating(false);
+  };
 
   const generate = () => {
     setGenerating(true); setOutput('');
@@ -78,6 +140,46 @@ export default function ReviewsPage() {
           <div key={i} className="panel stat-card rounded-2xl p-4 sm:p-6"><p className="hud-label text-[10px] mb-2">{s.l}</p><p className="text-2xl sm:text-3xl font-bold font-mono tabular-nums leading-none" style={{ color: s.c }}>{s.v}</p></div>
         ))}
       </div>
+
+      {/* Rating Distribution & Source Breakdown */}
+      {reviews.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
+          {/* Rating Distribution */}
+          <div className="panel rounded-2xl p-4 sm:p-6 animate-fade-in">
+            <p className="hud-label text-[10px] mb-4">RATING DISTRIBUTION</p>
+            <div className="space-y-2.5">
+              {ratingDistribution.map(({ star, count, pct }) => (
+                <div key={star} className="flex items-center gap-3">
+                  <span className="text-xs font-semibold text-gray-400 w-10 text-right flex-shrink-0">{star} star</span>
+                  <div className="flex-1 h-5 rounded-full overflow-hidden" style={{ background: 'rgba(234,179,8,0.06)' }}>
+                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: '#eab308', minWidth: count > 0 ? '4px' : '0px' }} />
+                  </div>
+                  <span className="text-xs font-mono text-gray-500 w-7 text-right flex-shrink-0">{count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Source Breakdown */}
+          <div className="panel rounded-2xl p-4 sm:p-6 animate-fade-in">
+            <p className="hud-label text-[10px] mb-4">REVIEW SOURCES</p>
+            {sourceBreakdown.length > 0 ? (
+              <div className="space-y-3">
+                {sourceBreakdown.map(({ source, count, color }) => (
+                  <div key={source} className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />
+                    <span className="text-sm text-gray-300 flex-1">{source}</span>
+                    <span className="text-xs font-mono text-gray-500">{count}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-600">No source data available</p>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-5 stagger">
         {TOOLS.map(t => (<button key={t.id} onClick={() => setActiveTool(t.id)} className="panel-interactive rounded-2xl p-4 sm:p-7 text-center group"><div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center" style={{ background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.12)' }}><svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={t.icon} /></svg></div><p className="text-sm font-bold text-gray-300 group-hover:text-white transition-colors">{t.name}</p></button>))}
       </div>
@@ -142,9 +244,37 @@ export default function ReviewsPage() {
       {/* Reviews list with generate response */}
       {reviews.length > 0 && (
         <div className="panel animate-fade-in" style={{ marginTop: 16 }}>
-          <div className="hud-label" style={{ marginBottom: 12 }}>Reviews ({reviews.length})</div>
+          {/* Header with bulk generate */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+            <div className="hud-label">Reviews ({filteredReviews.length}{filteredReviews.length !== reviews.length ? ` of ${reviews.length}` : ''})</div>
+            <button
+              className="chip text-[10px] flex-shrink-0"
+              style={{ color: '#eab308', borderColor: 'rgba(234,179,8,0.3)' }}
+              disabled={bulkGenerating}
+              onClick={handleBulkGenerate}
+            >
+              {bulkGenerating
+                ? `Generating ${bulkProgress.current}/${bulkProgress.total}...`
+                : 'Bulk Generate Responses'}
+            </button>
+          </div>
+
+          {/* Filter chips */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
+            {REVIEW_FILTERS.map(f => (
+              <button
+                key={f}
+                className="chip text-[10px]"
+                style={reviewFilter === f
+                  ? { background: 'rgba(234,179,8,0.15)', borderColor: 'rgba(234,179,8,0.3)', color: '#facc15' }
+                  : {}}
+                onClick={() => setReviewFilter(f)}
+              >{f}</button>
+            ))}
+          </div>
+
           <div className="divide-y divide-indigo-500/[0.04]">
-            {reviews.slice(0, 10).map(r => (
+            {filteredReviews.slice(0, 10).map(r => (
               <div key={r.id} style={{ padding: '10px 0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                   <div style={{ flex: 1 }}>
