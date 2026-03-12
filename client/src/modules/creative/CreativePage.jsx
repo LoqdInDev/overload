@@ -700,13 +700,13 @@ export default function CreativePage() {
             }
           } catch { /* non-JSON chunks */ }
         },
-        onResult: () => setGenerating(false),
+        onResult: () => { setGenerating(false); loadHistory(); },
         onError: (err) => {
           setError(err || 'Generation failed. Please try again.');
           setGenerating(false);
           setShowInput(true);
         },
-        onDone: () => setGenerating(false),
+        onDone: () => { setGenerating(false); loadHistory(); },
       });
       return;
     }
@@ -738,13 +738,13 @@ export default function CreativePage() {
           }
         } catch { /* non-JSON chunks */ }
       },
-      onResult: () => setGenerating(false),
+      onResult: () => { setGenerating(false); loadHistory(); },
       onError: (err) => {
         setError(err || 'Generation failed. Please try again.');
         setGenerating(false);
         setShowInput(true);
       },
-      onDone: () => setGenerating(false),
+      onDone: () => { setGenerating(false); loadHistory(); },
     });
   };
 
