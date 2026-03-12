@@ -264,6 +264,37 @@ app.get('/api/admin/db-backup', requireAuth, requireSuperAdmin, async (req, res)
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Admin: Volume/disk usage breakdown
+app.get('/api/admin/disk-usage', requireAuth, requireSuperAdmin, async (req, res) => {
+  const volDir = process.env.DB_PATH ? path.dirname(process.env.DB_PATH) : process.cwd();
+  function dirSize(dir) {
+    let total = 0, count = 0;
+    try {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const e of entries) {
+        const fp = path.join(dir, e.name);
+        if (e.isFile()) { total += fs.statSync(fp).size; count++; }
+        else if (e.isDirectory()) { const sub = dirSize(fp); total += sub.bytes; count += sub.files; }
+      }
+    } catch { /* dir may not exist */ }
+    return { bytes: total, files: count };
+  }
+  const dirs = [
+    { name: 'Creative Images', path: 'uploads/creatives' },
+    { name: 'Brand Media', path: 'uploads/brand-media' },
+    { name: 'Videos', path: 'videos' },
+    { name: 'PostgreSQL Data', path: 'pgdata' },
+  ];
+  const results = dirs.map(d => {
+    const full = path.join(volDir, d.path);
+    const info = dirSize(full);
+    return { name: d.name, path: d.path, bytes: info.bytes, files: info.files, size: info.bytes > 1048576 ? (info.bytes / 1048576).toFixed(1) + ' MB' : (info.bytes / 1024).toFixed(1) + ' KB' };
+  });
+  // Also get total volume usage
+  const volTotal = dirSize(volDir);
+  res.json({ volumePath: volDir, total: { bytes: volTotal.bytes, files: volTotal.files, size: volTotal.bytes > 1048576 ? (volTotal.bytes / 1048576).toFixed(1) + ' MB' : (volTotal.bytes / 1024).toFixed(1) + ' KB' }, directories: results });
+});
+
 // Catch-all 404 for unmatched /api/* routes
 app.all('/api/*', async (req, res) => {
   res.status(404).json({ error: 'Not found', code: 'NOT_FOUND' });

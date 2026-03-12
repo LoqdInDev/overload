@@ -427,14 +427,19 @@ export default function WorkspaceSettingsPage() {
 
 function DatabaseSection({ dark, cardBg, borderColor, ink, sub, muted, terra }) {
   const [dbSize, setDbSize] = useState(null);
+  const [diskUsage, setDiskUsage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [backupLoading, setBackupLoading] = useState(false);
 
   async function checkSize() {
     setLoading(true);
     try {
-      const data = await fetchJSON('/api/admin/db-size');
-      setDbSize(data);
+      const [dbData, diskData] = await Promise.all([
+        fetchJSON('/api/admin/db-size'),
+        fetchJSON('/api/admin/disk-usage'),
+      ]);
+      setDbSize(dbData);
+      setDiskUsage(diskData);
     } catch (e) {
       console.error(e);
     } finally {
@@ -491,10 +496,41 @@ function DatabaseSection({ dark, cardBg, borderColor, ink, sub, muted, terra }) 
           </button>
         </div>
 
+        {/* Volume / Disk Usage */}
+        {diskUsage && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-semibold" style={{ color: ink }}>Volume Usage: {diskUsage.total?.size}</span>
+              <span className="text-[10px] font-mono" style={{ color: muted }}>{diskUsage.volumePath}</span>
+            </div>
+            <div className="space-y-2">
+              {diskUsage.directories?.filter(d => d.bytes > 0).map(d => {
+                const pct = diskUsage.total?.bytes ? Math.min((d.bytes / diskUsage.total.bytes) * 100, 100) : 0;
+                const isLarge = d.bytes > 50_000_000;
+                return (
+                  <div key={d.path}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[11px] font-medium" style={{ color: sub }}>{d.name}</span>
+                      <span className="text-[11px] font-medium tabular-nums" style={{ color: isLarge ? '#e74c3c' : muted }}>{d.size} ({d.files} files)</span>
+                    </div>
+                    <div className="h-2 rounded-full overflow-hidden" style={{ background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(44,40,37,0.06)' }}>
+                      <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(pct, 1)}%`, background: isLarge ? '#e74c3c' : terra }} />
+                    </div>
+                  </div>
+                );
+              })}
+              {diskUsage.directories?.every(d => d.bytes === 0) && (
+                <p className="text-[11px]" style={{ color: muted }}>No files found in tracked directories.</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* DB Tables */}
         {dbSize && (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <span className="text-[13px] font-semibold" style={{ color: ink }}>Total: {dbSize.database?.db_size}</span>
+              <span className="text-[13px] font-semibold" style={{ color: ink }}>Database: {dbSize.database?.db_size}</span>
             </div>
             <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${borderColor}` }}>
               <table className="w-full text-[11px]">
