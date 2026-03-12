@@ -622,22 +622,6 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                  {productPhoto && (
-                    <div className="flex gap-1">
-                      {[{ v: 'model', label: '👤' }, { v: 'product', label: '📦' }].map(({ v, label }) => (
-                        <button key={v} type="button"
-                          onClick={() => updateScene(i, 'imgSrc', v)}
-                          title={v === 'model' ? 'Use model photo' : 'Use product photo'}
-                          className="px-1.5 py-0.5 rounded text-xs transition-all"
-                          style={{
-                            background: scene.imgSrc === v ? accentBg : 'transparent',
-                            border: `1px solid ${scene.imgSrc === v ? accentBorder : border}`,
-                          }}>
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                   <div className="flex gap-1">
                     {[5, 8].map(d => (
                       <button key={d} type="button"
