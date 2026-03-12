@@ -347,9 +347,22 @@ router.post('/install/:recipeId', async (req, res) => {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')`
     ).run(wsId, recipe.modules[0], recipe.name, recipe.trigger.type, triggerConfig, recipe.action.type, actionConfig, recipe.requires_approval ? 1 : 0);
 
+    // Auto-upgrade module to copilot if it's in manual mode, so the rule actually runs
+    const moduleId = recipe.modules[0];
+    try {
+      const modeRow = await db.prepare('SELECT mode FROM ae_module_modes WHERE module_id = ? AND workspace_id = ?').get(moduleId, wsId);
+      if (!modeRow || modeRow.mode === 'manual') {
+        await db.prepare(
+          `INSERT INTO ae_module_modes (module_id, mode, workspace_id)
+           VALUES (?, 'copilot', ?)
+           ON CONFLICT (module_id, workspace_id) DO UPDATE SET mode = 'copilot', updated_at = CURRENT_TIMESTAMP`
+        ).run(moduleId, wsId);
+      }
+    } catch {}
+
     try { await logActivity('automation-engine', 'install_recipe', `Installed recipe: ${recipe.name}`, recipe.name, result.lastInsertRowid, wsId); } catch {}
 
-    res.json({ success: true, rule_id: result.lastInsertRowid });
+    res.json({ success: true, rule_id: result.lastInsertRowid, mode_set: 'copilot' });
   } catch (err) {
     console.error('[marketplace] install error:', err);
     res.status(500).json({ error: err.message });

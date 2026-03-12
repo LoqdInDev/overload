@@ -264,10 +264,43 @@ Write a personalized, genuine review response.`;
     case 'generate_report':
       return `Generate a performance report summary:
 Rule: ${rule.name}
-${actionConfig.report_type ? `Report type: ${actionConfig.report_type}` : ''}
+${actionConfig.report_type || actionConfig.type ? `Report type: ${actionConfig.report_type || actionConfig.type}` : ''}
 ${actionConfig.include ? `Include metrics: ${actionConfig.include.join(', ')}` : ''}
 ${actionConfig.check ? `Check areas: ${actionConfig.check.join(', ')}` : ''}
+${actionConfig.modules ? `Modules to cover: ${actionConfig.modules}` : ''}
+${actionConfig.highlight_risks ? 'Highlight at-risk goals and concerns.' : ''}
+${actionConfig.include_payouts ? 'Include payout summaries for each affiliate.' : ''}
+${actionConfig.period ? `Time period: ${actionConfig.period}` : ''}
 Provide a structured report with key findings, metrics, and recommendations.`;
+
+    case 'optimize_keywords':
+      return `Perform an SEO keyword optimization analysis:
+Rule: ${rule.name}
+${actionConfig.type ? `Analysis type: ${actionConfig.type}` : 'Analysis type: keyword optimization'}
+${actionConfig.generate_report ? 'Generate a detailed report with actionable recommendations.' : ''}
+${actionConfig.keywords ? `Number of keywords to analyze: ${actionConfig.keywords}` : ''}
+
+Provide:
+1. Current top keyword opportunities
+2. Gaps vs competitors (if applicable)
+3. Specific content suggestions to target each keyword
+4. Priority ranking by search volume and difficulty
+
+Format as a structured report in markdown.`;
+
+    case 'update_meta':
+      return `Perform an SEO meta tag audit and generate improvements:
+Rule: ${rule.name}
+${actionConfig.scope ? `Scope: ${actionConfig.scope}` : 'Scope: key pages'}
+${actionConfig.generate_recommendations ? 'Generate specific improvement recommendations.' : ''}
+
+For each page audited, provide:
+- Current meta title assessment and improved version (under 60 chars)
+- Current meta description assessment and improved version (under 160 chars)
+- Recommended H1 tag
+- Priority level (high/medium/low)
+
+Format as a numbered list in markdown.`;
 
     default:
       return `Execute the following automation rule:
@@ -325,7 +358,24 @@ function saveToModuleDatabase(rule, wsId, text, actionLogId) {
         ).run(id, wsId, text, meta);
         break;
       }
-      // generate_report: output stays in ae_action_log only
+      case 'optimize_keywords':
+      case 'update_meta': {
+        // Save as content project (SEO report/audit)
+        const seoTitle = `Auto: ${rule.name}`.slice(0, 100);
+        const seoType = rule.action_type === 'update_meta' ? 'seo_audit' : 'seo_report';
+        db.prepare(
+          'INSERT INTO cc_projects (id, type, title, prompt, content, metadata, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        ).run(id, seoType, seoTitle, rule.name, text, meta, wsId);
+        break;
+      }
+      case 'generate_report': {
+        // Save reports as content projects too so they're visible
+        const reportTitle = `Auto: ${rule.name}`.slice(0, 100);
+        db.prepare(
+          'INSERT INTO cc_projects (id, type, title, prompt, content, metadata, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        ).run(id, 'report', reportTitle, rule.name, text, meta, wsId);
+        break;
+      }
       default:
         return;
     }
