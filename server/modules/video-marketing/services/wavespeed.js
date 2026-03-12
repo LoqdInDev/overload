@@ -116,7 +116,7 @@ class WaveSpeedService {
       await new Promise((r) => setTimeout(r, interval));
 
       try {
-        const res = await fetchWithTimeout(`${BASE_URL}/predictions/${taskId}/result`, {
+        const res = await fetchWithTimeout(`${BASE_URL}/predictions/${taskId}`, {
           headers: { Authorization: `Bearer ${this.apiKey}` },
         }, 30000);
 
@@ -162,7 +162,7 @@ class WaveSpeedService {
   }
   async checkTask(taskId) {
     try {
-      const res = await fetchWithTimeout(`${BASE_URL}/predictions/${taskId}/result`, {
+      const res = await fetchWithTimeout(`${BASE_URL}/predictions/${taskId}`, {
         headers: { Authorization: `Bearer ${this.apiKey}` },
       }, 15000);
       const data = await res.json();
