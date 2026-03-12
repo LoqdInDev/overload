@@ -1,10 +1,45 @@
 export const API_BASE = import.meta.env.VITE_API_URL || '';
-const TOKEN_KEY = 'overload_access_token';
-const REFRESH_KEY = 'overload_refresh_token';
+export const TOKEN_KEY = 'overload_access_token';
+export const REFRESH_KEY = 'overload_refresh_token';
 const WORKSPACE_KEY = 'overload_workspace_id';
+const REMEMBER_KEY = 'overload_remember';
+
+// Returns the correct storage based on "remember me" preference
+export function getTokenStorage() {
+  // If user chose "remember me", tokens are in localStorage; otherwise sessionStorage
+  // The REMEMBER_KEY flag itself is always in localStorage so we can check it on next visit
+  const remember = localStorage.getItem(REMEMBER_KEY);
+  return remember === 'false' ? sessionStorage : localStorage;
+}
+
+export function setRememberMe(remember) {
+  localStorage.setItem(REMEMBER_KEY, remember ? 'true' : 'false');
+}
+
+export function saveTokens(accessToken, refreshToken) {
+  const store = getTokenStorage();
+  store.setItem(TOKEN_KEY, accessToken);
+  store.setItem(REFRESH_KEY, refreshToken);
+}
+
+export function clearTokens() {
+  // Clear from both storages to be safe
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(REFRESH_KEY);
+  sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(REFRESH_KEY);
+}
+
+export function getAccessToken() {
+  return getTokenStorage().getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
+}
+
+export function getRefreshToken() {
+  return getTokenStorage().getItem(REFRESH_KEY) || localStorage.getItem(REFRESH_KEY) || sessionStorage.getItem(REFRESH_KEY);
+}
 
 function getAuthHeaders() {
-  const token = localStorage.getItem(TOKEN_KEY);
+  const token = getAccessToken();
   const wsId = localStorage.getItem(WORKSPACE_KEY);
   const headers = {};
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -12,8 +47,8 @@ function getAuthHeaders() {
   return headers;
 }
 
-async function attemptTokenRefresh() {
-  const refreshToken = localStorage.getItem(REFRESH_KEY);
+export async function attemptTokenRefresh() {
+  const refreshToken = getRefreshToken();
   if (!refreshToken) return false;
 
   try {
@@ -26,8 +61,7 @@ async function attemptTokenRefresh() {
     if (!res.ok) return false;
 
     const data = await res.json();
-    localStorage.setItem(TOKEN_KEY, data.accessToken);
-    localStorage.setItem(REFRESH_KEY, data.refreshToken);
+    saveTokens(data.accessToken, data.refreshToken);
     return true;
   } catch {
     return false;
@@ -50,8 +84,7 @@ export async function fetchJSON(url, options = {}) {
       });
       if (retry.ok) return retry.json();
     }
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_KEY);
+    clearTokens();
     window.location.href = '/login';
     throw new Error('Session expired');
   }
@@ -177,7 +210,7 @@ export function setupAuthInterceptor() {
 
     // Add auth headers for non-auth endpoints
     if (!url.includes('/api/auth/')) {
-      const token = localStorage.getItem(TOKEN_KEY);
+      const token = getAccessToken();
       const wsId = localStorage.getItem(WORKSPACE_KEY);
       const h = init.headers instanceof Headers
         ? Object.fromEntries(init.headers.entries())

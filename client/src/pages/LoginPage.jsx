@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -101,7 +102,7 @@ export default function LoginPage() {
 
     try {
       if (mode === 'login') {
-        await login(email, password);
+        await login(email, password, rememberMe);
       } else {
         await signup(email, password, displayName);
       }
@@ -249,6 +250,30 @@ export default function LoginPage() {
               />
               {fieldErrors.password && <p className="text-[11px] mt-1" style={{ color: '#C45D3E' }}>{fieldErrors.password}</p>}
             </div>
+
+            {mode === 'login' && (
+              <label className="flex items-center gap-2.5 cursor-pointer select-none group">
+                <div className="relative flex items-center justify-center">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div
+                    className="w-[18px] h-[18px] rounded-md border-[1.5px] transition-all duration-200 flex items-center justify-center peer-checked:border-[#C45D3E] peer-checked:bg-[#C45D3E] peer-focus-visible:ring-2 peer-focus-visible:ring-[#C45D3E]/30"
+                    style={{ borderColor: rememberMe ? '#C45D3E' : inputBorder, background: rememberMe ? '#C45D3E' : inputBg }}
+                  >
+                    {rememberMe && (
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+                <span className="text-[12px]" style={{ color: muted }}>Remember me</span>
+              </label>
+            )}
 
             {error && (
               <div

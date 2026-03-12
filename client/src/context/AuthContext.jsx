@@ -1,7 +1,12 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { trackEvent } from '../lib/analytics';
+import {
+  API_BASE as _API_BASE,
+  getAccessToken, getRefreshToken, saveTokens, clearTokens,
+  setRememberMe, attemptTokenRefresh,
+} from '../lib/api';
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+const API_BASE = _API_BASE || '';
 
 const AuthContext = createContext({
   user: null,
@@ -12,37 +17,56 @@ const AuthContext = createContext({
   logout: async () => {},
 });
 
-const TOKEN_KEY = 'overload_access_token';
-const REFRESH_KEY = 'overload_refresh_token';
-
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // On mount, verify existing token or stay unauthenticated
+  // On mount, verify existing token — try refresh if expired
   useEffect(() => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+    async function verifySession() {
+      const token = getAccessToken();
+      if (!token) {
+        setLoading(false);
+        return;
+      }
 
-    fetch(`${API_BASE}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error('Invalid token');
-        return r.json();
-      })
-      .then((data) => setUser(data.user))
-      .catch(() => {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(REFRESH_KEY);
-      })
-      .finally(() => setLoading(false));
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data.user);
+        } else {
+          // Access token expired — try refresh
+          const refreshed = await attemptTokenRefresh();
+          if (refreshed) {
+            const newToken = getAccessToken();
+            const retry = await fetch(`${API_BASE}/api/auth/me`, {
+              headers: { Authorization: `Bearer ${newToken}` },
+            });
+            if (retry.ok) {
+              const data = await retry.json();
+              setUser(data.user);
+            } else {
+              clearTokens();
+            }
+          } else {
+            clearTokens();
+          }
+        }
+      } catch {
+        clearTokens();
+      } finally {
+        setLoading(false);
+      }
+    }
+    verifySession();
   }, []);
 
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email, password, rememberMe = true) => {
+    setRememberMe(rememberMe);
     const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -52,13 +76,13 @@ export function AuthProvider({ children }) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Login failed');
 
-    localStorage.setItem(TOKEN_KEY, data.accessToken);
-    localStorage.setItem(REFRESH_KEY, data.refreshToken);
+    saveTokens(data.accessToken, data.refreshToken);
     setUser(data.user);
     return data.user;
   }, []);
 
   const signup = useCallback(async (email, password, displayName) => {
+    setRememberMe(true); // Always remember on signup
     const res = await fetch(`${API_BASE}/api/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -68,14 +92,14 @@ export function AuthProvider({ children }) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Signup failed');
 
-    localStorage.setItem(TOKEN_KEY, data.accessToken);
-    localStorage.setItem(REFRESH_KEY, data.refreshToken);
+    saveTokens(data.accessToken, data.refreshToken);
     setUser(data.user);
     trackEvent('signup_completed', { userId: data.user.id });
     return data.user;
   }, []);
 
   const loginWithGoogle = useCallback(async (credential) => {
+    setRememberMe(true); // Always remember for Google sign-in
     const res = await fetch(`${API_BASE}/api/auth/google`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -85,15 +109,14 @@ export function AuthProvider({ children }) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Google sign-in failed');
 
-    localStorage.setItem(TOKEN_KEY, data.accessToken);
-    localStorage.setItem(REFRESH_KEY, data.refreshToken);
+    saveTokens(data.accessToken, data.refreshToken);
     setUser(data.user);
     trackEvent('google_login_completed', { userId: data.user.id });
     return data.user;
   }, []);
 
   const logout = useCallback(async () => {
-    const refreshToken = localStorage.getItem(REFRESH_KEY);
+    const refreshToken = getRefreshToken();
     try {
       await fetch(`${API_BASE}/api/auth/logout`, {
         method: 'POST',
@@ -103,8 +126,7 @@ export function AuthProvider({ children }) {
     } catch {
       // ignore logout errors
     }
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_KEY);
+    clearTokens();
     setUser(null);
   }, []);
 
