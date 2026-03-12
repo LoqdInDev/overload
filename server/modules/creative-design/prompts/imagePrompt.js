@@ -55,7 +55,7 @@ function buildImagePromptOptimizer(type, userPrompt, count = 3, { style, palette
       .map(([k, v]) => `${k}: ${v}`)
       .join(', ');
     if (fontList) {
-      fontInstruction = `\nTYPOGRAPHY: When suggesting text overlays, describe typography in the style of these brand fonts: ${fontList}.`;
+      fontInstruction = `\nTYPOGRAPHY: Only if the user explicitly requests text in the image, use these brand fonts: ${fontList}. Otherwise do NOT add any text.`;
     }
   }
 
@@ -73,7 +73,7 @@ Return a JSON object with this structure:
   "prompts": [
     {
       "prompt": "detailed optimized prompt for image generation...",
-      "negative_prompt": "things to avoid...",
+      "negative_prompt": "things to avoid (ALWAYS include: text, words, letters, typography, watermarks, logos unless user asked for text)...",
       "alt": "short accessible description of the intended image",
       "style_notes": "brief description of the visual style and colors used"
     }
@@ -86,7 +86,7 @@ Generate ${count} prompt variation${count === 1 ? '' : 's'}. Each must be highly
 - Visual style: ${style || 'appropriate for the content type'}
 - Color palette: ${palette ? `${palette} (${(paletteColors || []).join(', ')})` : 'natural, fitting colors'} — MENTION THESE SPECIFIC COLORS
 - Mood and tone
-- Any text overlay suggestions (describe placement and style, NOT the actual text content)
+- Do NOT include any text, typography, words, letters, logos, or watermarks in the image unless the user explicitly requests it
 
 Return ONLY the JSON object.`;
 }
