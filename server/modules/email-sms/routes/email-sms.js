@@ -184,7 +184,7 @@ Format the output cleanly and professionally.`;
     });
 
     // Save campaign to database
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO es_campaigns (name, type, content, metadata, workspace_id) VALUES (?, ?, ?, ?, ?)'
     ).run(
       topic || `${type} campaign`,
@@ -226,7 +226,8 @@ router.get('/campaigns', async (req, res) => {
     }
     query += ' ORDER BY created_at DESC';
 
-    const campaigns = await db.prepare(query).all(...params).map(c => {
+    const rows = await db.prepare(query).all(...params);
+    const campaigns = rows.map(c => {
       const meta = c.metadata ? JSON.parse(c.metadata) : {};
       return { ...c, campaign_type: meta.campaign_type || null, tone: meta.tone || null, audience: meta.audience || null, preview_text: meta.preview_text || null, variants: meta.variants || null };
     });
@@ -263,7 +264,7 @@ router.post('/campaigns', async (req, res) => {
       audience: audience || null,
       variants: variants || null,
     });
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO es_campaigns (name, type, subject, content, status, metadata, scheduled_at, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(name, type, subject || null, content ?? body ?? null, status || 'draft', mergedMeta, scheduled_at || null, wsId);
     const campaign = await db.prepare('SELECT * FROM es_campaigns WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
@@ -291,7 +292,7 @@ router.put('/campaigns/:id', async (req, res) => {
       ...(audience !== undefined ? { audience } : {}),
       ...(variants !== undefined ? { variants } : {}),
     });
-    db.prepare(
+    await db.prepare(
       `UPDATE es_campaigns SET name = ?, subject = ?, content = ?, status = ?, metadata = ?, scheduled_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?`
     ).run(
       name || existing.name,
@@ -348,7 +349,7 @@ router.post('/templates', async (req, res) => {
     const wsId = req.workspace.id;
     const { name, type, category, subject, content, body } = req.body;
     if (!name || !type) return res.status(400).json({ error: 'name and type are required' });
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO es_templates (name, type, category, subject, body, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(name, type, category || null, subject || null, body || content || null, wsId);
     const template = await db.prepare('SELECT * FROM es_templates WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
