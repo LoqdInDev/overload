@@ -9,7 +9,7 @@ const API_BASE = import.meta.env.VITE_API_URL || '';
 
 const CREATIVE_TYPES = [
   { id: 'ad-creative', name: 'Ad Creatives', emoji: '🎯', desc: 'High-converting ads for social & paid media', tags: ['Facebook Ads', 'Instagram', 'Google Display', 'Retargeting'], accent: '#f97316', icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
-  { id: 'product-photo', name: 'Product Photos', emoji: '📸', desc: 'Studio-quality shots for listings & catalogues', tags: ['Amazon', 'Shopify', 'Lookbook', 'Detail Shot'], accent: '#22d3ee', icon: 'M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z' },
+  { id: 'product-photo', name: 'Product Photos', emoji: '📸', desc: 'Studio-quality shots for listings & catalogues', tags: ['Amazon', 'Shopify', 'Lookbook', 'Detail Shot'], accent: '#8B7355', icon: 'M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z' },
   { id: 'social-graphic', name: 'Social Graphics', emoji: '✨', desc: 'Feed posts, stories & carousels that stop the scroll', tags: ['Instagram', 'TikTok', 'LinkedIn', 'Pinterest'], accent: '#a78bfa', icon: 'M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z' },
   { id: 'banner', name: 'Banner Designs', emoji: '🖥', desc: 'Web banners, email headers & display ads', tags: ['Hero Banner', 'Email Header', 'Leaderboard', 'Billboard'], accent: '#4ade80', icon: 'M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5' },
 ];
@@ -165,7 +165,7 @@ const COLOR_PALETTES = [
   { id: 'cool', name: 'Cool Tones', colors: ['#06b6d4', '#3b82f6', '#8b5cf6'] },
   { id: 'earth', name: 'Earth Tones', colors: ['#92400e', '#78716c', '#65a30d'] },
   { id: 'mono', name: 'Monochrome', colors: ['#18181b', '#71717a', '#e4e4e7'] },
-  { id: 'neon', name: 'Neon Pop', colors: ['#f43f5e', '#a855f7', '#22d3ee'] },
+  { id: 'neon', name: 'Neon Pop', colors: ['#f43f5e', '#a855f7', '#C45D3E'] },
   { id: 'overload', name: 'Overload', colors: ['#C3A97A', '#B8893A', '#221F14'] },
 ];
 
@@ -220,7 +220,7 @@ function ImageLightbox({ images, index, onClose, type, onCreateVideo }) {
 
         {/* Counter */}
         {images.length > 1 && (
-          <p className="hud-label text-[10px] mb-3" style={{ color: '#22d3ee' }}>
+          <p className="hud-label text-[10px] mb-3" style={{ color: '#C45D3E' }}>
             {current + 1} / {images.length}
           </p>
         )}
@@ -238,7 +238,7 @@ function ImageLightbox({ images, index, onClose, type, onCreateVideo }) {
           )}
           <img src={imgSrc} alt={img.alt || 'Generated creative'}
             className="max-h-[70vh] max-w-full rounded-xl object-contain"
-            style={{ boxShadow: '0 0 80px rgba(6,182,212,0.15)' }} />
+            style={{ boxShadow: '0 0 80px rgba(196,93,62,0.12)' }} />
           {images.length > 1 && current < images.length - 1 && (
             <button onClick={() => setCurrent(i => i + 1)}
               className="absolute right-0 z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all"
@@ -254,7 +254,7 @@ function ImageLightbox({ images, index, onClose, type, onCreateVideo }) {
         <div className="mt-4 w-full max-w-xl flex flex-col gap-2">
           <div className="flex gap-2 justify-center flex-wrap">
             <a href={imgSrc} download={`creative-${img.id || current}.png`}
-              className="chip text-[10px]" style={{ background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' }}>
+              className="chip text-[10px]" style={{ background: 'rgba(196,93,62,0.12)', borderColor: 'rgba(196,93,62,0.25)', color: '#C45D3E' }}>
               <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
               </svg>
@@ -309,7 +309,7 @@ function ImageLightbox({ images, index, onClose, type, onCreateVideo }) {
               const src = im.dataUrl || im.url;
               return src ? (
                 <button key={i} onClick={() => setCurrent(i)}
-                  className={`w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${i === current ? 'border-cyan-400' : 'border-transparent opacity-50 hover:opacity-80'}`}>
+                  className={`w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${i === current ? 'border-[#C45D3E]' : 'border-transparent opacity-50 hover:opacity-80'}`}>
                   <img src={src} alt="" className="w-full h-full object-cover" />
                 </button>
               ) : null;
@@ -341,9 +341,9 @@ function ImageCard({ img, apiBase, onOpen, onRegenerate, onCreateVideo }) {
         {isPending ? (
           // Skeleton loading state while this image is still generating
           <div className="w-full aspect-square flex flex-col items-center justify-center gap-3"
-            style={{ background: 'rgba(6,182,212,0.03)' }}>
-            <div className="w-6 h-6 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin" />
-            <p className="hud-label text-[9px]" style={{ color: '#22d3ee' }}>RENDERING</p>
+            style={{ background: 'rgba(196,93,62,0.03)' }}>
+            <div className="w-6 h-6 border-2 border-[#C45D3E]/30 border-t-[#C45D3E] rounded-full animate-spin" />
+            <p className="hud-label text-[9px]" style={{ color: '#C45D3E' }}>RENDERING</p>
           </div>
         ) : hasImage ? (
           <>
@@ -359,7 +359,7 @@ function ImageCard({ img, apiBase, onOpen, onRegenerate, onCreateVideo }) {
               className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-end pb-4 gap-2 px-4 cursor-zoom-in">
               <a href={imgSrc} download={`creative-${img.id || 'image'}.png`}
                 onClick={e => e.stopPropagation()}
-                className="chip text-[10px] w-full justify-center cursor-pointer" style={{ background: 'rgba(6,182,212,0.25)', borderColor: 'rgba(6,182,212,0.4)', color: '#22d3ee' }}>
+                className="chip text-[10px] w-full justify-center cursor-pointer" style={{ background: 'rgba(196,93,62,0.2)', borderColor: 'rgba(196,93,62,0.35)', color: '#C45D3E' }}>
                 <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                 </svg>
@@ -382,10 +382,10 @@ function ImageCard({ img, apiBase, onOpen, onRegenerate, onCreateVideo }) {
           </>
         ) : (
           <div className="w-full aspect-square flex flex-col items-center justify-center p-5 text-center gap-3"
-            style={{ background: 'rgba(6,182,212,0.04)' }}>
+            style={{ background: 'rgba(196,93,62,0.04)' }}>
             <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.15)' }}>
-              <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              style={{ background: 'rgba(196,93,62,0.06)', border: '1px solid rgba(196,93,62,0.12)' }}>
+              <svg className="w-5 h-5 text-[#C45D3E]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
               </svg>
             </div>
@@ -397,13 +397,13 @@ function ImageCard({ img, apiBase, onOpen, onRegenerate, onCreateVideo }) {
                 </>
               ) : (
                 <>
-                  <p className="hud-label text-[9px] mb-1.5" style={{ color: '#22d3ee' }}>AI PROMPT READY</p>
+                  <p className="hud-label text-[9px] mb-1.5" style={{ color: '#C45D3E' }}>AI PROMPT READY</p>
                   <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-4">{img.prompt || img.alt}</p>
                 </>
               )}
             </div>
             <button onClick={copyPrompt}
-              className="chip text-[10px] mt-1" style={{ color: promptCopied ? '#4ade80' : '#22d3ee', borderColor: promptCopied ? 'rgba(74,222,128,0.3)' : 'rgba(6,182,212,0.25)' }}>
+              className="chip text-[10px] mt-1" style={{ color: promptCopied ? '#4ade80' : '#C45D3E', borderColor: promptCopied ? 'rgba(74,222,128,0.3)' : 'rgba(196,93,62,0.2)' }}>
               {promptCopied ? 'Copied!' : 'Copy Prompt'}
             </button>
           </div>
@@ -418,7 +418,7 @@ function ImageCard({ img, apiBase, onOpen, onRegenerate, onCreateVideo }) {
         }
         {onRegenerate && img.prompt && (
           <button onClick={onRegenerate}
-            className="flex-shrink-0 flex items-center gap-1 text-[9px] text-gray-600 hover:text-cyan-400 transition-colors"
+            className="flex-shrink-0 flex items-center gap-1 text-[9px] text-gray-600 hover:text-[#C45D3E] transition-colors"
             title="Regenerate this image">
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
@@ -764,7 +764,7 @@ export default function CreativePage() {
       <div className="p-4 sm:p-6 lg:p-12">
         <ModuleWrapper moduleId="creative">
         <div className="mb-8 sm:mb-10 animate-fade-in">
-          <p className="hud-label text-[11px] mb-3" style={{ color: '#06b6d4' }}>AI CREATIVE STUDIO</p>
+          <p className="hud-label text-[11px] mb-3" style={{ color: '#C45D3E' }}>AI CREATIVE STUDIO</p>
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">What do you want to create?</h1>
           <p className="text-base text-gray-500 max-w-lg">Pick a creative type and let AI handle the heavy lifting — from smart prompts to polished visuals.</p>
         </div>
@@ -818,7 +818,7 @@ export default function CreativePage() {
                     className="panel-interactive rounded-xl p-4 sm:p-5 text-left group">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-lg">{ct?.emoji}</span>
-                      <p className="hud-label text-[10px]" style={{ color: ct?.accent || '#06b6d4' }}>{ct?.name}</p>
+                      <p className="hud-label text-[10px]" style={{ color: ct?.accent || '#C45D3E' }}>{ct?.name}</p>
                     </div>
                     <p className="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">{t.name}</p>
                     <p className="text-[11px] text-gray-600 mt-1 line-clamp-2 leading-relaxed">{t.subject}</p>
@@ -854,7 +854,7 @@ export default function CreativePage() {
           </svg>
         </button>
         <div className="flex-1">
-          <p className="hud-label text-[11px]" style={{ color: '#06b6d4' }}>{currentType?.name?.toUpperCase()} GENERATOR</p>
+          <p className="hud-label text-[11px]" style={{ color: '#C45D3E' }}>{currentType?.name?.toUpperCase()} GENERATOR</p>
           <h2 className="text-xl sm:text-2xl font-bold text-white">Create {currentType?.name}</h2>
         </div>
         {/* Tabs */}
@@ -866,7 +866,7 @@ export default function CreativePage() {
           ].map(tab => (
             <button key={tab.id} onClick={() => { setActiveTab(tab.id); if (tab.id === 'history') loadHistory(); }}
               className={`chip text-[10px] ${activeTab === tab.id ? 'active' : ''}`}
-              style={activeTab === tab.id ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+              style={activeTab === tab.id ? { background: 'rgba(196,93,62,0.12)', borderColor: 'rgba(196,93,62,0.25)', color: '#C45D3E' } : {}}>
               {tab.label}
             </button>
           ))}
@@ -890,7 +890,7 @@ export default function CreativePage() {
                   <button key={v.id} onClick={() => setHistoryView(v.id)}
                     className="p-1.5 rounded-md transition-all"
                     style={historyView === v.id
-                      ? { background: 'rgba(6,182,212,0.12)', border: '1px solid rgba(6,182,212,0.25)', color: '#22d3ee' }
+                      ? { background: 'rgba(196,93,62,0.1)', border: '1px solid rgba(196,93,62,0.2)', color: '#C45D3E' }
                       : { border: '1px solid rgba(255,255,255,0.06)', color: '#4b5563' }}>
                     <svg className="w-3.5 h-3.5" fill={v.id === 'grid' ? 'currentColor' : 'none'} stroke={v.id === 'list' ? 'currentColor' : 'none'} strokeWidth={v.id === 'list' ? 2 : undefined} viewBox="0 0 16 20">
                       <path strokeLinecap={v.id === 'list' ? 'round' : undefined} d={v.icon} />
@@ -904,8 +904,8 @@ export default function CreativePage() {
           {historyLoading ? (
             <div className="panel rounded-2xl p-10 text-center">
               <div className="flex items-center justify-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                <span className="hud-label text-[11px]" style={{ color: '#06b6d4' }}>LOADING</span>
+                <div className="w-2 h-2 rounded-full bg-[#C45D3E] animate-pulse" />
+                <span className="hud-label text-[11px]" style={{ color: '#C45D3E' }}>LOADING</span>
               </div>
             </div>
           ) : history.length === 0 ? (
@@ -943,7 +943,7 @@ export default function CreativePage() {
                               <button
                                 onClick={e => { e.stopPropagation(); handleCreateVideo({ url: `${API_BASE}${url}`, alt: project.title || 'Creative' }); }}
                                 className="px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 pointer-events-auto"
-                                style={{ background: 'rgba(6,182,212,0.85)', color: '#fff', backdropFilter: 'blur(4px)' }}>
+                                style={{ background: 'rgba(196,93,62,0.85)', color: '#fff', backdropFilter: 'blur(4px)' }}>
                                 ▶ Create Video
                               </button>
                               <button onClick={() => setHistoryLightbox({ images: lbImages, index: i })}
@@ -963,7 +963,7 @@ export default function CreativePage() {
                         ))}
                       </div>
                     ) : (
-                      <div className="aspect-video flex items-center justify-center" style={{ background: 'rgba(6,182,212,0.03)' }}>
+                      <div className="aspect-video flex items-center justify-center" style={{ background: 'rgba(196,93,62,0.03)' }}>
                         <svg className="w-8 h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
                         </svg>
@@ -975,7 +975,7 @@ export default function CreativePage() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="hud-label text-[9px]" style={{ color: '#06b6d4' }}>{typeLabel}</span>
+                            <span className="hud-label text-[9px]" style={{ color: '#C45D3E' }}>{typeLabel}</span>
                             <span className="text-[10px] text-gray-600">{formatDate(project.created_at)}</span>
                           </div>
                           <p className="text-sm text-gray-300 truncate font-medium">{project.title || 'Untitled'}</p>
@@ -1028,7 +1028,7 @@ export default function CreativePage() {
                       ))}
                       {imageUrls.length === 0 && (
                         <div className="w-14 h-14 rounded-lg flex items-center justify-center"
-                          style={{ background: 'rgba(6,182,212,0.05)', border: '1px solid rgba(6,182,212,0.1)' }}>
+                          style={{ background: 'rgba(196,93,62,0.05)', border: '1px solid rgba(196,93,62,0.08)' }}>
                           <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
                           </svg>
@@ -1036,16 +1036,16 @@ export default function CreativePage() {
                       )}
                       {imageUrls.length > 3 && (
                         <div className="w-14 h-14 rounded-lg flex items-center justify-center cursor-pointer"
-                          style={{ background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.15)' }}
+                          style={{ background: 'rgba(196,93,62,0.06)', border: '1px solid rgba(196,93,62,0.12)' }}
                           onClick={() => setHistoryLightbox({ images: lbImages, index: 3 })}>
-                          <span className="text-xs font-bold text-cyan-400">+{imageUrls.length - 3}</span>
+                          <span className="text-xs font-bold text-[#C45D3E]">+{imageUrls.length - 3}</span>
                         </div>
                       )}
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="hud-label text-[9px]" style={{ color: '#06b6d4' }}>{typeLabel}</span>
+                        <span className="hud-label text-[9px]" style={{ color: '#C45D3E' }}>{typeLabel}</span>
                         <span className="text-[10px] text-gray-600">{formatDate(project.created_at)}</span>
                         {imageUrls.length > 0 && <span className="text-[10px] text-gray-600">{imageUrls.length} images</span>}
                       </div>
@@ -1088,9 +1088,9 @@ export default function CreativePage() {
                 {brand?.brand_name && (
                   <button onClick={() => setBriefUseBrand(v => !v)}
                     className={`chip flex items-center gap-2 text-[10px] font-semibold transition-all ${briefUseBrand ? 'active' : ''}`}
-                    style={briefUseBrand ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                    style={briefUseBrand ? { background: 'rgba(196,93,62,0.12)', borderColor: 'rgba(196,93,62,0.25)', color: '#C45D3E' } : {}}>
                     <span className="relative inline-flex h-4 w-7 items-center rounded-full transition-colors flex-shrink-0"
-                      style={{ background: briefUseBrand ? '#22d3ee' : 'currentColor', opacity: briefUseBrand ? 1 : 0.25 }}>
+                      style={{ background: briefUseBrand ? '#C45D3E' : 'currentColor', opacity: briefUseBrand ? 1 : 0.25 }}>
                       <span className="inline-block h-3 w-3 rounded-full bg-white shadow transition-transform"
                         style={{ transform: briefUseBrand ? 'translateX(14px)' : 'translateX(2px)' }} />
                     </span>
@@ -1101,16 +1101,16 @@ export default function CreativePage() {
 
               {briefUseBrand && brand?.brand_name && (
                 <div className="mb-4 px-3 py-2.5 rounded-xl text-[11px] leading-relaxed"
-                  style={{ background: 'rgba(6,182,212,0.06)', border: '1px solid rgba(6,182,212,0.15)', color: '#67e8f9' }}>
+                  style={{ background: 'rgba(196,93,62,0.06)', border: '1px solid rgba(196,93,62,0.12)', color: '#C45D3E' }}>
                   <span className="font-semibold">{brand.brand_name}</span>
-                  {brand.tagline && <span className="text-cyan-400/60"> · {brand.tagline}</span>}
+                  {brand.tagline && <span className="text-[#C45D3E]/60"> · {brand.tagline}</span>}
                   {brand.colors?.primary && (
                     <span className="inline-flex items-center gap-1 ml-2">
                       <span className="inline-block w-2.5 h-2.5 rounded-full border border-white/20" style={{ background: brand.colors.primary }} />
-                      <span className="text-cyan-400/60">{brand.colors.primary}</span>
+                      <span className="text-[#C45D3E]/60">{brand.colors.primary}</span>
                     </span>
                   )}
-                  {brand.voice_tone && <span className="ml-2 text-cyan-400/60">· {Array.isArray(brand.voice_tone) ? brand.voice_tone.join(', ') : brand.voice_tone}</span>}
+                  {brand.voice_tone && <span className="ml-2 text-[#C45D3E]/60">· {Array.isArray(brand.voice_tone) ? brand.voice_tone.join(', ') : brand.voice_tone}</span>}
                 </div>
               )}
 
@@ -1119,7 +1119,7 @@ export default function CreativePage() {
                 {/* ── Group 1: Campaign Basics ── */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-bold tracking-widest uppercase" style={{ color: '#06b6d4' }}>01</span>
+                    <span className="text-[9px] font-bold tracking-widest uppercase" style={{ color: '#C45D3E' }}>01</span>
                     <p className="text-[11px] font-semibold text-gray-300">Campaign Basics</p>
                     <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
                   </div>
@@ -1135,7 +1135,7 @@ export default function CreativePage() {
                       {['Brand Awareness', 'Product Launch', 'Conversion', 'Retargeting', 'Seasonal Campaign'].map(g => (
                         <button key={g} onClick={() => setBriefGoal(g)}
                           className="chip text-[10px]"
-                          style={briefGoal === g ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                          style={briefGoal === g ? { background: 'rgba(196,93,62,0.12)', borderColor: 'rgba(196,93,62,0.25)', color: '#C45D3E' } : {}}>
                           {g}
                         </button>
                       ))}
@@ -1147,7 +1147,7 @@ export default function CreativePage() {
                       {['Awareness', 'Testing', 'Full Campaign', 'Product Launch'].map(s => (
                         <button key={s} onClick={() => setBriefScale(s)}
                           className="chip text-[10px]"
-                          style={briefScale === s ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                          style={briefScale === s ? { background: 'rgba(196,93,62,0.12)', borderColor: 'rgba(196,93,62,0.25)', color: '#C45D3E' } : {}}>
                           {s}
                         </button>
                       ))}
@@ -1231,7 +1231,7 @@ export default function CreativePage() {
               }}
               disabled={!briefProduct || briefLoading}
               className="btn-accent w-full py-3 rounded-lg font-bold text-sm tracking-wide"
-              style={{ background: briefLoading ? '#1e1e2e' : '#06b6d4', boxShadow: briefLoading ? 'none' : '0 4px 20px -4px rgba(6,182,212,0.4)' }}>
+              style={{ background: briefLoading ? '#1e1e2e' : '#C45D3E', boxShadow: briefLoading ? 'none' : '0 4px 20px -4px rgba(196,93,62,0.35)' }}>
               {briefLoading ? (
                 <span className="flex items-center gap-2">
                   <span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />
@@ -1245,8 +1245,8 @@ export default function CreativePage() {
               <div className="panel rounded-2xl p-4 sm:p-6 animate-fade-up">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full" style={{ background: briefLoading ? '#06b6d4' : '#4ade80', animation: briefLoading ? 'pulse 1s infinite' : 'none' }} />
-                    <span className="hud-label text-[11px]" style={{ color: briefLoading ? '#06b6d4' : '#4ade80' }}>
+                    <div className="w-2 h-2 rounded-full" style={{ background: briefLoading ? '#C45D3E' : '#4ade80', animation: briefLoading ? 'pulse 1s infinite' : 'none' }} />
+                    <span className="hud-label text-[11px]" style={{ color: briefLoading ? '#C45D3E' : '#4ade80' }}>
                       {briefLoading ? 'GENERATING' : 'CREATIVE BRIEF'}
                     </span>
                   </div>
@@ -1257,16 +1257,16 @@ export default function CreativePage() {
                         {briefCopied ? 'Copied!' : 'Copy'}
                       </button>
                       <button onClick={applyBriefToGenerate}
-                        className="chip text-[10px]" style={{ color: '#22d3ee', borderColor: 'rgba(6,182,212,0.3)', background: 'rgba(6,182,212,0.1)' }}>
+                        className="chip text-[10px]" style={{ color: '#C45D3E', borderColor: 'rgba(196,93,62,0.25)', background: 'rgba(196,93,62,0.08)' }}>
                         Use as Brief →
                       </button>
                     </div>
                   )}
                 </div>
                 <div className="bg-black/40 rounded-xl p-4 sm:p-5 max-h-[55vh] overflow-y-auto text-sm text-gray-300 whitespace-pre-wrap leading-relaxed"
-                  style={{ borderLeft: '2px solid rgba(6,182,212,0.3)' }}>
+                  style={{ borderLeft: '2px solid rgba(196,93,62,0.25)' }}>
                   {briefOutput}
-                  {briefLoading && <span className="inline-block w-[2px] h-4 bg-cyan-400 ml-0.5 animate-pulse" />}
+                  {briefLoading && <span className="inline-block w-[2px] h-4 bg-[#C45D3E] ml-0.5 animate-pulse" />}
                 </div>
               </div>
             )}
@@ -1283,7 +1283,7 @@ export default function CreativePage() {
                   { step: '03', text: 'Click "Use as Brief →" to apply it to your image generation' },
                 ].map(s => (
                   <div key={s.step} className="flex items-start gap-3">
-                    <span className="hud-label text-[10px] flex-shrink-0 mt-0.5" style={{ color: '#22d3ee' }}>{s.step}</span>
+                    <span className="hud-label text-[10px] flex-shrink-0 mt-0.5" style={{ color: '#C45D3E' }}>{s.step}</span>
                     <p className="text-xs text-gray-500 leading-relaxed">{s.text}</p>
                   </div>
                 ))}
@@ -1323,7 +1323,7 @@ export default function CreativePage() {
                           <button key={m.id} onClick={() => setPromptMode(m.id)}
                             className="px-3 py-1 rounded-md text-[10px] font-semibold transition-all"
                             style={promptMode === m.id
-                              ? { background: 'rgba(6,182,212,0.2)', color: '#22d3ee', border: '1px solid rgba(6,182,212,0.25)' }
+                              ? { background: 'rgba(196,93,62,0.15)', color: '#C45D3E', border: '1px solid rgba(196,93,62,0.2)' }
                               : { color: '#4b5563' }}>
                             {m.label}
                           </button>
@@ -1337,7 +1337,7 @@ export default function CreativePage() {
                         <div className="flex gap-3 pb-5">
                           <div className="flex flex-col items-center flex-shrink-0">
                             <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
-                              style={{ background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.25)', color: '#22d3ee' }}>1</div>
+                              style={{ background: 'rgba(196,93,62,0.12)', border: '1px solid rgba(196,93,62,0.2)', color: '#C45D3E' }}>1</div>
                             <div className="w-px flex-1 mt-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
                           </div>
                           <div className="flex-1 pt-0.5 space-y-2.5 min-w-0">
@@ -1360,7 +1360,7 @@ export default function CreativePage() {
                         <div className="flex gap-3 pb-5">
                           <div className="flex flex-col items-center flex-shrink-0">
                             <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
-                              style={{ background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.25)', color: '#22d3ee' }}>2</div>
+                              style={{ background: 'rgba(196,93,62,0.12)', border: '1px solid rgba(196,93,62,0.2)', color: '#C45D3E' }}>2</div>
                             <div className="w-px flex-1 mt-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
                           </div>
                           <div className="flex-1 pt-0.5 min-w-0">
@@ -1372,16 +1372,16 @@ export default function CreativePage() {
                                   style={{
                                     background: v.gradient,
                                     aspectRatio: '1/1',
-                                    outline: builderVibe === v.id ? '2px solid #22d3ee' : '2px solid transparent',
+                                    outline: builderVibe === v.id ? '2px solid #C45D3E' : '2px solid transparent',
                                     outlineOffset: '2px',
-                                    boxShadow: builderVibe === v.id ? '0 0 12px rgba(6,182,212,0.3)' : 'none',
+                                    boxShadow: builderVibe === v.id ? '0 0 12px rgba(196,93,62,0.25)' : 'none',
                                   }}>
                                   <div className="absolute inset-0 flex flex-col justify-end p-1.5"
                                     style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)' }}>
                                     <p className="text-[8px] font-bold leading-tight" style={{ color: '#fff' }}>{v.name}</p>
                                   </div>
                                   {builderVibe === v.id && (
-                                    <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: '#22d3ee' }}>
+                                    <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: '#C45D3E' }}>
                                       <svg className="w-2.5 h-2.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                       </svg>
@@ -1397,7 +1397,7 @@ export default function CreativePage() {
                         <div className="flex gap-3 pb-5">
                           <div className="flex flex-col items-center flex-shrink-0">
                             <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
-                              style={{ background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.25)', color: '#22d3ee' }}>3</div>
+                              style={{ background: 'rgba(196,93,62,0.12)', border: '1px solid rgba(196,93,62,0.2)', color: '#C45D3E' }}>3</div>
                             <div className="w-px flex-1 mt-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
                           </div>
                           <div className="flex-1 pt-0.5 space-y-2 min-w-0">
@@ -1412,9 +1412,9 @@ export default function CreativePage() {
                                   <button onClick={() => setExpandedAttr(isOpen ? null : 'setting')}
                                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left"
                                     style={isOpen || sel
-                                      ? { borderColor: 'rgba(6,182,212,0.35)', background: 'rgba(6,182,212,0.06)' }
+                                      ? { borderColor: 'rgba(196,93,62,0.3)', background: 'rgba(196,93,62,0.06)' }
                                       : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(0,0,0,0.02)' }}>
-                                    <span className="hud-label text-[9px] w-16 flex-shrink-0" style={{ color: isOpen ? '#22d3ee' : '#4b5563' }}>SETTING</span>
+                                    <span className="hud-label text-[9px] w-16 flex-shrink-0" style={{ color: isOpen ? '#C45D3E' : '#4b5563' }}>SETTING</span>
                                     <span className="flex-1 text-[11px] font-medium" style={{ color: sel ? '#111827' : '#6b7280' }}>
                                       {sel ? `${sel.emoji} ${sel.name}` : 'Not set'}
                                     </span>
@@ -1422,16 +1422,16 @@ export default function CreativePage() {
                                     <svg className="w-3 h-3 text-gray-600 flex-shrink-0 transition-transform" style={{ transform: isOpen ? 'rotate(180deg)' : '' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
                                   </button>
                                   {isOpen && (
-                                    <div className="mt-1.5 p-3 rounded-xl border" style={{ borderColor: 'rgba(6,182,212,0.15)', background: 'rgba(0,0,0,0.15)' }}>
+                                    <div className="mt-1.5 p-3 rounded-xl border" style={{ borderColor: 'rgba(196,93,62,0.12)', background: 'rgba(0,0,0,0.15)' }}>
                                       <div className="grid grid-cols-5 gap-2">
                                         {SETTINGS.map(s => (
                                           <button key={s.id} onClick={() => pickAttr(setBuilderSetting, s.id, builderSetting, null)}
                                             className="flex flex-col items-center gap-1 py-2.5 rounded-lg border-2 transition-all"
                                             style={builderSetting === s.id
-                                              ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.5)' }
+                                              ? { background: 'rgba(196,93,62,0.12)', borderColor: 'rgba(196,93,62,0.4)' }
                                               : { background: 'rgba(0,0,0,0.03)', borderColor: 'rgba(0,0,0,0.1)' }}>
                                             <span className="text-xl leading-none">{s.emoji}</span>
-                                            <span className="text-[9px] font-medium mt-0.5" style={{ color: builderSetting === s.id ? '#22d3ee' : '#6b7280' }}>{s.name}</span>
+                                            <span className="text-[9px] font-medium mt-0.5" style={{ color: builderSetting === s.id ? '#C45D3E' : '#6b7280' }}>{s.name}</span>
                                           </button>
                                         ))}
                                       </div>
@@ -1450,9 +1450,9 @@ export default function CreativePage() {
                                   <button onClick={() => setExpandedAttr(isOpen ? null : 'framing')}
                                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left"
                                     style={isOpen || sel
-                                      ? { borderColor: 'rgba(6,182,212,0.35)', background: 'rgba(6,182,212,0.06)' }
+                                      ? { borderColor: 'rgba(196,93,62,0.3)', background: 'rgba(196,93,62,0.06)' }
                                       : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(0,0,0,0.02)' }}>
-                                    <span className="hud-label text-[9px] w-16 flex-shrink-0" style={{ color: isOpen ? '#22d3ee' : '#4b5563' }}>FRAMING</span>
+                                    <span className="hud-label text-[9px] w-16 flex-shrink-0" style={{ color: isOpen ? '#C45D3E' : '#4b5563' }}>FRAMING</span>
                                     <span className="flex-1 text-[11px] font-medium" style={{ color: sel ? '#111827' : '#6b7280' }}>
                                       {sel ? sel.label : 'Not set'}
                                     </span>
@@ -1460,13 +1460,13 @@ export default function CreativePage() {
                                     <svg className="w-3 h-3 text-gray-600 flex-shrink-0 transition-transform" style={{ transform: isOpen ? 'rotate(180deg)' : '' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
                                   </button>
                                   {isOpen && (
-                                    <div className="mt-1.5 p-3 rounded-xl border" style={{ borderColor: 'rgba(6,182,212,0.15)', background: 'rgba(0,0,0,0.15)' }}>
+                                    <div className="mt-1.5 p-3 rounded-xl border" style={{ borderColor: 'rgba(196,93,62,0.12)', background: 'rgba(0,0,0,0.15)' }}>
                                       <div className="grid grid-cols-4 gap-1.5">
                                         {COMPOSITIONS.map(c => (
                                           <button key={c.id} onClick={() => pickAttr(setBuilderComposition, c.id, builderComposition, null)}
                                             className="py-2 px-2 rounded-lg border-2 transition-all text-center text-[10px] font-medium"
                                             style={builderComposition === c.id
-                                              ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.5)', color: '#22d3ee' }
+                                              ? { background: 'rgba(196,93,62,0.12)', borderColor: 'rgba(196,93,62,0.4)', color: '#C45D3E' }
                                               : { background: 'rgba(0,0,0,0.03)', borderColor: 'rgba(0,0,0,0.1)', color: '#6b7280' }}>
                                             {c.label}
                                           </button>
@@ -1484,23 +1484,23 @@ export default function CreativePage() {
                         <div className="flex gap-3 pb-5">
                           <div className="flex flex-col items-center flex-shrink-0">
                             <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
-                              style={{ background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.25)', color: '#22d3ee' }}>4</div>
+                              style={{ background: 'rgba(196,93,62,0.12)', border: '1px solid rgba(196,93,62,0.2)', color: '#C45D3E' }}>4</div>
                             <div className="w-px flex-1 mt-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
                           </div>
                           <div className="flex-1 pt-0.5 min-w-0">
                             <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(0,0,0,0.1)' }}>
                               <button onClick={() => setShowModels(v => !v)}
                                 className="w-full flex items-center justify-between px-4 py-3 transition-colors text-left"
-                                style={{ background: showModels ? 'rgba(6,182,212,0.08)' : 'rgba(0,0,0,0.03)' }}>
+                                style={{ background: showModels ? 'rgba(196,93,62,0.06)' : 'rgba(0,0,0,0.03)' }}>
                                 <div className="flex items-center gap-2.5">
                                   <span className="text-lg">👤</span>
                                   <div>
-                                    <p className="text-[12px] font-semibold" style={{ color: showModels ? '#22d3ee' : '#9ca3af' }}>People & Models</p>
+                                    <p className="text-[12px] font-semibold" style={{ color: showModels ? '#C45D3E' : '#9ca3af' }}>People & Models</p>
                                     <p className="text-[10px]" style={{ color: '#4b5563' }}>Include people in your design</p>
                                   </div>
                                 </div>
                                 <span className="relative inline-flex h-4 w-7 items-center rounded-full transition-colors flex-shrink-0"
-                                  style={{ background: showModels ? '#22d3ee' : 'rgba(255,255,255,0.12)' }}>
+                                  style={{ background: showModels ? '#C45D3E' : 'rgba(255,255,255,0.12)' }}>
                                   <span className="inline-block h-3 w-3 rounded-full bg-white shadow transition-transform"
                                     style={{ transform: showModels ? 'translateX(14px)' : 'translateX(2px)' }} />
                                 </span>
@@ -1513,7 +1513,7 @@ export default function CreativePage() {
                                       {MODEL_GENDERS.map(g => (
                                         <button key={g.id} onClick={() => setBuilderModelGender(builderModelGender === g.id ? '' : g.id)}
                                           className="chip text-[10px]"
-                                          style={builderModelGender === g.id ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                                          style={builderModelGender === g.id ? { background: 'rgba(196,93,62,0.12)', borderColor: 'rgba(196,93,62,0.25)', color: '#C45D3E' } : {}}>
                                           {g.label}
                                         </button>
                                       ))}
@@ -1525,7 +1525,7 @@ export default function CreativePage() {
                                       {MODEL_AGES.map(a => (
                                         <button key={a} onClick={() => setBuilderModelAge(builderModelAge === a ? '' : a)}
                                           className="chip text-[10px]"
-                                          style={builderModelAge === a ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                                          style={builderModelAge === a ? { background: 'rgba(196,93,62,0.12)', borderColor: 'rgba(196,93,62,0.25)', color: '#C45D3E' } : {}}>
                                           {a}
                                         </button>
                                       ))}
@@ -1537,7 +1537,7 @@ export default function CreativePage() {
                                       {MODEL_STYLES.map(s => (
                                         <button key={s} onClick={() => setBuilderModelStyle(builderModelStyle === s ? '' : s)}
                                           className="chip text-[10px]"
-                                          style={builderModelStyle === s ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                                          style={builderModelStyle === s ? { background: 'rgba(196,93,62,0.12)', borderColor: 'rgba(196,93,62,0.25)', color: '#C45D3E' } : {}}>
                                           {s}
                                         </button>
                                       ))}
@@ -1553,7 +1553,7 @@ export default function CreativePage() {
                         <div className="flex gap-3 pb-5">
                           <div className="flex flex-col items-center flex-shrink-0">
                             <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
-                              style={{ background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.25)', color: '#22d3ee' }}>5</div>
+                              style={{ background: 'rgba(196,93,62,0.12)', border: '1px solid rgba(196,93,62,0.2)', color: '#C45D3E' }}>5</div>
                             <div className="w-px flex-1 mt-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
                           </div>
                           <div className="flex-1 pt-0.5 space-y-2 min-w-0">
@@ -1568,26 +1568,26 @@ export default function CreativePage() {
                                   <button onClick={() => setExpandedAttr(isOpen ? null : 'lighting')}
                                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left"
                                     style={isOpen || sel
-                                      ? { borderColor: 'rgba(6,182,212,0.35)', background: 'rgba(6,182,212,0.06)' }
+                                      ? { borderColor: 'rgba(196,93,62,0.3)', background: 'rgba(196,93,62,0.06)' }
                                       : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(0,0,0,0.02)' }}>
-                                    <span className="hud-label text-[9px] w-20 flex-shrink-0" style={{ color: isOpen ? '#22d3ee' : '#4b5563' }}>LIGHTING</span>
+                                    <span className="hud-label text-[9px] w-20 flex-shrink-0" style={{ color: isOpen ? '#C45D3E' : '#4b5563' }}>LIGHTING</span>
                                     {sel && <span className="w-5 h-5 rounded-md flex-shrink-0 border border-black/20" style={{ background: sel.swatch }} />}
                                     <span className="flex-1 text-[11px] font-medium" style={{ color: sel ? '#111827' : '#6b7280' }}>{sel ? sel.label : 'Not set'}</span>
                                     {sel && <button onClick={e => { e.stopPropagation(); setBuilderLighting(''); }} className="text-[10px] text-gray-600 hover:text-red-400 px-1 transition-colors">✕</button>}
                                     <svg className="w-3 h-3 text-gray-600 flex-shrink-0 transition-transform" style={{ transform: isOpen ? 'rotate(180deg)' : '' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
                                   </button>
                                   {isOpen && (
-                                    <div className="mt-1.5 p-3 rounded-xl border" style={{ borderColor: 'rgba(6,182,212,0.15)', background: 'rgba(0,0,0,0.15)' }}>
+                                    <div className="mt-1.5 p-3 rounded-xl border" style={{ borderColor: 'rgba(196,93,62,0.12)', background: 'rgba(0,0,0,0.15)' }}>
                                       <div className="grid grid-cols-3 gap-2">
                                         {LIGHTING_OPTIONS.map(l => (
                                           <button key={l.id} onClick={() => pickAttr(setBuilderLighting, l.id, builderLighting, null)}
                                             className="rounded-xl border-2 overflow-hidden transition-all"
                                             style={builderLighting === l.id
-                                              ? { borderColor: 'rgba(6,182,212,0.6)' }
+                                              ? { borderColor: 'rgba(196,93,62,0.5)' }
                                               : { borderColor: 'rgba(0,0,0,0.1)' }}>
                                             <div className="h-8 w-full" style={{ background: l.swatch }} />
-                                            <div className="py-1.5 text-center" style={{ background: builderLighting === l.id ? 'rgba(6,182,212,0.12)' : 'rgba(0,0,0,0.03)' }}>
-                                              <span className="text-[9px] font-medium" style={{ color: builderLighting === l.id ? '#22d3ee' : '#6b7280' }}>{l.label}</span>
+                                            <div className="py-1.5 text-center" style={{ background: builderLighting === l.id ? 'rgba(196,93,62,0.1)' : 'rgba(0,0,0,0.03)' }}>
+                                              <span className="text-[9px] font-medium" style={{ color: builderLighting === l.id ? '#C45D3E' : '#6b7280' }}>{l.label}</span>
                                             </div>
                                           </button>
                                         ))}
@@ -1607,26 +1607,26 @@ export default function CreativePage() {
                                   <button onClick={() => setExpandedAttr(isOpen ? null : 'background')}
                                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left"
                                     style={isOpen || sel
-                                      ? { borderColor: 'rgba(6,182,212,0.35)', background: 'rgba(6,182,212,0.06)' }
+                                      ? { borderColor: 'rgba(196,93,62,0.3)', background: 'rgba(196,93,62,0.06)' }
                                       : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(0,0,0,0.02)' }}>
-                                    <span className="hud-label text-[9px] w-20 flex-shrink-0" style={{ color: isOpen ? '#22d3ee' : '#4b5563' }}>BACKGROUND</span>
+                                    <span className="hud-label text-[9px] w-20 flex-shrink-0" style={{ color: isOpen ? '#C45D3E' : '#4b5563' }}>BACKGROUND</span>
                                     {sel && <span className="w-5 h-5 rounded-md flex-shrink-0 border border-black/20" style={{ background: sel.swatch }} />}
                                     <span className="flex-1 text-[11px] font-medium" style={{ color: sel ? '#111827' : '#6b7280' }}>{sel ? sel.label : 'Not set'}</span>
                                     {sel && <button onClick={e => { e.stopPropagation(); setBuilderBackground(''); }} className="text-[10px] text-gray-600 hover:text-red-400 px-1 transition-colors">✕</button>}
                                     <svg className="w-3 h-3 text-gray-600 flex-shrink-0 transition-transform" style={{ transform: isOpen ? 'rotate(180deg)' : '' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
                                   </button>
                                   {isOpen && (
-                                    <div className="mt-1.5 p-3 rounded-xl border" style={{ borderColor: 'rgba(6,182,212,0.15)', background: 'rgba(0,0,0,0.15)' }}>
+                                    <div className="mt-1.5 p-3 rounded-xl border" style={{ borderColor: 'rgba(196,93,62,0.12)', background: 'rgba(0,0,0,0.15)' }}>
                                       <div className="grid grid-cols-3 gap-2">
                                         {BACKGROUND_OPTIONS.map(b => (
                                           <button key={b.id} onClick={() => pickAttr(setBuilderBackground, b.id, builderBackground, null)}
                                             className="rounded-xl border-2 overflow-hidden transition-all"
                                             style={builderBackground === b.id
-                                              ? { borderColor: 'rgba(6,182,212,0.6)' }
+                                              ? { borderColor: 'rgba(196,93,62,0.5)' }
                                               : { borderColor: 'rgba(0,0,0,0.1)' }}>
                                             <div className="h-8 w-full" style={{ background: b.swatch }} />
-                                            <div className="py-1.5 text-center" style={{ background: builderBackground === b.id ? 'rgba(6,182,212,0.12)' : 'rgba(0,0,0,0.03)' }}>
-                                              <span className="text-[9px] font-medium" style={{ color: builderBackground === b.id ? '#22d3ee' : '#6b7280' }}>{b.label}</span>
+                                            <div className="py-1.5 text-center" style={{ background: builderBackground === b.id ? 'rgba(196,93,62,0.1)' : 'rgba(0,0,0,0.03)' }}>
+                                              <span className="text-[9px] font-medium" style={{ color: builderBackground === b.id ? '#C45D3E' : '#6b7280' }}>{b.label}</span>
                                             </div>
                                           </button>
                                         ))}
@@ -1646,26 +1646,26 @@ export default function CreativePage() {
                                   <button onClick={() => setExpandedAttr(isOpen ? null : 'colorgrade')}
                                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left"
                                     style={isOpen || sel
-                                      ? { borderColor: 'rgba(6,182,212,0.35)', background: 'rgba(6,182,212,0.06)' }
+                                      ? { borderColor: 'rgba(196,93,62,0.3)', background: 'rgba(196,93,62,0.06)' }
                                       : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(0,0,0,0.02)' }}>
-                                    <span className="hud-label text-[9px] w-20 flex-shrink-0" style={{ color: isOpen ? '#22d3ee' : '#4b5563' }}>COLOR GRADE</span>
+                                    <span className="hud-label text-[9px] w-20 flex-shrink-0" style={{ color: isOpen ? '#C45D3E' : '#4b5563' }}>COLOR GRADE</span>
                                     {sel && <span className="w-10 h-4 rounded flex-shrink-0 border border-black/20" style={{ background: sel.swatch }} />}
                                     <span className="flex-1 text-[11px] font-medium" style={{ color: sel ? '#111827' : '#6b7280' }}>{sel ? sel.label : 'Not set'}</span>
                                     {sel && <button onClick={e => { e.stopPropagation(); setBuilderColorGrade(''); }} className="text-[10px] text-gray-600 hover:text-red-400 px-1 transition-colors">✕</button>}
                                     <svg className="w-3 h-3 text-gray-600 flex-shrink-0 transition-transform" style={{ transform: isOpen ? 'rotate(180deg)' : '' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
                                   </button>
                                   {isOpen && (
-                                    <div className="mt-1.5 p-3 rounded-xl border" style={{ borderColor: 'rgba(6,182,212,0.15)', background: 'rgba(0,0,0,0.15)' }}>
+                                    <div className="mt-1.5 p-3 rounded-xl border" style={{ borderColor: 'rgba(196,93,62,0.12)', background: 'rgba(0,0,0,0.15)' }}>
                                       <div className="grid grid-cols-4 gap-2">
                                         {COLOR_GRADES.map(g => (
                                           <button key={g.id} onClick={() => pickAttr(setBuilderColorGrade, g.id, builderColorGrade, null)}
                                             className="rounded-xl border-2 overflow-hidden transition-all"
                                             style={builderColorGrade === g.id
-                                              ? { borderColor: 'rgba(6,182,212,0.6)' }
+                                              ? { borderColor: 'rgba(196,93,62,0.5)' }
                                               : { borderColor: 'rgba(0,0,0,0.1)' }}>
                                             <div className="h-7 w-full" style={{ background: g.swatch }} />
-                                            <div className="py-1.5 text-center px-1" style={{ background: builderColorGrade === g.id ? 'rgba(6,182,212,0.12)' : 'rgba(0,0,0,0.03)' }}>
-                                              <span className="text-[8px] font-medium leading-tight" style={{ color: builderColorGrade === g.id ? '#22d3ee' : '#6b7280' }}>{g.label}</span>
+                                            <div className="py-1.5 text-center px-1" style={{ background: builderColorGrade === g.id ? 'rgba(196,93,62,0.1)' : 'rgba(0,0,0,0.03)' }}>
+                                              <span className="text-[8px] font-medium leading-tight" style={{ color: builderColorGrade === g.id ? '#C45D3E' : '#6b7280' }}>{g.label}</span>
                                             </div>
                                           </button>
                                         ))}
@@ -1683,14 +1683,14 @@ export default function CreativePage() {
                         <div className="flex gap-3 pb-3">
                           <div className="flex-shrink-0">
                             <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
-                              style={{ background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.25)', color: '#22d3ee' }}>6</div>
+                              style={{ background: 'rgba(196,93,62,0.12)', border: '1px solid rgba(196,93,62,0.2)', color: '#C45D3E' }}>6</div>
                           </div>
                           <div className="flex-1 pt-0.5 space-y-2 min-w-0">
                             <button onClick={() => setShowTextOverlay(v => !v)}
                               className="flex items-center gap-2 text-[12px] font-semibold transition-colors"
-                              style={{ color: showTextOverlay ? '#22d3ee' : '#9ca3af' }}>
+                              style={{ color: showTextOverlay ? '#C45D3E' : '#9ca3af' }}>
                               <span className="relative inline-flex h-4 w-7 items-center rounded-full transition-colors flex-shrink-0"
-                                style={{ background: showTextOverlay ? '#22d3ee' : 'rgba(255,255,255,0.12)' }}>
+                                style={{ background: showTextOverlay ? '#C45D3E' : 'rgba(255,255,255,0.12)' }}>
                                 <span className="inline-block h-3 w-3 rounded-full bg-white shadow transition-transform"
                                   style={{ transform: showTextOverlay ? 'translateX(14px)' : 'translateX(2px)' }} />
                               </span>
@@ -1706,9 +1706,9 @@ export default function CreativePage() {
 
                         {/* Assembled prompt preview */}
                         {prompt && (
-                          <div className="rounded-xl p-3 mt-2" style={{ background: 'rgba(6,182,212,0.05)', border: '1px solid rgba(6,182,212,0.12)' }}>
+                          <div className="rounded-xl p-3 mt-2" style={{ background: 'rgba(196,93,62,0.05)', border: '1px solid rgba(196,93,62,0.1)' }}>
                             <div className="flex items-center justify-between mb-1.5">
-                              <p className="hud-label text-[9px]" style={{ color: '#22d3ee' }}>ASSEMBLED PROMPT</p>
+                              <p className="hud-label text-[9px]" style={{ color: '#C45D3E' }}>ASSEMBLED PROMPT</p>
                               <button onClick={() => setPromptMode('manual')} className="text-[9px] font-semibold" style={{ color: '#4b5563' }}>Edit manually →</button>
                             </div>
                             <p className="text-[11px] text-gray-400 leading-relaxed">{prompt}</p>
@@ -1722,7 +1722,7 @@ export default function CreativePage() {
                           {templates.map(t => (
                             <button key={t.name} onClick={() => setPrompt(t.subject)}
                               className={`chip text-[10px] ${prompt === t.subject ? 'active' : ''}`}
-                              style={prompt === t.subject ? { background: 'rgba(6,182,212,0.15)', borderColor: 'rgba(6,182,212,0.3)', color: '#22d3ee' } : {}}>
+                              style={prompt === t.subject ? { background: 'rgba(196,93,62,0.12)', borderColor: 'rgba(196,93,62,0.25)', color: '#C45D3E' } : {}}>
                               {t.name}
                             </button>
                           ))}
@@ -1736,11 +1736,11 @@ export default function CreativePage() {
 
                   {/* Reference Images Upload */}
                   <div className="panel rounded-2xl p-4 sm:p-5"
-                    style={referenceImages.length ? { borderColor: 'rgba(6,182,212,0.25)', background: 'rgba(6,182,212,0.04)' } : {}}>
+                    style={referenceImages.length ? { borderColor: 'rgba(196,93,62,0.2)', background: 'rgba(196,93,62,0.04)' } : {}}>
                     <div className="flex items-center justify-between mb-2">
                       <p className="hud-label text-[11px]">REFERENCE IMAGES</p>
                       {referenceImages.length > 0 && (
-                        <span className="text-[9px] text-cyan-400 font-medium">{referenceImages.length} image{referenceImages.length !== 1 ? 's' : ''}</span>
+                        <span className="text-[9px] text-[#C45D3E] font-medium">{referenceImages.length} image{referenceImages.length !== 1 ? 's' : ''}</span>
                       )}
                     </div>
                     {referenceImages.length > 0 ? (
@@ -1749,7 +1749,7 @@ export default function CreativePage() {
                           <div key={idx} className="relative flex-shrink-0">
                             <img src={img.dataUrl} alt={img.name}
                               className="w-16 h-16 rounded-xl object-cover"
-                              style={{ border: idx === 0 ? '2px solid rgba(6,182,212,0.5)' : '1px solid rgba(0,0,0,0.1)' }} />
+                              style={{ border: idx === 0 ? '2px solid rgba(196,93,62,0.4)' : '1px solid rgba(0,0,0,0.1)' }} />
                             {idx === 0 && (
                               <span className="absolute bottom-0.5 left-0.5 text-[7px] font-bold bg-cyan-500 text-black px-1 rounded leading-tight">PRIMARY</span>
                             )}
@@ -1763,20 +1763,20 @@ export default function CreativePage() {
                         {/* Add more button */}
                         <button onClick={() => fileInputRef.current?.click()}
                           className="w-16 h-16 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all"
-                          style={{ borderColor: 'rgba(6,182,212,0.25)', background: 'rgba(6,182,212,0.03)' }}
-                          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(6,182,212,0.5)'; }}
-                          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(6,182,212,0.25)'; }}>
-                          <svg className="w-4 h-4 text-cyan-500/60" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                          style={{ borderColor: 'rgba(196,93,62,0.2)', background: 'rgba(196,93,62,0.03)' }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(196,93,62,0.4)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(196,93,62,0.2)'; }}>
+                          <svg className="w-4 h-4 text-[#C45D3E]/60" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
                           <span className="text-[8px] text-gray-500">Add</span>
                         </button>
                       </div>
                     ) : (
                       <button onClick={() => fileInputRef.current?.click()}
                         className="w-full flex flex-col items-center justify-center gap-2 py-5 rounded-xl border border-dashed transition-all text-center"
-                        style={{ borderColor: 'rgba(6,182,212,0.2)', background: 'rgba(6,182,212,0.02)' }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(6,182,212,0.4)'; e.currentTarget.style.background = 'rgba(6,182,212,0.06)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(6,182,212,0.2)'; e.currentTarget.style.background = 'rgba(6,182,212,0.02)'; }}>
-                        <svg className="w-5 h-5 text-cyan-500/60" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                        style={{ borderColor: 'rgba(196,93,62,0.15)', background: 'rgba(6,182,212,0.02)' }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(196,93,62,0.35)'; e.currentTarget.style.background = 'rgba(196,93,62,0.06)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(196,93,62,0.15)'; e.currentTarget.style.background = 'rgba(6,182,212,0.02)'; }}>
+                        <svg className="w-5 h-5 text-[#C45D3E]/60" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                         </svg>
                         <div>
@@ -1801,7 +1801,7 @@ export default function CreativePage() {
                   {/* Generate */}
                   <button onClick={generate} disabled={generating || (!prompt.trim() && !referenceImages.length)}
                     className="btn-accent w-full py-3 rounded-lg font-bold text-sm tracking-wide"
-                    style={{ background: (!prompt.trim() && !referenceImages.length) ? '#1e1e2e' : '#06b6d4', boxShadow: (!prompt.trim() && !referenceImages.length) ? 'none' : '0 4px 20px -4px rgba(6,182,212,0.4)' }}>
+                    style={{ background: (!prompt.trim() && !referenceImages.length) ? '#1e1e2e' : '#C45D3E', boxShadow: (!prompt.trim() && !referenceImages.length) ? 'none' : '0 4px 20px -4px rgba(196,93,62,0.35)' }}>
                     {referenceImages.length ? `GENERATE ${quantity} VARIATIONS` : `GENERATE ${quantity} CREATIVES`}
                   </button>
                 </div>
@@ -1824,13 +1824,13 @@ export default function CreativePage() {
               {generating && images.length === 0 && (
                 <div className="panel rounded-2xl p-6 sm:p-10 animate-fade-up text-center">
                   <div className="flex items-center justify-center gap-3 mb-5">
-                    <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                    <span className="hud-label text-[11px]" style={{ color: '#06b6d4' }}>RENDERING VISUALS</span>
+                    <div className="w-2 h-2 rounded-full bg-[#C45D3E] animate-pulse" />
+                    <span className="hud-label text-[11px]" style={{ color: '#C45D3E' }}>RENDERING VISUALS</span>
                   </div>
                   <div className="flex justify-center gap-1 mb-5">
                     {[0, 1, 2, 3, 4].map(i => (
-                      <div key={i} className="w-1.5 rounded-full overflow-hidden" style={{ height: 32, background: 'rgba(6,182,212,0.1)' }}>
-                        <div className="w-full rounded-full bg-cyan-400" style={{ height: '40%', animation: `pulse 1.2s ease-in-out ${i * 0.15}s infinite` }} />
+                      <div key={i} className="w-1.5 rounded-full overflow-hidden" style={{ height: 32, background: 'rgba(196,93,62,0.08)' }}>
+                        <div className="w-full rounded-full bg-[#C45D3E]" style={{ height: '40%', animation: `pulse 1.2s ease-in-out ${i * 0.15}s infinite` }} />
                       </div>
                     ))}
                   </div>
@@ -1847,14 +1847,14 @@ export default function CreativePage() {
                 <div className="animate-fade-up">
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full" style={{ background: generating ? '#22d3ee' : '#4ade80', animation: generating ? 'pulse 1s infinite' : 'none' }} />
-                      <span className="hud-label text-[11px]" style={{ color: generating ? '#22d3ee' : '#4ade80' }}>
+                      <div className="w-2 h-2 rounded-full" style={{ background: generating ? '#C45D3E' : '#4ade80', animation: generating ? 'pulse 1s infinite' : 'none' }} />
+                      <span className="hud-label text-[11px]" style={{ color: generating ? '#C45D3E' : '#4ade80' }}>
                         {generating
                           ? `RENDERING — ${images.filter(im => im.status === 'completed').length} / ${images.length} DONE`
                           : `GENERATED — ${images.length} CREATIVES`}
                       </span>
                       {promptReadyCount > 0 && !generating && (
-                        <span className="chip text-[9px]" style={{ color: '#22d3ee', borderColor: 'rgba(6,182,212,0.2)' }}>
+                        <span className="chip text-[9px]" style={{ color: '#C45D3E', borderColor: 'rgba(196,93,62,0.15)' }}>
                           {promptReadyCount} prompt ready
                         </span>
                       )}
@@ -1863,7 +1863,7 @@ export default function CreativePage() {
                       <div className="flex gap-2">
                         {images.some(im => im.dataUrl || im.url) && (
                           <button onClick={downloadAll} className="chip text-[10px]"
-                            style={{ color: '#22d3ee', borderColor: 'rgba(6,182,212,0.25)' }}>
+                            style={{ color: '#C45D3E', borderColor: 'rgba(196,93,62,0.2)' }}>
                             <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                             </svg>
@@ -1879,8 +1879,8 @@ export default function CreativePage() {
                   </div>
 
                   {promptReadyCount === images.length && !generating && (
-                    <div className="panel rounded-xl p-3 mb-3" style={{ borderColor: 'rgba(6,182,212,0.15)', background: 'rgba(6,182,212,0.04)' }}>
-                      <p className="text-xs text-cyan-400/70">
+                    <div className="panel rounded-xl p-3 mb-3" style={{ borderColor: 'rgba(196,93,62,0.12)', background: 'rgba(196,93,62,0.04)' }}>
+                      <p className="text-xs text-[#C45D3E]/70">
                         <span className="font-semibold">AI prompts generated.</span> Image rendering requires Gemini API configuration. Copy these prompts to use in any image generation tool.
                       </p>
                     </div>
@@ -1973,10 +1973,10 @@ export default function CreativePage() {
 
               {/* Visual Style */}
               <div className="panel rounded-2xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-white/[0.04]" style={{ background: 'rgba(6,182,212,0.03)' }}>
+                <div className="px-4 py-3 border-b border-white/[0.04]" style={{ background: 'rgba(196,93,62,0.03)' }}>
                   <div className="flex items-center gap-2">
-                    <div className="w-1 h-3.5 rounded-full" style={{ background: '#06b6d4' }} />
-                    <p className="hud-label text-[10px]" style={{ color: '#06b6d4' }}>VISUAL STYLE</p>
+                    <div className="w-1 h-3.5 rounded-full" style={{ background: '#C45D3E' }} />
+                    <p className="hud-label text-[10px]" style={{ color: '#C45D3E' }}>VISUAL STYLE</p>
                   </div>
                 </div>
                 <div className="p-3">
@@ -1985,10 +1985,10 @@ export default function CreativePage() {
                       <button key={s.id} onClick={() => setStyle(s.id)}
                         className="relative px-3 py-2.5 rounded-xl border text-[11px] font-medium transition-all text-left"
                         style={style === s.id
-                          ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.4)', color: '#22d3ee' }
+                          ? { background: 'rgba(196,93,62,0.1)', borderColor: 'rgba(196,93,62,0.35)', color: '#C45D3E' }
                           : { background: 'rgba(0,0,0,0.02)', borderColor: 'rgba(255,255,255,0.06)', color: '#6b7280' }}>
                         {style === s.id && (
-                          <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full" style={{ background: '#06b6d4' }} />
+                          <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full" style={{ background: '#C45D3E' }} />
                         )}
                         {s.name}
                       </button>
@@ -1999,10 +1999,10 @@ export default function CreativePage() {
 
               {/* Dimensions */}
               <div className="panel rounded-2xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-white/[0.04]" style={{ background: 'rgba(6,182,212,0.03)' }}>
+                <div className="px-4 py-3 border-b border-white/[0.04]" style={{ background: 'rgba(196,93,62,0.03)' }}>
                   <div className="flex items-center gap-2">
-                    <div className="w-1 h-3.5 rounded-full" style={{ background: '#06b6d4' }} />
-                    <p className="hud-label text-[10px]" style={{ color: '#06b6d4' }}>DIMENSIONS</p>
+                    <div className="w-1 h-3.5 rounded-full" style={{ background: '#C45D3E' }} />
+                    <p className="hud-label text-[10px]" style={{ color: '#C45D3E' }}>DIMENSIONS</p>
                   </div>
                 </div>
                 <div className="p-3">
@@ -2017,14 +2017,14 @@ export default function CreativePage() {
                         <button key={d.id} onClick={() => setDimension(d.id)}
                           className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all"
                           style={active
-                            ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.4)' }
+                            ? { background: 'rgba(196,93,62,0.1)', borderColor: 'rgba(196,93,62,0.35)' }
                             : { background: 'rgba(0,0,0,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
                           <div className="flex-shrink-0 flex items-center justify-center" style={{ width: 22, height: 22 }}>
                             <div className="rounded-sm border-2 transition-all"
-                              style={{ width: bw, height: bh, borderColor: active ? '#22d3ee' : '#374151', background: active ? 'rgba(6,182,212,0.15)' : 'transparent' }} />
+                              style={{ width: bw, height: bh, borderColor: active ? '#C45D3E' : '#374151', background: active ? 'rgba(196,93,62,0.12)' : 'transparent' }} />
                           </div>
                           <div className="min-w-0">
-                            <p className="text-[11px] font-bold leading-none truncate" style={{ color: active ? '#22d3ee' : '#9ca3af' }}>{d.label}</p>
+                            <p className="text-[11px] font-bold leading-none truncate" style={{ color: active ? '#C45D3E' : '#9ca3af' }}>{d.label}</p>
                             <p className="text-[9px] mt-0.5 truncate" style={{ color: active ? 'rgba(34,211,238,0.55)' : '#4b5563' }}>{d.desc}</p>
                           </div>
                         </button>
@@ -2036,10 +2036,10 @@ export default function CreativePage() {
 
               {/* Color Palette */}
               <div className="panel rounded-2xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-white/[0.04]" style={{ background: 'rgba(6,182,212,0.03)' }}>
+                <div className="px-4 py-3 border-b border-white/[0.04]" style={{ background: 'rgba(196,93,62,0.03)' }}>
                   <div className="flex items-center gap-2">
-                    <div className="w-1 h-3.5 rounded-full" style={{ background: '#06b6d4' }} />
-                    <p className="hud-label text-[10px]" style={{ color: '#06b6d4' }}>COLOR PALETTE</p>
+                    <div className="w-1 h-3.5 rounded-full" style={{ background: '#C45D3E' }} />
+                    <p className="hud-label text-[10px]" style={{ color: '#C45D3E' }}>COLOR PALETTE</p>
                   </div>
                 </div>
                 <div className="p-2.5 space-y-1">
@@ -2047,14 +2047,14 @@ export default function CreativePage() {
                     <button onClick={() => setPalette('image-colors')}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all"
                       style={palette === 'image-colors'
-                        ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.4)' }
+                        ? { background: 'rgba(196,93,62,0.1)', borderColor: 'rgba(196,93,62,0.35)' }
                         : { background: 'rgba(0,0,0,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
                       <div className="flex gap-0.5 flex-shrink-0">
                         {imageColors.slice(0, 5).map((c, i) => (
                           <div key={i} className="w-4 h-4 rounded-full border border-black/20" style={{ background: c }} />
                         ))}
                       </div>
-                      <span className="text-[11px] font-semibold" style={{ color: palette === 'image-colors' ? '#22d3ee' : '#9ca3af' }}>Image Colors</span>
+                      <span className="text-[11px] font-semibold" style={{ color: palette === 'image-colors' ? '#C45D3E' : '#9ca3af' }}>Image Colors</span>
                       <span className="ml-auto text-[9px] opacity-50">from upload</span>
                     </button>
                   )}
@@ -2062,15 +2062,15 @@ export default function CreativePage() {
                     <button key={p.id} onClick={() => setPalette(p.id)}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all"
                       style={palette === p.id
-                        ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.4)' }
+                        ? { background: 'rgba(196,93,62,0.1)', borderColor: 'rgba(196,93,62,0.35)' }
                         : { background: 'rgba(0,0,0,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
                       <div className="flex gap-0.5 flex-shrink-0">
                         {p.colors.map((c, i) => (
                           <div key={i} className="w-4 h-4 rounded-full border border-black/20" style={{ background: c }} />
                         ))}
                       </div>
-                      <span className="text-[11px] font-semibold" style={{ color: palette === p.id ? '#22d3ee' : '#9ca3af' }}>{p.name}</span>
-                      {palette === p.id && <span className="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#06b6d4' }} />}
+                      <span className="text-[11px] font-semibold" style={{ color: palette === p.id ? '#C45D3E' : '#9ca3af' }}>{p.name}</span>
+                      {palette === p.id && <span className="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#C45D3E' }} />}
                     </button>
                   ))}
                 </div>
@@ -2078,10 +2078,10 @@ export default function CreativePage() {
 
               {/* Quantity */}
               <div className="panel rounded-2xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-white/[0.04]" style={{ background: 'rgba(6,182,212,0.03)' }}>
+                <div className="px-4 py-3 border-b border-white/[0.04]" style={{ background: 'rgba(196,93,62,0.03)' }}>
                   <div className="flex items-center gap-2">
-                    <div className="w-1 h-3.5 rounded-full" style={{ background: '#06b6d4' }} />
-                    <p className="hud-label text-[10px]" style={{ color: '#06b6d4' }}>QUANTITY</p>
+                    <div className="w-1 h-3.5 rounded-full" style={{ background: '#C45D3E' }} />
+                    <p className="hud-label text-[10px]" style={{ color: '#C45D3E' }}>QUANTITY</p>
                   </div>
                 </div>
                 <div className="p-3">
@@ -2090,9 +2090,9 @@ export default function CreativePage() {
                       <button key={q.v} onClick={() => setQuantity(q.v)}
                         className="flex flex-col items-center justify-center py-3 rounded-xl border transition-all"
                         style={quantity === q.v
-                          ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.4)' }
+                          ? { background: 'rgba(196,93,62,0.1)', borderColor: 'rgba(196,93,62,0.35)' }
                           : { background: 'rgba(0,0,0,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
-                        <span className="text-lg font-bold leading-none" style={{ color: quantity === q.v ? '#22d3ee' : '#9ca3af' }}>{q.label}</span>
+                        <span className="text-lg font-bold leading-none" style={{ color: quantity === q.v ? '#C45D3E' : '#9ca3af' }}>{q.label}</span>
                         <span className="text-[9px] mt-1" style={{ color: quantity === q.v ? 'rgba(34,211,238,0.55)' : '#4b5563' }}>imgs</span>
                       </button>
                     ))}
