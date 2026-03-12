@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const sharp = require('sharp');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_IMAGE_MODEL || 'gemini-3.1-flash-image-preview';
@@ -113,18 +114,23 @@ async function generateImage(prompt, aspectRatio = '1:1') {
   }
 
   const { data: base64, mimeType } = imagePart.inlineData;
-  const ext = mimeType === 'image/jpeg' ? 'jpg' : 'png';
-  const filename = `${crypto.randomUUID()}.${ext}`;
+  const rawBuffer = Buffer.from(base64, 'base64');
+
+  // Compress: convert to JPEG at quality 85 — typically 5-10x smaller than raw PNG
+  const filename = `${crypto.randomUUID()}.jpg`;
   const filepath = path.join(uploadsDir, filename);
+  const compressed = await sharp(rawBuffer).jpeg({ quality: 85, mozjpeg: true }).toBuffer();
+  fs.writeFileSync(filepath, compressed);
 
-  fs.writeFileSync(filepath, Buffer.from(base64, 'base64'));
+  const compressedBase64 = compressed.toString('base64');
+  const savedMime = 'image/jpeg';
 
-  console.log(`[gemini] Saved image: ${filename} (${mimeType}, ${aspectRatio})`);
+  console.log(`[gemini] Saved image: ${filename} (${mimeType} → jpeg, ${(rawBuffer.length / 1024).toFixed(0)}KB → ${(compressed.length / 1024).toFixed(0)}KB, ${aspectRatio})`);
 
   return {
     url: `/uploads/creatives/${filename}`,
-    dataUrl: `data:${mimeType};base64,${base64}`,
-    mimeType,
+    dataUrl: `data:${savedMime};base64,${compressedBase64}`,
+    mimeType: savedMime,
   };
 }
 
@@ -209,17 +215,22 @@ async function generateImageFromReference(promptText, referenceImages, aspectRat
   }
 
   const { data: base64, mimeType } = imagePart.inlineData;
-  const ext = mimeType === 'image/jpeg' ? 'jpg' : 'png';
-  const filename = `${crypto.randomUUID()}.${ext}`;
-  const filepath = path.join(uploadsDir, filename);
+  const rawBuffer = Buffer.from(base64, 'base64');
 
-  fs.writeFileSync(filepath, Buffer.from(base64, 'base64'));
-  console.log(`[gemini] Saved variation image: ${filename} (${mimeType})`);
+  const filename = `${crypto.randomUUID()}.jpg`;
+  const filepath = path.join(uploadsDir, filename);
+  const compressed = await sharp(rawBuffer).jpeg({ quality: 85, mozjpeg: true }).toBuffer();
+  fs.writeFileSync(filepath, compressed);
+
+  const compressedBase64 = compressed.toString('base64');
+  const savedMime = 'image/jpeg';
+
+  console.log(`[gemini] Saved variation: ${filename} (${mimeType} → jpeg, ${(rawBuffer.length / 1024).toFixed(0)}KB → ${(compressed.length / 1024).toFixed(0)}KB)`);
 
   return {
     url: `/uploads/creatives/${filename}`,
-    dataUrl: `data:${mimeType};base64,${base64}`,
-    mimeType,
+    dataUrl: `data:${savedMime};base64,${compressedBase64}`,
+    mimeType: savedMime,
   };
 }
 
