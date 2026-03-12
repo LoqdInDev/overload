@@ -417,4 +417,42 @@ router.get('/test-poll/:taskId', async (req, res) => {
   }
 });
 
+// POST /recover/:jobId — attempt to recover a timed-out video from WaveSpeed
+router.post('/recover/:jobId', async (req, res) => {
+  const wsId = req.workspace.id;
+  const videoQueries = getVideoQueries(wsId);
+  const job = await videoQueries.getVideoJob(Number(req.params.jobId));
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+
+  const result = safeParse(job.result);
+  const taskId = result?.taskId;
+  if (!taskId) return res.status(400).json({ error: 'No task ID saved — cannot recover this job' });
+
+  try {
+    const wavespeed = require('../services/wavespeed');
+    const check = await wavespeed.checkTask(taskId);
+
+    if (check.success && check.videoUrl) {
+      // Download and save the video
+      const filename = `recovered_${job.id}_${Date.now()}.mp4`;
+      const filepath = path.join(videosDir, filename);
+      try {
+        await videoManager.downloadVideo(check.videoUrl, filepath);
+        check.localPath = `/videos/${filename}`;
+        check.filename = filename;
+      } catch (dlErr) {
+        console.error('[Recover] Download failed, using remote URL:', dlErr.message);
+        check.localPath = null;
+        check.filename = null;
+      }
+      await videoQueries.updateVideoJob(job.id, 'completed', check);
+      return res.json({ success: true, recovered: true, result: check });
+    }
+
+    res.json({ success: false, error: check.error, status: check.status });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

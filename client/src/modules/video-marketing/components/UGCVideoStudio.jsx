@@ -187,6 +187,7 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
   const [sceneGenerating, setSceneGenerating] = useState({});
   const [sceneResults, setSceneResults] = useState({});
   const [sceneErrors, setSceneErrors] = useState({});
+  const [sceneJobIds, setSceneJobIds] = useState({});
   const [sceneLipsync, setSceneLipsync] = useState({});
   const [generatingAll, setGeneratingAll] = useState(false);
   const activeRef = useRef(true);
@@ -304,6 +305,7 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
         aspectRatio,
         sound: scene.enableAudio,
       });
+      setSceneJobIds(prev => ({ ...prev, [i]: jobId }));
       await pollSceneAsync(jobId, i);
     } catch (e) {
       setSceneErrors(prev => ({ ...prev, [i]: e.message || 'Failed to start.' }));
@@ -330,6 +332,24 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
     setSceneErrors(prev => { const n = { ...prev }; delete n[i]; return n; });
     setSceneLipsync(prev => { const n = { ...prev }; delete n[i]; return n; });
     fireScene(scenes[i], i);
+  };
+
+  const recoverScene = async (i) => {
+    const jobId = sceneJobIds[i];
+    if (!jobId) return;
+    setSceneGenerating(prev => ({ ...prev, [i]: true }));
+    setSceneErrors(prev => ({ ...prev, [i]: null }));
+    try {
+      const res = await postJSON(`/api/video/recover/${jobId}`, {});
+      if (res.success && res.recovered) {
+        setSceneResults(prev => ({ ...prev, [i]: res.result }));
+      } else {
+        setSceneErrors(prev => ({ ...prev, [i]: res.error || 'Video not ready yet. Try again in a minute.' }));
+      }
+    } catch (e) {
+      setSceneErrors(prev => ({ ...prev, [i]: e.message || 'Recovery failed.' }));
+    }
+    setSceneGenerating(prev => ({ ...prev, [i]: false }));
   };
 
   const handleLipsync = async (i) => {
@@ -1008,12 +1028,21 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
                 )}
 
                 {err && !isGen && (
-                  <div className="flex items-center gap-2 px-4 py-3 text-xs"
+                  <div className="flex items-center justify-between gap-2 px-4 py-3 text-xs"
                     style={{ background: 'rgba(239,68,68,0.06)', color: '#f87171' }}>
-                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                    </svg>
-                    {err}
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                      </svg>
+                      {err}
+                    </div>
+                    {sceneJobIds[i] && err.includes('imed out') && (
+                      <button type="button" onClick={() => recoverScene(i)}
+                        className="text-[10px] font-medium px-2.5 py-1 rounded-lg flex-shrink-0"
+                        style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.2)' }}>
+                        Recover
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

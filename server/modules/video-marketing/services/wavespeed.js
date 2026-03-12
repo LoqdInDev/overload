@@ -58,7 +58,10 @@ class WaveSpeedService {
         return { success: false, error: data.message || `API error (${data.code})` };
       }
 
-      return this.pollForResult(data.data.id);
+      const taskId = data.data.id;
+      const result = await this.pollForResult(taskId);
+      result.taskId = taskId;
+      return result;
     } catch (error) {
       const cause = error.cause?.message || error.cause?.code || '';
       console.error('[WaveSpeed] generateFromText failed:', error.message, cause || '');
@@ -91,7 +94,10 @@ class WaveSpeedService {
         return { success: false, error: data.message || `API error (${data.code})` };
       }
 
-      return this.pollForResult(data.data.id);
+      const taskId = data.data.id;
+      const result = await this.pollForResult(taskId);
+      result.taskId = taskId;
+      return result;
     } catch (error) {
       const cause = error.cause?.message || error.cause?.code || '';
       console.error('[WaveSpeed] generateFromImage failed:', error.message, cause || '', 'image:', imageUrl);
@@ -128,7 +134,27 @@ class WaveSpeedService {
       }
     }
 
-    return { success: false, error: 'Generation timed out after 9 minutes. Try again.' };
+    return { success: false, error: 'Generation timed out after 9 minutes. Try again.', taskId, timedOut: true };
+  }
+  async checkTask(taskId) {
+    try {
+      const res = await fetchWithTimeout(`${BASE_URL}/predictions/${taskId}/result`, {
+        headers: { Authorization: `Bearer ${this.apiKey}` },
+      }, 15000);
+      const data = await res.json();
+      const status = data.data?.status;
+      if (status === 'completed') {
+        const videoUrl = data.data?.outputs?.[0];
+        if (videoUrl) return { success: true, videoUrl, taskId };
+        return { success: false, error: 'Completed but no output URL', taskId };
+      }
+      if (status === 'failed') {
+        return { success: false, error: data.data?.error || 'Generation failed', taskId };
+      }
+      return { success: false, error: `Still processing (status: ${status})`, taskId, status };
+    } catch (error) {
+      return { success: false, error: error.message, taskId };
+    }
   }
 }
 
