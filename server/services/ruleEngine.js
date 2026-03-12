@@ -129,7 +129,7 @@ function shouldThresholdTrigger(rule) {
 // ── Safety Checks ────────────────────────────────────────────────
 
 async function checkSafetyLimits(wsId) {
-  const settings = loadSettings(wsId);
+  const settings = await loadSettings(wsId);
   if (settings.pauseAll === 'true') return { allowed: false, reason: 'All automation paused' };
 
   const maxDay = Number(settings.maxActionsPerDay) || 50;
@@ -146,17 +146,72 @@ async function checkSafetyLimits(wsId) {
   if (todayCount >= maxDay) return { allowed: false, reason: `Daily limit reached (${maxDay})` };
   if (hourCount >= maxHour) return { allowed: false, reason: `Hourly limit reached (${maxHour})` };
 
-  return { allowed: true };
+  // Monthly budget limit (count all actions this month as a proxy for cost)
+  const monthlyLimit = Number(settings.monthlyBudgetLimit) || 0;
+  if (monthlyLimit > 0) {
+    const monthCount = db.prepare(
+      "SELECT COUNT(*) as c FROM ae_action_log WHERE workspace_id = ? AND created_at::timestamptz >= DATE_TRUNC('month', NOW()) AND mode = 'autopilot'"
+    ).get(wsId)?.c || 0;
+    if (monthCount >= monthlyLimit) return { allowed: false, reason: `Monthly action budget reached (${monthlyLimit})` };
+  }
+
+  return { allowed: true, settings };
 }
 
 async function loadSettings(wsId) {
   const DEFAULTS = {
-    pauseAll: 'false', maxActionsPerDay: '50', maxActionsPerHour: '10', confidenceThreshold: '70',
+    pauseAll: 'false', maxActionsPerDay: '50', maxActionsPerHour: '10',
+    confidenceThreshold: '70', riskLevel: 'balanced', monthlyBudgetLimit: '0',
   };
   const rows = await db.prepare('SELECT key, value FROM ae_settings WHERE workspace_id = ?').all(wsId);
   const result = { ...DEFAULTS };
   for (const r of rows) result[r.key] = r.value;
   return result;
+}
+
+// ── Confidence Scoring ───────────────────────────────────────────
+
+function computeConfidence(rule) {
+  let score = 0.5; // base confidence
+
+  const actionConfig = JSON.parse(rule.action_config || '{}');
+  const triggerConfig = JSON.parse(rule.trigger_config || '{}');
+
+  // +0.1 if rule has run successfully before (proven track record)
+  if (rule.run_count > 0) score += 0.1;
+  // +0.05 more if run 5+ times
+  if (rule.run_count >= 5) score += 0.05;
+
+  // +0.1 if trigger is well-configured (has time or metric)
+  if (triggerConfig.time || triggerConfig.metric) score += 0.1;
+
+  // +0.1 if action config has specific parameters (not just defaults)
+  const configKeys = Object.keys(actionConfig).filter(k => actionConfig[k]);
+  if (configKeys.length >= 2) score += 0.1;
+
+  // +0.05 if rule has a description (human reviewed)
+  if (rule.description && rule.description.length > 10) score += 0.05;
+
+  // +0.1 if threshold trigger has concrete operator/value
+  if (rule.trigger_type === 'threshold' && triggerConfig.operator && triggerConfig.value) score += 0.1;
+
+  // Cap at 0.95
+  return Math.min(score, 0.95);
+}
+
+// ── Risk Level Helpers ──────────────────────────────────────────
+
+function shouldRequireApprovalForRisk(rule, riskLevel) {
+  // Conservative: all actions require approval (even in autopilot)
+  if (riskLevel === 'conservative') return true;
+
+  // Aggressive: only require approval if rule explicitly says so
+  if (riskLevel === 'aggressive') return !!rule.requires_approval;
+
+  // Balanced (default): require approval for high-impact actions
+  const highImpactActions = ['adjust_budget', 'send_campaign', 'publish_blog'];
+  if (highImpactActions.includes(rule.action_type) && !rule.run_count) return true;
+  return !!rule.requires_approval;
 }
 
 // ── Action Execution ─────────────────────────────────────────────
@@ -323,7 +378,8 @@ function queueForApproval(rule, wsId) {
   const actionConfig = JSON.parse(rule.action_config || '{}');
   const triggerConfig = JSON.parse(rule.trigger_config || '{}');
 
-  const confidence = 0.7 + Math.random() * 0.25; // 70-95% simulated
+  // Compute meaningful confidence based on rule maturity and configuration completeness
+  const confidence = computeConfidence(rule);
 
   db.prepare(`
     INSERT INTO ae_approval_queue (module_id, action_type, title, description, payload, ai_confidence, priority, status, source, created_at, workspace_id)
@@ -382,18 +438,28 @@ async function tick() {
         if (!shouldTrigger) continue;
 
         // Safety check
-        const safety = checkSafetyLimits(wsId);
+        const safety = await checkSafetyLimits(wsId);
         if (!safety.allowed) {
           console.log(`  [rule-engine] Skipped "${rule.name}": ${safety.reason}`);
           continue;
         }
 
+        const settings = safety.settings;
+        const confidenceThreshold = Number(settings.confidenceThreshold || 70) / 100;
+        const riskLevel = settings.riskLevel || 'balanced';
+
         // Execute based on mode
         if (moduleMode === 'autopilot') {
-          if (rule.requires_approval) {
-            // Even in autopilot, some rules need approval
+          const needsApproval = shouldRequireApprovalForRisk(rule, riskLevel);
+
+          // Check confidence threshold — low-confidence actions get queued instead
+          const ruleConfidence = computeConfidence(rule);
+          if (ruleConfidence < confidenceThreshold) {
             queueForApproval(rule, wsId);
-            console.log(`  [rule-engine] Queued "${rule.name}" (requires approval)`);
+            console.log(`  [rule-engine] Queued "${rule.name}" (confidence ${Math.round(ruleConfidence * 100)}% < threshold ${Math.round(confidenceThreshold * 100)}%)`);
+          } else if (needsApproval) {
+            queueForApproval(rule, wsId);
+            console.log(`  [rule-engine] Queued "${rule.name}" (requires approval, risk: ${riskLevel})`);
           } else {
             console.log(`  [rule-engine] Executing "${rule.name}" in autopilot...`);
             const result = await executeAction(rule, wsId);
@@ -451,14 +517,17 @@ async function triggerEvent(eventType, moduleId, wsId, eventData = {}) {
       if (hoursSince < 1) continue;
     }
 
-    const safety = checkSafetyLimits(wsId);
+    const safety = await checkSafetyLimits(wsId);
     if (!safety.allowed) continue;
 
     const modeRow = await db.prepare('SELECT mode FROM ae_module_modes WHERE module_id = ? AND workspace_id = ?').get(moduleId, wsId);
     const mode = modeRow?.mode || 'manual';
     if (mode === 'manual') continue;
 
-    if (mode === 'autopilot' && !rule.requires_approval) {
+    const riskLevel = safety.settings?.riskLevel || 'balanced';
+    const needsApproval = shouldRequireApprovalForRisk(rule, riskLevel);
+
+    if (mode === 'autopilot' && !needsApproval) {
       await executeAction(rule, wsId);
     } else {
       queueForApproval(rule, wsId);

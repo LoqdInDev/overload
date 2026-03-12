@@ -47,15 +47,10 @@ router.put('/settings', async (req, res) => {
 // GET /execution-log — get automation execution history
 router.get('/execution-log', async (req, res) => {
   const workspace_id = req.workspace.id;
-  try {
-    const logs = await db.prepare(`
-      SELECT * FROM automation_executions WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 100
-    `).all(workspace_id);
-    res.json({ logs: logs || [] });
-  } catch {
-    // If table doesn't exist, return empty
-    res.json({ logs: [] });
-  }
+  const logs = await db.prepare(`
+    SELECT * FROM ae_action_log WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 100
+  `).all(workspace_id);
+  res.json({ logs: logs || [] });
 });
 
 // POST /analyze-automation — AI analyze an automation rule
