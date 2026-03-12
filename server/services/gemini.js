@@ -119,7 +119,7 @@ async function generateImage(prompt, aspectRatio = '1:1') {
   // Compress: convert to JPEG at quality 85 — typically 5-10x smaller than raw PNG
   const filename = `${crypto.randomUUID()}.jpg`;
   const filepath = path.join(uploadsDir, filename);
-  const compressed = await sharp(rawBuffer).jpeg({ quality: 85, mozjpeg: true }).toBuffer();
+  const compressed = await sharp(rawBuffer).jpeg({ quality: 92, mozjpeg: true }).toBuffer();
   fs.writeFileSync(filepath, compressed);
 
   const compressedBase64 = compressed.toString('base64');
@@ -219,7 +219,7 @@ async function generateImageFromReference(promptText, referenceImages, aspectRat
 
   const filename = `${crypto.randomUUID()}.jpg`;
   const filepath = path.join(uploadsDir, filename);
-  const compressed = await sharp(rawBuffer).jpeg({ quality: 85, mozjpeg: true }).toBuffer();
+  const compressed = await sharp(rawBuffer).jpeg({ quality: 92, mozjpeg: true }).toBuffer();
   fs.writeFileSync(filepath, compressed);
 
   const compressedBase64 = compressed.toString('base64');
