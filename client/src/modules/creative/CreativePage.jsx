@@ -1691,7 +1691,7 @@ export default function CreativePage() {
                               style={{ background: 'rgba(196,93,62,0.12)', border: '1px solid rgba(196,93,62,0.2)', color: '#C45D3E' }}>6</div>
                           </div>
                           <div className="flex-1 pt-0.5 space-y-2 min-w-0">
-                            <button onClick={() => setShowTextOverlay(v => !v)}
+                            <button onClick={() => setShowTextOverlay(v => { if (!v) setNoText(false); else setNoText(true); return !v; })}
                               className="flex items-center gap-2 text-[12px] font-semibold transition-colors"
                               style={{ color: showTextOverlay ? '#C45D3E' : '#9ca3af' }}>
                               <span className="relative inline-flex h-4 w-7 items-center rounded-full transition-colors flex-shrink-0"
@@ -1991,7 +1991,7 @@ export default function CreativePage() {
                         <p className="text-[10px]" style={{ color: dark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }}>Exclude text, logos & watermarks</p>
                       </div>
                     </div>
-                    <button onClick={() => setNoText(v => !v)}
+                    <button onClick={() => setNoText(v => { if (!v) { setShowTextOverlay(false); setBuilderTextOverlay(''); } return !v; })}
                       className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors flex-shrink-0"
                       style={{ background: noText ? '#C45D3E' : (dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.12)') }}>
                       <span className="inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform shadow-sm"
