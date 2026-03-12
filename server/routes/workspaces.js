@@ -89,7 +89,7 @@ router.put('/:id', async (req, res) => {
 
     const { name } = req.body;
     if (name && name.trim()) {
-      db.prepare(
+      await db.prepare(
         "UPDATE workspaces SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
       ).run(name.trim(), id);
     }
@@ -114,7 +114,7 @@ router.delete('/:id', async (req, res) => {
     }
 
     // Ensure user has at least one other workspace
-    const count = db.prepare(
+    const count = await db.prepare(
       'SELECT COUNT(*) as c FROM workspace_members WHERE user_id = ?'
     ).get(req.user.id);
 
@@ -188,7 +188,7 @@ router.post('/:id/members', async (req, res) => {
       return res.status(409).json({ error: 'User is already a member of this workspace' });
     }
 
-    db.prepare(
+    await db.prepare(
       'INSERT INTO workspace_members (id, workspace_id, user_id, role) VALUES (?, ?, ?, ?)'
     ).run(crypto.randomUUID(), id, user.id, memberRole);
 

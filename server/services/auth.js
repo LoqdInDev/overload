@@ -69,7 +69,7 @@ async function createUser(email, password, displayName) {
   const id = crypto.randomUUID();
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
-  db.prepare(
+  await db.prepare(
     'INSERT INTO users (id, email, password_hash, display_name) VALUES (?, ?, ?, ?)'
   ).run(id, email.toLowerCase().trim(), passwordHash, displayName || null);
 
@@ -104,7 +104,7 @@ async function generateTokenPair(userId) {
 
   const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
-  db.prepare(
+  await db.prepare(
     'INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)'
   ).run(refreshTokenId, userId, refreshTokenHash, expiresAt);
 
@@ -174,7 +174,7 @@ async function createPasswordResetToken(email) {
   const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
 
-  db.prepare(
+  await db.prepare(
     'INSERT INTO password_reset_tokens (id, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)'
   ).run(id, user.id, tokenHash, expiresAt);
 
@@ -202,7 +202,7 @@ async function verifyPasswordResetToken(compositeToken) {
 }
 
 async function resetPassword(compositeToken, newPassword) {
-  const userId = verifyPasswordResetToken(compositeToken);
+  const userId = await verifyPasswordResetToken(compositeToken);
   if (!userId) {
     const err = new Error('Invalid or expired reset token');
     err.status = 400;
@@ -212,7 +212,7 @@ async function resetPassword(compositeToken, newPassword) {
 
   const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
 
-  db.prepare("UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(passwordHash, userId);
+  await db.prepare("UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(passwordHash, userId);
 
   // Mark token as used
   const [tokenId] = compositeToken.split(':');
@@ -238,7 +238,7 @@ async function createEmailVerificationToken(userId) {
   const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
 
-  db.prepare(
+  await db.prepare(
     'INSERT INTO email_verification_tokens (id, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)'
   ).run(id, userId, tokenHash, expiresAt);
 
@@ -264,7 +264,7 @@ async function verifyEmailToken(compositeToken) {
 
   // Mark token as used and verify the user's email
   await db.prepare('UPDATE email_verification_tokens SET used = 1 WHERE id = ?').run(tokenId);
-  db.prepare("UPDATE users SET email_verified = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(record.user_id);
+  await db.prepare("UPDATE users SET email_verified = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(record.user_id);
 
   return record.user_id;
 }

@@ -254,12 +254,12 @@ router.post('/platforms/sync', async (req, res) => {
         await db.prepare('UPDATE eh_orders SET customer = ?, total = ?, status = ? WHERE id = ? AND workspace_id = ?')
           .run(o.customerName, o.totalPrice, o.financialStatus || 'pending', existing.id, wsId);
       } else {
-        db.prepare('INSERT INTO eh_orders (store_id, order_number, customer, total, status, platform, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)')
+        await db.prepare('INSERT INTO eh_orders (store_id, order_number, customer, total, status, platform, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)')
           .run(store.id, String(o.orderNumber), o.customerName, o.totalPrice, o.financialStatus || 'pending', 'shopify', wsId);
       }
     }
 
-    db.prepare("UPDATE eh_stores SET last_sync = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?").run(store.id, wsId);
+    await db.prepare("UPDATE eh_stores SET last_sync = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?").run(store.id, wsId);
 
     res.json({ success: true, synced: { products: products.length, orders: orders.length } });
   } catch (error) {

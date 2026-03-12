@@ -7,11 +7,11 @@ const CALLBACK_BASE = () => process.env.OAUTH_CALLBACK_URL || 'http://localhost:
 
 async function generateState(providerId, extraParams) {
   const state = crypto.randomUUID();
-  db.prepare(
+  await db.prepare(
     'INSERT INTO int_oauth_states (state, provider_id, extra_params) VALUES (?, ?, ?)'
   ).run(state, providerId, extraParams ? JSON.stringify(extraParams) : null);
   // Clean up states older than 10 minutes
-  db.prepare(
+  await db.prepare(
     "DELETE FROM int_oauth_states WHERE created_at < NOW() - INTERVAL '10 minutes'"
   ).run();
   return state;
@@ -27,14 +27,14 @@ async function validateState(state) {
   };
 }
 
-function getAuthorizationUrl(providerId, extraParams = {}) {
+async function getAuthorizationUrl(providerId, extraParams = {}) {
   const provider = PROVIDERS[providerId];
   if (!provider || provider.authType !== 'oauth2') return null;
 
   const clientId = process.env[provider.envClientId];
   if (!clientId) throw new Error(`Missing env var: ${provider.envClientId}`);
 
-  const state = generateState(providerId, extraParams);
+  const state = await generateState(providerId, extraParams);
   const redirectUri = `${CALLBACK_BASE()}/api/integrations/oauth/callback`;
 
   const params = new URLSearchParams({
@@ -133,7 +133,7 @@ async function storeTokens(providerId, tokenData, profile) {
   const existing = await db.prepare('SELECT id FROM int_connections WHERE provider_id = ?').get(providerId);
 
   if (existing) {
-    db.prepare(`
+    await db.prepare(`
       UPDATE int_connections SET
         status = 'connected',
         access_token_enc = ?,
@@ -156,7 +156,7 @@ async function storeTokens(providerId, tokenData, profile) {
       providerId
     );
   } else {
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO int_connections (provider_id, display_name, auth_type, status, access_token_enc, refresh_token_enc, token_expires_at, token_scope, account_name, account_id, connected_at)
       VALUES (?, ?, ?, 'connected', ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `).run(
@@ -205,7 +205,7 @@ async function refreshAccessToken(providerId) {
   }
 
   const expiresAt = data.expires_in ? Math.floor(Date.now() / 1000) + data.expires_in : null;
-  db.prepare(`
+  await db.prepare(`
     UPDATE int_connections SET
       access_token_enc = ?,
       refresh_token_enc = COALESCE(?, refresh_token_enc),

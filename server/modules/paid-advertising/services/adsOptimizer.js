@@ -207,7 +207,7 @@ async function executeDecision(decision, campaign, wsId) {
             campaignId: launch.campaignId,
             customerId: launch.customerId,
           });
-          db.prepare("UPDATE pa_campaigns SET status = 'paused', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(campaign.id);
+          await db.prepare("UPDATE pa_campaigns SET status = 'paused', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(campaign.id);
         }
         break;
       }
@@ -217,7 +217,7 @@ async function executeDecision(decision, campaign, wsId) {
             campaignId: launch.campaignId,
             customerId: launch.customerId,
           });
-          db.prepare("UPDATE pa_campaigns SET status = 'launched', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(campaign.id);
+          await db.prepare("UPDATE pa_campaigns SET status = 'launched', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(campaign.id);
         }
         break;
       }
@@ -232,7 +232,7 @@ async function executeDecision(decision, campaign, wsId) {
           const safeBudget = Math.min(newBudget, maxAllowed);
 
           // Update local record
-          db.prepare("UPDATE pa_campaigns SET budget = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+          await db.prepare("UPDATE pa_campaigns SET budget = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
             .run(String(safeBudget), campaign.id);
 
           // Platform budget update would go here when APIs support it
@@ -255,10 +255,10 @@ async function executeDecision(decision, campaign, wsId) {
 
 // ── Queue for Approval (Copilot mode) ───────────────────────────
 
-function queueOptimizationForApproval(decision, campaign, wsId, analysis) {
+async function queueOptimizationForApproval(decision, campaign, wsId, analysis) {
   const confidence = decision.confidence || 0.8;
 
-  db.prepare(`
+  await db.prepare(`
     INSERT INTO ae_approval_queue (module_id, action_type, title, description, payload, ai_confidence, priority, status, source, created_at, workspace_id)
     VALUES ('ads', ?, ?, ?, ?, ?, ?, 'pending', 'ai', CURRENT_TIMESTAMP, ?)
   `).run(
@@ -288,8 +288,8 @@ function queueOptimizationForApproval(decision, campaign, wsId, analysis) {
   );
 }
 
-function queueNewCampaignSuggestion(suggestion, wsId, analysis) {
-  db.prepare(`
+async function queueNewCampaignSuggestion(suggestion, wsId, analysis) {
+  await db.prepare(`
     INSERT INTO ae_approval_queue (module_id, action_type, title, description, payload, ai_confidence, priority, status, source, created_at, workspace_id)
     VALUES ('ads', 'new_campaign', ?, ?, ?, ?, 'medium', 'pending', 'ai', CURRENT_TIMESTAMP, ?)
   `).run(
@@ -331,7 +331,7 @@ async function optimizeWorkspace(wsId) {
   if (!analysis) return;
 
   // 4. Log the optimization run
-  db.prepare(`
+  await db.prepare(`
     INSERT INTO pa_optimization_log (workspace_id, action_type, description, ai_analysis, decisions, status)
     VALUES (?, 'full_review', ?, ?, ?, ?)
   `).run(
@@ -356,7 +356,7 @@ async function optimizeWorkspace(wsId) {
         || (decision.action === 'scale_budget' && (decision.details?.budget_change_pct || 0) > MAX_BUDGET_INCREASE_PCT);
 
       if (needsApproval) {
-        queueOptimizationForApproval(decision, campaign, wsId, analysis);
+        await queueOptimizationForApproval(decision, campaign, wsId, analysis);
         console.log(`  [ads-optimizer] Queued high-impact "${decision.action}" for ${campaign.name} (needs approval)`);
       } else {
         const result = await executeDecision(decision, campaign, wsId);
@@ -370,7 +370,7 @@ async function optimizeWorkspace(wsId) {
 
   // 6. New campaign suggestions → always go to approval
   for (const suggestion of (analysis.new_campaign_suggestions || [])) {
-    queueNewCampaignSuggestion(suggestion, wsId, analysis);
+    await queueNewCampaignSuggestion(suggestion, wsId, analysis);
     console.log(`  [ads-optimizer] Suggested new campaign: "${suggestion.name}" for ${suggestion.platform}`);
   }
 

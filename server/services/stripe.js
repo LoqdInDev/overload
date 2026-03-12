@@ -126,7 +126,7 @@ async function upsertSubscription({ userId, workspaceId, stripeCustomerId, strip
   ).get(stripeSubscriptionId);
 
   if (existing) {
-    db.prepare(`
+    await db.prepare(`
       UPDATE subscriptions SET
         plan = ?, status = ?, trial_ends_at = ?, current_period_end = ?,
         cancel_at_period_end = ?, updated_at = CURRENT_TIMESTAMP
@@ -136,7 +136,7 @@ async function upsertSubscription({ userId, workspaceId, stripeCustomerId, strip
   }
 
   const id = crypto.randomUUID();
-  db.prepare(`
+  await db.prepare(`
     INSERT INTO subscriptions (id, user_id, workspace_id, stripe_customer_id, stripe_subscription_id, plan, status, trial_ends_at, current_period_end, cancel_at_period_end)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(id, userId, workspaceId || null, stripeCustomerId, stripeSubscriptionId, plan, status, trialEndsAt || null, currentPeriodEnd || null, cancelAtPeriodEnd ? 1 : 0);
@@ -164,7 +164,7 @@ async function handleWebhookEvent(event) {
 
       const subscription = await stripe.subscriptions.retrieve(session.subscription);
 
-      upsertSubscription({
+      await upsertSubscription({
         userId,
         workspaceId: workspaceId || null,
         stripeCustomerId: session.customer,
@@ -183,7 +183,7 @@ async function handleWebhookEvent(event) {
       const { userId, workspaceId, plan } = subscription.metadata;
       if (!userId) break;
 
-      upsertSubscription({
+      await upsertSubscription({
         userId,
         workspaceId: workspaceId || null,
         stripeCustomerId: subscription.customer,
@@ -204,7 +204,7 @@ async function handleWebhookEvent(event) {
       ).get(subscription.id);
 
       if (existing) {
-        db.prepare(`
+        await db.prepare(`
           UPDATE subscriptions SET status = 'canceled', cancel_at_period_end = 0, updated_at = CURRENT_TIMESTAMP
           WHERE stripe_subscription_id = ?
         `).run(subscription.id);
@@ -221,7 +221,7 @@ async function handleWebhookEvent(event) {
         ).get(subscription.id);
 
         if (sub) {
-          db.prepare(`
+          await db.prepare(`
             UPDATE subscriptions SET status = 'active', current_period_end = ?, updated_at = CURRENT_TIMESTAMP
             WHERE stripe_subscription_id = ?
           `).run(new Date(subscription.current_period_end * 1000).toISOString(), subscription.id);
@@ -238,7 +238,7 @@ async function handleWebhookEvent(event) {
     case 'invoice.payment_failed': {
       const invoice = event.data.object;
       if (invoice.subscription) {
-        db.prepare(`
+        await db.prepare(`
           UPDATE subscriptions SET status = 'past_due', updated_at = CURRENT_TIMESTAMP
           WHERE stripe_subscription_id = ?
         `).run(invoice.subscription);
@@ -261,8 +261,8 @@ const PLAN_LEVEL = { free: 0, manual: 1, copilot: 2, autopilot: 3 };
  */
 function requirePlan(minimumPlan) {
   const minLevel = PLAN_LEVEL[minimumPlan] || 0;
-  return (req, res, next) => {
-    const sub = getSubscription(req.user?.id, req.workspace?.id);
+  return async (req, res, next) => {
+    const sub = await getSubscription(req.user?.id, req.workspace?.id);
     const userPlan = sub?.plan || 'free';
     const userStatus = sub?.status;
     const isActive = ['trialing', 'active'].includes(userStatus);

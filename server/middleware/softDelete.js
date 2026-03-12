@@ -40,7 +40,7 @@ async function addSoftDeleteColumns(db, tableName) {
  * Soft-delete a record by setting its `deleted_at` timestamp.
  */
 async function softDelete(db, table, id) {
-  return db.prepare(
+  return await db.prepare(
     `UPDATE ${table} SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL`
   ).run(id);
 }
@@ -49,7 +49,7 @@ async function softDelete(db, table, id) {
  * Restore a soft-deleted record by clearing its `deleted_at` timestamp.
  */
 async function restoreRecord(db, table, id) {
-  return db.prepare(
+  return await db.prepare(
     `UPDATE ${table} SET deleted_at = NULL WHERE id = ?`
   ).run(id);
 }

@@ -42,7 +42,7 @@ router.post('/create-checkout', async (req, res, next) => {
 // POST /api/billing/portal — creates billing portal session
 router.post('/portal', async (req, res, next) => {
   try {
-    const sub = getSubscription(req.user.id, req.workspace?.id);
+    const sub = await getSubscription(req.user.id, req.workspace?.id);
 
     if (!sub?.stripe_customer_id) {
       return res.status(404).json({
@@ -64,7 +64,7 @@ router.post('/portal', async (req, res, next) => {
 
 // GET /api/billing/subscription — get current subscription status
 router.get('/subscription', async (req, res) => {
-  const sub = getSubscription(req.user.id, req.workspace?.id);
+  const sub = await getSubscription(req.user.id, req.workspace?.id);
 
   if (!sub) {
     return res.json({
@@ -92,7 +92,7 @@ router.get('/subscription', async (req, res) => {
 // POST /api/billing/cancel — cancel subscription at period end
 router.post('/cancel', async (req, res, next) => {
   try {
-    const sub = getSubscription(req.user.id, req.workspace?.id);
+    const sub = await getSubscription(req.user.id, req.workspace?.id);
 
     if (!sub?.stripe_subscription_id) {
       return res.status(404).json({
@@ -107,7 +107,7 @@ router.post('/cancel', async (req, res, next) => {
 
     // Update local record
     const { db } = require('../db/database');
-    db.prepare(`
+    await db.prepare(`
       UPDATE subscriptions SET cancel_at_period_end = 1, updated_at = CURRENT_TIMESTAMP
       WHERE stripe_subscription_id = ?
     `).run(sub.stripe_subscription_id);
