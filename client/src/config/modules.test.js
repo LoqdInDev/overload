@@ -3,8 +3,8 @@ import { MODULE_REGISTRY, CATEGORIES, getModulesByCategory } from './modules';
 
 describe('MODULE_REGISTRY', () => {
   it('has the correct number of modules', () => {
-    expect(MODULE_REGISTRY.length).toBeGreaterThanOrEqual(35);
-    expect(MODULE_REGISTRY.length).toBeLessThanOrEqual(40);
+    expect(MODULE_REGISTRY.length).toBeGreaterThanOrEqual(30);
+    expect(MODULE_REGISTRY.length).toBeLessThanOrEqual(35);
   });
 
   it('every module has required fields', () => {
@@ -44,6 +44,11 @@ describe('MODULE_REGISTRY', () => {
     expect(ids).not.toContain('profit-dashboard');
     expect(ids).not.toContain('billing');
     expect(ids).not.toContain('scheduler');
+    expect(ids).not.toContain('referral-loyalty');
+    expect(ids).not.toContain('knowledge-base');
+    expect(ids).not.toContain('webhooks');
+    expect(ids).not.toContain('api-manager');
+    expect(ids).not.toContain('goal-tracker');
   });
 
   it('contains the merged modules', () => {
