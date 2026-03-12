@@ -111,6 +111,16 @@ export default function BrandHubPage() {
   const [result, setResult] = useState('');
   const [copied, setCopied] = useState(false);
   const [savedBrands, setSavedBrands] = useState([]);
+  const [toolInputs, setToolInputs] = useState({
+    voice: { personality: '', doSay: '', dontSay: '', sampleContent: '' },
+    positioning: { competitors: '', uvp: '', differentiators: '', problem: '' },
+    guidelines: { brandStory: '', visualStyle: '', dos: '', donts: '' },
+    persona: { demographics: '', painPoints: '', goals: '', channels: '', buyingBehavior: '' },
+    messaging: { corePurpose: '', brandPromise: '', taglineStyle: '', emotionalTone: '' },
+  });
+  const updateToolInput = (tool, field, value) => setToolInputs(prev => ({
+    ...prev, [tool]: { ...prev[tool], [field]: value },
+  }));
 
   /* ═══════════════════ AUDIT STATE ═══════════════════ */
   const [auditInputs, setAuditInputs] = useState({ sample_content: '', channel: '' });
@@ -241,6 +251,7 @@ export default function BrandHubPage() {
           industry: stratIndustry,
           targetAudience: stratAudience,
           elementType: activeTool,
+          toolInputs: toolInputs[activeTool] || {},
           currentBrand: {
             archetype: archetypeInfo ? archetypeInfo.name : null,
             archetypeDesc: archetypeInfo ? archetypeInfo.desc : null,
@@ -838,7 +849,7 @@ export default function BrandHubPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
               {/* Left: Inputs */}
               <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-                {/* Brand Name */}
+                {/* Brand Name — shared across all tools */}
                 <div className="panel rounded-2xl p-4 sm:p-6">
                   <p className="hud-label text-[11px] mb-3">BRAND NAME</p>
                   <input type="text" value={stratBrandName} onChange={(e) => setStratBrandName(e.target.value)}
@@ -846,7 +857,7 @@ export default function BrandHubPage() {
                     className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base" />
                 </div>
 
-                {/* Industry */}
+                {/* Industry — shared across all tools */}
                 <div className="panel rounded-2xl p-4 sm:p-6">
                   <p className="hud-label text-[11px] mb-3">INDUSTRY</p>
                   <div className="flex flex-wrap gap-1.5 mb-3">
@@ -863,13 +874,191 @@ export default function BrandHubPage() {
                     className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base" />
                 </div>
 
-                {/* Target Audience */}
-                <div className="panel rounded-2xl p-4 sm:p-6">
-                  <p className="hud-label text-[11px] mb-3">TARGET AUDIENCE</p>
-                  <textarea value={stratAudience} onChange={(e) => setStratAudience(e.target.value)} rows={3}
-                    placeholder="Describe your ideal customer... age, interests, pain points, goals..."
-                    className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base resize-none" />
-                </div>
+                {/* ── TOOL-SPECIFIC INPUTS ── */}
+
+                {/* Voice Generator */}
+                {activeTool === 'voice' && (
+                  <>
+                    <div className="panel rounded-2xl p-4 sm:p-6">
+                      <p className="hud-label text-[11px] mb-3">TARGET AUDIENCE</p>
+                      <textarea value={stratAudience} onChange={(e) => setStratAudience(e.target.value)} rows={2}
+                        placeholder="Who are you speaking to? e.g. Tech-savvy millennials, busy parents, C-suite executives..."
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                    <div className="panel rounded-2xl p-4 sm:p-6">
+                      <p className="hud-label text-[11px] mb-3">BRAND PERSONALITY TRAITS</p>
+                      <textarea value={toolInputs.voice.personality} onChange={(e) => updateToolInput('voice', 'personality', e.target.value)} rows={2}
+                        placeholder="3-5 personality traits, e.g. Witty, confident, approachable, innovative..."
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="panel rounded-2xl p-4 sm:p-6">
+                        <p className="hud-label text-[11px] mb-3">WORDS & PHRASES TO USE</p>
+                        <textarea value={toolInputs.voice.doSay} onChange={(e) => updateToolInput('voice', 'doSay', e.target.value)} rows={3}
+                          placeholder="Words your brand should say, e.g. Empower, unlock, together, effortless..."
+                          className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                      </div>
+                      <div className="panel rounded-2xl p-4 sm:p-6">
+                        <p className="hud-label text-[11px] mb-3">WORDS & PHRASES TO AVOID</p>
+                        <textarea value={toolInputs.voice.dontSay} onChange={(e) => updateToolInput('voice', 'dontSay', e.target.value)} rows={3}
+                          placeholder="Words your brand should never use, e.g. Cheap, synergy, disrupt..."
+                          className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                      </div>
+                    </div>
+                    <div className="panel rounded-2xl p-4 sm:p-6">
+                      <p className="hud-label text-[11px] mb-3">SAMPLE CONTENT (OPTIONAL)</p>
+                      <textarea value={toolInputs.voice.sampleContent} onChange={(e) => updateToolInput('voice', 'sampleContent', e.target.value)} rows={3}
+                        placeholder="Paste existing content that represents your voice well — social posts, emails, taglines..."
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                  </>
+                )}
+
+                {/* Positioning Statement */}
+                {activeTool === 'positioning' && (
+                  <>
+                    <div className="panel rounded-2xl p-4 sm:p-6">
+                      <p className="hud-label text-[11px] mb-3">TARGET AUDIENCE</p>
+                      <textarea value={stratAudience} onChange={(e) => setStratAudience(e.target.value)} rows={2}
+                        placeholder="Who is your product/service for? Be specific about their role, needs, and situation..."
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                    <div className="panel rounded-2xl p-4 sm:p-6">
+                      <p className="hud-label text-[11px] mb-3">PROBLEM YOU SOLVE</p>
+                      <textarea value={toolInputs.positioning.problem} onChange={(e) => updateToolInput('positioning', 'problem', e.target.value)} rows={2}
+                        placeholder="What's the #1 problem or frustration your brand solves for customers?"
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                    <div className="panel rounded-2xl p-4 sm:p-6">
+                      <p className="hud-label text-[11px] mb-3">UNIQUE VALUE PROPOSITION</p>
+                      <textarea value={toolInputs.positioning.uvp} onChange={(e) => updateToolInput('positioning', 'uvp', e.target.value)} rows={2}
+                        placeholder="What makes your offering uniquely valuable? Why should customers choose you?"
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                    <div className="panel rounded-2xl p-4 sm:p-6">
+                      <p className="hud-label text-[11px] mb-3">KEY COMPETITORS</p>
+                      <textarea value={toolInputs.positioning.competitors} onChange={(e) => updateToolInput('positioning', 'competitors', e.target.value)} rows={2}
+                        placeholder="List your main competitors — who else does your audience consider? e.g. Nike, Adidas, Under Armour..."
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                    <div className="panel rounded-2xl p-4 sm:p-6">
+                      <p className="hud-label text-[11px] mb-3">KEY DIFFERENTIATORS</p>
+                      <textarea value={toolInputs.positioning.differentiators} onChange={(e) => updateToolInput('positioning', 'differentiators', e.target.value)} rows={2}
+                        placeholder="What sets you apart? e.g. Faster delivery, lower price, premium quality, ethical sourcing..."
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                  </>
+                )}
+
+                {/* Brand Guidelines */}
+                {activeTool === 'guidelines' && (
+                  <>
+                    <div className="panel rounded-2xl p-4 sm:p-6">
+                      <p className="hud-label text-[11px] mb-3">TARGET AUDIENCE</p>
+                      <textarea value={stratAudience} onChange={(e) => setStratAudience(e.target.value)} rows={2}
+                        placeholder="Who will use these guidelines? Internal team, agencies, partners..."
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                    <div className="panel rounded-2xl p-4 sm:p-6">
+                      <p className="hud-label text-[11px] mb-3">BRAND STORY & ORIGIN</p>
+                      <textarea value={toolInputs.guidelines.brandStory} onChange={(e) => updateToolInput('guidelines', 'brandStory', e.target.value)} rows={3}
+                        placeholder="How did your brand start? What's the founding story or inspiration behind it?"
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                    <div className="panel rounded-2xl p-4 sm:p-6">
+                      <p className="hud-label text-[11px] mb-3">VISUAL STYLE PREFERENCES</p>
+                      <textarea value={toolInputs.guidelines.visualStyle} onChange={(e) => updateToolInput('guidelines', 'visualStyle', e.target.value)} rows={2}
+                        placeholder="Describe your visual aesthetic — e.g. Clean & minimal, bold & colorful, luxury & refined, organic & earthy..."
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="panel rounded-2xl p-4 sm:p-6">
+                        <p className="hud-label text-[11px] mb-3">BRAND DO'S</p>
+                        <textarea value={toolInputs.guidelines.dos} onChange={(e) => updateToolInput('guidelines', 'dos', e.target.value)} rows={3}
+                          placeholder="What should always be true about your brand? e.g. Always use logo on white background..."
+                          className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                      </div>
+                      <div className="panel rounded-2xl p-4 sm:p-6">
+                        <p className="hud-label text-[11px] mb-3">BRAND DON'TS</p>
+                        <textarea value={toolInputs.guidelines.donts} onChange={(e) => updateToolInput('guidelines', 'donts', e.target.value)} rows={3}
+                          placeholder="What should never happen? e.g. Never stretch the logo, never use Comic Sans..."
+                          className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Buyer Persona Builder */}
+                {activeTool === 'persona' && (
+                  <>
+                    <div className="panel rounded-2xl p-4 sm:p-6">
+                      <p className="hud-label text-[11px] mb-3">CUSTOMER DEMOGRAPHICS</p>
+                      <textarea value={toolInputs.persona.demographics} onChange={(e) => updateToolInput('persona', 'demographics', e.target.value)} rows={2}
+                        placeholder="Age range, gender, income level, location, education, job title... e.g. 25-40, urban professionals, $60-120K income"
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                    <div className="panel rounded-2xl p-4 sm:p-6">
+                      <p className="hud-label text-[11px] mb-3">PAIN POINTS & FRUSTRATIONS</p>
+                      <textarea value={toolInputs.persona.painPoints} onChange={(e) => updateToolInput('persona', 'painPoints', e.target.value)} rows={2}
+                        placeholder="What problems keep them up at night? e.g. Not enough time, too many tools, inconsistent results..."
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                    <div className="panel rounded-2xl p-4 sm:p-6">
+                      <p className="hud-label text-[11px] mb-3">GOALS & ASPIRATIONS</p>
+                      <textarea value={toolInputs.persona.goals} onChange={(e) => updateToolInput('persona', 'goals', e.target.value)} rows={2}
+                        placeholder="What does success look like for them? e.g. Scale their business, save time on marketing, increase revenue..."
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                    <div className="panel rounded-2xl p-4 sm:p-6">
+                      <p className="hud-label text-[11px] mb-3">PREFERRED CHANNELS</p>
+                      <textarea value={toolInputs.persona.channels} onChange={(e) => updateToolInput('persona', 'channels', e.target.value)} rows={2}
+                        placeholder="Where do they spend time? e.g. Instagram, LinkedIn, YouTube, newsletters, podcasts..."
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                    <div className="panel rounded-2xl p-4 sm:p-6">
+                      <p className="hud-label text-[11px] mb-3">BUYING BEHAVIOR</p>
+                      <textarea value={toolInputs.persona.buyingBehavior} onChange={(e) => updateToolInput('persona', 'buyingBehavior', e.target.value)} rows={2}
+                        placeholder="How do they make decisions? e.g. Research-heavy, impulse buyer, needs social proof, price-sensitive..."
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                  </>
+                )}
+
+                {/* Mission/Vision & Taglines */}
+                {activeTool === 'messaging' && (
+                  <>
+                    <div className="panel rounded-2xl p-4 sm:p-6">
+                      <p className="hud-label text-[11px] mb-3">TARGET AUDIENCE</p>
+                      <textarea value={stratAudience} onChange={(e) => setStratAudience(e.target.value)} rows={2}
+                        placeholder="Who should your mission and taglines resonate with?"
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                    <div className="panel rounded-2xl p-4 sm:p-6">
+                      <p className="hud-label text-[11px] mb-3">CORE PURPOSE</p>
+                      <textarea value={toolInputs.messaging.corePurpose} onChange={(e) => updateToolInput('messaging', 'corePurpose', e.target.value)} rows={2}
+                        placeholder="Why does your brand exist beyond making money? What change do you want to make in the world?"
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                    <div className="panel rounded-2xl p-4 sm:p-6">
+                      <p className="hud-label text-[11px] mb-3">BRAND PROMISE</p>
+                      <textarea value={toolInputs.messaging.brandPromise} onChange={(e) => updateToolInput('messaging', 'brandPromise', e.target.value)} rows={2}
+                        placeholder="What do you guarantee to every customer? e.g. We make marketing effortless for small businesses"
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                    <div className="panel rounded-2xl p-4 sm:p-6">
+                      <p className="hud-label text-[11px] mb-3">TAGLINE STYLE PREFERENCE</p>
+                      <textarea value={toolInputs.messaging.taglineStyle} onChange={(e) => updateToolInput('messaging', 'taglineStyle', e.target.value)} rows={2}
+                        placeholder="What style of tagline fits your brand? e.g. Short & punchy, inspirational, clever wordplay, descriptive..."
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                    <div className="panel rounded-2xl p-4 sm:p-6">
+                      <p className="hud-label text-[11px] mb-3">EMOTIONAL TONE</p>
+                      <textarea value={toolInputs.messaging.emotionalTone} onChange={(e) => updateToolInput('messaging', 'emotionalTone', e.target.value)} rows={2}
+                        placeholder="What emotions should your messaging evoke? e.g. Empowerment, trust, excitement, comfort, urgency..."
+                        className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
+                    </div>
+                  </>
+                )}
 
                 {/* Generate Button */}
                 <button onClick={generate} disabled={!stratBrandName.trim() || generating}
@@ -907,42 +1096,88 @@ export default function BrandHubPage() {
                   </div>
                 </div>
 
-                {/* Brand Archetype */}
-                <div className="panel rounded-2xl p-4 sm:p-6">
-                  <p className="hud-label text-[11px] mb-3">BRAND ARCHETYPE</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
-                    {ARCHETYPES.map(arc => (
-                      <button key={arc.id} onClick={() => setArchetype(arc.id)}
-                        className={`text-center px-1.5 py-2 rounded-lg border text-[9px] transition-all ${
-                          archetype === arc.id
-                            ? ''
-                            : dark ? 'border-indigo-500/8 bg-white/[0.01] text-gray-500 hover:text-gray-300' : 'border-gray-200 text-gray-500 hover:text-gray-700'
-                        }`}
-                        style={archetype === arc.id ? { background: `${COLOR}12`, borderColor: `${COLOR}30`, color: COLOR } : {}}>
-                        <p className="font-bold">{arc.name}</p>
-                      </button>
-                    ))}
+                {/* Brand Archetype — shown for voice, guidelines, messaging */}
+                {['voice', 'guidelines', 'messaging'].includes(activeTool) && (
+                  <div className="panel rounded-2xl p-4 sm:p-6">
+                    <p className="hud-label text-[11px] mb-3">BRAND ARCHETYPE</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+                      {ARCHETYPES.map(arc => (
+                        <button key={arc.id} onClick={() => setArchetype(arc.id)}
+                          className={`text-center px-1.5 py-2 rounded-lg border text-[9px] transition-all ${
+                            archetype === arc.id
+                              ? ''
+                              : dark ? 'border-indigo-500/8 bg-white/[0.01] text-gray-500 hover:text-gray-300' : 'border-gray-200 text-gray-500 hover:text-gray-700'
+                          }`}
+                          style={archetype === arc.id ? { background: `${COLOR}12`, borderColor: `${COLOR}30`, color: COLOR } : {}}>
+                          <p className="font-bold">{arc.name}</p>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {/* Tone Spectrum */}
-                <div className="panel rounded-2xl p-4 sm:p-6">
-                  <p className="hud-label text-[11px] mb-3">TONE SPECTRUM</p>
-                  <div className="space-y-4">
-                    {TONE_SPECTRUM.map(tone => (
-                      <div key={tone.id}>
-                        <div className="flex justify-between mb-1">
-                          <span className="text-[9px] text-gray-500 font-semibold">{tone.name}</span>
-                          <span className="text-[9px] text-gray-500 font-semibold">{tone.opposite}</span>
+                {/* Tone Spectrum — shown for voice, messaging */}
+                {['voice', 'messaging'].includes(activeTool) && (
+                  <div className="panel rounded-2xl p-4 sm:p-6">
+                    <p className="hud-label text-[11px] mb-3">TONE SPECTRUM</p>
+                    <div className="space-y-4">
+                      {TONE_SPECTRUM.map(tone => (
+                        <div key={tone.id}>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-[9px] text-gray-500 font-semibold">{tone.name}</span>
+                            <span className="text-[9px] text-gray-500 font-semibold">{tone.opposite}</span>
+                          </div>
+                          <input type="range" min="0" max="100" value={toneValues[tone.id]}
+                            onChange={(e) => setToneValues(prev => ({ ...prev, [tone.id]: parseInt(e.target.value) }))}
+                            className="w-full h-1 rounded-full appearance-none cursor-pointer"
+                            style={{
+                              background: `linear-gradient(to right, ${COLOR} 0%, ${COLOR} ${toneValues[tone.id]}%, ${dark ? '#1e1e2e' : '#e5e7eb'} ${toneValues[tone.id]}%, ${dark ? '#1e1e2e' : '#e5e7eb'} 100%)`,
+                            }} />
                         </div>
-                        <input type="range" min="0" max="100" value={toneValues[tone.id]}
-                          onChange={(e) => setToneValues(prev => ({ ...prev, [tone.id]: parseInt(e.target.value) }))}
-                          className="w-full h-1 rounded-full appearance-none cursor-pointer"
-                          style={{
-                            background: `linear-gradient(to right, ${COLOR} 0%, ${COLOR} ${toneValues[tone.id]}%, ${dark ? '#1e1e2e' : '#e5e7eb'} ${toneValues[tone.id]}%, ${dark ? '#1e1e2e' : '#e5e7eb'} 100%)`,
-                          }} />
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Tool-specific tips */}
+                <div className="panel rounded-2xl p-4 sm:p-6">
+                  <p className="hud-label text-[11px] mb-3">TIPS</p>
+                  <div className={`text-[11px] leading-relaxed space-y-2 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {activeTool === 'voice' && (
+                      <>
+                        <p>Your brand voice should be consistent across all channels — social media, email, website, and ads.</p>
+                        <p>Select an archetype above to give your voice a strong personality foundation.</p>
+                        <p>The more specific your personality traits, the more distinctive your voice guide will be.</p>
+                      </>
+                    )}
+                    {activeTool === 'positioning' && (
+                      <>
+                        <p>Great positioning answers: "For [audience], [brand] is the [category] that [benefit] because [reason]."</p>
+                        <p>Be specific about competitors — the AI will craft positioning that differentiates you from them.</p>
+                        <p>Your UVP should pass the "so what?" test: it must matter to your customer.</p>
+                      </>
+                    )}
+                    {activeTool === 'guidelines' && (
+                      <>
+                        <p>Brand guidelines ensure consistency whether it's your team, a freelancer, or an agency creating content.</p>
+                        <p>Include your founding story — it humanizes your brand and creates emotional connection.</p>
+                        <p>Clear do's and don'ts prevent costly mistakes and off-brand content.</p>
+                      </>
+                    )}
+                    {activeTool === 'persona' && (
+                      <>
+                        <p>The best personas are based on real customer data, not assumptions. Think about your best customers.</p>
+                        <p>Pain points are more valuable than demographics — they drive purchase decisions.</p>
+                        <p>Include buying behavior so your team knows how to sell to each persona.</p>
+                      </>
+                    )}
+                    {activeTool === 'messaging' && (
+                      <>
+                        <p>Your mission says what you do today. Your vision says where you're going. Both should inspire.</p>
+                        <p>Great taglines are 3-7 words, memorable, and capture your brand's essence.</p>
+                        <p>Select an archetype and adjust tone sliders to shape the emotional feel of your messaging.</p>
+                      </>
+                    )}
                   </div>
                 </div>
 

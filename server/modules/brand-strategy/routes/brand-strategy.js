@@ -10,14 +10,45 @@ router.post('/generate', async (req, res) => {
   const sse = setupSSE(res);
 
   try {
-    const { brandName, industry, targetAudience, elementType, currentBrand } = req.body;
+    const { brandName, industry, targetAudience, elementType, currentBrand, toolInputs } = req.body;
+    const ti = toolInputs || {};
+
+    // Build tool-specific extra context from user inputs
+    let extraContext = '';
+    if (elementType === 'voice' && ti.personality) {
+      extraContext += `\nBrand Personality Traits: ${ti.personality}`;
+      if (ti.doSay) extraContext += `\nPreferred Words/Phrases: ${ti.doSay}`;
+      if (ti.dontSay) extraContext += `\nWords/Phrases to Avoid: ${ti.dontSay}`;
+      if (ti.sampleContent) extraContext += `\nExisting Content Sample (match this style): ${ti.sampleContent}`;
+    } else if (elementType === 'positioning') {
+      if (ti.problem) extraContext += `\nCore Problem Solved: ${ti.problem}`;
+      if (ti.uvp) extraContext += `\nUnique Value Proposition: ${ti.uvp}`;
+      if (ti.competitors) extraContext += `\nKey Competitors: ${ti.competitors}`;
+      if (ti.differentiators) extraContext += `\nKey Differentiators: ${ti.differentiators}`;
+    } else if (elementType === 'guidelines') {
+      if (ti.brandStory) extraContext += `\nBrand Story & Origin: ${ti.brandStory}`;
+      if (ti.visualStyle) extraContext += `\nVisual Style Preferences: ${ti.visualStyle}`;
+      if (ti.dos) extraContext += `\nBrand Do's: ${ti.dos}`;
+      if (ti.donts) extraContext += `\nBrand Don'ts: ${ti.donts}`;
+    } else if (elementType === 'persona') {
+      if (ti.demographics) extraContext += `\nKnown Customer Demographics: ${ti.demographics}`;
+      if (ti.painPoints) extraContext += `\nKnown Pain Points: ${ti.painPoints}`;
+      if (ti.goals) extraContext += `\nCustomer Goals: ${ti.goals}`;
+      if (ti.channels) extraContext += `\nPreferred Channels: ${ti.channels}`;
+      if (ti.buyingBehavior) extraContext += `\nBuying Behavior: ${ti.buyingBehavior}`;
+    } else if (elementType === 'messaging') {
+      if (ti.corePurpose) extraContext += `\nCore Brand Purpose: ${ti.corePurpose}`;
+      if (ti.brandPromise) extraContext += `\nBrand Promise: ${ti.brandPromise}`;
+      if (ti.taglineStyle) extraContext += `\nTagline Style Preference: ${ti.taglineStyle}`;
+      if (ti.emotionalTone) extraContext += `\nDesired Emotional Tone: ${ti.emotionalTone}`;
+    }
 
     const prompt = `You are a world-class brand strategist. Generate a detailed ${elementType || 'comprehensive brand strategy'} for a brand.
 
 Brand: ${brandName || 'the brand'}
 Industry: ${industry || 'general'}
 Target Audience: ${targetAudience || 'Not specified'}
-${currentBrand ? `Current Brand Context: ${JSON.stringify(currentBrand)}` : ''}
+${currentBrand ? `Current Brand Context: ${JSON.stringify(currentBrand)}` : ''}${extraContext}
 
 ${elementType === 'voice' ? `BRAND VOICE GUIDE:
 - Core voice attributes (3-5 defining characteristics)
@@ -74,7 +105,7 @@ elementType === 'messaging' ? `MESSAGING FRAMEWORK:
 - Brand story narrative
 - Implementation roadmap`}
 
-Be thorough, strategic, and provide ready-to-implement content.`;
+Be thorough, strategic, and provide ready-to-implement content. Use the specific inputs provided above to make this highly tailored and actionable for this brand.`;
 
     const { text } = await generateTextWithClaude(prompt, {
       onChunk: (chunk) => sse.sendChunk(chunk),
