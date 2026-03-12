@@ -191,6 +191,9 @@ router.post('/generate-stream', async (req, res) => {
     // Immediately send prompts so client shows pending cards
     sse.sendChunk(JSON.stringify({ step: 'prompts_ready', projectId, prompts: parsed.prompts || [] }));
 
+    // Append no-text instruction directly to each prompt for Gemini
+    const noTextSuffix = noText ? '\n\nCRITICAL: Do NOT include ANY text, words, letters, numbers, typography, logos, watermarks, or URLs anywhere in the image. The image must be purely visual with zero text elements.' : '';
+
     // Generate images sequentially with retry to avoid Gemini rate limits
     for (let i = 0; i < (parsed.prompts || []).length; i++) {
       const p = parsed.prompts[i];
@@ -199,7 +202,7 @@ router.post('/generate-stream', async (req, res) => {
       let lastErr = null;
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
-          gen = await generateImage(p.prompt, ratio);
+          gen = await generateImage(p.prompt + noTextSuffix, ratio);
           break;
         } catch (err) {
           lastErr = err;
@@ -270,7 +273,7 @@ Format each with the platform name bolded. Be specific, compelling, and conversi
 router.post('/generate-from-image-stream', async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
-  const { type, prompt, imageData, imageMimeType, images: rawImages, style, palette, paletteColors, useBrand, quantity: rawQty, dimension: rawDim } = req.body;
+  const { type, prompt, imageData, imageMimeType, images: rawImages, style, palette, paletteColors, useBrand, noText, quantity: rawQty, dimension: rawDim } = req.body;
 
   // Support both legacy single-image and new multi-image format
   const refImages = rawImages?.length
@@ -309,9 +312,10 @@ router.post('/generate-from-image-stream', async (req, res) => {
     : '';
 
   const userContext = prompt?.trim() ? `\nAdditional instructions: ${prompt.trim()}` : '';
+  const noTextInstruction = noText ? ' CRITICAL: Do NOT include ANY text, words, letters, numbers, typography, logos, watermarks, or URLs anywhere in the image.' : '';
 
   const variations = VARIATION_ANGLES.slice(0, quantity).map((angle, i) => ({
-    prompt: `Generate a variation of the reference image for use as a ${typeContext}. Variation approach: ${angle}. ${styleInstruction} ${colorInstruction}${userContext} Keep the core subject recognizable but apply a distinctly different visual treatment.`,
+    prompt: `Generate a variation of the reference image for use as a ${typeContext}. Variation approach: ${angle}. ${styleInstruction} ${colorInstruction}${userContext}${noTextInstruction} Keep the core subject recognizable but apply a distinctly different visual treatment.`,
     alt: `Variation ${i + 1} — ${angle.split('—')[0].trim()}`,
     style_notes: angle.split('—')[0].trim(),
   }));
