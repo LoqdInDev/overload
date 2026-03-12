@@ -1923,17 +1923,17 @@ export default function CreativePage() {
                       </div>
                       <p className="text-xs font-semibold text-gray-200">Brand Hub</p>
                     </div>
-                    <button onClick={() => setUseBrandHub(v => !v)}
+                    <button onClick={() => brand && setUseBrandHub(v => !v)}
                       className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors flex-shrink-0"
-                      style={{ background: useBrandHub ? '#a78bfa' : 'rgba(255,255,255,0.1)' }}>
+                      style={{ background: useBrandHub && brand ? '#a78bfa' : 'rgba(255,255,255,0.1)', opacity: brand ? 1 : 0.4, cursor: brand ? 'pointer' : 'not-allowed' }}>
                       <span className="inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform shadow-sm"
-                        style={{ transform: useBrandHub ? 'translateX(18px)' : 'translateX(2px)' }} />
+                        style={{ transform: useBrandHub && brand ? 'translateX(18px)' : 'translateX(2px)' }} />
                     </button>
                   </div>
                 </div>
                 <div className="px-4 py-3">
                   {!brand ? (
-                    <p className="text-[11px] text-gray-500 leading-relaxed">Set up your Brand Hub to pull colors, fonts &amp; identity into every generation.</p>
+                    <button onClick={() => navigate('/brand-hub')} className="text-[11px] text-gray-500 leading-relaxed hover:text-[#C45D3E] transition-colors text-left">Set up your Brand Hub to pull colors, fonts &amp; identity into every generation. <span className="font-semibold" style={{ color: '#C45D3E' }}>Go to Brand Hub &rarr;</span></button>
                   ) : useBrandHub ? (
                     <div className="space-y-2.5">
                       <p className="text-[11px] text-violet-300/80">Using brand settings for this generation</p>
@@ -2025,7 +2025,7 @@ export default function CreativePage() {
                           </div>
                           <div className="min-w-0">
                             <p className="text-[11px] font-bold leading-none truncate" style={{ color: active ? '#C45D3E' : '#9ca3af' }}>{d.label}</p>
-                            <p className="text-[9px] mt-0.5 truncate" style={{ color: active ? 'rgba(34,211,238,0.55)' : '#4b5563' }}>{d.desc}</p>
+                            <p className="text-[9px] mt-0.5 truncate" style={{ color: active ? 'rgba(196,93,62,0.6)' : '#4b5563' }}>{d.desc}</p>
                           </div>
                         </button>
                       );
@@ -2093,7 +2093,7 @@ export default function CreativePage() {
                           ? { background: 'rgba(196,93,62,0.1)', borderColor: 'rgba(196,93,62,0.35)' }
                           : { background: 'rgba(0,0,0,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
                         <span className="text-lg font-bold leading-none" style={{ color: quantity === q.v ? '#C45D3E' : '#9ca3af' }}>{q.label}</span>
-                        <span className="text-[9px] mt-1" style={{ color: quantity === q.v ? 'rgba(34,211,238,0.55)' : '#4b5563' }}>imgs</span>
+                        <span className="text-[9px] mt-1" style={{ color: quantity === q.v ? 'rgba(196,93,62,0.6)' : '#4b5563' }}>imgs</span>
                       </button>
                     ))}
                   </div>
