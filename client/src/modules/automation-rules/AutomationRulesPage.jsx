@@ -328,6 +328,7 @@ function MarketplaceTab({ dark, rules, onInstalled }) {
   const [localOverrides, setLocalOverrides] = useState({});
   // Shows which module was auto-set to copilot after install
   const [modeNotice, setModeNotice] = useState(null);
+  const [error, setError] = useState(null);
 
   const textPrimary = dark ? '#E8E4DE' : '#332F2B';
   const textSecondary = dark ? '#6B6660' : '#94908A';
@@ -352,16 +353,24 @@ function MarketplaceTab({ dark, rules, onInstalled }) {
 
   async function install(recipe) {
     setActing({ id: recipe.id, type: 'install' });
+    setError(null);
     try {
       const res = await postJSON(`/api/automation/marketplace/install/${recipe.id}`, {});
       setLocalOverrides(prev => ({ ...prev, [recipe.id]: true }));
       setJustInstalled(recipe.id);
       setTimeout(() => setJustInstalled(null), 4000);
       onInstalled?.();
-      // If the module was auto-set to copilot, show an extended message
       if (res?.mode_set) setModeNotice(recipe.modules?.[0] || null);
     } catch (err) {
-      console.error('[marketplace] install failed:', err?.message || err);
+      const msg = err?.message || String(err);
+      if (err?.status === 409 || msg.includes('already installed')) {
+        // Already installed from a previous attempt — just mark it
+        setLocalOverrides(prev => ({ ...prev, [recipe.id]: true }));
+        onInstalled?.();
+      } else {
+        setError(`Install failed: ${msg}`);
+        setTimeout(() => setError(null), 6000);
+      }
     }
     setActing(null);
   }
@@ -425,6 +434,12 @@ function MarketplaceTab({ dark, rules, onInstalled }) {
           );
         })}
       </div>
+
+      {error && (
+        <div className="mb-4 px-4 py-3 rounded-xl text-xs font-medium" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}>
+          {error}
+        </div>
+      )}
 
       {modeNotice && (
         <div className="mb-4 px-4 py-3 rounded-xl flex items-center justify-between text-xs" style={{ background: 'rgba(94,142,110,0.1)', border: '1px solid rgba(94,142,110,0.2)', color: '#5E8E6E' }}>
