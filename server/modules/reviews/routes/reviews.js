@@ -151,7 +151,7 @@ Create a detailed Review Summary Report:
     });
 
     try {
-      db.prepare(
+      await db.prepare(
         'INSERT INTO rv_generated (workspace_id, tool_type, input_data, output, platform, tone) VALUES (?, ?, ?, ?, ?, ?)'
       ).run(wsId, toolType, JSON.stringify({ rating: starRating, reviewText: review?.content || review, businessName }), text, platform || null, tone || null);
     } catch (_) {}
@@ -190,7 +190,7 @@ router.post('/reviews', async (req, res) => {
     const wsId = req.workspace.id;
     const { source, rating, content, author, sentiment, status } = req.body;
 
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO rv_reviews (source, rating, content, author, sentiment, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(source || null, rating || null, content || null, author || null, sentiment || null, status || 'pending', wsId);
 
@@ -219,7 +219,7 @@ router.post('/templates', async (req, res) => {
     const wsId = req.workspace.id;
     const { name, star_rating, tone, content } = req.body;
 
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO rv_templates (name, star_rating, tone, content, workspace_id) VALUES (?, ?, ?, ?, ?)'
     ).run(name, star_rating || null, tone || null, content, wsId);
 
@@ -274,12 +274,15 @@ Write a response that is sincere, addresses their specific points, and is 2-3 pa
 router.get('/stats', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const total = db.prepare('SELECT COUNT(*) as count FROM rv_reviews WHERE workspace_id = ?').get(wsId).count;
-    const pending = db.prepare("SELECT COUNT(*) as count FROM rv_reviews WHERE status = 'pending' AND workspace_id = ?").get(wsId).count;
-    const avgRating = db.prepare('SELECT COALESCE(AVG(rating), 0) as avg FROM rv_reviews WHERE rating IS NOT NULL AND workspace_id = ?').get(wsId).avg;
-    const bySource = db.prepare('SELECT source, COUNT(*) as count FROM rv_reviews WHERE source IS NOT NULL AND workspace_id = ? GROUP BY source').all(wsId);
-    const byRating = db.prepare('SELECT rating, COUNT(*) as count FROM rv_reviews WHERE rating IS NOT NULL AND workspace_id = ? GROUP BY rating ORDER BY rating').all(wsId);
-    const bySentiment = db.prepare('SELECT sentiment, COUNT(*) as count FROM rv_reviews WHERE sentiment IS NOT NULL AND workspace_id = ? GROUP BY sentiment').all(wsId);
+    const totalRow = await db.prepare('SELECT COUNT(*) as count FROM rv_reviews WHERE workspace_id = ?').get(wsId);
+    const total = totalRow.count;
+    const pendingRow = await db.prepare("SELECT COUNT(*) as count FROM rv_reviews WHERE status = 'pending' AND workspace_id = ?").get(wsId);
+    const pending = pendingRow.count;
+    const avgRow = await db.prepare('SELECT COALESCE(AVG(rating), 0) as avg FROM rv_reviews WHERE rating IS NOT NULL AND workspace_id = ?').get(wsId);
+    const avgRating = avgRow.avg;
+    const bySource = await db.prepare('SELECT source, COUNT(*) as count FROM rv_reviews WHERE source IS NOT NULL AND workspace_id = ? GROUP BY source').all(wsId);
+    const byRating = await db.prepare('SELECT rating, COUNT(*) as count FROM rv_reviews WHERE rating IS NOT NULL AND workspace_id = ? GROUP BY rating ORDER BY rating').all(wsId);
+    const bySentiment = await db.prepare('SELECT sentiment, COUNT(*) as count FROM rv_reviews WHERE sentiment IS NOT NULL AND workspace_id = ? GROUP BY sentiment').all(wsId);
 
     res.json({ total, pending, avgRating: Math.round(avgRating * 10) / 10, bySource, byRating, bySentiment });
   } catch (error) {

@@ -101,7 +101,7 @@ router.post('/reports', async (req, res) => {
       return res.status(400).json({ error: 'Name is required' });
     }
 
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO cr_reports (name, client_name, date_range, modules, content, template, branding, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(
       name,
@@ -222,7 +222,7 @@ router.post('/schedules', async (req, res) => {
       return res.status(404).json({ error: 'Report not found' });
     }
 
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO cr_schedules (report_id, frequency, next_run, recipients, workspace_id) VALUES (?, ?, ?, ?, ?)'
     ).run(report_id, frequency, next_run || null, recipients || null, wsId);
 

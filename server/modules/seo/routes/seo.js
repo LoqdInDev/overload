@@ -85,7 +85,7 @@ router.post('/audit', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { url, results, score } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO seo_audits (url, results, score, workspace_id) VALUES (?, ?, ?, ?)'
     ).run(url, results || null, score || null, wsId);
     const audit = await db.prepare('SELECT * FROM seo_audits WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
@@ -147,7 +147,7 @@ router.delete('/keywords/:id', async (req, res) => {
 router.put('/audits/:id', async (req, res) => {
   try {
     const { score, issues, recommendations } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE seo_audits SET score = COALESCE(?, score), issues = COALESCE(?, issues), recommendations = COALESCE(?, recommendations) WHERE id = ? AND workspace_id = ?'
     ).run(score, issues ? JSON.stringify(issues) : null, recommendations ? JSON.stringify(recommendations) : null, req.params.id, req.workspace.id);
     res.json({ success: true });
