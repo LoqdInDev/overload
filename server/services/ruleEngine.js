@@ -76,7 +76,7 @@ function getMinGapMs(frequency) {
 
 // ── Threshold Evaluation ─────────────────────────────────────────
 
-function shouldThresholdTrigger(rule) {
+async function shouldThresholdTrigger(rule) {
   // Cooldown: don't re-trigger within 6 hours
   if (rule.last_triggered) {
     const hoursSince = (Date.now() - new Date(rule.last_triggered).getTime()) / 3600000;
@@ -98,7 +98,7 @@ function shouldThresholdTrigger(rule) {
                      cost_per_acquisition: 'cpa' }[metric];
       if (!col) return true;
 
-      const row = db.prepare(`
+      const row = await db.prepare(`
         SELECT AVG(${col}) as val FROM pa_campaign_metrics
         WHERE workspace_id = ? AND date::timestamptz >= NOW() - INTERVAL '7 days'
       `).get(rule.workspace_id);
@@ -135,13 +135,15 @@ async function checkSafetyLimits(wsId) {
   const maxDay = Number(settings.maxActionsPerDay) || 50;
   const maxHour = Number(settings.maxActionsPerHour) || 10;
 
-  const todayCount = db.prepare(
+  const todayRow = await db.prepare(
     "SELECT COUNT(*) as c FROM ae_action_log WHERE workspace_id = ? AND created_at::timestamptz >= DATE_TRUNC('day', NOW()) AND mode = 'autopilot'"
-  ).get(wsId)?.c || 0;
+  ).get(wsId);
+  const todayCount = todayRow?.c || 0;
 
-  const hourCount = db.prepare(
+  const hourRow = await db.prepare(
     "SELECT COUNT(*) as c FROM ae_action_log WHERE workspace_id = ? AND created_at::timestamptz >= NOW() - INTERVAL '1 hour' AND mode = 'autopilot'"
-  ).get(wsId)?.c || 0;
+  ).get(wsId);
+  const hourCount = hourRow?.c || 0;
 
   if (todayCount >= maxDay) return { allowed: false, reason: `Daily limit reached (${maxDay})` };
   if (hourCount >= maxHour) return { allowed: false, reason: `Hourly limit reached (${maxHour})` };
@@ -149,9 +151,10 @@ async function checkSafetyLimits(wsId) {
   // Monthly budget limit (count all actions this month as a proxy for cost)
   const monthlyLimit = Number(settings.monthlyBudgetLimit) || 0;
   if (monthlyLimit > 0) {
-    const monthCount = db.prepare(
+    const monthRow = await db.prepare(
       "SELECT COUNT(*) as c FROM ae_action_log WHERE workspace_id = ? AND created_at::timestamptz >= DATE_TRUNC('month', NOW()) AND mode = 'autopilot'"
-    ).get(wsId)?.c || 0;
+    ).get(wsId);
+    const monthCount = monthRow?.c || 0;
     if (monthCount >= monthlyLimit) return { allowed: false, reason: `Monthly action budget reached (${monthlyLimit})` };
   }
 
@@ -313,7 +316,7 @@ Generate appropriate content or output for this automation action.`;
 
 // ── Save to Module Database ("Last Mile") ───────────────────────
 
-function saveToModuleDatabase(rule, wsId, text, actionLogId) {
+async function saveToModuleDatabase(rule, wsId, text, actionLogId) {
   const actionConfig = JSON.parse(rule.action_config || '{}');
   const meta = JSON.stringify({ source: 'autopilot', ruleId: rule.id, actionLogId });
   const id = crypto.randomUUID();
@@ -324,14 +327,14 @@ function saveToModuleDatabase(rule, wsId, text, actionLogId) {
       case 'publish_blog': {
         const type = actionConfig.type || 'blog';
         const title = `Auto: ${rule.name}`.slice(0, 100);
-        db.prepare(
+        await db.prepare(
           'INSERT INTO cc_projects (id, type, title, prompt, content, metadata, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
         ).run(id, type, title, rule.name, text, meta, wsId);
         break;
       }
       case 'schedule_post': {
         const platform = (actionConfig.platforms && actionConfig.platforms[0]) || 'multi';
-        db.prepare(
+        await db.prepare(
           "INSERT INTO sm_posts (platform, post_type, caption, hashtags, status, metadata, workspace_id) VALUES (?, 'feed', ?, null, 'draft', ?, ?)"
         ).run(platform, text, meta, wsId);
         break;
@@ -339,7 +342,7 @@ function saveToModuleDatabase(rule, wsId, text, actionLogId) {
       case 'send_campaign': {
         const name = `Auto: ${rule.name}`.slice(0, 100);
         const type = actionConfig.template || 'email';
-        db.prepare(
+        await db.prepare(
           "INSERT INTO es_campaigns (name, type, body, status, metadata, workspace_id) VALUES (?, ?, ?, 'draft', ?, ?)"
         ).run(name, type === 'sms' ? 'sms' : 'email', text, meta, wsId);
         break;
@@ -347,13 +350,13 @@ function saveToModuleDatabase(rule, wsId, text, actionLogId) {
       case 'adjust_budget': {
         const name = `Budget: ${rule.name}`.slice(0, 100);
         const platform = actionConfig.platform || 'google';
-        db.prepare(
+        await db.prepare(
           'INSERT INTO pa_campaigns (id, platform, name, objective, budget, audience, ad_content, metadata, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
         ).run(id, platform, name, 'budget_adjustment', '0', null, text, meta, wsId);
         break;
       }
       case 'respond_review': {
-        db.prepare(
+        await db.prepare(
           "INSERT INTO rv_responses (id, workspace_id, review_id, content, status, metadata) VALUES (?, ?, 'auto', ?, 'draft', ?)"
         ).run(id, wsId, text, meta);
         break;
@@ -363,7 +366,7 @@ function saveToModuleDatabase(rule, wsId, text, actionLogId) {
         // Save as content project (SEO report/audit)
         const seoTitle = `Auto: ${rule.name}`.slice(0, 100);
         const seoType = rule.action_type === 'update_meta' ? 'seo_audit' : 'seo_report';
-        db.prepare(
+        await db.prepare(
           'INSERT INTO cc_projects (id, type, title, prompt, content, metadata, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
         ).run(id, seoType, seoTitle, rule.name, text, meta, wsId);
         break;
@@ -371,7 +374,7 @@ function saveToModuleDatabase(rule, wsId, text, actionLogId) {
       case 'generate_report': {
         // Save reports as content projects too so they're visible
         const reportTitle = `Auto: ${rule.name}`.slice(0, 100);
-        db.prepare(
+        await db.prepare(
           'INSERT INTO cc_projects (id, type, title, prompt, content, metadata, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
         ).run(id, 'report', reportTitle, rule.name, text, meta, wsId);
         break;
@@ -399,13 +402,13 @@ async function executeAction(rule, wsId) {
     const durationMs = Date.now() - startTime;
 
     // Log the completed action
-    const result = db.prepare(`
+    const result = await db.prepare(`
       INSERT INTO ae_action_log (module_id, action_type, mode, description, output_data, status, duration_ms, created_at, completed_at, workspace_id)
-      VALUES (?, ?, 'autopilot', ?, ?, 'completed', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
+      VALUES (?, ?, 'autopilot', ?, ?, 'completed', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?) RETURNING id
     `).run(rule.module_id, rule.action_type, `Auto: ${rule.name}`, text, durationMs, wsId);
 
     // Save generated content as draft in the target module's database
-    saveToModuleDatabase(rule, wsId, text, result.lastInsertRowid);
+    await saveToModuleDatabase(rule, wsId, text, result.lastInsertRowid);
 
     createNotification('action_completed', `Auto: ${rule.name}`, `Autopilot executed "${rule.name}" successfully`, rule.module_id, wsId);
 
@@ -413,7 +416,7 @@ async function executeAction(rule, wsId) {
   } catch (err) {
     const durationMs = Date.now() - startTime;
 
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO ae_action_log (module_id, action_type, mode, description, error, status, duration_ms, created_at, completed_at, workspace_id)
       VALUES (?, ?, 'autopilot', ?, ?, 'failed', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
     `).run(rule.module_id, rule.action_type, `Auto: ${rule.name}`, err.message, durationMs, wsId);
@@ -424,14 +427,14 @@ async function executeAction(rule, wsId) {
   }
 }
 
-function queueForApproval(rule, wsId) {
+async function queueForApproval(rule, wsId) {
   const actionConfig = JSON.parse(rule.action_config || '{}');
   const triggerConfig = JSON.parse(rule.trigger_config || '{}');
 
   // Compute meaningful confidence based on rule maturity and configuration completeness
   const confidence = computeConfidence(rule);
 
-  db.prepare(`
+  await db.prepare(`
     INSERT INTO ae_approval_queue (module_id, action_type, title, description, payload, ai_confidence, priority, status, source, created_at, workspace_id)
     VALUES (?, ?, ?, ?, ?, ?, 'medium', 'pending', 'rule', CURRENT_TIMESTAMP, ?)
   `).run(
@@ -447,8 +450,8 @@ function queueForApproval(rule, wsId) {
   createNotification('suggestion_ready', `Rule triggered: ${rule.name}`, `"${rule.name}" needs your approval`, rule.module_id, wsId);
 }
 
-function markRuleTriggered(ruleId) {
-  db.prepare("UPDATE ae_rules SET last_triggered = CURRENT_TIMESTAMP, run_count = run_count + 1 WHERE id = ?").run(ruleId);
+async function markRuleTriggered(ruleId) {
+  await db.prepare("UPDATE ae_rules SET last_triggered = CURRENT_TIMESTAMP, run_count = run_count + 1 WHERE id = ?").run(ruleId);
 }
 
 // ── Main Engine Loop ─────────────────────────────────────────────
@@ -481,7 +484,7 @@ async function tick() {
         if (rule.trigger_type === 'schedule') {
           shouldTrigger = shouldScheduleTrigger(rule);
         } else if (rule.trigger_type === 'threshold') {
-          shouldTrigger = shouldThresholdTrigger(rule);
+          shouldTrigger = await shouldThresholdTrigger(rule);
         }
         // event triggers are handled by the API endpoint, not the loop
 
@@ -505,10 +508,10 @@ async function tick() {
           // Check confidence threshold — low-confidence actions get queued instead
           const ruleConfidence = computeConfidence(rule);
           if (ruleConfidence < confidenceThreshold) {
-            queueForApproval(rule, wsId);
+            await queueForApproval(rule, wsId);
             console.log(`  [rule-engine] Queued "${rule.name}" (confidence ${Math.round(ruleConfidence * 100)}% < threshold ${Math.round(confidenceThreshold * 100)}%)`);
           } else if (needsApproval) {
-            queueForApproval(rule, wsId);
+            await queueForApproval(rule, wsId);
             console.log(`  [rule-engine] Queued "${rule.name}" (requires approval, risk: ${riskLevel})`);
           } else {
             console.log(`  [rule-engine] Executing "${rule.name}" in autopilot...`);
@@ -516,11 +519,11 @@ async function tick() {
             console.log(`  [rule-engine] "${rule.name}" ${result.success ? 'completed' : 'failed'} (${result.durationMs || 0}ms)`);
           }
         } else if (moduleMode === 'copilot') {
-          queueForApproval(rule, wsId);
+          await queueForApproval(rule, wsId);
           console.log(`  [rule-engine] Queued "${rule.name}" for copilot review`);
         }
 
-        markRuleTriggered(rule.id);
+        await markRuleTriggered(rule.id);
       }
     }
   } catch (err) {
@@ -580,10 +583,10 @@ async function triggerEvent(eventType, moduleId, wsId, eventData = {}) {
     if (mode === 'autopilot' && !needsApproval) {
       await executeAction(rule, wsId);
     } else {
-      queueForApproval(rule, wsId);
+      await queueForApproval(rule, wsId);
     }
 
-    markRuleTriggered(rule.id);
+    await markRuleTriggered(rule.id);
     triggered++;
   }
 

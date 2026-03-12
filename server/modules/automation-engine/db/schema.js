@@ -131,8 +131,8 @@ async function initDatabase() {
   }
 }
 
-function createNotification(type, title, message, moduleId, wsId) {
-  db.prepare(
+async function createNotification(type, title, message, moduleId, wsId) {
+  await db.prepare(
     'INSERT INTO ae_notifications (type, title, message, module_id, workspace_id) VALUES (?, ?, ?, ?, ?)'
   ).run(type, title, message || null, moduleId || null, wsId || null);
 }

@@ -342,9 +342,9 @@ router.post('/install/:recipeId', async (req, res) => {
     const triggerConfig = JSON.stringify({ ...recipe.trigger.config, marketplace_recipe_id: recipe.id });
     const actionConfig = JSON.stringify(recipe.action.config);
 
-    const result = db.prepare(
+    const result = await db.prepare(
       `INSERT INTO ae_rules (workspace_id, module_id, name, trigger_type, trigger_config, action_type, action_config, requires_approval, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active') RETURNING id`
     ).run(wsId, recipe.modules[0], recipe.name, recipe.trigger.type, triggerConfig, recipe.action.type, actionConfig, recipe.requires_approval ? 1 : 0);
 
     // Auto-upgrade module to copilot if it's in manual mode, so the rule actually runs
