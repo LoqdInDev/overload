@@ -14,6 +14,35 @@ const REPORT_TYPES = [
 
 const PERIODS = ['Last 7 Days', 'Last 30 Days', 'Last Quarter', 'Last Year', 'Custom'];
 const FORMATS = ['PDF', 'CSV', 'Google Sheets', 'Notion'];
+const FREQUENCIES = ['Weekly', 'Monthly'];
+
+function getNextRunDate(frequency) {
+  const now = new Date();
+  if (frequency === 'Weekly') {
+    const next = new Date(now);
+    next.setDate(now.getDate() + (7 - now.getDay()) % 7 + 1);
+    return next.toISOString().slice(0, 10);
+  }
+  const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  return next.toISOString().slice(0, 10);
+}
+
+function getReportHistoryStats(reports) {
+  const total = reports.length;
+  const now = new Date();
+  const thisMonth = reports.filter(r => {
+    const d = new Date(r.created_at);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length;
+  const typeCounts = {};
+  reports.forEach(r => { typeCounts[r.template] = (typeCounts[r.template] || 0) + 1; });
+  let mostCommon = '—';
+  let max = 0;
+  for (const [k, v] of Object.entries(typeCounts)) {
+    if (v > max) { max = v; mostCommon = REPORT_TYPES.find(t => t.id === k)?.name || k; }
+  }
+  return { total, thisMonth, mostCommon };
+}
 
 
 export default function ReportsPage() {
@@ -30,6 +59,10 @@ export default function ReportsPage() {
   const [summaryOutput, setSummaryOutput] = useState('');
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
+  const [scheduledReports, setScheduledReports] = useState([]);
+  const [showScheduleForm, setShowScheduleForm] = useState(false);
+  const [scheduleType, setScheduleType] = useState('overview');
+  const [scheduleFrequency, setScheduleFrequency] = useState('Weekly');
 
   useEffect(() => {
     fetchJSON('/api/reports/reports').then(data => { if (Array.isArray(data)) setReports(data); }).catch(() => {});
@@ -73,6 +106,35 @@ export default function ReportsPage() {
     URL.revokeObjectURL(url);
   };
 
+  const downloadSavedReport = (report) => {
+    const text = typeof report.content === 'object' ? (report.content?.text || JSON.stringify(report.content, null, 2)) : (report.content || '');
+    const blob = new Blob([text], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(report.name || 'report').replace(/\s+/g, '-').toLowerCase()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const addSchedule = () => {
+    const type = REPORT_TYPES.find(t => t.id === scheduleType);
+    setScheduledReports(prev => [...prev, {
+      id: Date.now(),
+      type: scheduleType,
+      typeName: type?.name || scheduleType,
+      frequency: scheduleFrequency,
+      nextRun: getNextRunDate(scheduleFrequency),
+    }]);
+    setShowScheduleForm(false);
+  };
+
+  const removeSchedule = (id) => {
+    setScheduledReports(prev => prev.filter(s => s.id !== id));
+  };
+
+  const stats = getReportHistoryStats(reports);
+
   if (!selectedType) return (
     <div className="p-4 sm:p-6 lg:p-12">
       <ModuleWrapper moduleId="reports">
@@ -90,6 +152,24 @@ export default function ReportsPage() {
         ))}
       </div>
 
+      {/* Report History Stats */}
+      {reports.length > 0 && (
+        <div className="grid grid-cols-3 gap-3 mb-4 animate-fade-in">
+          <div className="panel rounded-2xl px-4 py-3 text-center">
+            <p className="text-2xl font-bold text-white">{stats.total}</p>
+            <p className="hud-label text-[9px] mt-0.5" style={{ color: '#f43f5e' }}>TOTAL REPORTS</p>
+          </div>
+          <div className="panel rounded-2xl px-4 py-3 text-center">
+            <p className="text-2xl font-bold text-white">{stats.thisMonth}</p>
+            <p className="hud-label text-[9px] mt-0.5" style={{ color: '#f43f5e' }}>THIS MONTH</p>
+          </div>
+          <div className="panel rounded-2xl px-4 py-3 text-center">
+            <p className="text-sm font-bold text-white truncate">{stats.mostCommon}</p>
+            <p className="hud-label text-[9px] mt-0.5" style={{ color: '#f43f5e' }}>MOST COMMON</p>
+          </div>
+        </div>
+      )}
+
       <p className="hud-label text-[11px] mb-3" style={{ color: '#f43f5e' }}>RECENT REPORTS</p>
       <div className="panel rounded-2xl overflow-hidden">
         {reports.length === 0 ? (
@@ -97,18 +177,113 @@ export default function ReportsPage() {
         ) : (
           <div className="divide-y divide-indigo-500/[0.04]">
             {reports.map(r => (
-              <div key={r.id} className="flex items-center gap-6 px-6 py-4 hover:bg-white/[0.01] transition-colors">
+              <div key={r.id} onClick={() => setSelectedReport(selectedReport?.id === r.id ? null : r)} className={`flex items-center gap-6 px-6 py-4 cursor-pointer transition-colors ${selectedReport?.id === r.id ? 'bg-white/[0.03]' : 'hover:bg-white/[0.01]'}`}>
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(244,63,94,0.08)' }}>
                   <svg className="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={REPORT_TYPES.find(t => t.id === r.template)?.icon || REPORT_TYPES[0].icon} /></svg>
                 </div>
                 <div className="flex-1 min-w-0"><p className="text-sm font-semibold text-gray-200 truncate">{r.name}</p><p className="text-xs text-gray-500">{r.client_name ? `${r.client_name} · ` : ''}{r.date_range || r.created_at?.slice(0, 10) || ''}</p></div>
+                <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${r.status === 'ready' ? 'bg-emerald-400' : 'bg-amber-400'}`} title={r.status === 'ready' ? 'Ready' : 'Draft'} />
                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${r.status === 'ready' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20 animate-pulse'}`}>{r.status}</span>
+                <svg className={`w-4 h-4 text-gray-500 transition-transform ${selectedReport?.id === r.id ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
               </div>
             ))}
           </div>
         )}
       </div>
-      <div className="rounded-2xl overflow-hidden mt-4 animate-fade-in" style={{ background: 'rgba(244,63,94,0.04)', border: '1px solid rgba(244,63,94,0.14)' }}>
+
+      {/* Report Detail Panel */}
+      {selectedReport && (
+        <div className="mt-3 animate-fade-in">
+          <div className="panel rounded-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid rgba(244,63,94,0.08)' }}>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(244,63,94,0.12)' }}>
+                  <svg className="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d={REPORT_TYPES.find(t => t.id === selectedReport.template)?.icon || REPORT_TYPES[0].icon} /></svg>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white">{selectedReport.name}</p>
+                  <p className="text-xs text-gray-500">{selectedReport.date_range || selectedReport.created_at?.slice(0, 10) || ''} · {selectedReport.status}</p>
+                </div>
+              </div>
+              <button onClick={() => downloadSavedReport(selectedReport)} className="chip text-[10px] flex items-center gap-1.5 px-3 py-1.5">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                Download .md
+              </button>
+            </div>
+            <div className="px-6 py-5">
+              <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans leading-relaxed max-h-96 overflow-y-auto">
+                {typeof selectedReport.content === 'object'
+                  ? (selectedReport.content?.text || JSON.stringify(selectedReport.content, null, 2))
+                  : (selectedReport.content || 'No content available.')}
+              </pre>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Scheduled Reports */}
+      <div className="mt-6 animate-fade-in">
+        <p className="hud-label text-[11px] mb-3" style={{ color: '#f43f5e' }}>SCHEDULED REPORTS</p>
+        <div className="panel rounded-2xl overflow-hidden">
+          {scheduledReports.length === 0 && !showScheduleForm ? (
+            <div className="px-6 py-6 text-center">
+              <p className="text-sm text-gray-500 mb-3">No scheduled reports. Automate recurring report generation.</p>
+              <button onClick={() => setShowScheduleForm(true)} className="chip text-[10px] px-4 py-1.5" style={{ background: 'rgba(244,63,94,0.1)', borderColor: 'rgba(244,63,94,0.2)', color: '#fb7185' }}>+ Add Schedule</button>
+            </div>
+          ) : (
+            <div>
+              {scheduledReports.length > 0 && (
+                <div className="divide-y divide-indigo-500/[0.04]">
+                  {scheduledReports.map(s => (
+                    <div key={s.id} className="flex items-center gap-4 px-6 py-4 hover:bg-white/[0.01] transition-colors">
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(244,63,94,0.08)' }}>
+                        <svg className="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={REPORT_TYPES.find(t => t.id === s.type)?.icon || REPORT_TYPES[0].icon} /></svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-200">{s.typeName}</p>
+                        <p className="text-xs text-gray-500">{s.frequency} · Next: {s.nextRun}</p>
+                      </div>
+                      <span className="chip text-[9px] px-2 py-0.5" style={{ background: 'rgba(244,63,94,0.1)', borderColor: 'rgba(244,63,94,0.15)', color: '#fb7185' }}>{s.frequency}</span>
+                      <button onClick={() => removeSchedule(s.id)} className="text-gray-600 hover:text-rose-400 transition-colors">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {showScheduleForm && (
+                <div className="px-6 py-4" style={{ borderTop: scheduledReports.length > 0 ? '1px solid rgba(244,63,94,0.08)' : 'none' }}>
+                  <p className="hud-label text-[10px] mb-2">NEW SCHEDULE</p>
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div className="flex-1 min-w-[140px]">
+                      <p className="text-[10px] text-gray-500 mb-1">Report Type</p>
+                      <select value={scheduleType} onChange={e => setScheduleType(e.target.value)} className="input-field rounded-lg px-3 py-2 text-xs w-full">
+                        {REPORT_TYPES.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="min-w-[100px]">
+                      <p className="text-[10px] text-gray-500 mb-1">Frequency</p>
+                      <select value={scheduleFrequency} onChange={e => setScheduleFrequency(e.target.value)} className="input-field rounded-lg px-3 py-2 text-xs w-full">
+                        {FREQUENCIES.map(f => <option key={f} value={f}>{f}</option>)}
+                      </select>
+                    </div>
+                    <button onClick={addSchedule} className="chip text-[10px] px-4 py-2" style={{ background: 'rgba(244,63,94,0.15)', borderColor: 'rgba(244,63,94,0.3)', color: '#fb7185' }}>Add</button>
+                    <button onClick={() => setShowScheduleForm(false)} className="chip text-[10px] px-4 py-2">Cancel</button>
+                  </div>
+                </div>
+              )}
+              {!showScheduleForm && (
+                <div className="px-6 py-3" style={{ borderTop: '1px solid rgba(244,63,94,0.06)' }}>
+                  <button onClick={() => setShowScheduleForm(true)} className="chip text-[10px] px-3 py-1" style={{ background: 'rgba(244,63,94,0.08)', borderColor: 'rgba(244,63,94,0.15)', color: '#fb7185' }}>+ Add Schedule</button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Executive Summary Generator */}
+      <div className="rounded-2xl overflow-hidden mt-6 animate-fade-in" style={{ background: 'rgba(244,63,94,0.04)', border: '1px solid rgba(244,63,94,0.14)' }}>
         <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid rgba(244,63,94,0.08)' }}>
           <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(244,63,94,0.12)' }}>
             <svg className="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
