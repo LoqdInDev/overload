@@ -127,8 +127,8 @@ function emptyBuilder() {
   return { camera: null, setting: null, lighting: null, subject: null };
 }
 
-function sceneFromArchetype(s) {
-  return { ...s, archBase: s.visual, builder: emptyBuilder(), manualMode: false, imgSrc: 'model', enableAudio: false };
+function sceneFromArchetype(s, index) {
+  return { ...s, archBase: s.visual, builder: emptyBuilder(), manualMode: false, imgSrc: 'model', enableAudio: false, useRefImage: index === 0 };
 }
 
 function buildScenePrompt(scene, productName, moods, withAudio = false) {
@@ -238,7 +238,7 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
   const selectArchetype = (id) => {
     setArchetypeId(id);
     const arch = ARCHETYPES.find(a => a.id === id);
-    if (arch) setScenes(arch.scenes.map(sceneFromArchetype));
+    if (arch) setScenes(arch.scenes.map((s, idx) => sceneFromArchetype(s, idx)));
   };
 
   const updateScene = (i, field, value) =>
@@ -266,7 +266,7 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
 
   const addScene = () => setScenes(prev => [
     ...prev,
-    { label: `Scene ${prev.length + 1}`, duration: 5, visual: '', vo: '', imgSrc: 'model', archBase: '', builder: emptyBuilder(), manualMode: false, enableAudio: false },
+    { label: `Scene ${prev.length + 1}`, duration: 5, visual: '', vo: '', imgSrc: 'model', archBase: '', builder: emptyBuilder(), manualMode: false, enableAudio: false, useRefImage: false },
   ]);
 
   const pollSceneAsync = async (jobId, i) => {
@@ -295,9 +295,9 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
     setSceneGenerating(prev => ({ ...prev, [i]: true }));
     setSceneErrors(prev => ({ ...prev, [i]: null }));
     try {
-      const sceneImage = scene.imgSrc === 'product' && productPhoto
-        ? productPhoto
-        : (activeImage?.url || null);
+      const sceneImage = scene.useRefImage !== false
+        ? (scene.imgSrc === 'product' && productPhoto ? productPhoto : (activeImage?.url || null))
+        : null;
       const { jobId } = await postJSON('/api/video/generate-quick', {
         hookText: buildScenePrompt(scene, productName, moods, scene.enableAudio),
         productImageUrl: sceneImage,
@@ -704,6 +704,23 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
                     />
                   ))}
                 </div>
+
+                {/* Reference image toggle */}
+                {activeImage && (
+                  <button type="button"
+                    onClick={() => updateScene(i, 'useRefImage', !scene.useRefImage)}
+                    className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-[11px] font-medium transition-all"
+                    style={{
+                      background: scene.useRefImage ? accentBg : (dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'),
+                      border: `1px solid ${scene.useRefImage ? accentBorder : border}`,
+                      color: scene.useRefImage ? accent : textSecondary,
+                    }}>
+                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    {scene.useRefImage ? 'Using reference image (image-to-video)' : 'Prompt only (text-to-video) — unique composition'}
+                  </button>
+                )}
 
                 {/* Visual prompt textarea — always visible, editable */}
                 <textarea
