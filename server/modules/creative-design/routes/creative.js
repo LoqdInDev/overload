@@ -61,7 +61,7 @@ router.post('/generate', async (req, res) => {
 
     const projectId = uuid();
     const title = cleanPrompt.slice(0, 100);
-    q.createProject(projectId, type, title, cleanPrompt, JSON.stringify(parsed));
+    await q.createProject(projectId, type, title, cleanPrompt, JSON.stringify(parsed));
 
     const imagePrompts = (parsed.prompts || []).map(p => p.prompt);
 
@@ -72,24 +72,27 @@ router.post('/generate', async (req, res) => {
     } catch (genErr) {
       console.error('Image generation failed, returning prompts only:', genErr.message);
       // Fall back to prompt-only mode if Gemini is unavailable
-      const images = (parsed.prompts || []).map((p) => {
+      const images = [];
+      for (const p of (parsed.prompts || [])) {
         const imgId = uuid();
-        q.createImage(imgId, projectId, null, p.alt, 'pending', 'prompt_ready', JSON.stringify(p));
-        return { id: imgId, prompt: p.prompt, alt: p.alt, style_notes: p.style_notes, status: 'prompt_ready', url: null };
-      });
+        await q.createImage(imgId, projectId, null, p.alt, 'pending', 'prompt_ready', JSON.stringify(p));
+        images.push({ id: imgId, prompt: p.prompt, alt: p.alt, style_notes: p.style_notes, status: 'prompt_ready', url: null });
+      }
       await logActivity('creative', 'generate', `Generated ${type} creative (prompts only)`, title, projectId, wsId);
       return res.json({ projectId, images, prompts: parsed.prompts, warning: genErr.message });
     }
 
     // Step 3: Save results to database
-    const images = (parsed.prompts || []).map((p, i) => {
+    const images = [];
+    for (let i = 0; i < (parsed.prompts || []).length; i++) {
+      const p = parsed.prompts[i];
       const imgId = uuid();
       const genResult = generatedImages[i];
       const url = genResult?.url || null;
       const status = url ? 'completed' : 'failed';
-      q.createImage(imgId, projectId, url, p.alt, 'gemini', status, JSON.stringify({ ...p, error: genResult?.error }));
-      return { id: imgId, prompt: p.prompt, alt: p.alt, style_notes: p.style_notes, status, url, dataUrl: genResult?.dataUrl || null, error: genResult?.error };
-    });
+      await q.createImage(imgId, projectId, url, p.alt, 'gemini', status, JSON.stringify({ ...p, error: genResult?.error }));
+      images.push({ id: imgId, prompt: p.prompt, alt: p.alt, style_notes: p.style_notes, status, url, dataUrl: genResult?.dataUrl || null, error: genResult?.error });
+    }
 
     await logActivity('creative', 'generate', `Generated ${type} creative`, title, projectId, wsId);
     res.json({ projectId, images, prompts: parsed.prompts });
@@ -103,7 +106,7 @@ router.post('/generate', async (req, res) => {
 router.get('/projects', async (req, res) => {
   const wsId = req.workspace.id;
   const projects = await db.prepare(
-    `SELECT p.*, GROUP_CONCAT(i.url) as image_urls FROM cd_projects p
+    `SELECT p.*, STRING_AGG(i.url, ',') as image_urls FROM cd_projects p
      LEFT JOIN cd_images i ON i.project_id = p.id AND i.workspace_id = p.workspace_id
      WHERE p.workspace_id = ? GROUP BY p.id ORDER BY p.created_at DESC LIMIT 30`
   ).all(wsId);
@@ -134,9 +137,9 @@ router.post('/projects', async (req, res) => {
 router.get('/projects/:id', async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
-  const project = q.getProjectById(req.params.id);
+  const project = await q.getProjectById(req.params.id);
   if (!project) return res.status(404).json({ error: 'Not found' });
-  const images = q.getImagesByProject(req.params.id);
+  const images = await q.getImagesByProject(req.params.id);
   res.json({ ...project, images });
 });
 
@@ -146,7 +149,7 @@ router.delete('/projects/:id', async (req, res) => {
   const q = getQueries(wsId);
 
   // Delete files from disk before removing DB records
-  const images = q.getImagesByProject(req.params.id);
+  const images = await q.getImagesByProject(req.params.id);
   for (const img of images) {
     if (img.url && img.url.startsWith('/uploads/creatives/')) {
       const filepath = path.join(dataDir, img.url);
@@ -154,7 +157,7 @@ router.delete('/projects/:id', async (req, res) => {
     }
   }
 
-  q.deleteProject(req.params.id);
+  await q.deleteProject(req.params.id);
   await logActivity('creative', 'delete', 'Deleted creative project', null, req.params.id, wsId);
   res.json({ success: true });
 });
@@ -183,7 +186,7 @@ router.post('/generate-stream', async (req, res) => {
 
     const projectId = uuid();
     const title = cleanPrompt.slice(0, 100);
-    q.createProject(projectId, type, title, cleanPrompt, JSON.stringify(parsed));
+    await q.createProject(projectId, type, title, cleanPrompt, JSON.stringify(parsed));
 
     // Immediately send prompts so client shows pending cards
     sse.sendChunk(JSON.stringify({ step: 'prompts_ready', projectId, prompts: parsed.prompts || [] }));
@@ -194,13 +197,13 @@ router.post('/generate-stream', async (req, res) => {
         const imgId = uuid();
         try {
           const gen = await generateImage(p.prompt, ratio);
-          q.createImage(imgId, projectId, gen.url, p.alt, 'gemini', 'completed', JSON.stringify(p));
+          await q.createImage(imgId, projectId, gen.url, p.alt, 'gemini', 'completed', JSON.stringify(p));
           sse.sendChunk(JSON.stringify({
             step: 'image', index: i,
             image: { id: imgId, prompt: p.prompt, alt: p.alt, style_notes: p.style_notes, status: 'completed', url: gen.url, dataUrl: gen.dataUrl },
           }));
         } catch (err) {
-          q.createImage(imgId, projectId, null, p.alt, 'gemini', 'failed', JSON.stringify({ ...p, error: err.message }));
+          await q.createImage(imgId, projectId, null, p.alt, 'gemini', 'failed', JSON.stringify({ ...p, error: err.message }));
           sse.sendChunk(JSON.stringify({
             step: 'image', index: i,
             image: { id: imgId, prompt: p.prompt, alt: p.alt, style_notes: p.style_notes, status: 'failed', url: null, error: err.message },
@@ -307,7 +310,7 @@ router.post('/generate-from-image-stream', async (req, res) => {
   try {
     const projectId = uuid();
     const title = (prompt?.trim() || 'Image variation').slice(0, 100);
-    q.createProject(projectId, type || 'ad-creative', title, prompt || '', JSON.stringify({ variations: true }));
+    await q.createProject(projectId, type || 'ad-creative', title, prompt || '', JSON.stringify({ variations: true }));
 
     sse.sendChunk(JSON.stringify({ step: 'prompts_ready', projectId, prompts: variations }));
 
@@ -316,13 +319,13 @@ router.post('/generate-from-image-stream', async (req, res) => {
         const imgId = uuid();
         try {
           const gen = await generateImageFromReference(v.prompt, refImages, ratio);
-          q.createImage(imgId, projectId, gen.url, v.alt, 'gemini', 'completed', JSON.stringify(v));
+          await q.createImage(imgId, projectId, gen.url, v.alt, 'gemini', 'completed', JSON.stringify(v));
           sse.sendChunk(JSON.stringify({
             step: 'image', index: i,
             image: { id: imgId, prompt: v.prompt, alt: v.alt, style_notes: v.style_notes, status: 'completed', url: gen.url, dataUrl: gen.dataUrl },
           }));
         } catch (err) {
-          q.createImage(imgId, projectId, null, v.alt, 'gemini', 'failed', JSON.stringify({ ...v, error: err.message }));
+          await q.createImage(imgId, projectId, null, v.alt, 'gemini', 'failed', JSON.stringify({ ...v, error: err.message }));
           sse.sendChunk(JSON.stringify({
             step: 'image', index: i,
             image: { id: imgId, prompt: v.prompt, alt: v.alt, style_notes: v.style_notes, status: 'failed', url: null, error: err.message },
