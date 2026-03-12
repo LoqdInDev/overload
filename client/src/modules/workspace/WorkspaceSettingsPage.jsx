@@ -379,6 +379,11 @@ export default function WorkspaceSettingsPage() {
           </div>
         </div>
 
+        {/* Database Management */}
+        {current.role === 'owner' && (
+          <DatabaseSection dark={dark} cardBg={cardBg} borderColor={borderColor} ink={ink} sub={sub} muted={muted} terra={terra} />
+        )}
+
         {/* Danger Zone */}
         {current.role === 'owner' && workspaces.length > 1 && (
           <div className="rounded-2xl overflow-hidden" style={{ background: cardBg, border: `1px solid ${dark ? 'rgba(231,76,60,0.15)' : 'rgba(231,76,60,0.12)'}`, boxShadow: dark ? 'none' : '0 1px 3px rgba(44,40,37,0.04)' }}>
@@ -413,6 +418,107 @@ export default function WorkspaceSettingsPage() {
         )}
 
         <div className="h-10" />
+      </div>
+    </div>
+  );
+}
+
+function DatabaseSection({ dark, cardBg, borderColor, ink, sub, muted, terra }) {
+  const [dbSize, setDbSize] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [backupLoading, setBackupLoading] = useState(false);
+
+  async function checkSize() {
+    setLoading(true);
+    try {
+      const data = await fetchJSON('/api/admin/db-size');
+      setDbSize(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function downloadBackup() {
+    setBackupLoading(true);
+    try {
+      const { getAccessToken } = await import('../../lib/api');
+      const token = getAccessToken();
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/db-backup`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `overload-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setBackupLoading(false);
+    }
+  }
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: cardBg, border: `1px solid ${borderColor}`, boxShadow: dark ? 'none' : '0 1px 3px rgba(44,40,37,0.04)' }}>
+      <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: `1px solid ${borderColor}` }}>
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(196,93,62,0.08)' }}>
+          <svg className="w-4 h-4" fill="none" stroke={terra} viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
+          </svg>
+        </div>
+        <div>
+          <h2 className="text-[14px] font-semibold" style={{ color: ink }}>Database Management</h2>
+          <p className="text-[11px]" style={{ color: muted }}>Monitor storage usage and backup your data</p>
+        </div>
+      </div>
+      <div className="p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <button onClick={checkSize} disabled={loading}
+            className="px-4 py-2.5 rounded-xl text-[12px] font-semibold text-white transition-all"
+            style={{ background: terra, opacity: loading ? 0.6 : 1 }}>
+            {loading ? 'Checking...' : 'Check DB Size'}
+          </button>
+          <button onClick={downloadBackup} disabled={backupLoading}
+            className="px-4 py-2.5 rounded-xl text-[12px] font-semibold transition-all"
+            style={{ background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(44,40,37,0.06)', color: sub, opacity: backupLoading ? 0.6 : 1 }}>
+            {backupLoading ? 'Downloading...' : 'Download Backup'}
+          </button>
+        </div>
+
+        {dbSize && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] font-semibold" style={{ color: ink }}>Total: {dbSize.database?.db_size}</span>
+            </div>
+            <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${borderColor}` }}>
+              <table className="w-full text-[11px]">
+                <thead>
+                  <tr style={{ background: dark ? 'rgba(255,255,255,0.03)' : 'rgba(44,40,37,0.03)' }}>
+                    <th className="text-left px-3 py-2 font-semibold" style={{ color: muted }}>Table</th>
+                    <th className="text-right px-3 py-2 font-semibold" style={{ color: muted }}>Rows</th>
+                    <th className="text-right px-3 py-2 font-semibold" style={{ color: muted }}>Size</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dbSize.tables?.map((t, i) => {
+                    const rc = dbSize.rowCounts?.find(r => r.tablename === t.tablename);
+                    return (
+                      <tr key={t.tablename} style={{ borderTop: `1px solid ${borderColor}` }}>
+                        <td className="px-3 py-2 font-medium" style={{ color: sub }}>{t.tablename}</td>
+                        <td className="px-3 py-2 text-right tabular-nums" style={{ color: muted }}>{rc?.estimated_rows ?? '—'}</td>
+                        <td className="px-3 py-2 text-right font-medium tabular-nums" style={{ color: t.total_bytes > 5_000_000 ? '#e74c3c' : sub }}>{t.total_size}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
