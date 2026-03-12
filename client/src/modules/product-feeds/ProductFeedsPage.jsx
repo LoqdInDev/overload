@@ -18,6 +18,23 @@ const AI_TOOLS = [
   { name: 'Feed Audit', prompt: 'Audit this product feed for common issues: missing fields, poor titles, low-quality descriptions, policy violations' },
 ];
 
+const FEED_FORMATS = ['CSV', 'XML', 'JSON'];
+
+function FeedHealthBar({ label, pct }) {
+  const color = pct >= 80 ? '#22c55e' : pct >= 50 ? '#eab308' : '#ef4444';
+  return (
+    <div className="flex-1 min-w-[120px]">
+      <div className="flex items-center justify-between mb-1">
+        <span className="hud-label text-[9px]" style={{ color: '#64748b' }}>{label}</span>
+        <span className="text-[10px] font-bold font-mono" style={{ color }}>{pct}%</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
+        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: color }} />
+      </div>
+    </div>
+  );
+}
+
 export default function ProductFeedsPage() {
   usePageTitle('Product Feeds');
   const [tab, setTab] = useState('products');
@@ -32,6 +49,12 @@ export default function ProductFeedsPage() {
   const [editProduct, setEditProduct] = useState({});
   const [feedAudit, setFeedAudit] = useState(null);
   const [auditLoading, setAuditLoading] = useState(false);
+
+  // New states
+  const [selectedProducts, setSelectedProducts] = useState(new Set());
+  const [expandedProductId, setExpandedProductId] = useState(null);
+  const [showImportForm, setShowImportForm] = useState(false);
+  const [importForm, setImportForm] = useState({ name: '', url: '', channel: 'google', format: 'CSV' });
 
   useEffect(() => {
     let cancelled = false;
@@ -69,9 +92,20 @@ export default function ProductFeedsPage() {
   const totalChannels = new Set(products.map(p => p.channel).filter(Boolean)).size;
   const totalOutOfStock = products.filter(p => (p.availability || '').toLowerCase() === 'out_of_stock' || (p.availability || '').toLowerCase() === 'out of stock').length;
 
+  // Feed health metrics
+  const healthMetrics = (() => {
+    const total = products.length || 1;
+    const titleQuality = Math.round((products.filter(p => (p.title || '').length > 20).length / total) * 100);
+    const priceCoverage = Math.round((products.filter(p => parseFloat(p.price) > 0).length / total) * 100);
+    const imageReady = Math.round((products.filter(p => !!(p.image_url || p.image)).length / total) * 100);
+    const descScore = Math.round((products.filter(p => (p.description || '').length > 30).length / total) * 100);
+    return { titleQuality, priceCoverage, imageReady, descScore };
+  })();
+
   const deleteProduct = async (id) => {
     await deleteJSON(`/api/product-feeds/products/${id}`);
     setProducts(prev => prev.filter(p => p.id !== id));
+    setSelectedProducts(prev => { const n = new Set(prev); n.delete(id); return n; });
   };
 
   const saveProductEdit = async (id) => {
@@ -112,6 +146,66 @@ export default function ProductFeedsPage() {
     return <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${s.bg} ${s.text} border ${s.border}`}>{status.replace('_', ' ')}</span>;
   };
 
+  // Bulk actions
+  const toggleSelectProduct = (id) => {
+    setSelectedProducts(prev => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedProducts.size === filtered.length) {
+      setSelectedProducts(new Set());
+    } else {
+      setSelectedProducts(new Set(filtered.map(p => p.id)));
+    }
+  };
+
+  const bulkSetAvailability = async (availability) => {
+    const ids = [...selectedProducts];
+    await Promise.all(ids.map(id => putJSON(`/api/product-feeds/products/${id}`, { availability })));
+    setProducts(prev => prev.map(p => selectedProducts.has(p.id) ? { ...p, availability } : p));
+    setSelectedProducts(new Set());
+  };
+
+  const bulkDelete = async () => {
+    const ids = [...selectedProducts];
+    await Promise.all(ids.map(id => deleteJSON(`/api/product-feeds/products/${id}`)));
+    setProducts(prev => prev.filter(p => !selectedProducts.has(p.id)));
+    setSelectedProducts(new Set());
+  };
+
+  const bulkEditPrice = async () => {
+    const newPrice = prompt('Enter new price for selected products:');
+    if (newPrice === null || newPrice === '') return;
+    const price = parseFloat(newPrice);
+    if (isNaN(price)) return;
+    const ids = [...selectedProducts];
+    await Promise.all(ids.map(id => putJSON(`/api/product-feeds/products/${id}`, { price })));
+    setProducts(prev => prev.map(p => selectedProducts.has(p.id) ? { ...p, price } : p));
+    setSelectedProducts(new Set());
+  };
+
+  const submitImportFeed = async () => {
+    if (!importForm.name || !importForm.url) return;
+    try {
+      await postJSON('/api/product-feeds/feeds', {
+        name: importForm.name,
+        url: importForm.url,
+        channel: importForm.channel,
+        format: importForm.format,
+      });
+      const feedsData = await fetchJSON('/api/product-feeds/feeds');
+      setFeeds(Array.isArray(feedsData) ? feedsData : []);
+      setShowImportForm(false);
+      setImportForm({ name: '', url: '', channel: 'google', format: 'CSV' });
+    } catch (err) {
+      console.error('Failed to import feed:', err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-4 sm:p-6 lg:p-12">
@@ -142,6 +236,19 @@ export default function ProductFeedsPage() {
 
       {tab === 'products' && (
         <div className="animate-fade-in">
+          {/* Feed Health Dashboard */}
+          {products.length > 0 && (
+            <div className="panel rounded-2xl p-4 sm:p-5 mb-5 animate-fade-in">
+              <p className="hud-label text-[10px] mb-3" style={{ color: '#64748b' }}>FEED HEALTH</p>
+              <div className="flex flex-wrap gap-4 sm:gap-6">
+                <FeedHealthBar label="TITLE QUALITY" pct={healthMetrics.titleQuality} />
+                <FeedHealthBar label="PRICE COVERAGE" pct={healthMetrics.priceCoverage} />
+                <FeedHealthBar label="IMAGE READY" pct={healthMetrics.imageReady} />
+                <FeedHealthBar label="DESCRIPTION SCORE" pct={healthMetrics.descScore} />
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-5 mb-6">
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search products..." className="input-field rounded-xl px-5 py-3 text-base flex-1" />
             <div className="flex flex-wrap gap-1">
@@ -161,17 +268,27 @@ export default function ProductFeedsPage() {
           ) : (
             <div className="panel rounded-2xl overflow-hidden overflow-x-auto">
               <div className="min-w-[640px]">
-                <div className="grid grid-cols-[1fr_80px_80px_auto_80px_32px_32px] px-4 sm:px-6 py-3 border-b border-indigo-500/[0.06] text-xs font-bold text-gray-500">
+                <div className="grid grid-cols-[32px_1fr_80px_80px_auto_80px_32px_32px] px-4 sm:px-6 py-3 border-b border-indigo-500/[0.06] text-xs font-bold text-gray-500">
+                  <span className="flex items-center justify-center">
+                    <input
+                      type="checkbox"
+                      checked={filtered.length > 0 && selectedProducts.size === filtered.length}
+                      onChange={toggleSelectAll}
+                      className="accent-slate-500 w-3.5 h-3.5 cursor-pointer"
+                    />
+                  </span>
                   <span>PRODUCT</span><span>SKU</span><span className="text-right">PRICE</span><span className="text-center">CHANNEL</span><span className="text-center">STATUS</span><span /><span />
                 </div>
                 {filtered.map((p, idx) => {
                   const status = mapAvailabilityToStatus(p.availability);
                   const ch = CHANNELS.find(x => x.id === (p.channel || '').toLowerCase());
                   const isEditing = editingProductId === p.id;
+                  const isExpanded = expandedProductId === p.id;
+                  const isSelected = selectedProducts.has(p.id);
                   return (
-                    <div key={p.id || idx} className="border-b border-indigo-500/[0.03] hover:bg-white/[0.01] transition-colors">
+                    <div key={p.id || idx} className="border-b border-indigo-500/[0.03]">
                       {isEditing ? (
-                        <div className="flex flex-wrap items-center gap-2 px-4 sm:px-6 py-3">
+                        <div className="flex flex-wrap items-center gap-2 px-4 sm:px-6 py-3 hover:bg-white/[0.01] transition-colors">
                           <span className="text-sm font-semibold text-gray-200 flex-1 truncate">{p.title}</span>
                           <input
                             type="number"
@@ -202,7 +319,22 @@ export default function ProductFeedsPage() {
                           >Cancel</button>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-[1fr_80px_80px_auto_80px_32px_32px] items-center px-4 sm:px-6 py-4">
+                        <div
+                          className="grid grid-cols-[32px_1fr_80px_80px_auto_80px_32px_32px] items-center px-4 sm:px-6 py-4 hover:bg-white/[0.01] transition-colors cursor-pointer"
+                          onClick={(e) => {
+                            // Don't expand if clicking checkbox, edit, or delete buttons
+                            if (e.target.closest('input[type="checkbox"]') || e.target.closest('button')) return;
+                            setExpandedProductId(isExpanded ? null : p.id);
+                          }}
+                        >
+                          <span className="flex items-center justify-center" onClick={e => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleSelectProduct(p.id)}
+                              className="accent-slate-500 w-3.5 h-3.5 cursor-pointer"
+                            />
+                          </span>
                           <span className="text-sm font-semibold text-gray-200 truncate">{p.title}</span>
                           <span className="text-xs text-gray-500 font-mono">{p.sku}</span>
                           <span className="text-sm text-gray-300 font-mono text-right">${p.price}</span>
@@ -211,16 +343,95 @@ export default function ProductFeedsPage() {
                           </div>
                           <div className="text-center">{statusBadge(status)}</div>
                           <button
-                            onClick={() => { setEditingProductId(p.id); setEditProduct({ price: p.price, availability: p.availability }); }}
+                            onClick={(e) => { e.stopPropagation(); setEditingProductId(p.id); setEditProduct({ price: p.price, availability: p.availability }); }}
                             className="text-gray-500 hover:text-slate-300 transition-colors text-xs leading-none text-center px-1 py-0.5 rounded"
                             title="Edit product"
                           >✎</button>
-                          <button onClick={() => deleteProduct(p.id)} className="text-gray-600 hover:text-red-400 transition-colors text-lg leading-none text-center" title="Delete product">×</button>
+                          <button onClick={(e) => { e.stopPropagation(); deleteProduct(p.id); }} className="text-gray-600 hover:text-red-400 transition-colors text-lg leading-none text-center" title="Delete product">×</button>
+                        </div>
+                      )}
+
+                      {/* Expanded product detail row */}
+                      {isExpanded && !isEditing && (
+                        <div className="px-4 sm:px-6 pb-4 pt-1 animate-fade-in" style={{ background: 'rgba(255,255,255,0.01)' }}>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pl-8">
+                            {p.description && (
+                              <div className="sm:col-span-2 lg:col-span-3">
+                                <p className="hud-label text-[9px] mb-1" style={{ color: '#64748b' }}>DESCRIPTION</p>
+                                <p className="text-xs text-gray-400 leading-relaxed">{p.description}</p>
+                              </div>
+                            )}
+                            {(p.image_url || p.image) && (
+                              <div>
+                                <p className="hud-label text-[9px] mb-1" style={{ color: '#64748b' }}>IMAGE URL</p>
+                                <p className="text-xs text-gray-500 font-mono truncate">{p.image_url || p.image}</p>
+                              </div>
+                            )}
+                            {p.category && (
+                              <div>
+                                <p className="hud-label text-[9px] mb-1" style={{ color: '#64748b' }}>CATEGORY</p>
+                                <p className="text-xs text-gray-400">{p.category}</p>
+                              </div>
+                            )}
+                            {p.brand && (
+                              <div>
+                                <p className="hud-label text-[9px] mb-1" style={{ color: '#64748b' }}>BRAND</p>
+                                <p className="text-xs text-gray-400">{p.brand}</p>
+                              </div>
+                            )}
+                            {p.gtin && (
+                              <div>
+                                <p className="hud-label text-[9px] mb-1" style={{ color: '#64748b' }}>GTIN</p>
+                                <p className="text-xs text-gray-400 font-mono">{p.gtin}</p>
+                              </div>
+                            )}
+                            {p.channel && (
+                              <div>
+                                <p className="hud-label text-[9px] mb-1" style={{ color: '#64748b' }}>CHANNEL</p>
+                                <p className="text-xs text-gray-400">{ch ? ch.name : p.channel}</p>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* Bulk Actions Bar */}
+          {selectedProducts.size > 0 && (
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
+              <div className="panel rounded-2xl px-5 py-3 flex items-center gap-3 shadow-2xl" style={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(100,116,139,0.25)', backdropFilter: 'blur(12px)' }}>
+                <span className="text-sm font-semibold text-gray-300 whitespace-nowrap">{selectedProducts.size} selected</span>
+                <div className="w-px h-5 bg-white/10" />
+                <button
+                  onClick={bulkEditPrice}
+                  className="chip text-[10px] whitespace-nowrap"
+                  style={{ background: 'rgba(100,116,139,0.15)', borderColor: 'rgba(100,116,139,0.3)', color: '#94a3b8' }}
+                >Bulk Edit Price</button>
+                <button
+                  onClick={() => bulkSetAvailability('in_stock')}
+                  className="chip text-[10px] whitespace-nowrap"
+                  style={{ background: 'rgba(34,197,94,0.1)', borderColor: 'rgba(34,197,94,0.25)', color: '#4ade80' }}
+                >Set In Stock</button>
+                <button
+                  onClick={() => bulkSetAvailability('out_of_stock')}
+                  className="chip text-[10px] whitespace-nowrap"
+                  style={{ background: 'rgba(234,179,8,0.1)', borderColor: 'rgba(234,179,8,0.25)', color: '#eab308' }}
+                >Set Out of Stock</button>
+                <button
+                  onClick={bulkDelete}
+                  className="chip text-[10px] whitespace-nowrap"
+                  style={{ background: 'rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.25)', color: '#ef4444' }}
+                >Delete Selected</button>
+                <button
+                  onClick={() => setSelectedProducts(new Set())}
+                  className="text-gray-500 hover:text-gray-300 transition-colors text-lg leading-none ml-1"
+                  title="Clear selection"
+                >×</button>
               </div>
             </div>
           )}
@@ -255,6 +466,64 @@ export default function ProductFeedsPage() {
                 </div>
               );
             })}
+
+            {/* Import Feed Card */}
+            <div
+              className={`panel rounded-2xl p-4 sm:p-6 ${showImportForm ? '' : 'panel-interactive cursor-pointer'} transition-all`}
+              onClick={() => { if (!showImportForm) setShowImportForm(true); }}
+            >
+              {!showImportForm ? (
+                <div className="flex flex-col items-center justify-center h-full min-h-[100px] gap-2">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(100,116,139,0.1)', border: '1px solid rgba(100,116,139,0.2)' }}>
+                    <svg className="w-5 h-5" style={{ color: '#94a3b8' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                  </div>
+                  <p className="text-sm font-semibold" style={{ color: '#94a3b8' }}>Import Feed</p>
+                </div>
+              ) : (
+                <div className="space-y-3 animate-fade-in">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="hud-label text-[10px]" style={{ color: '#64748b' }}>IMPORT FEED</p>
+                    <button onClick={(e) => { e.stopPropagation(); setShowImportForm(false); }} className="text-gray-500 hover:text-gray-300 transition-colors text-lg leading-none">×</button>
+                  </div>
+                  <input
+                    value={importForm.name}
+                    onChange={e => setImportForm(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Feed Name"
+                    className="input-field rounded-lg px-3 py-2 text-sm w-full"
+                    onClick={e => e.stopPropagation()}
+                  />
+                  <input
+                    value={importForm.url}
+                    onChange={e => setImportForm(prev => ({ ...prev, url: e.target.value }))}
+                    placeholder="Feed URL"
+                    className="input-field rounded-lg px-3 py-2 text-sm w-full"
+                    onClick={e => e.stopPropagation()}
+                  />
+                  <select
+                    value={importForm.channel}
+                    onChange={e => setImportForm(prev => ({ ...prev, channel: e.target.value }))}
+                    className="input-field rounded-lg px-3 py-2 text-sm w-full"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    {CHANNELS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                  <select
+                    value={importForm.format}
+                    onChange={e => setImportForm(prev => ({ ...prev, format: e.target.value }))}
+                    className="input-field rounded-lg px-3 py-2 text-sm w-full"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    {FEED_FORMATS.map(f => <option key={f} value={f}>{f}</option>)}
+                  </select>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); submitImportFeed(); }}
+                    className="w-full text-xs py-2 rounded-lg font-semibold transition-colors"
+                    style={{ background: 'rgba(100,116,139,0.15)', border: '1px solid rgba(100,116,139,0.3)', color: '#94a3b8' }}
+                    disabled={!importForm.name || !importForm.url}
+                  >Import</button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
