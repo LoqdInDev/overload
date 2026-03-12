@@ -81,7 +81,7 @@ router.post('/', async (req, res) => {
     const wsId = req.workspace.id;
     const { title, slug, content, category, status } = req.body;
     const articleSlug = slug || title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || null;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO kb_articles (title, slug, content, category, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(title, articleSlug, content || null, category || null, status || 'draft', wsId);
     const item = await db.prepare('SELECT * FROM kb_articles WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
@@ -99,7 +99,7 @@ router.put('/:id', async (req, res) => {
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
     const { title, slug, content, category, status } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE kb_articles SET title = ?, slug = ?, content = ?, category = ?, status = ?, updated_at = NOW() WHERE id = ? AND workspace_id = ?'
     ).run(
       title || existing.title,
@@ -158,7 +158,7 @@ router.post('/categories', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, description, icon, sort_order } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO kb_categories (name, description, icon, sort_order, workspace_id) VALUES (?, ?, ?, ?, ?)'
     ).run(name, description || null, icon || null, sort_order || 0, wsId);
     const item = await db.prepare('SELECT * FROM kb_categories WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);

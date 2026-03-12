@@ -32,7 +32,7 @@ router.post('/', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { title, content, status, target_date, distribution_list } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO pp_releases (title, content, status, target_date, distribution_list, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(title, content || null, status || 'draft', target_date || null, distribution_list || null, wsId);
     const item = await db.prepare('SELECT * FROM pp_releases WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
@@ -50,7 +50,7 @@ router.put('/:id', async (req, res) => {
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
     const { title, content, status, target_date, distribution_list } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE pp_releases SET title = ?, content = ?, status = ?, target_date = ?, distribution_list = ?, updated_at = NOW() WHERE id = ? AND workspace_id = ?'
     ).run(
       title || existing.title,
@@ -97,7 +97,7 @@ router.post('/contacts', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, outlet, email, beat, relationship } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO pp_contacts (name, outlet, email, beat, relationship, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(name, outlet || null, email || null, beat || null, relationship || null, wsId);
     const contact = await db.prepare('SELECT * FROM pp_contacts WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
@@ -112,7 +112,7 @@ router.put('/contacts/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, outlet, email, beat, relationship } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE pp_contacts SET name = COALESCE(?, name), outlet = COALESCE(?, outlet), email = COALESCE(?, email), beat = COALESCE(?, beat), relationship = COALESCE(?, relationship) WHERE id = ? AND workspace_id = ?'
     ).run(name, outlet, email, beat, relationship, req.params.id, wsId);
     const contact = await db.prepare('SELECT * FROM pp_contacts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);

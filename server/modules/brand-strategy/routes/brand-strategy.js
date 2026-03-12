@@ -105,7 +105,7 @@ router.post('/brands', async (req, res) => {
   try {
     const { name, voice, positioning, guidelines, personas } = req.body;
 
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO bs_brands (name, voice, positioning, guidelines, personas, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(name, voice || null, positioning || null, guidelines || null, personas || null, wsId);
 
@@ -144,7 +144,7 @@ router.put('/brands/:id', async (req, res) => {
 
     const { name, voice, positioning, guidelines, personas } = req.body;
 
-    db.prepare(
+    await db.prepare(
       'UPDATE bs_brands SET name = ?, voice = ?, positioning = ?, guidelines = ?, personas = ?, updated_at = NOW() WHERE id = ? AND workspace_id = ?'
     ).run(
       name || brand.name,

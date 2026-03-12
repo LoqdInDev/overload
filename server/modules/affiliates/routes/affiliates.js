@@ -46,7 +46,7 @@ router.post('/programs', async (req, res) => {
       return res.status(400).json({ error: 'Program name is required' });
     }
 
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO af_programs (name, description, commission_rate, commission_type, cookie_duration, terms, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(name, description || null, commissionRate || 0, commissionType || 'percentage', cookieDuration || 30, terms || null, wsId);
 
@@ -93,7 +93,7 @@ router.post('/affiliates', async (req, res) => {
 
     const affiliateCode = `AFF-${Date.now().toString(36).toUpperCase()}`;
 
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO af_affiliates (program_id, name, email, website, affiliate_code, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(programId, name, email || null, website || null, affiliateCode, wsId);
 
@@ -236,7 +236,7 @@ router.get('/payouts', async (req, res) => {
 router.get('/payouts/summary', async (req, res) => {
   try {
     const wsId = req.workspace.id;
-    const summary = db.prepare(`
+    const summary = await db.prepare(`
       SELECT
         a.id as affiliate_id, a.name as affiliate_name, a.email,
         COALESCE(SUM(CASE WHEN p.status = 'pending' THEN p.amount ELSE 0 END), 0) as pending_amount,
@@ -265,7 +265,7 @@ router.post('/payouts', async (req, res) => {
     const affiliate = await db.prepare('SELECT * FROM af_affiliates WHERE id = ? AND workspace_id = ?').get(affiliate_id, wsId);
     if (!affiliate) return res.status(404).json({ error: 'Affiliate not found' });
 
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO af_payouts (affiliate_id, program_id, amount, status, period, notes, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(affiliate_id, program_id || null, amount, 'pending', period || null, notes || null, wsId);
 
@@ -284,7 +284,7 @@ router.put('/payouts/:id/mark-paid', async (req, res) => {
     const payout = await db.prepare('SELECT * FROM af_payouts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
     if (!payout) return res.status(404).json({ error: 'Payout not found' });
 
-    db.prepare('UPDATE af_payouts SET status = ?, paid_at = NOW() WHERE id = ? AND workspace_id = ?')
+    await db.prepare('UPDATE af_payouts SET status = ?, paid_at = NOW() WHERE id = ? AND workspace_id = ?')
       .run('paid', req.params.id, wsId);
 
     const updated = await db.prepare('SELECT * FROM af_payouts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);

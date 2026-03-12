@@ -145,14 +145,14 @@ router.post('/connections/api-key', async (req, res) => {
     const existing = await db.prepare('SELECT id FROM int_connections WHERE provider_id = ? AND workspace_id = ?').get(providerId, wsId);
 
     if (existing) {
-      db.prepare(`
+      await db.prepare(`
         UPDATE int_connections SET
           status = 'connected', credentials_enc = ?, error_message = NULL,
           connected_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
         WHERE provider_id = ? AND workspace_id = ?
       `).run(encryptedCreds, providerId, wsId);
     } else {
-      db.prepare(`
+      await db.prepare(`
         INSERT INTO int_connections (provider_id, display_name, auth_type, status, credentials_enc, connected_at, workspace_id)
         VALUES (?, ?, 'api_key', 'connected', ?, CURRENT_TIMESTAMP, ?)
       `).run(providerId, provider.name, encryptedCreds, wsId);
@@ -174,7 +174,7 @@ router.delete('/connections/:providerId', async (req, res) => {
     const provider = PROVIDERS[providerId];
     if (!provider) return res.status(404).json({ success: false, error: 'Unknown provider' });
 
-    db.prepare(`
+    await db.prepare(`
       UPDATE int_connections SET
         status = 'disconnected',
         access_token_enc = NULL, refresh_token_enc = NULL,

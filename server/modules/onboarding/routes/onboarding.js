@@ -25,7 +25,7 @@ function getRouter() {
 
     if (!state) {
       // Create initial state
-      db.prepare(
+      await db.prepare(
         'INSERT INTO onboarding_state (user_id, workspace_id) VALUES (?, ?)'
       ).run(userId, wsId);
       state = await db.prepare(
@@ -34,20 +34,20 @@ function getRouter() {
     }
 
     // Auto-detect completion from other modules
-    const brandProfile = safeGet('SELECT brand_name FROM bp_profiles WHERE workspace_id = ? ORDER BY id DESC LIMIT 1', [wsId]);
+    const brandProfile = await safeGet('SELECT brand_name FROM bp_profiles WHERE workspace_id = ? ORDER BY id DESC LIMIT 1', [wsId]);
     const brandDone = !!(brandProfile?.brand_name);
 
-    const integrations = safeGet(
+    const integrations = await safeGet(
       "SELECT COUNT(*) as count FROM int_connections WHERE status = 'connected' AND workspace_id = ?", [wsId]
     );
     const integrationDone = (integrations?.count || 0) > 0;
 
-    const content = safeGet('SELECT COUNT(*) as count FROM cc_projects WHERE workspace_id = ?', [wsId]);
+    const content = await safeGet('SELECT COUNT(*) as count FROM cc_projects WHERE workspace_id = ?', [wsId]);
     const firstContentDone = (content?.count || 0) > 0;
 
     // Update auto-detected fields
     if (brandDone !== !!state.brand_done || integrationDone !== !!state.integration_done || firstContentDone !== !!state.first_content_done) {
-      db.prepare(
+      await db.prepare(
         `UPDATE onboarding_state SET brand_done = ?, integration_done = ?, first_content_done = ?, updated_at = CURRENT_TIMESTAMP
          WHERE id = ? AND workspace_id = ?`
       ).run(brandDone ? 1 : 0, integrationDone ? 1 : 0, firstContentDone ? 1 : 0, state.id, wsId);
@@ -56,7 +56,7 @@ function getRouter() {
     // Auto-complete if all steps done
     const allDone = brandDone && integrationDone && firstContentDone;
     if (allDone && !state.completed) {
-      db.prepare(
+      await db.prepare(
         "UPDATE onboarding_state SET completed = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?"
       ).run(state.id, wsId);
     }
@@ -83,7 +83,7 @@ function getRouter() {
       return res.status(400).json({ error: 'Invalid step number' });
     }
 
-    db.prepare(
+    await db.prepare(
       "UPDATE onboarding_state SET current_step = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND workspace_id = ?"
     ).run(step, userId, wsId);
 
@@ -95,7 +95,7 @@ function getRouter() {
     const wsId = req.workspace.id;
     const userId = req.user?.id || 'default';
 
-    db.prepare(
+    await db.prepare(
       "UPDATE onboarding_state SET dismissed = 1, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND workspace_id = ?"
     ).run(userId, wsId);
 
@@ -107,7 +107,7 @@ function getRouter() {
     const wsId = req.workspace.id;
     const userId = req.user?.id || 'default';
 
-    db.prepare(
+    await db.prepare(
       "UPDATE onboarding_state SET completed = 1, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND workspace_id = ?"
     ).run(userId, wsId);
 

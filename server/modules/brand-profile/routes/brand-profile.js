@@ -80,7 +80,7 @@ router.post('/profile', async (req, res) => {
       industry, website, social_links, words_to_use, words_to_avoid
     } = req.body;
 
-    const result = db.prepare(
+    const result = await db.prepare(
       `INSERT INTO bp_profiles (brand_name, tagline, mission, vision, "values", voice_tone, voice_personality,
         target_audience, competitors, colors, fonts, logo_url, guidelines, keywords, industry, website, social_links,
         words_to_use, words_to_avoid, workspace_id)
@@ -120,7 +120,7 @@ router.put('/profile/:id', async (req, res) => {
     } = req.body;
 
     const def = (v, fallback) => v !== undefined ? v : fallback;
-    db.prepare(
+    await db.prepare(
       `UPDATE bp_profiles SET brand_name = ?, tagline = ?, mission = ?, vision = ?, "values" = ?,
         voice_tone = ?, voice_personality = ?, target_audience = ?, competitors = ?, colors = ?,
         fonts = ?, logo_url = ?, guidelines = ?, keywords = ?, industry = ?, website = ?,
@@ -168,7 +168,7 @@ router.post('/media', upload.array('files', 20), async (req, res) => {
     const category = req.body.category || 'other';
     const inserted = [];
     for (const file of req.files) {
-      const result = db.prepare(
+      const result = await db.prepare(
         'INSERT INTO bp_media (filename, original_name, category, mimetype, size, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
       ).run(file.filename, file.originalname, category, file.mimetype, file.size, wsId);
       inserted.push({

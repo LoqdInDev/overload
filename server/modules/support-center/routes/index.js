@@ -40,7 +40,7 @@ router.post('/', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { subject, description, customer_email, priority, status, assigned_to, ai_response } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO sc_tickets (subject, description, customer_email, priority, status, assigned_to, ai_response, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(subject, description || null, customer_email || null, priority || 'medium', status || 'open', assigned_to || null, ai_response || null, wsId);
     const item = await db.prepare('SELECT * FROM sc_tickets WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
@@ -58,7 +58,7 @@ router.put('/:id', async (req, res) => {
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
     const { subject, description, customer_email, priority, status, assigned_to, ai_response } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE sc_tickets SET subject = ?, description = ?, customer_email = ?, priority = ?, status = ?, assigned_to = ?, ai_response = ?, updated_at = NOW() WHERE id = ? AND workspace_id = ?'
     ).run(
       subject || existing.subject,
@@ -107,7 +107,7 @@ router.post('/templates', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, category, content } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO sc_templates (name, category, content, workspace_id) VALUES (?, ?, ?, ?)'
     ).run(name, category || null, content || null, wsId);
     const item = await db.prepare('SELECT * FROM sc_templates WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);

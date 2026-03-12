@@ -41,7 +41,7 @@ router.post('/', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { name, company, email, phone, status, notes } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO cm_clients (name, company, email, phone, status, notes, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(name, company || null, email || null, phone || null, status || 'active', notes || null, wsId);
     const item = await db.prepare('SELECT * FROM cm_clients WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
@@ -59,7 +59,7 @@ router.put('/:id', async (req, res) => {
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
     const { name, company, email, phone, status, notes } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE cm_clients SET name = ?, company = ?, email = ?, phone = ?, status = ?, notes = ?, updated_at = NOW() WHERE id = ? AND workspace_id = ?'
     ).run(
       name || existing.name,
@@ -115,7 +115,7 @@ router.post('/projects', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { client_id, name, description, modules, status } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO cm_projects (client_id, name, description, modules, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(client_id || null, name, description || null, modules || null, status || 'active', wsId);
     const item = await db.prepare('SELECT * FROM cm_projects WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
