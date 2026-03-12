@@ -248,8 +248,8 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
     setScenes(prev => prev.map((s, idx) => {
       if (idx !== i) return s;
       const newBuilder = { ...s.builder, [key]: value };
-      const newVisual = s.manualMode ? s.visual : composeVisual(s.archBase, newBuilder);
-      return { ...s, builder: newBuilder, visual: newVisual };
+      const newVisual = composeVisual(s.archBase, newBuilder);
+      return { ...s, builder: newBuilder, visual: newVisual, manualMode: false };
     }));
   };
 
@@ -709,7 +709,7 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
                 <textarea
                   value={scene.visual}
                   onChange={e => setScenes(prev => prev.map((s, idx) =>
-                    idx === i ? { ...s, visual: e.target.value, manualMode: true } : s
+                    idx === i ? { ...s, visual: e.target.value, archBase: e.target.value, manualMode: true } : s
                   ))}
                   rows={3}
                   placeholder="Describe what the camera sees and what's happening…"
