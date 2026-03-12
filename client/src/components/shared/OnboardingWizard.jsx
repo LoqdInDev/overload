@@ -100,12 +100,9 @@ export default function OnboardingWizard({ onComplete, onDismiss }) {
   const t3 = dark ? '#6B6660' : '#94908A';
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={handleDismiss} />
-      <div
-        className="relative w-full max-w-lg rounded-3xl shadow-2xl animate-fade-up overflow-hidden"
-        style={{ background: bg, border: `1px solid ${border}` }}
-      >
+    <div className="relative w-full rounded-3xl shadow-2xl animate-fade-up overflow-hidden"
+      style={{ background: bg, border: `1px solid ${border}` }}
+    >
         {/* Progress bar */}
         <div className="flex gap-1.5 px-6 pt-5">
           {STEPS.map((_, i) => (
@@ -226,6 +223,17 @@ export default function OnboardingWizard({ onComplete, onDismiss }) {
           </div>
         </div>
       </div>
-    </div>
   );
 }
+
+// Modal variant export for use outside dashboard
+OnboardingWizard.Modal = function OnboardingWizardModal({ onComplete, onDismiss }) {
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onDismiss} />
+      <div className="relative w-full max-w-lg z-10">
+        <OnboardingWizard onComplete={onComplete} onDismiss={onDismiss} />
+      </div>
+    </div>
+  );
+};

@@ -251,7 +251,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="p-4 sm:p-5 md:p-7 lg:p-9 max-w-[1440px] mx-auto space-y-4" style={{ fontFamily: dmSans }}>
+    <div className="p-3 sm:p-5 md:p-7 lg:p-9 max-w-[1440px] mx-auto space-y-3 sm:space-y-4" style={{ fontFamily: dmSans }}>
 
       {/* ═══ ONBOARDING WIZARD ═══ */}
       {showOnboarding && (
@@ -316,7 +316,7 @@ export default function HomePage() {
       </div>
 
       {/* ═══ 2. GREETING + AI SUMMARY ═══ */}
-      <div className="px-1 pt-3 pb-3" style={{ animationDelay: '30ms' }}>
+      <div className="px-1 pt-1 sm:pt-3 pb-1 sm:pb-3" style={{ animationDelay: '30ms' }}>
         <h1 className="text-[22px] sm:text-[26px] md:text-[32px] leading-tight" style={{
           fontFamily: fraunces,
           fontStyle: 'italic',
@@ -358,10 +358,10 @@ export default function HomePage() {
             Quick Actions
           </span>
         </div>
-        <div className="p-3 sm:p-4 grid grid-cols-3 sm:grid-cols-7 gap-2.5 sm:gap-3">
+        <div className="p-2 sm:p-4 grid grid-cols-4 sm:grid-cols-7 gap-1.5 sm:gap-3">
           {quickActions.map((q, i) => (
             <button key={i} onClick={() => nav(q.path)}
-              className="group/q flex flex-col items-center gap-2 sm:gap-2.5 px-2 sm:px-3 py-4 sm:py-5 rounded-2xl transition-all duration-300 cursor-pointer"
+              className="group/q flex flex-col items-center gap-1 sm:gap-2.5 px-1 sm:px-3 py-2.5 sm:py-5 rounded-xl sm:rounded-2xl transition-all duration-300 cursor-pointer"
               style={{
                 background: dark ? 'rgba(255,255,255,0.02)' : 'rgba(44,40,37,0.02)',
                 border: `1px solid ${dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.05)'}`,
@@ -381,16 +381,16 @@ export default function HomePage() {
               }}
             >
               <div className="relative">
-                <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 group-hover/q:scale-110 group-hover/q:rotate-3" style={{
+                <div className="w-9 h-9 sm:w-14 sm:h-14 rounded-lg sm:rounded-2xl flex items-center justify-center transition-all duration-300 group-hover/q:scale-110 group-hover/q:rotate-3" style={{
                   background: `linear-gradient(135deg, ${q.color}, ${q.grad})`,
                   boxShadow: `0 6px 16px -2px ${q.color}40`,
                 }}>
                   {q.filled ? (
-                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white drop-shadow-sm" fill="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 sm:w-6 sm:h-6 text-white drop-shadow-sm" fill="currentColor" viewBox="0 0 24 24">
                       <path fillRule="evenodd" clipRule="evenodd" d={q.icon} />
                     </svg>
                   ) : (
-                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                    <svg className="w-4 h-4 sm:w-6 sm:h-6 text-white drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
                       <path strokeLinecap="round" strokeLinejoin="round" d={q.icon} />
                     </svg>
                   )}
@@ -401,10 +401,10 @@ export default function HomePage() {
                 }} />
               </div>
               <div className="text-center">
-                <span className="block text-[11px] font-bold" style={{ color: dark ? '#B5B0AA' : '#4A4541' }}>
+                <span className="block text-[9px] sm:text-[11px] font-bold leading-tight" style={{ color: dark ? '#B5B0AA' : '#4A4541' }}>
                   {q.label}
                 </span>
-                <span className="block text-[9px] font-medium mt-0.5" style={{ color: dark ? '#6B6660' : '#94908A' }}>
+                <span className="hidden sm:block text-[9px] font-medium mt-0.5" style={{ color: dark ? '#6B6660' : '#94908A' }}>
                   {q.sub}
                 </span>
               </div>
