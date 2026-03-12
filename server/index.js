@@ -295,6 +295,34 @@ app.get('/api/admin/disk-usage', requireAuth, requireSuperAdmin, async (req, res
   res.json({ volumePath: volDir, total: { bytes: volTotal.bytes, files: volTotal.files, size: volTotal.bytes > 1048576 ? (volTotal.bytes / 1048576).toFixed(1) + ' MB' : (volTotal.bytes / 1024).toFixed(1) + ' KB' }, directories: results });
 });
 
+// Admin: Purge files from a volume directory
+app.post('/api/admin/purge-dir', requireAuth, requireSuperAdmin, async (req, res) => {
+  const { dir } = req.body;
+  const allowed = ['uploads/creatives', 'videos'];
+  if (!dir || !allowed.includes(dir)) return res.status(400).json({ error: 'Invalid directory' });
+  const volDir = process.env.DB_PATH ? path.dirname(process.env.DB_PATH) : process.cwd();
+  const target = path.join(volDir, dir);
+  let deleted = 0, freed = 0;
+  try {
+    if (fs.existsSync(target)) {
+      const files = fs.readdirSync(target);
+      for (const f of files) {
+        const fp = path.join(target, f);
+        try {
+          const stat = fs.statSync(fp);
+          if (stat.isFile()) { freed += stat.size; fs.unlinkSync(fp); deleted++; }
+        } catch { /* skip */ }
+      }
+    }
+    // Also clean DB references for creatives
+    if (dir === 'uploads/creatives') {
+      await db.pool.query(`DELETE FROM cd_images`);
+      await db.pool.query(`DELETE FROM cd_projects`);
+    }
+    res.json({ ok: true, deleted, freedMB: (freed / 1048576).toFixed(1) });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // Catch-all 404 for unmatched /api/* routes
 app.all('/api/*', async (req, res) => {
   res.status(404).json({ error: 'Not found', code: 'NOT_FOUND' });

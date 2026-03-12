@@ -430,6 +430,7 @@ function DatabaseSection({ dark, cardBg, borderColor, ink, sub, muted, terra }) 
   const [diskUsage, setDiskUsage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [backupLoading, setBackupLoading] = useState(false);
+  const [purging, setPurging] = useState(null);
 
   async function checkSize() {
     setLoading(true);
@@ -444,6 +445,21 @@ function DatabaseSection({ dark, cardBg, borderColor, ink, sub, muted, terra }) 
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function purgeDir(dir, label) {
+    if (!confirm(`Delete ALL ${label}? This cannot be undone.`)) return;
+    setPurging(dir);
+    try {
+      const result = await postJSON('/api/admin/purge-dir', { dir });
+      alert(`Deleted ${result.deleted} files, freed ${result.freedMB} MB`);
+      checkSize();
+    } catch (e) {
+      console.error(e);
+      alert('Purge failed: ' + e.message);
+    } finally {
+      setPurging(null);
     }
   }
 
@@ -507,11 +523,21 @@ function DatabaseSection({ dark, cardBg, borderColor, ink, sub, muted, terra }) 
               {diskUsage.directories?.filter(d => d.bytes > 0).map(d => {
                 const pct = diskUsage.total?.bytes ? Math.min((d.bytes / diskUsage.total.bytes) * 100, 100) : 0;
                 const isLarge = d.bytes > 50_000_000;
+                const canPurge = ['uploads/creatives', 'videos'].includes(d.path);
                 return (
                   <div key={d.path}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[11px] font-medium" style={{ color: sub }}>{d.name}</span>
-                      <span className="text-[11px] font-medium tabular-nums" style={{ color: isLarge ? '#e74c3c' : muted }}>{d.size} ({d.files} files)</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-medium tabular-nums" style={{ color: isLarge ? '#e74c3c' : muted }}>{d.size} ({d.files} files)</span>
+                        {canPurge && d.files > 0 && (
+                          <button onClick={() => purgeDir(d.path, d.name)} disabled={purging === d.path}
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors"
+                            style={{ color: '#e74c3c', background: 'rgba(231,76,60,0.08)', border: '1px solid rgba(231,76,60,0.15)' }}>
+                            {purging === d.path ? 'Purging...' : 'Purge'}
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <div className="h-2 rounded-full overflow-hidden" style={{ background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(44,40,37,0.06)' }}>
                       <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(pct, 1)}%`, background: isLarge ? '#e74c3c' : terra }} />
