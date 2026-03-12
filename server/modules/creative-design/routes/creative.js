@@ -191,26 +191,25 @@ router.post('/generate-stream', async (req, res) => {
     // Immediately send prompts so client shows pending cards
     sse.sendChunk(JSON.stringify({ step: 'prompts_ready', projectId, prompts: parsed.prompts || [] }));
 
-    // Generate all images in parallel — stream each result as it completes
-    await Promise.allSettled(
-      (parsed.prompts || []).map(async (p, i) => {
-        const imgId = uuid();
-        try {
-          const gen = await generateImage(p.prompt, ratio);
-          await q.createImage(imgId, projectId, gen.url, p.alt, 'gemini', 'completed', JSON.stringify(p));
-          sse.sendChunk(JSON.stringify({
-            step: 'image', index: i,
-            image: { id: imgId, prompt: p.prompt, alt: p.alt, style_notes: p.style_notes, status: 'completed', url: gen.url, dataUrl: gen.dataUrl },
-          }));
-        } catch (err) {
-          await q.createImage(imgId, projectId, null, p.alt, 'gemini', 'failed', JSON.stringify({ ...p, error: err.message }));
-          sse.sendChunk(JSON.stringify({
-            step: 'image', index: i,
-            image: { id: imgId, prompt: p.prompt, alt: p.alt, style_notes: p.style_notes, status: 'failed', url: null, error: err.message },
-          }));
-        }
-      })
-    );
+    // Generate images sequentially to avoid Gemini rate limits
+    for (let i = 0; i < (parsed.prompts || []).length; i++) {
+      const p = parsed.prompts[i];
+      const imgId = uuid();
+      try {
+        const gen = await generateImage(p.prompt, ratio);
+        await q.createImage(imgId, projectId, gen.url, p.alt, 'gemini', 'completed', JSON.stringify(p));
+        sse.sendChunk(JSON.stringify({
+          step: 'image', index: i,
+          image: { id: imgId, prompt: p.prompt, alt: p.alt, style_notes: p.style_notes, status: 'completed', url: gen.url, dataUrl: gen.dataUrl },
+        }));
+      } catch (err) {
+        await q.createImage(imgId, projectId, null, p.alt, 'gemini', 'failed', JSON.stringify({ ...p, error: err.message }));
+        sse.sendChunk(JSON.stringify({
+          step: 'image', index: i,
+          image: { id: imgId, prompt: p.prompt, alt: p.alt, style_notes: p.style_notes, status: 'failed', url: null, error: err.message },
+        }));
+      }
+    }
 
     await logActivity('creative', 'generate', `Generated ${type} creative`, title, projectId, wsId);
     sse.sendResult({ step: 'done', projectId });
@@ -314,25 +313,25 @@ router.post('/generate-from-image-stream', async (req, res) => {
 
     sse.sendChunk(JSON.stringify({ step: 'prompts_ready', projectId, prompts: variations }));
 
-    await Promise.allSettled(
-      variations.map(async (v, i) => {
-        const imgId = uuid();
-        try {
-          const gen = await generateImageFromReference(v.prompt, refImages, ratio);
-          await q.createImage(imgId, projectId, gen.url, v.alt, 'gemini', 'completed', JSON.stringify(v));
-          sse.sendChunk(JSON.stringify({
-            step: 'image', index: i,
-            image: { id: imgId, prompt: v.prompt, alt: v.alt, style_notes: v.style_notes, status: 'completed', url: gen.url, dataUrl: gen.dataUrl },
-          }));
-        } catch (err) {
-          await q.createImage(imgId, projectId, null, v.alt, 'gemini', 'failed', JSON.stringify({ ...v, error: err.message }));
-          sse.sendChunk(JSON.stringify({
-            step: 'image', index: i,
-            image: { id: imgId, prompt: v.prompt, alt: v.alt, style_notes: v.style_notes, status: 'failed', url: null, error: err.message },
-          }));
-        }
-      })
-    );
+    // Generate variations sequentially to avoid Gemini rate limits
+    for (let i = 0; i < variations.length; i++) {
+      const v = variations[i];
+      const imgId = uuid();
+      try {
+        const gen = await generateImageFromReference(v.prompt, refImages, ratio);
+        await q.createImage(imgId, projectId, gen.url, v.alt, 'gemini', 'completed', JSON.stringify(v));
+        sse.sendChunk(JSON.stringify({
+          step: 'image', index: i,
+          image: { id: imgId, prompt: v.prompt, alt: v.alt, style_notes: v.style_notes, status: 'completed', url: gen.url, dataUrl: gen.dataUrl },
+        }));
+      } catch (err) {
+        await q.createImage(imgId, projectId, null, v.alt, 'gemini', 'failed', JSON.stringify({ ...v, error: err.message }));
+        sse.sendChunk(JSON.stringify({
+          step: 'image', index: i,
+          image: { id: imgId, prompt: v.prompt, alt: v.alt, style_notes: v.style_notes, status: 'failed', url: null, error: err.message },
+        }));
+      }
+    }
 
     await logActivity('creative', 'generate', `Generated ${type} variations from reference image`, title, projectId, wsId);
     sse.sendResult({ step: 'done', projectId });
