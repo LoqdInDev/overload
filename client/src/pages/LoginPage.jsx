@@ -15,11 +15,18 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const { login, signup, loginWithGoogle } = useAuth();
+  const { login, signup, loginWithGoogle, isAuthenticated, loading: authLoading } = useAuth();
   const { dark, toggle } = useTheme();
   const navigate = useNavigate();
   const googleBtnRef = useRef(null);
   usePageTitle(mode === 'login' ? 'Log In' : 'Sign Up');
+
+  // If already authenticated, redirect to dashboard
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [authLoading, isAuthenticated, navigate]);
 
   const handleGoogleResponse = useCallback(async (response) => {
     setError('');

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MODULE_REGISTRY } from '../config/modules';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { useAuth } from '../context/AuthContext';
 
 const MODULE_COUNT = MODULE_REGISTRY.length;
 const BENTO_REMAINING = MODULE_COUNT - 8;
@@ -579,6 +580,7 @@ const PRICING = [
    ═══════════════════════════════════════════ */
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [email, setEmail] = useState('');
   const [showDemo, setShowDemo] = useState(false);
@@ -628,7 +630,7 @@ export default function LandingPage() {
     return () => observer.disconnect();
   }, []);
 
-  const go = () => navigate('/login');
+  const go = () => navigate(isAuthenticated ? '/dashboard' : '/login');
 
   return (
     <div className="lp">
@@ -678,11 +680,17 @@ export default function LandingPage() {
             })}
           </div>
           <div className="flex items-center gap-4">
-            <button onClick={go} className="text-[13px] font-medium hidden sm:block" style={{ color: 'var(--lp-muted)' }}
-              onMouseEnter={e => e.target.style.color = 'var(--lp-ink)'}
-              onMouseLeave={e => e.target.style.color = 'var(--lp-muted)'}
-            >Sign in</button>
-            <button onClick={go} className="lp-cta lp-cta-terra hidden sm:inline-flex" style={{ padding: '10px 26px', fontSize: 13 }}>Get Started</button>
+            {isAuthenticated ? (
+              <button onClick={go} className="lp-cta lp-cta-terra hidden sm:inline-flex" style={{ padding: '10px 26px', fontSize: 13 }}>Go to Dashboard</button>
+            ) : (
+              <>
+                <button onClick={go} className="text-[13px] font-medium hidden sm:block" style={{ color: 'var(--lp-muted)' }}
+                  onMouseEnter={e => e.target.style.color = 'var(--lp-ink)'}
+                  onMouseLeave={e => e.target.style.color = 'var(--lp-muted)'}
+                >Sign in</button>
+                <button onClick={go} className="lp-cta lp-cta-terra hidden sm:inline-flex" style={{ padding: '10px 26px', fontSize: 13 }}>Get Started</button>
+              </>
+            )}
             <button
               className="md:hidden p-2 rounded-lg"
               style={{ color: 'var(--lp-ink)' }}
@@ -722,8 +730,14 @@ export default function LandingPage() {
               Watch demo
             </button>
             <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-              <button onClick={() => { setMobileMenu(false); go(); }} className="text-[13px] font-medium" style={{ color: 'var(--lp-muted)', padding: '10px 0' }}>Sign in</button>
-              <button onClick={() => { setMobileMenu(false); go(); }} className="lp-cta lp-cta-terra" style={{ padding: '10px 26px', fontSize: 13, flex: 1, justifyContent: 'center' }}>Get Started</button>
+              {isAuthenticated ? (
+                <button onClick={() => { setMobileMenu(false); go(); }} className="lp-cta lp-cta-terra" style={{ padding: '10px 26px', fontSize: 13, flex: 1, justifyContent: 'center' }}>Go to Dashboard</button>
+              ) : (
+                <>
+                  <button onClick={() => { setMobileMenu(false); go(); }} className="text-[13px] font-medium" style={{ color: 'var(--lp-muted)', padding: '10px 0' }}>Sign in</button>
+                  <button onClick={() => { setMobileMenu(false); go(); }} className="lp-cta lp-cta-terra" style={{ padding: '10px 26px', fontSize: 13, flex: 1, justifyContent: 'center' }}>Get Started</button>
+                </>
+              )}
             </div>
           </div>
         )}
