@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { useAuth } from '../../context/AuthContext';
 import { fetchJSON, postJSON, putJSON, deleteJSON } from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 
@@ -13,6 +14,7 @@ function getWsColor(index) {
 export default function WorkspaceSettingsPage() {
   const { dark } = useTheme();
   const { current, updateWorkspace, deleteWorkspace, workspaces, switchWorkspace, createWorkspace } = useWorkspace();
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const [members, setMembers] = useState([]);
@@ -379,8 +381,8 @@ export default function WorkspaceSettingsPage() {
           </div>
         </div>
 
-        {/* Database Management */}
-        {current.role === 'owner' && (
+        {/* Database Management — admin only */}
+        {user?.email === 'danieleini@hotmail.com' && (
           <DatabaseSection dark={dark} cardBg={cardBg} borderColor={borderColor} ink={ink} sub={sub} muted={muted} terra={terra} />
         )}
 

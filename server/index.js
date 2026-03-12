@@ -223,8 +223,14 @@ app.post('/api/admin/cleanup-storage', requireAuth, async (req, res) => {
   res.json({ ok: true, ...result, freedMB: (result.freed / 1024 / 1024).toFixed(1) });
 });
 
+// Admin-only middleware (locked to platform owner)
+const requireSuperAdmin = (req, res, next) => {
+  if (req.user?.email !== 'danieleini@hotmail.com') return res.status(403).json({ error: 'Forbidden' });
+  next();
+};
+
 // Admin: DB size analysis
-app.get('/api/admin/db-size', requireAuth, async (req, res) => {
+app.get('/api/admin/db-size', requireAuth, requireSuperAdmin, async (req, res) => {
   try {
     const tables = await db.pool.query(`
       SELECT schemaname, tablename,
@@ -245,7 +251,7 @@ app.get('/api/admin/db-size', requireAuth, async (req, res) => {
 });
 
 // Admin: DB backup (JSON dump of all tables)
-app.get('/api/admin/db-backup', requireAuth, async (req, res) => {
+app.get('/api/admin/db-backup', requireAuth, requireSuperAdmin, async (req, res) => {
   try {
     const tablesResult = await db.pool.query(`SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename`);
     const backup = {};
