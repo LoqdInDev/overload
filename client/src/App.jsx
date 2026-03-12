@@ -67,6 +67,7 @@ const AutomationRulesPage = lazy(() => import('./modules/automation-rules/Automa
 const ActivityLogPage = lazy(() => import('./modules/activity-log/ActivityLogPage'));
 const AutomationSettingsPage = lazy(() => import('./modules/automation-settings/AutomationSettingsPage'));
 const TutorialPage = lazy(() => import('./modules/tutorial/TutorialPage'));
+const SetupGuidePage = lazy(() => import('./modules/tutorial/SetupGuidePage'));
 const BillingPage = lazy(() => import('./pages/BillingPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
@@ -435,6 +436,7 @@ export default function App() {
                     <Route path="/activity-log/*" element={<M component={ActivityLogPage} name="Activity Log" />} />
                     <Route path="/automation-settings/*" element={<M component={AutomationSettingsPage} name="Automation Settings" />} />
                     <Route path="/tutorial/*" element={<TutorialPage />} />
+                    <Route path="/setup-guide/*" element={<SetupGuidePage />} />
                     <Route path="/video-marketing/*" element={<M component={VideoMarketingPage} name="Video Marketing" />} />
                     <Route path="/content/*" element={<M component={ContentPage} name="AI Content" />} />
                     <Route path="/creative/*" element={<M component={CreativePage} name="Creative" />} />
@@ -736,25 +738,62 @@ function SidebarNav({ navOpen, setNavOpen, mobileMenuOpen, setMobileMenuOpen, da
           {navOpen && <span className="text-[12.5px]">Activity Log</span>}
         </NavLink>
 
-        {/* Tutorial */}
-        <NavLink to="/tutorial"
-          className={`flex items-center gap-3 rounded-xl transition-all duration-200 group mt-1 ${navOpen ? 'px-3 py-2.5' : 'p-2.5 justify-center'}`}
-          style={{
-            color: location.pathname === '/tutorial' ? (dark ? '#F5EDE6' : '#2C2825') : muted,
-            fontWeight: location.pathname === '/tutorial' ? 600 : 500,
-            background: location.pathname === '/tutorial' ? (dark ? 'rgba(59,130,246,0.12)' : 'rgba(59,130,246,0.07)') : undefined,
-          }}
-          onMouseEnter={e => { if (location.pathname !== '/tutorial') { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.03)'; e.currentTarget.style.color = ink; } }}
-          onMouseLeave={e => { if (location.pathname !== '/tutorial') { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = muted; } }}
-        >
-          <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ background: location.pathname === '/tutorial' ? (dark ? 'rgba(59,130,246,0.2)' : 'rgba(59,130,246,0.1)') : (dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)') }}>
-            <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" strokeWidth={1.6} stroke={location.pathname === '/tutorial' ? '#3b82f6' : 'currentColor'}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-            </svg>
-          </div>
-          {navOpen && <span className="text-[12.5px]">Tutorial</span>}
-        </NavLink>
+        {/* Guides */}
+        {(() => {
+          const onGuidesPage = location.pathname.startsWith('/tutorial') || location.pathname.startsWith('/setup-guide');
+          const guidesOpen = onGuidesPage || expandedSections['guides'];
+          const guidesColor = '#3b82f6';
+          const guideItems = [
+            { label: 'Setup Guide', path: '/setup-guide', color: '#10b981' },
+            { label: 'Tutorial', path: '/tutorial', color: '#3b82f6' },
+          ];
+          return (
+            <div className="mt-1">
+              <button onClick={() => toggleSection('guides')}
+                className={`w-full flex items-center gap-3 rounded-xl transition-all duration-200 ${navOpen ? 'px-3 py-2.5' : 'p-2.5 justify-center'}`}
+                style={{ background: onGuidesPage ? (dark ? 'rgba(59,130,246,0.12)' : 'rgba(59,130,246,0.07)') : undefined }}
+                onMouseEnter={e => { if (!onGuidesPage) e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.03)'; }}
+                onMouseLeave={e => { if (!onGuidesPage) e.currentTarget.style.background = onGuidesPage ? (dark ? 'rgba(59,130,246,0.12)' : 'rgba(59,130,246,0.07)') : 'transparent'; }}
+              >
+                <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: onGuidesPage ? (dark ? `${guidesColor}20` : `${guidesColor}10`) : (dark ? 'rgba(255,255,255,0.04)' : 'rgba(44,40,37,0.04)') }}>
+                  <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" strokeWidth={1.6} stroke={onGuidesPage ? guidesColor : muted}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                  </svg>
+                </div>
+                {navOpen && (
+                  <>
+                    <span className="flex-1 text-left text-[12.5px] font-medium truncate" style={{ color: onGuidesPage ? ink : muted }}>Guides</span>
+                    <svg className={`w-3 h-3 sidebar-section-arrow ${guidesOpen ? 'expanded' : ''} flex-shrink-0`} fill="none" stroke={dark ? '#4A4540' : '#C8C3BC'} viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                    </svg>
+                  </>
+                )}
+              </button>
+              <div className={`sidebar-section-items ${(!guidesOpen && navOpen) ? 'collapsed' : ''}`}
+                style={{ maxHeight: (guidesOpen || !navOpen) ? `${guideItems.length * 38}px` : '0' }}>
+                {guideItems.map(item => {
+                  const isActive = location.pathname.startsWith(item.path);
+                  return (
+                    <NavLink key={item.path} to={item.path} tabIndex={guidesOpen || !navOpen ? 0 : -1}
+                      className={`flex items-center gap-2.5 ${navOpen ? 'ml-[42px] px-2.5' : 'px-2 justify-center'} py-[6px] rounded-lg text-[12px] transition-all duration-200`}
+                      style={{
+                        background: isActive ? (dark ? `${item.color}14` : `${item.color}0a`) : undefined,
+                        color: isActive ? (dark ? '#F5EDE6' : '#2C2825') : muted,
+                        fontWeight: isActive ? 600 : 400,
+                      }}
+                      onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.03)' : 'rgba(44,40,37,0.025)'; e.currentTarget.style.color = ink; } }}
+                      onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = muted; } }}
+                    >
+                      <div className="w-[6px] h-[6px] rounded-full flex-shrink-0" style={{ background: isActive ? item.color : (dark ? 'rgba(255,255,255,0.1)' : 'rgba(44,40,37,0.12)') }} />
+                      {navOpen && <span className="truncate">{item.label}</span>}
+                    </NavLink>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Automation Settings */}
         <NavLink to="/automation-settings"
