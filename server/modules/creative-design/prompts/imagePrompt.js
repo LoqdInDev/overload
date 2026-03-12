@@ -1,6 +1,6 @@
 const { getBrandContext, buildBrandSystemPrompt } = require('../../../services/brandContext');
 
-function buildImagePromptOptimizer(type, userPrompt, count = 3, { style, palette, paletteColors, workspaceId, useBrand, dimension, aspectRatio } = {}) {
+function buildImagePromptOptimizer(type, userPrompt, count = 3, { style, palette, paletteColors, workspaceId, useBrand, dimension, aspectRatio, noText } = {}) {
   const typeContext = {
     'ad-creative': 'high-converting social media advertisement image',
     'product-photo': 'professional product photography on a clean background',
@@ -49,20 +49,25 @@ function buildImagePromptOptimizer(type, userPrompt, count = 3, { style, palette
 
   // Brand typography hint
   let fontInstruction = '';
-  if (useBrand && brand?.fonts && typeof brand.fonts === 'object') {
+  if (!noText && useBrand && brand?.fonts && typeof brand.fonts === 'object') {
     const fontList = Object.entries(brand.fonts)
       .filter(([, v]) => v)
       .map(([k, v]) => `${k}: ${v}`)
       .join(', ');
     if (fontList) {
-      fontInstruction = `\nTYPOGRAPHY: Only if the user explicitly requests text in the image, use these brand fonts: ${fontList}. Otherwise do NOT add any text.`;
+      fontInstruction = `\nTYPOGRAPHY: When suggesting text overlays, describe typography in the style of these brand fonts: ${fontList}.`;
     }
   }
+
+  // No-text instruction
+  const noTextInstruction = noText
+    ? `\nTEXT RESTRICTION — MANDATORY: Do NOT include ANY text, typography, words, letters, numbers, logos, watermarks, URLs, or captions in the image. Every prompt must explicitly state "no text, no words, no letters, no typography, no logos, no watermarks". Add "text, words, letters, typography, watermarks, logos" to every negative_prompt.`
+    : '';
 
   return `You are an expert AI image prompt engineer. Convert the user's description into optimized image generation prompts.
 
 TYPE: ${context}
-${styleInstruction}${dimensionInstruction}${colorInstruction}${fontInstruction}
+${styleInstruction}${dimensionInstruction}${colorInstruction}${fontInstruction}${noTextInstruction}
 ${brandBlock}
 
 USER DESCRIPTION:
@@ -73,7 +78,7 @@ Return a JSON object with this structure:
   "prompts": [
     {
       "prompt": "detailed optimized prompt for image generation...",
-      "negative_prompt": "things to avoid (ALWAYS include: text, words, letters, typography, watermarks, logos unless user asked for text)...",
+      "negative_prompt": "things to avoid...",
       "alt": "short accessible description of the intended image",
       "style_notes": "brief description of the visual style and colors used"
     }
@@ -86,7 +91,7 @@ Generate ${count} prompt variation${count === 1 ? '' : 's'}. Each must be highly
 - Visual style: ${style || 'appropriate for the content type'}
 - Color palette: ${palette ? `${palette} (${(paletteColors || []).join(', ')})` : 'natural, fitting colors'} — MENTION THESE SPECIFIC COLORS
 - Mood and tone
-- Do NOT include any text, typography, words, letters, logos, or watermarks in the image unless the user explicitly requests it
+- Any text overlay suggestions (describe placement and style, NOT the actual text content)
 
 Return ONLY the JSON object.`;
 }

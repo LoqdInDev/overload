@@ -457,6 +457,7 @@ export default function CreativePage() {
   const [palette, setPalette] = useState('brand');
   const [quantity, setQuantity] = useState('4');
   const [useBrandHub, setUseBrandHub] = useState(false);
+  const [noText, setNoText] = useState(true);
   const [referenceImages, setReferenceImages] = useState([]); // [{ dataUrl, base64, mimeType, name }]
   const [imageColors, setImageColors] = useState([]); // dominant colors extracted from first reference image
   const fileInputRef = useRef(null);
@@ -682,6 +683,7 @@ export default function CreativePage() {
         palette: selectedPalette?.name,
         paletteColors: selectedPalette?.colors,
         useBrand: useBrandHub,
+        noText,
         quantity,
         dimension: selectedDim?.id,
       }, {
@@ -722,6 +724,7 @@ export default function CreativePage() {
       palette: selectedPalette?.name,
       paletteColors: selectedPalette?.colors,
       useBrand: useBrandHub,
+      noText,
     }, {
       onChunk: (text) => {
         try {
@@ -1970,6 +1973,31 @@ export default function CreativePage() {
                   ) : (
                     <p className="text-[11px] text-gray-500 leading-relaxed">Enable to use <span className="text-violet-400">{brand.brand_name}</span>'s colors &amp; visual identity.</p>
                   )}
+                </div>
+              </div>
+
+              {/* No Text Toggle */}
+              <div className="panel rounded-2xl overflow-hidden" style={noText ? { borderColor: 'rgba(196,93,62,0.3)' } : {}}>
+                <div className="px-4 py-3" style={{ background: noText ? 'rgba(196,93,62,0.05)' : 'transparent' }}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(196,93,62,0.12)', border: '1px solid rgba(196,93,62,0.2)' }}>
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ color: '#C45D3E' }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold" style={{ color: dark ? '#e5e7eb' : '#374151' }}>No Text</p>
+                        <p className="text-[10px]" style={{ color: dark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }}>Exclude text, logos & watermarks</p>
+                      </div>
+                    </div>
+                    <button onClick={() => setNoText(v => !v)}
+                      className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors flex-shrink-0"
+                      style={{ background: noText ? '#C45D3E' : (dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.12)') }}>
+                      <span className="inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform shadow-sm"
+                        style={{ transform: noText ? 'translateX(18px)' : 'translateX(2px)' }} />
+                    </button>
+                  </div>
                 </div>
               </div>
 

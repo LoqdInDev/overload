@@ -31,7 +31,7 @@ router.get('/test-gemini', async (req, res) => {
 router.post('/generate', async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
-  const { type, prompt, style, palette, paletteColors, useBrand } = req.body;
+  const { type, prompt, style, palette, paletteColors, useBrand, noText } = req.body;
 
   if (!type || !prompt) {
     return res.status(400).json({ error: 'type and prompt are required' });
@@ -56,7 +56,7 @@ router.post('/generate', async (req, res) => {
 
   try {
     // Step 1: Use Claude to optimize and create prompt variations
-    const optimizerPrompt = buildImagePromptOptimizer(type, cleanPrompt, quantity, { style, palette, paletteColors, workspaceId: wsId, useBrand });
+    const optimizerPrompt = buildImagePromptOptimizer(type, cleanPrompt, quantity, { style, palette, paletteColors, workspaceId: wsId, useBrand, noText });
     const { parsed } = await generateWithClaude(optimizerPrompt, { temperature: 0.8 });
 
     const projectId = uuid();
@@ -166,7 +166,7 @@ router.delete('/projects/:id', async (req, res) => {
 router.post('/generate-stream', async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
-  const { type, prompt, style, palette, paletteColors, useBrand } = req.body;
+  const { type, prompt, style, palette, paletteColors, useBrand, noText } = req.body;
   if (!type || !prompt) return res.status(400).json({ error: 'type and prompt are required' });
 
   const sse = setupSSE(res);
@@ -181,7 +181,7 @@ router.post('/generate-stream', async (req, res) => {
 
   try {
     const ratio = dimension ? dimensionToAspectRatio(dimension) : '1:1';
-    const optimizerPrompt = buildImagePromptOptimizer(type, cleanPrompt, quantity, { style, palette, paletteColors, workspaceId: wsId, useBrand, dimension, aspectRatio: ratio });
+    const optimizerPrompt = buildImagePromptOptimizer(type, cleanPrompt, quantity, { style, palette, paletteColors, workspaceId: wsId, useBrand, noText, dimension, aspectRatio: ratio });
     const { parsed } = await generateWithClaude(optimizerPrompt, { temperature: 0.8 });
 
     const projectId = uuid();
