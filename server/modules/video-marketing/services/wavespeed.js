@@ -120,7 +120,18 @@ class WaveSpeedService {
           headers: { Authorization: `Bearer ${this.apiKey}` },
         }, 30000);
 
-        const data = await res.json();
+        if (!res.ok) {
+          console.error(`[WaveSpeed] poll #${i + 1} HTTP ${res.status} for task=${taskId}`);
+          continue;
+        }
+
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch {
+          console.error(`[WaveSpeed] poll #${i + 1} invalid JSON for task=${taskId}:`, text.slice(0, 200));
+          continue;
+        }
+
         const status = data.data?.status;
 
         if (i % 6 === 0 || status === 'completed' || status === 'failed') {
@@ -130,6 +141,7 @@ class WaveSpeedService {
         if (status === 'completed') {
           const videoUrl = data.data?.outputs?.[0];
           if (videoUrl) {
+            console.log(`[WaveSpeed] task=${taskId} COMPLETED, url=${videoUrl.slice(0, 80)}...`);
             return { success: true, videoUrl, taskId };
           }
           console.error('[WaveSpeed] Completed but no output URL. Full response:', JSON.stringify(data.data));
