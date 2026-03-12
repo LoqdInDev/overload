@@ -35,7 +35,7 @@ router.post('/', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { date, yesterday_summary, today_recommendations, weekly_snapshot } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO adv_briefings (date, yesterday_summary, today_recommendations, weekly_snapshot, workspace_id) VALUES (?, ?, ?, ?, ?)'
     ).run(date || new Date().toISOString().split('T')[0], yesterday_summary || null, today_recommendations || null, weekly_snapshot || null, wsId);
     const item = await db.prepare('SELECT * FROM adv_briefings WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
@@ -53,7 +53,7 @@ router.put('/:id', async (req, res) => {
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
     const { date, yesterday_summary, today_recommendations, weekly_snapshot } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE adv_briefings SET date = ?, yesterday_summary = ?, today_recommendations = ?, weekly_snapshot = ?, generated_at = NOW() WHERE id = ? AND workspace_id = ?'
     ).run(
       date || existing.date,
@@ -108,7 +108,7 @@ router.post('/actions', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { briefing_id, priority, title, description, module, status } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO adv_actions (briefing_id, priority, title, description, module, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(briefing_id || null, priority || 'medium', title || null, description || null, module || null, status || 'pending', wsId);
     const item = await db.prepare('SELECT * FROM adv_actions WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);

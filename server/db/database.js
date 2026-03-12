@@ -213,6 +213,16 @@ async function logActivity(moduleId, action, title, detail, entityId, workspaceI
   await db.prepare(
     'INSERT INTO activity_log (module_id, action, title, detail, entity_id, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
   ).run(moduleId, action, title, detail || null, entityId || null, workspaceId || null);
+
+  // Fire webhooks for this event (lazy-loaded to avoid circular deps)
+  if (workspaceId) {
+    try {
+      const { dispatchEvent } = require('../services/webhookDispatcher');
+      const eventType = `${moduleId}.${action}`;
+      dispatchEvent(eventType, { title, detail, entityId, moduleId, action }, workspaceId)
+        .catch(err => console.warn('[Webhook] Dispatch failed:', err.message));
+    } catch { /* webhooks table may not exist yet during init */ }
+  }
 }
 
 async function getRecentActivity(limit = 20, workspaceId) {

@@ -38,7 +38,7 @@ router.post('/audiences', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { name, platform, type, size, criteria, status } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO ab_audiences (name, platform, type, size, criteria, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(name, platform, type, size, criteria ? JSON.stringify(criteria) : null, status || 'active', wsId);
     await logActivity('audience-builder', 'create', `Created audience: ${name}`, 'Audience created', null, wsId);

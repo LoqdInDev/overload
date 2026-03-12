@@ -43,7 +43,7 @@ Also provide:
     });
 
     // Save search to database
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO inf_searches (niche, platform, criteria, results, workspace_id) VALUES (?, ?, ?, ?, ?)'
     ).run(niche, platform, JSON.stringify({ followerMin, followerMax, engagementRate, budget }), text, wsId);
 
@@ -197,7 +197,7 @@ router.post('/campaigns', async (req, res) => {
     const wsId = req.workspace.id;
     const { name, influencers, budget, status } = req.body;
 
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO inf_campaigns (name, influencers, budget, status, workspace_id) VALUES (?, ?, ?, ?, ?)'
     ).run(name, influencers ? JSON.stringify(influencers) : null, budget || 0, status || 'planning', wsId);
 
@@ -214,7 +214,7 @@ router.put('/campaigns/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, description, budget, status } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE inf_campaigns SET name = COALESCE(?, name), description = COALESCE(?, description), budget = COALESCE(?, budget), status = COALESCE(?, status) WHERE id = ? AND workspace_id = ?'
     ).run(name, description, budget, status, req.params.id, wsId);
     const campaign = await db.prepare('SELECT * FROM inf_campaigns WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);

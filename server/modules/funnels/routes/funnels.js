@@ -333,7 +333,7 @@ router.post('/funnels', async (req, res) => {
     const wsId = req.workspace.id;
     const { name, type, stages, status, description, product, audience, industry } = req.body;
     const id = uuid();
-    db.prepare(
+    await db.prepare(
       'INSERT INTO fn_funnels (id, name, type, stages, status, description, product, audience, industry, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(
       id, name, type || null,
@@ -356,7 +356,7 @@ router.put('/funnels/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, type, description, status, stages, product, audience, industry } = req.body;
-    db.prepare(
+    await db.prepare(
       `UPDATE fn_funnels SET
         name = COALESCE(?, name),
         type = COALESCE(?, type),
@@ -422,7 +422,7 @@ router.post('/funnels/:id/pages', async (req, res) => {
       await db.prepare('DELETE FROM fn_pages WHERE funnel_id = ? AND workspace_id = ? AND stage_name = ?').run(funnelId, wsId, stage_name);
     }
 
-    db.prepare(
+    await db.prepare(
       'INSERT INTO fn_pages (id, funnel_id, workspace_id, name, stage_name, type, content, generated_content, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(pageId, funnelId, wsId, name || stage_name, stage_name || null, type || 'landing', null, content, position || 0);
 

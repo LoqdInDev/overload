@@ -331,6 +331,10 @@ startRuleEngine();
 const { startAdsOptimizer } = require('./modules/paid-advertising/services/adsOptimizer');
 startAdsOptimizer();
 
+// Start the integration sync scheduler (syncs Shopify data every 30 minutes)
+const { startSyncScheduler } = require('./services/syncScheduler');
+startSyncScheduler();
+
 const server = app.listen(PORT, () => {
   logger.info(`Overload server running on http://localhost:${PORT}`, { modules: loadedModules.length });
 });

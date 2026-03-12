@@ -23,6 +23,7 @@ async function initDatabase() {
       workspace_id TEXT,
       name TEXT NOT NULL,
       description TEXT,
+      influencers TEXT,
       budget REAL,
       status TEXT DEFAULT 'draft',
       start_date TEXT,
@@ -30,6 +31,16 @@ async function initDatabase() {
       metadata TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS inf_searches (
+      id SERIAL PRIMARY KEY,
+      workspace_id TEXT,
+      niche TEXT,
+      platform TEXT,
+      criteria TEXT,
+      results TEXT,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS inf_outreach (

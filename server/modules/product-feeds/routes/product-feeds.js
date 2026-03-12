@@ -72,11 +72,11 @@ router.get('/feeds', async (req, res) => {
     const wsId = req.workspace.id;
     const feeds = await db.prepare('SELECT * FROM pf_feeds WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
 
-    const feedsWithCounts = feeds.map(feed => {
-      const count = db.prepare('SELECT COUNT(*) as count FROM pf_products WHERE feed_id = ? AND workspace_id = ?').get(feed.id, wsId);
-      const rules = db.prepare('SELECT COUNT(*) as count FROM pf_rules WHERE feed_id = ? AND workspace_id = ?').get(feed.id, wsId);
+    const feedsWithCounts = await Promise.all(feeds.map(async (feed) => {
+      const count = await db.prepare('SELECT COUNT(*) as count FROM pf_products WHERE feed_id = ? AND workspace_id = ?').get(feed.id, wsId);
+      const rules = await db.prepare('SELECT COUNT(*) as count FROM pf_rules WHERE feed_id = ? AND workspace_id = ?').get(feed.id, wsId);
       return { ...feed, product_count: count.count, rule_count: rules.count };
-    });
+    }));
 
     res.json(feedsWithCounts);
   } catch (error) {
@@ -94,7 +94,7 @@ router.post('/feeds', async (req, res) => {
       return res.status(400).json({ error: 'Name and channel are required' });
     }
 
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO pf_feeds (name, channel, format, status, workspace_id) VALUES (?, ?, ?, ?, ?)'
     ).run(name, channel, format || 'csv', status || 'active', wsId);
 
@@ -159,12 +159,12 @@ router.post('/products', async (req, res) => {
       return res.status(404).json({ error: 'Feed not found' });
     }
 
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO pf_products (feed_id, title, description, price, sale_price, image_url, category, brand, sku, availability, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(feed_id, title, description || null, price || null, sale_price || null, image_url || null, category || null, brand || null, sku || null, availability || 'in_stock', wsId);
 
     // Update feed product count
-    const count = db.prepare('SELECT COUNT(*) as count FROM pf_products WHERE feed_id = ? AND workspace_id = ?').get(feed_id, wsId);
+    const count = await db.prepare('SELECT COUNT(*) as count FROM pf_products WHERE feed_id = ? AND workspace_id = ?').get(feed_id, wsId);
     await db.prepare('UPDATE pf_feeds SET product_count = ? WHERE id = ? AND workspace_id = ?').run(count.count, feed_id, wsId);
 
     const product = await db.prepare('SELECT * FROM pf_products WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
@@ -180,7 +180,7 @@ router.put('/feeds/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, channel, format, status } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE pf_feeds SET name = COALESCE(?, name), channel = COALESCE(?, channel), format = COALESCE(?, format), status = COALESCE(?, status) WHERE id = ? AND workspace_id = ?'
     ).run(name, channel, format, status, req.params.id, wsId);
     res.json({ success: true });
@@ -207,7 +207,7 @@ router.put('/products/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { title, description, price, sale_price, availability } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE pf_products SET title = COALESCE(?, title), description = COALESCE(?, description), price = COALESCE(?, price), sale_price = COALESCE(?, sale_price), availability = COALESCE(?, availability) WHERE id = ? AND workspace_id = ?'
     ).run(title, description, price, sale_price, availability, req.params.id, wsId);
     res.json({ success: true });

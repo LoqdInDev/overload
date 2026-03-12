@@ -20,7 +20,7 @@ router.put('/members/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { tier, points } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE rl_members SET tier = COALESCE(?, tier), points = COALESCE(?, points) WHERE id = ? AND workspace_id = ?'
     ).run(tier, points, req.params.id, wsId);
     res.json(await db.prepare('SELECT * FROM rl_members WHERE id = ?').get(req.params.id));
@@ -45,7 +45,7 @@ router.post('/members', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { program_id, customer_name, email, referrals, points, tier } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO rl_members (program_id, customer_name, email, referrals, points, tier, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(program_id, customer_name || null, email || null, referrals || 0, points || 0, tier || null, wsId);
     const item = await db.prepare('SELECT * FROM rl_members WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
@@ -84,7 +84,7 @@ router.post('/', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, type, reward_type, reward_value, rules, status } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO rl_programs (name, type, reward_type, reward_value, rules, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(name, type || null, reward_type || null, reward_value || null, rules || null, status || 'active', wsId);
     const item = await db.prepare('SELECT * FROM rl_programs WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
@@ -102,7 +102,7 @@ router.put('/:id', async (req, res) => {
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
     const { name, type, reward_type, reward_value, rules, status } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE rl_programs SET name = ?, type = ?, reward_type = ?, reward_value = ?, rules = ?, status = ?, updated_at = NOW() WHERE id = ? AND workspace_id = ?'
     ).run(
       name || existing.name,

@@ -70,7 +70,7 @@ router.put('/workflows/:id', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, description, trigger_type, status } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE wf_workflows SET name = COALESCE(?, name), description = COALESCE(?, description), trigger_type = COALESCE(?, trigger_type), status = COALESCE(?, status) WHERE id = ? AND workspace_id = ?'
     ).run(name, description, trigger_type, status, req.params.id, wsId);
     const wf = await db.prepare('SELECT * FROM wf_workflows WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
@@ -121,7 +121,66 @@ router.delete('/workflows/:id', async (req, res) => {
   }
 });
 
-// Run a workflow
+// ── Step executor: runs a single workflow step against its target module ──
+async function executeStep(step, wsId, workflowName) {
+  const config = typeof step.config === 'string' ? JSON.parse(step.config || '{}') : (step.config || {});
+  const mod = step.module || 'general';
+  const action = step.action || 'generate_content';
+
+  // Build an AI prompt scoped to the module + action
+  const promptParts = [`You are an expert marketing assistant executing an automated workflow step.`,
+    `Workflow: ${workflowName}`,
+    `Module: ${mod}`,
+    `Action: ${action}`];
+  if (config.topic) promptParts.push(`Topic: ${config.topic}`);
+  if (config.audience) promptParts.push(`Audience: ${config.audience}`);
+  if (config.tone) promptParts.push(`Tone: ${config.tone}`);
+  if (config.prompt) promptParts.push(`Instructions: ${config.prompt}`);
+  if (config.platforms) promptParts.push(`Platforms: ${Array.isArray(config.platforms) ? config.platforms.join(', ') : config.platforms}`);
+  if (config.template_type) promptParts.push(`Template: ${config.template_type}`);
+  if (config.subject) promptParts.push(`Subject: ${config.subject}`);
+  if (config.budget_change) promptParts.push(`Budget adjustment: ${config.budget_change}%`);
+
+  // Action-specific prompts
+  const actionPrompts = {
+    generate_content: 'Generate high-quality marketing content based on the above context. Output the complete content ready to use.',
+    publish_blog: 'Write a complete blog post (title, introduction, 3-5 sections with headers, conclusion). Output in markdown.',
+    schedule_post: 'Create a social media post with caption, hashtags, and optimal posting notes for the target platform.',
+    send_campaign: 'Write an email campaign with subject line, preview text, and full HTML-ready email body.',
+    respond_review: 'Draft a professional, empathetic response to a customer review. Keep under 100 words.',
+    adjust_budget: 'Analyze and recommend specific budget adjustments with reasoning. Output as JSON: { "changes": [{ "campaign": "...", "action": "increase|decrease|pause", "amount_pct": N, "reason": "..." }] }',
+    generate_report: 'Generate a comprehensive performance summary report with insights and action items.',
+    update_meta: 'Generate optimized SEO meta title (60 chars), meta description (155 chars), and H1 tag.',
+    optimize_keywords: 'Perform keyword gap analysis and provide ranked keyword recommendations.',
+  };
+  promptParts.push(actionPrompts[action] || actionPrompts.generate_content);
+
+  const { text } = await generateTextWithClaude(promptParts.join('\n'));
+
+  // Save generated content to the appropriate module database
+  const saveTargets = {
+    content: { table: 'cc_projects', cols: '(title, content, type, status, workspace_id)', vals: [workflowName + ' — generated', text, action === 'publish_blog' ? 'blog' : 'brief', 'draft', wsId] },
+    social: { table: 'sm_posts', cols: '(content, platform, status, workspace_id)', vals: [text, config.platforms || 'instagram', 'draft', wsId] },
+    'email-sms': { table: 'es_campaigns', cols: '(name, content, type, status, workspace_id)', vals: [workflowName + ' — email', text, 'newsletter', 'draft', wsId] },
+    seo: { table: 'cc_projects', cols: '(title, content, type, status, workspace_id)', vals: [workflowName + ' — SEO', text, 'seo_brief', 'draft', wsId] },
+    reviews: { table: 'cc_projects', cols: '(title, content, type, status, workspace_id)', vals: [workflowName + ' — review response', text, 'review_response', 'draft', wsId] },
+    reports: { table: 'cc_projects', cols: '(title, content, type, status, workspace_id)', vals: [workflowName + ' — report', text, 'report', 'draft', wsId] },
+  };
+
+  const target = saveTargets[mod];
+  if (target) {
+    try {
+      const placeholders = target.vals.map(() => '?').join(', ');
+      await db.prepare(`INSERT INTO ${target.table} ${target.cols} VALUES (${placeholders})`).run(...target.vals);
+    } catch (saveErr) {
+      console.warn(`[Workflow] Could not save to ${target.table}:`, saveErr.message);
+    }
+  }
+
+  return { module: mod, action, output: text.substring(0, 500), saved: !!target };
+}
+
+// Run a workflow — executes each step sequentially via AI
 router.post('/workflows/:id/run', async (req, res) => {
   try {
     const wsId = req.workspace.id;
@@ -133,28 +192,44 @@ router.post('/workflows/:id/run', async (req, res) => {
     const now = new Date().toISOString();
     const steps = await db.prepare('SELECT * FROM wf_steps WHERE workflow_id = ? AND workspace_id = ? ORDER BY step_order').all(req.params.id, wsId);
 
+    // Create the run record
+    const runResult = await db.prepare(
+      'INSERT INTO wf_runs (workflow_id, status, started_at, workspace_id) VALUES (?, ?, ?, ?)'
+    ).run(req.params.id, 'running', now, wsId);
+    const runId = runResult.lastInsertRowid;
+
+    await db.prepare('UPDATE wf_workflows SET run_count = run_count + 1, last_run = ? WHERE id = ? AND workspace_id = ?').run(now, req.params.id, wsId);
+
+    // Execute each step sequentially
     const logs = [`Workflow "${workflow.name}" started at ${now}`, `Executing ${steps.length} step(s)...`];
-    steps.forEach((step) => {
-      logs.push(`Step ${step.step_order}: ${step.module} -> ${step.action}`);
-    });
-    logs.push('Workflow completed.');
+    const stepResults = [];
+    let failed = false;
 
-    const runId = await db.transaction(async (tx) => {
-      const runResult = await tx.prepare(
-        'INSERT INTO wf_runs (workflow_id, status, started_at, workspace_id) VALUES (?, ?, ?, ?)'
-      ).run(req.params.id, 'running', now, wsId);
+    for (const step of steps) {
+      const stepStart = Date.now();
+      try {
+        logs.push(`Step ${step.step_order}: ${step.module} → ${step.action} — executing...`);
+        const result = await executeStep(step, wsId, workflow.name);
+        const duration = Date.now() - stepStart;
+        logs.push(`Step ${step.step_order}: completed in ${duration}ms${result.saved ? ' (saved to DB)' : ''}`);
+        stepResults.push({ step: step.step_order, status: 'completed', duration, ...result });
+      } catch (stepErr) {
+        const duration = Date.now() - stepStart;
+        logs.push(`Step ${step.step_order}: FAILED after ${duration}ms — ${stepErr.message}`);
+        stepResults.push({ step: step.step_order, status: 'failed', error: stepErr.message, duration });
+        failed = true;
+        // Continue executing remaining steps even if one fails
+      }
+    }
 
-      const rid = runResult.lastInsertRowid;
+    const finalStatus = failed ? 'partial' : 'completed';
+    logs.push(`Workflow ${finalStatus} at ${new Date().toISOString()}`);
 
-      await tx.prepare('UPDATE wf_workflows SET run_count = run_count + 1, last_run = ? WHERE id = ? AND workspace_id = ?').run(now, req.params.id, wsId);
-      await tx.prepare('UPDATE wf_runs SET status = ?, completed_at = ?, logs = ? WHERE id = ? AND workspace_id = ?')
-        .run('completed', new Date().toISOString(), JSON.stringify(logs), rid, wsId);
+    await db.prepare('UPDATE wf_runs SET status = ?, completed_at = ?, logs = ? WHERE id = ? AND workspace_id = ?')
+      .run(finalStatus, new Date().toISOString(), JSON.stringify(logs), runId, wsId);
 
-      return rid;
-    });
-
-    await logActivity('workflow-builder', 'run', `Ran workflow: ${workflow.name}`, 'Workflow execution', null, wsId);
-    res.json({ runId, status: 'completed', logs });
+    await logActivity('workflow-builder', 'run', `Ran workflow: ${workflow.name} (${finalStatus})`, 'Workflow execution', null, wsId);
+    res.json({ runId, status: finalStatus, logs, stepResults });
   } catch (error) {
     console.error('Error running workflow:', error);
     res.status(500).json({ error: 'Failed to run workflow' });

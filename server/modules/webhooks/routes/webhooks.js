@@ -38,7 +38,7 @@ router.post('/webhooks', async (req, res) => {
   try {
     const wsId = req.workspace.id;
     const { name, url, events, secret, status } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO wh_webhooks (name, url, events, secret, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(name, url, events ? JSON.stringify(events) : null, secret, status || 'active', wsId);
     await logActivity('webhooks', 'create', `Created webhook: ${name}`, 'Webhook created', null, wsId);

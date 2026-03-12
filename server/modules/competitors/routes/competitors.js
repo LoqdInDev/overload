@@ -73,7 +73,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Competitor name is required' });
     }
 
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO ci_competitors (name, website, industry, description, strengths, weaknesses, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(name, website || null, industry || null, description || null, strengths || null, weaknesses || null, wsId);
 
@@ -181,7 +181,7 @@ Be specific, data-driven where possible, and provide actionable insights.`;
     });
 
     // Save as report
-    const reportResult = db.prepare(
+    const reportResult = await db.prepare(
       'INSERT INTO ci_reports (competitor_id, type, title, content, raw_response, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(
       competitorId || null,
@@ -227,10 +227,13 @@ router.get('/reports', async (req, res) => {
 router.get('/stats', async (req, res) => {
   const wsId = req.workspace.id;
   try {
-    const totalCompetitors = db.prepare('SELECT COUNT(*) as count FROM ci_competitors WHERE workspace_id = ?').get(wsId).count;
-    const totalReports = db.prepare('SELECT COUNT(*) as count FROM ci_reports WHERE workspace_id = ?').get(wsId).count;
-    const byType = db.prepare('SELECT type, COUNT(*) as count FROM ci_reports WHERE workspace_id = ? GROUP BY type').all(wsId);
-    const recentReports = db.prepare("SELECT COUNT(*) as count FROM ci_reports WHERE workspace_id = ? AND created_at > NOW() - INTERVAL '30 days'").get(wsId).count;
+    const totalCompetitorsRow = await db.prepare('SELECT COUNT(*) as count FROM ci_competitors WHERE workspace_id = ?').get(wsId);
+    const totalCompetitors = totalCompetitorsRow.count;
+    const totalReportsRow = await db.prepare('SELECT COUNT(*) as count FROM ci_reports WHERE workspace_id = ?').get(wsId);
+    const totalReports = totalReportsRow.count;
+    const byType = await db.prepare('SELECT type, COUNT(*) as count FROM ci_reports WHERE workspace_id = ? GROUP BY type').all(wsId);
+    const recentReportsRow = await db.prepare("SELECT COUNT(*) as count FROM ci_reports WHERE workspace_id = ? AND created_at > NOW() - INTERVAL '30 days'").get(wsId);
+    const recentReports = recentReportsRow.count;
     res.json({ totalCompetitors, totalReports, byType, recentReports });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -264,7 +267,7 @@ router.put('/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { name, website, industry, description, strengths, weaknesses } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE ci_competitors SET name = COALESCE(?, name), website = COALESCE(?, website), industry = COALESCE(?, industry), description = COALESCE(?, description), strengths = COALESCE(?, strengths), weaknesses = COALESCE(?, weaknesses) WHERE id = ? AND workspace_id = ?'
     ).run(name, website, industry, description, strengths, weaknesses, req.params.id, wsId);
     res.json(await db.prepare('SELECT * FROM ci_competitors WHERE id = ?').get(req.params.id));

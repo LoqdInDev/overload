@@ -266,4 +266,31 @@ router.get('/sync-health', async (req, res) => {
   }
 });
 
+// POST /sync - Trigger manual sync for all connected integrations
+router.post('/sync', async (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const { runScheduledSync } = require('../../../services/syncScheduler');
+    await runScheduledSync();
+    await logActivity('integrations', 'sync', 'Manual sync triggered', 'All connected platforms', null, wsId);
+    res.json({ success: true, message: 'Sync completed for all connected platforms' });
+  } catch (error) {
+    console.error('Integration sync error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /sync-logs - Get recent sync history
+router.get('/sync-logs', async (req, res) => {
+  const wsId = req.workspace.id;
+  try {
+    const logs = await db.prepare(
+      'SELECT * FROM int_sync_logs WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 50'
+    ).all(wsId);
+    res.json({ success: true, data: logs || [] });
+  } catch {
+    res.json({ success: true, data: [] });
+  }
+});
+
 module.exports = router;

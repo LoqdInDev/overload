@@ -38,7 +38,7 @@ router.post('/budgets', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { name, total_budget, period, status } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO bo_budgets (name, total_budget, period, status, workspace_id) VALUES (?, ?, ?, ?, ?)'
     ).run(name, total_budget, period, status || 'active', wsId);
     await logActivity('budget-optimizer', 'create', `Created budget: ${name}`, 'Budget created', null, wsId);
@@ -71,7 +71,7 @@ router.put('/budgets/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { name, total_budget, period, status } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE bo_budgets SET name = COALESCE(?, name), total_budget = COALESCE(?, total_budget), period = COALESCE(?, period), status = COALESCE(?, status) WHERE id = ? AND workspace_id = ?'
     ).run(name, total_budget, period, status, req.params.id, wsId);
     res.json(await db.prepare('SELECT * FROM bo_budgets WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId));
@@ -99,7 +99,7 @@ router.put('/allocations/:id', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { amount, roas, status } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE bo_allocations SET amount = COALESCE(?, amount), roas = COALESCE(?, roas), status = COALESCE(?, status), updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?'
     ).run(amount, roas, status, req.params.id, wsId);
     res.json({ success: true });

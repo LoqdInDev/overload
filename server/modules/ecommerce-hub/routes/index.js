@@ -35,7 +35,7 @@ router.post('/', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { platform, store_name, store_url, api_key, status } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO eh_stores (platform, store_name, store_url, api_key, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(platform || null, store_name, store_url || null, api_key || null, status || 'connected', wsId);
     const item = await db.prepare('SELECT * FROM eh_stores WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
@@ -110,7 +110,7 @@ router.post('/orders', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { store_id, order_number, customer, total, status, platform } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO eh_orders (store_id, order_number, customer, total, status, platform, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(store_id || null, order_number || null, customer || null, total || 0, status || 'pending', platform || null, wsId);
     const item = await db.prepare('SELECT * FROM eh_orders WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
@@ -144,7 +144,7 @@ router.post('/products', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { store_id, name, sku, price, stock, status } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO eh_products (store_id, name, sku, price, stock, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(store_id || null, name, sku || null, price || 0, stock || 0, status || 'active', wsId);
     const item = await db.prepare('SELECT * FROM eh_products WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
@@ -229,7 +229,7 @@ router.post('/platforms/sync', async (req, res) => {
     // Find or create the store record
     let store = await db.prepare("SELECT * FROM eh_stores WHERE platform = 'shopify' AND store_name = ? AND workspace_id = ?").get(shop || 'Shopify', wsId);
     if (!store) {
-      const r = db.prepare("INSERT INTO eh_stores (platform, store_name, status, workspace_id) VALUES ('shopify', ?, 'connected', ?)").run(shop || 'Shopify', wsId);
+      const r = await db.prepare("INSERT INTO eh_stores (platform, store_name, status, workspace_id) VALUES ('shopify', ?, 'connected', ?)").run(shop || 'Shopify', wsId);
       store = await db.prepare('SELECT * FROM eh_stores WHERE id = ? AND workspace_id = ?').get(r.lastInsertRowid, wsId);
     }
 
@@ -241,7 +241,7 @@ router.post('/platforms/sync', async (req, res) => {
         await db.prepare('UPDATE eh_products SET name = ?, price = ?, stock = ?, status = ? WHERE id = ? AND workspace_id = ?')
           .run(p.title, p.price || 0, p.inventory || 0, p.status || 'active', existing.id, wsId);
       } else {
-        db.prepare('INSERT INTO eh_products (store_id, name, sku, price, stock, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)')
+        await db.prepare('INSERT INTO eh_products (store_id, name, sku, price, stock, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)')
           .run(store.id, p.title, String(p.id), p.price || 0, p.inventory || 0, p.status || 'active', wsId);
       }
     }
