@@ -125,7 +125,7 @@ export default function TheAdvisorPage() {
       {/* Quick Insight Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8 animate-fade-in">
         {[
-          { label: 'BRIEFING STATUS', value: briefingDateStr || 'No briefing', sub: briefingDateStr ? 'Last generated' : 'Generate above' },
+          { label: 'BRIEFING STATUS', value: briefingDateStr || 'No briefing', sub: briefingDateStr ? 'Last generated' : 'Generate below' },
           { label: 'OPEN ACTIONS', value: openActionsCount, sub: `${totalActionsCount} total` },
           { label: 'RECOMMENDATIONS', value: recommendations.length, sub: recommendations.length > 0 ? 'From latest briefing' : 'None yet' },
           { label: 'WEEKLY SCORE', value: weeklyScoreValue, sub: weeklyMetrics.length > 0 ? weeklyMetrics[0].label : 'No data yet' },
