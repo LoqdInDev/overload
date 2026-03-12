@@ -260,12 +260,13 @@ function callbackHTML(providerId, success, errorMsg) {
 </div>
 <script>
   if (window.opener) {
+    var targetOrigin = ${JSON.stringify(process.env.CORS_ORIGIN || 'http://localhost:5173')};
     window.opener.postMessage({
       type: 'oauth-callback',
       providerId: ${JSON.stringify(providerId)},
       success: ${success},
       error: ${JSON.stringify(errorMsg || null)}
-    }, '*');
+    }, targetOrigin);
   }
   setTimeout(() => window.close(), 2000);
 </script></body></html>`;

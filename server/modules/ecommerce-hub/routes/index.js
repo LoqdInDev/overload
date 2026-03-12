@@ -4,13 +4,21 @@ const { db } = require('../../../db/database');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
 const pm = require('../../../services/platformManager');
+const { encrypt, decrypt } = require('../../../services/encryption');
+
+// Strip api_key from responses — never send to frontend
+function safeStore(row) {
+  if (!row) return null;
+  const { api_key, ...safe } = row;
+  return { ...safe, hasApiKey: !!api_key };
+}
 
 // GET / - list all stores
 router.get('/', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const items = await db.prepare('SELECT * FROM eh_stores WHERE workspace_id = ? ORDER BY created_at DESC').all(wsId);
-    res.json(items);
+    res.json(items.map(safeStore));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -24,7 +32,7 @@ router.get('/:id', async (req, res) => {
     if (!item) return res.status(404).json({ error: 'Not found' });
     const orders = await db.prepare('SELECT * FROM eh_orders WHERE store_id = ? AND workspace_id = ? ORDER BY created_at DESC LIMIT 50').all(req.params.id, wsId);
     const products = await db.prepare('SELECT * FROM eh_products WHERE store_id = ? AND workspace_id = ? ORDER BY created_at DESC').all(req.params.id, wsId);
-    res.json({ ...item, orders, products });
+    res.json({ ...safeStore(item), orders, products });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -35,11 +43,12 @@ router.post('/', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { platform, store_name, store_url, api_key, status } = req.body;
+    const encryptedKey = api_key ? encrypt(api_key) : null;
     const result = await db.prepare(
       'INSERT INTO eh_stores (platform, store_name, store_url, api_key, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(platform || null, store_name, store_url || null, api_key || null, status || 'connected', wsId);
+    ).run(platform || null, store_name, store_url || null, encryptedKey, status || 'connected', wsId);
     const item = await db.prepare('SELECT * FROM eh_stores WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
-    res.status(201).json(item);
+    res.status(201).json(safeStore(item));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -53,19 +62,20 @@ router.put('/:id', async (req, res) => {
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
     const { platform, store_name, store_url, api_key, status, last_sync } = req.body;
+    const encryptedKey = api_key !== undefined ? (api_key ? encrypt(api_key) : null) : existing.api_key;
     await db.prepare(
       'UPDATE eh_stores SET platform = ?, store_name = ?, store_url = ?, api_key = ?, status = ?, last_sync = ? WHERE id = ? AND workspace_id = ?'
     ).run(
       platform !== undefined ? platform : existing.platform,
       store_name || existing.store_name,
       store_url !== undefined ? store_url : existing.store_url,
-      api_key !== undefined ? api_key : existing.api_key,
+      encryptedKey,
       status || existing.status,
       last_sync !== undefined ? last_sync : existing.last_sync,
       req.params.id, wsId
     );
     const updated = await db.prepare('SELECT * FROM eh_stores WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
-    res.json(updated);
+    res.json(safeStore(updated));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

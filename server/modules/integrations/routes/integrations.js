@@ -3,6 +3,7 @@ const router = express.Router();
 const { db, logActivity } = require('../../../db/database');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
+const { decrypt } = require('../../../services/encryption');
 
 // POST /generate - AI-powered integration config generation with SSE streaming
 router.post('/generate', async (req, res) => {
@@ -22,14 +23,15 @@ router.post('/generate', async (req, res) => {
 });
 
 // Map a DB row (schema column names) back to the client field names the frontend expects.
+// SECURITY: never send encrypted tokens/credentials to the frontend.
 function toClientShape(row) {
   if (!row) return null;
+  const { credentials_enc, access_token_enc, refresh_token_enc, ...safe } = row;
   return {
-    ...row,
+    ...safe,
     platform: row.provider_id,
     name: row.display_name,
-    api_key_hash: row.credentials_enc,
-    // keep provider_id / display_name / credentials_enc as well so nothing breaks
+    hasCredentials: !!credentials_enc,
   };
 }
 
@@ -191,7 +193,9 @@ router.post('/test-connection', async (req, res) => {
       return res.json({ success: false, error: 'Not connected' });
     }
 
-    const creds = conn.credentials_enc;
+    // Decrypt credentials before use
+    let creds;
+    try { creds = decrypt(conn.credentials_enc); } catch { creds = conn.credentials_enc; }
     let config = {};
     try { config = conn.config ? JSON.parse(conn.config) : {}; } catch { /* ignore */ }
 
@@ -214,7 +218,9 @@ router.post('/test-connection', async (req, res) => {
       return res.json({ success: false, latency, error: `Shopify returned ${r.status}` });
 
     } else if (provider === 'google') {
-      const r = await fetch(`https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${creds}`);
+      const r = await fetch('https://www.googleapis.com/oauth2/v1/tokeninfo', {
+        headers: { Authorization: `Bearer ${creds}` },
+      });
       const latency = Date.now() - start;
       if (r.ok) {
         return res.json({ success: true, latency });
@@ -222,7 +228,9 @@ router.post('/test-connection', async (req, res) => {
       return res.json({ success: false, latency, error: `Google returned ${r.status}` });
 
     } else if (provider === 'meta' || provider === 'facebook') {
-      const r = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${creds}`);
+      const r = await fetch('https://graph.facebook.com/v19.0/me', {
+        headers: { Authorization: `Bearer ${creds}` },
+      });
       const latency = Date.now() - start;
       if (r.ok) {
         return res.json({ success: true, latency });
