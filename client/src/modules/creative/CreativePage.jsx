@@ -4,6 +4,7 @@ import { usePageTitle } from '../../hooks/usePageTitle';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
 import { fetchJSON, postJSON, deleteJSON, connectSSE } from '../../lib/api';
 import { useBrand as useBrandContext } from '../../context/BrandContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -434,6 +435,7 @@ function ImageCard({ img, apiBase, onOpen, onRegenerate, onCreateVideo }) {
 export default function CreativePage() {
   usePageTitle('Creative & Design');
   const navigate = useNavigate();
+  const { dark } = useTheme();
   const { brand } = useBrandContext();
 
   const handleCreateVideo = (img) => {
@@ -1913,7 +1915,7 @@ export default function CreativePage() {
 
               {/* Brand Hub */}
               <div className="panel rounded-2xl overflow-hidden" style={useBrandHub ? { borderColor: 'rgba(167,139,250,0.3)' } : {}}>
-                <div className="px-4 py-3 border-b border-white/[0.04]" style={{ background: useBrandHub ? 'rgba(167,139,250,0.07)' : 'rgba(167,139,250,0.03)' }}>
+                <div className="px-4 py-3 border-b" style={{ background: useBrandHub ? 'rgba(167,139,250,0.07)' : 'rgba(167,139,250,0.03)', borderColor: dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)' }}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.2)' }}>
@@ -1921,11 +1923,11 @@ export default function CreativePage() {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                         </svg>
                       </div>
-                      <p className="text-xs font-semibold text-gray-200">Brand Hub</p>
+                      <p className="text-xs font-semibold" style={{ color: dark ? '#e5e7eb' : '#374151' }}>Brand Hub</p>
                     </div>
                     <button onClick={() => brand && setUseBrandHub(v => !v)}
                       className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors flex-shrink-0"
-                      style={{ background: useBrandHub && brand ? '#a78bfa' : 'rgba(255,255,255,0.1)', opacity: brand ? 1 : 0.4, cursor: brand ? 'pointer' : 'not-allowed' }}>
+                      style={{ background: useBrandHub && brand ? '#a78bfa' : (dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.12)'), opacity: brand ? 1 : 0.4, cursor: brand ? 'pointer' : 'not-allowed' }}>
                       <span className="inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform shadow-sm"
                         style={{ transform: useBrandHub && brand ? 'translateX(18px)' : 'translateX(2px)' }} />
                     </button>
@@ -1973,7 +1975,7 @@ export default function CreativePage() {
 
               {/* Visual Style */}
               <div className="panel rounded-2xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-white/[0.04]" style={{ background: 'rgba(196,93,62,0.03)' }}>
+                <div className="px-4 py-3 border-b" style={{ background: 'rgba(196,93,62,0.03)', borderColor: dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)' }}>
                   <div className="flex items-center gap-2">
                     <div className="w-1 h-3.5 rounded-full" style={{ background: '#C45D3E' }} />
                     <p className="hud-label text-[10px]" style={{ color: '#C45D3E' }}>VISUAL STYLE</p>
@@ -1986,7 +1988,7 @@ export default function CreativePage() {
                         className="relative px-3 py-2.5 rounded-xl border text-[11px] font-medium transition-all text-left"
                         style={style === s.id
                           ? { background: 'rgba(196,93,62,0.1)', borderColor: 'rgba(196,93,62,0.35)', color: '#C45D3E' }
-                          : { background: 'rgba(0,0,0,0.02)', borderColor: 'rgba(255,255,255,0.06)', color: '#6b7280' }}>
+                          : { background: 'rgba(0,0,0,0.02)', borderColor: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.1)', color: '#6b7280' }}>
                         {style === s.id && (
                           <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full" style={{ background: '#C45D3E' }} />
                         )}
@@ -1999,7 +2001,7 @@ export default function CreativePage() {
 
               {/* Dimensions */}
               <div className="panel rounded-2xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-white/[0.04]" style={{ background: 'rgba(196,93,62,0.03)' }}>
+                <div className="px-4 py-3 border-b" style={{ background: 'rgba(196,93,62,0.03)', borderColor: dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)' }}>
                   <div className="flex items-center gap-2">
                     <div className="w-1 h-3.5 rounded-full" style={{ background: '#C45D3E' }} />
                     <p className="hud-label text-[10px]" style={{ color: '#C45D3E' }}>DIMENSIONS</p>
@@ -2018,14 +2020,14 @@ export default function CreativePage() {
                           className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all"
                           style={active
                             ? { background: 'rgba(196,93,62,0.1)', borderColor: 'rgba(196,93,62,0.35)' }
-                            : { background: 'rgba(0,0,0,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
+                            : { background: 'rgba(0,0,0,0.02)', borderColor: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.1)' }}>
                           <div className="flex-shrink-0 flex items-center justify-center" style={{ width: 22, height: 22 }}>
                             <div className="rounded-sm border-2 transition-all"
-                              style={{ width: bw, height: bh, borderColor: active ? '#C45D3E' : '#374151', background: active ? 'rgba(196,93,62,0.12)' : 'transparent' }} />
+                              style={{ width: bw, height: bh, borderColor: active ? '#C45D3E' : (dark ? '#374151' : '#9ca3af'), background: active ? 'rgba(196,93,62,0.12)' : 'transparent' }} />
                           </div>
                           <div className="min-w-0">
-                            <p className="text-[11px] font-bold leading-none truncate" style={{ color: active ? '#C45D3E' : '#9ca3af' }}>{d.label}</p>
-                            <p className="text-[9px] mt-0.5 truncate" style={{ color: active ? 'rgba(196,93,62,0.6)' : '#4b5563' }}>{d.desc}</p>
+                            <p className="text-[11px] font-bold leading-none truncate" style={{ color: active ? '#C45D3E' : (dark ? '#9ca3af' : '#4b5563') }}>{d.label}</p>
+                            <p className="text-[9px] mt-0.5 truncate font-medium" style={{ color: active ? '#C45D3E' : (dark ? '#9ca3af' : '#6b7280') }}>{d.desc}</p>
                           </div>
                         </button>
                       );
@@ -2036,7 +2038,7 @@ export default function CreativePage() {
 
               {/* Color Palette */}
               <div className="panel rounded-2xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-white/[0.04]" style={{ background: 'rgba(196,93,62,0.03)' }}>
+                <div className="px-4 py-3 border-b" style={{ background: 'rgba(196,93,62,0.03)', borderColor: dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)' }}>
                   <div className="flex items-center gap-2">
                     <div className="w-1 h-3.5 rounded-full" style={{ background: '#C45D3E' }} />
                     <p className="hud-label text-[10px]" style={{ color: '#C45D3E' }}>COLOR PALETTE</p>
@@ -2048,7 +2050,7 @@ export default function CreativePage() {
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all"
                       style={palette === 'image-colors'
                         ? { background: 'rgba(196,93,62,0.1)', borderColor: 'rgba(196,93,62,0.35)' }
-                        : { background: 'rgba(0,0,0,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
+                        : { background: 'rgba(0,0,0,0.02)', borderColor: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.1)' }}>
                       <div className="flex gap-0.5 flex-shrink-0">
                         {imageColors.slice(0, 5).map((c, i) => (
                           <div key={i} className="w-4 h-4 rounded-full border border-black/20" style={{ background: c }} />
@@ -2063,7 +2065,7 @@ export default function CreativePage() {
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all"
                       style={palette === p.id
                         ? { background: 'rgba(196,93,62,0.1)', borderColor: 'rgba(196,93,62,0.35)' }
-                        : { background: 'rgba(0,0,0,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
+                        : { background: 'rgba(0,0,0,0.02)', borderColor: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.1)' }}>
                       <div className="flex gap-0.5 flex-shrink-0">
                         {p.colors.map((c, i) => (
                           <div key={i} className="w-4 h-4 rounded-full border border-black/20" style={{ background: c }} />
@@ -2078,7 +2080,7 @@ export default function CreativePage() {
 
               {/* Quantity */}
               <div className="panel rounded-2xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-white/[0.04]" style={{ background: 'rgba(196,93,62,0.03)' }}>
+                <div className="px-4 py-3 border-b" style={{ background: 'rgba(196,93,62,0.03)', borderColor: dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)' }}>
                   <div className="flex items-center gap-2">
                     <div className="w-1 h-3.5 rounded-full" style={{ background: '#C45D3E' }} />
                     <p className="hud-label text-[10px]" style={{ color: '#C45D3E' }}>QUANTITY</p>
@@ -2091,9 +2093,9 @@ export default function CreativePage() {
                         className="flex flex-col items-center justify-center py-3 rounded-xl border transition-all"
                         style={quantity === q.v
                           ? { background: 'rgba(196,93,62,0.1)', borderColor: 'rgba(196,93,62,0.35)' }
-                          : { background: 'rgba(0,0,0,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
-                        <span className="text-lg font-bold leading-none" style={{ color: quantity === q.v ? '#C45D3E' : '#9ca3af' }}>{q.label}</span>
-                        <span className="text-[9px] mt-1" style={{ color: quantity === q.v ? 'rgba(196,93,62,0.6)' : '#4b5563' }}>imgs</span>
+                          : { background: 'rgba(0,0,0,0.02)', borderColor: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.1)' }}>
+                        <span className="text-lg font-bold leading-none" style={{ color: quantity === q.v ? '#C45D3E' : (dark ? '#9ca3af' : '#4b5563') }}>{q.label}</span>
+                        <span className="text-[9px] mt-1 font-medium" style={{ color: quantity === q.v ? '#C45D3E' : (dark ? '#9ca3af' : '#6b7280') }}>imgs</span>
                       </button>
                     ))}
                   </div>
