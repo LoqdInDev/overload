@@ -192,7 +192,7 @@ router.post('/generate-stream', async (req, res) => {
     sse.sendChunk(JSON.stringify({ step: 'prompts_ready', projectId, prompts: parsed.prompts || [] }));
 
     // Append no-text instruction directly to each prompt for Gemini
-    const noTextSuffix = noText ? '\n\nCRITICAL: Do NOT include ANY text, words, letters, numbers, typography, logos, watermarks, or URLs anywhere in the image. The image must be purely visual with zero text elements.' : '';
+    const noTextSuffix = noText ? '\n\nNo text, no words, no letters, no logos, no watermarks. Fill the entire canvas with the visual — no empty space or blank areas reserved for text.' : '';
 
     // Generate images sequentially with retry to avoid Gemini rate limits
     for (let i = 0; i < (parsed.prompts || []).length; i++) {
@@ -312,7 +312,7 @@ router.post('/generate-from-image-stream', async (req, res) => {
     : '';
 
   const userContext = prompt?.trim() ? `\nAdditional instructions: ${prompt.trim()}` : '';
-  const noTextInstruction = noText ? ' CRITICAL: Do NOT include ANY text, words, letters, numbers, typography, logos, watermarks, or URLs anywhere in the image.' : '';
+  const noTextInstruction = noText ? ' No text, no words, no letters, no logos, no watermarks. Fill the entire canvas with the visual — no empty space or blank areas reserved for text.' : '';
 
   const variations = VARIATION_ANGLES.slice(0, quantity).map((angle, i) => ({
     prompt: `Generate a variation of the reference image for use as a ${typeContext}. Variation approach: ${angle}. ${styleInstruction} ${colorInstruction}${userContext}${noTextInstruction} Keep the core subject recognizable but apply a distinctly different visual treatment.`,

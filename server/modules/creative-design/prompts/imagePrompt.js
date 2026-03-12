@@ -61,7 +61,7 @@ function buildImagePromptOptimizer(type, userPrompt, count = 3, { style, palette
 
   // No-text instruction
   const noTextInstruction = noText
-    ? `\nTEXT RESTRICTION — MANDATORY: Do NOT include ANY text, typography, words, letters, numbers, logos, watermarks, URLs, or captions in the image. Every prompt must explicitly state "no text, no words, no letters, no typography, no logos, no watermarks". Add "text, words, letters, typography, watermarks, logos" to every negative_prompt.`
+    ? `\nTEXT RESTRICTION — MANDATORY: No text, words, letters, logos, or watermarks in the image. The visual should fill the entire canvas edge-to-edge — do NOT leave blank areas or white space where text would go. Add "text, words, letters, typography, watermarks, logos" to every negative_prompt.`
     : '';
 
   return `You are an expert AI image prompt engineer. Convert the user's description into optimized image generation prompts.
