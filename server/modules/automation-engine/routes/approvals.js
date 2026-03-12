@@ -33,7 +33,7 @@ router.get('/approvals', async (req, res) => {
   params.push(Number(limit), Number(offset));
 
   const rows = await db.prepare(sql).all(...params);
-  const total = db.prepare('SELECT COUNT(*) as count FROM ae_approval_queue WHERE status = ? AND workspace_id = ?').get('pending', wsId);
+  const totalRow = await db.prepare('SELECT COUNT(*) as count FROM ae_approval_queue WHERE status = ? AND workspace_id = ?').get('pending', wsId);
 
   res.json({
     items: rows.map(r => ({
@@ -50,15 +50,15 @@ router.get('/approvals', async (req, res) => {
       reviewedAt: r.reviewed_at,
       reviewedBy: r.reviewed_by,
     })),
-    total: total.count,
+    total: totalRow.count,
   });
 });
 
 // GET /approvals/count — pending counts
 router.get('/approvals/count', async (req, res) => {
   const wsId = req.workspace.id;
-  const total = db.prepare('SELECT COUNT(*) as count FROM ae_approval_queue WHERE status = ? AND workspace_id = ?').get('pending', wsId);
-  const byModule = db.prepare(
+  const totalRow = await db.prepare('SELECT COUNT(*) as count FROM ae_approval_queue WHERE status = ? AND workspace_id = ?').get('pending', wsId);
+  const byModule = await db.prepare(
     'SELECT module_id, COUNT(*) as count FROM ae_approval_queue WHERE status = ? AND workspace_id = ? GROUP BY module_id'
   ).all('pending', wsId);
 
@@ -68,7 +68,7 @@ router.get('/approvals/count', async (req, res) => {
   }
 
   res.json({
-    total: total.count,
+    total: totalRow.count,
     byModule: pendingByModule,
   });
 });

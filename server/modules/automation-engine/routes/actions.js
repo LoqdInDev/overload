@@ -41,7 +41,7 @@ router.get('/actions/stats/:moduleId', async (req, res) => {
   const { moduleId } = req.params;
   const today = new Date().toISOString().split('T')[0];
 
-  const todayRows = db.prepare(
+  const todayRows = await db.prepare(
     'SELECT status, COUNT(*) as count FROM ae_action_log WHERE module_id = ? AND date(created_at) = ? AND workspace_id = ? GROUP BY status'
   ).all(moduleId, today, wsId);
 
@@ -65,15 +65,15 @@ router.get('/actions/stats', async (req, res) => {
   const wsId = req.workspace.id;
   const today = new Date().toISOString().split('T')[0];
 
-  const todayCount = db.prepare(
+  const todayCountRow = await db.prepare(
     'SELECT COUNT(*) as count FROM ae_action_log WHERE date(created_at) = ? AND workspace_id = ?'
   ).get(today, wsId);
 
-  const byStatus = db.prepare(
+  const byStatus = await db.prepare(
     'SELECT status, COUNT(*) as count FROM ae_action_log WHERE workspace_id = ? GROUP BY status'
   ).all(wsId);
 
-  const byModule = db.prepare(
+  const byModule = await db.prepare(
     'SELECT module_id, COUNT(*) as count FROM ae_action_log WHERE date(created_at) = ? AND workspace_id = ? GROUP BY module_id'
   ).all(today, wsId);
 
@@ -84,7 +84,7 @@ router.get('/actions/stats', async (req, res) => {
   for (const row of byModule) moduleMap[row.module_id] = row.count;
 
   res.json({
-    today: todayCount.count,
+    today: todayCountRow.count,
     completed: statusMap.completed || 0,
     failed: statusMap.failed || 0,
     queued: statusMap.queued || 0,
@@ -103,12 +103,12 @@ router.get('/status', async (req, res) => {
     moduleStatuses[row.module_id] = row.mode;
   }
 
-  const pendingCount = db.prepare(
+  const pendingCountRow = await db.prepare(
     'SELECT COUNT(*) as count FROM ae_approval_queue WHERE status = ? AND workspace_id = ?'
   ).get('pending', wsId);
 
   const today = new Date().toISOString().split('T')[0];
-  const todayActions = db.prepare(
+  const todayActionsRow = await db.prepare(
     'SELECT COUNT(*) as count FROM ae_action_log WHERE date(created_at) = ? AND workspace_id = ?'
   ).get(today, wsId);
 
@@ -119,8 +119,8 @@ router.get('/status', async (req, res) => {
   res.json({
     modes: modeDistribution,
     moduleStatuses,
-    pendingApprovals: pendingCount.count,
-    todayActions: todayActions.count,
+    pendingApprovals: pendingCountRow.count,
+    todayActions: todayActionsRow.count,
     recentActions: recentActions.map(r => ({
       ...r,
       input_data: safeParse(r.input_data),
@@ -134,31 +134,37 @@ router.get('/overview', async (req, res) => {
   const wsId = req.workspace.id;
   const today = new Date().toISOString().split('T')[0];
 
-  const totalActions = db.prepare(
+  const totalActionsRow = await db.prepare(
     'SELECT COUNT(*) as count FROM ae_action_log WHERE workspace_id = ?'
-  ).get(wsId)?.count || 0;
+  ).get(wsId);
+  const totalActions = totalActionsRow?.count || 0;
 
-  const actionsToday = db.prepare(
+  const actionsTodayRow = await db.prepare(
     'SELECT COUNT(*) as count FROM ae_action_log WHERE date(created_at) = ? AND workspace_id = ?'
-  ).get(today, wsId)?.count || 0;
+  ).get(today, wsId);
+  const actionsToday = actionsTodayRow?.count || 0;
 
-  const actionsThisWeek = db.prepare(
+  const actionsThisWeekRow = await db.prepare(
     "SELECT COUNT(*) as count FROM ae_action_log WHERE created_at::timestamptz >= NOW() - INTERVAL '7 days' AND workspace_id = ?"
-  ).get(wsId)?.count || 0;
+  ).get(wsId);
+  const actionsThisWeek = actionsThisWeekRow?.count || 0;
 
-  const completedAll = db.prepare(
+  const completedAllRow = await db.prepare(
     "SELECT COUNT(*) as count FROM ae_action_log WHERE status = 'completed' AND workspace_id = ?"
-  ).get(wsId)?.count || 0;
+  ).get(wsId);
+  const completedAll = completedAllRow?.count || 0;
 
   const successRate = totalActions > 0 ? Math.round((completedAll / totalActions) * 100) : 100;
 
-  const pendingApprovals = db.prepare(
+  const pendingApprovalsRow = await db.prepare(
     "SELECT COUNT(*) as count FROM ae_approval_queue WHERE status = 'pending' AND workspace_id = ?"
-  ).get(wsId)?.count || 0;
+  ).get(wsId);
+  const pendingApprovals = pendingApprovalsRow?.count || 0;
 
-  const activeRules = db.prepare(
+  const activeRulesRow = await db.prepare(
     "SELECT COUNT(*) as count FROM ae_rules WHERE status = 'active' AND workspace_id = ?"
-  ).get(wsId)?.count || 0;
+  ).get(wsId);
+  const activeRules = activeRulesRow?.count || 0;
 
   const modes = await db.prepare('SELECT module_id, mode FROM ae_module_modes WHERE workspace_id = ?').all(wsId);
   const autopilotModules = modes.filter(m => m.mode === 'autopilot').length;

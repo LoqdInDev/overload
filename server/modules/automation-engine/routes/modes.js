@@ -50,7 +50,7 @@ router.put('/modes/:moduleId', async (req, res) => {
     return res.status(400).json({ error: 'Invalid mode. Must be manual, copilot, or autopilot.' });
   }
 
-  db.prepare(`
+  await db.prepare(`
     INSERT INTO ae_module_modes (module_id, mode, config, risk_level, updated_at, workspace_id)
     VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
     ON CONFLICT(module_id, workspace_id) DO UPDATE SET
@@ -61,7 +61,7 @@ router.put('/modes/:moduleId', async (req, res) => {
   `).run(moduleId, mode, config ? JSON.stringify(config) : null, riskLevel || 'conservative', wsId);
 
   // Log the mode change
-  db.prepare(`
+  await db.prepare(`
     INSERT INTO ae_action_log (module_id, action_type, mode, description, status, created_at, completed_at, workspace_id)
     VALUES (?, 'mode_change', ?, ?, 'completed', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
   `).run(moduleId, mode, `Mode changed to ${mode}`, wsId);

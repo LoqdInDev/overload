@@ -41,7 +41,7 @@ router.get('/activity-log', async (req, res) => {
   params.push(Number(limit), Number(offset));
 
   const rows = await db.prepare(sql).all(...params);
-  const total = db.prepare(
+  const totalRow = await db.prepare(
     `SELECT COUNT(*) as count FROM ae_action_log ${where}`
   ).get(...countParams);
 
@@ -51,27 +51,27 @@ router.get('/activity-log', async (req, res) => {
       input_data: safeParse(r.input_data),
       output_data: safeParse(r.output_data),
     })),
-    total: total.count,
+    total: totalRow.count,
   });
 });
 
 // GET /activity-log/stats — summary statistics
 router.get('/activity-log/stats', async (req, res) => {
   const wsId = req.workspace.id;
-  const total = db.prepare('SELECT COUNT(*) as count FROM ae_action_log WHERE workspace_id = ?').get(wsId);
-  const completed = db.prepare("SELECT COUNT(*) as count FROM ae_action_log WHERE status = 'completed' AND workspace_id = ?").get(wsId);
-  const successRate = total.count > 0 ? Math.round((completed.count / total.count) * 100) : 0;
+  const totalRow = await db.prepare('SELECT COUNT(*) as count FROM ae_action_log WHERE workspace_id = ?').get(wsId);
+  const completedRow = await db.prepare("SELECT COUNT(*) as count FROM ae_action_log WHERE status = 'completed' AND workspace_id = ?").get(wsId);
+  const successRate = totalRow.count > 0 ? Math.round((completedRow.count / totalRow.count) * 100) : 0;
 
-  const mostActive = db.prepare(
+  const mostActive = await db.prepare(
     'SELECT module_id, COUNT(*) as count FROM ae_action_log WHERE workspace_id = ? GROUP BY module_id ORDER BY count DESC LIMIT 1'
   ).get(wsId);
 
-  const avgDuration = db.prepare(
+  const avgDuration = await db.prepare(
     'SELECT AVG(duration_ms) as avg FROM ae_action_log WHERE duration_ms IS NOT NULL AND workspace_id = ?'
   ).get(wsId);
 
   res.json({
-    total: total.count,
+    total: totalRow.count,
     successRate,
     mostActiveModule: mostActive?.module_id || null,
     avgDuration: avgDuration?.avg ? Math.round(avgDuration.avg) : null,

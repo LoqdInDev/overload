@@ -29,7 +29,7 @@ router.post('/rules', async (req, res) => {
   if (!module_id || !name || !trigger_type || !trigger_config || !action_type) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
-  const result = db.prepare(`
+  const result = await db.prepare(`
     INSERT INTO ae_rules (module_id, name, trigger_type, trigger_config, action_type, action_config, requires_approval, workspace_id)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
@@ -71,7 +71,7 @@ router.put('/rules/:id', async (req, res) => {
   if (fields.length === 0) return res.status(400).json({ error: 'No fields to update' });
 
   params.push(req.params.id, wsId);
-  db.prepare(`UPDATE ae_rules SET ${fields.join(', ')} WHERE id = ? AND workspace_id = ?`).run(...params);
+  await db.prepare(`UPDATE ae_rules SET ${fields.join(', ')} WHERE id = ? AND workspace_id = ?`).run(...params);
   res.json({ success: true, id: Number(req.params.id) });
 });
 

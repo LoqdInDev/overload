@@ -10,13 +10,13 @@ router.get('/notifications', async (req, res) => {
     'SELECT * FROM ae_notifications WHERE workspace_id = ? ORDER BY created_at DESC LIMIT ?'
   ).all(wsId, Number(limit));
 
-  const unreadCount = db.prepare(
+  const unreadCountRow = await db.prepare(
     'SELECT COUNT(*) as count FROM ae_notifications WHERE read = 0 AND workspace_id = ?'
   ).get(wsId);
 
   res.json({
     items: items.map(n => ({ ...n, read: !!n.read })),
-    unreadCount: unreadCount.count,
+    unreadCount: unreadCountRow.count,
   });
 });
 
