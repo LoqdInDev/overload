@@ -315,11 +315,20 @@ Generate appropriate content or output for this automation action.`;
 }
 
 // ── Save to Module Database ("Last Mile") ───────────────────────
+// mode: 'autopilot' saves with active statuses, 'copilot' saves as draft for review
 
-async function saveToModuleDatabase(rule, wsId, text, actionLogId) {
-  const actionConfig = JSON.parse(rule.action_config || '{}');
-  const meta = JSON.stringify({ source: 'autopilot', ruleId: rule.id, actionLogId });
+async function saveToModuleDatabase(rule, wsId, text, actionLogId, mode = 'autopilot') {
+  const actionConfig = typeof rule.action_config === 'string'
+    ? JSON.parse(rule.action_config || '{}')
+    : (rule.action_config || {});
+  const meta = JSON.stringify({ source: mode, ruleId: rule.id || rule.rule_id, actionLogId });
   const id = crypto.randomUUID();
+
+  // Autopilot = live/scheduled statuses; copilot = draft for human review
+  const contentStatus = mode === 'autopilot' ? 'published' : 'draft';
+  const postStatus = mode === 'autopilot' ? 'scheduled' : 'draft';
+  const campaignStatus = mode === 'autopilot' ? 'scheduled' : 'draft';
+  const reviewStatus = mode === 'autopilot' ? 'ready' : 'draft';
 
   try {
     switch (rule.action_type) {
@@ -335,16 +344,17 @@ async function saveToModuleDatabase(rule, wsId, text, actionLogId) {
       case 'schedule_post': {
         const platform = (actionConfig.platforms && actionConfig.platforms[0]) || 'multi';
         await db.prepare(
-          "INSERT INTO sm_posts (platform, post_type, caption, hashtags, status, metadata, workspace_id) VALUES (?, 'feed', ?, null, 'draft', ?, ?)"
-        ).run(platform, text, meta, wsId);
+          "INSERT INTO sm_posts (platform, post_type, caption, hashtags, status, metadata, workspace_id) VALUES (?, 'feed', ?, null, ?, ?, ?)"
+        ).run(platform, text, postStatus, meta, wsId);
         break;
       }
       case 'send_campaign': {
+        const campId = crypto.randomUUID();
         const name = `Auto: ${rule.name}`.slice(0, 100);
         const type = actionConfig.template || 'email';
         await db.prepare(
-          "INSERT INTO es_campaigns (name, type, body, status, metadata, workspace_id) VALUES (?, ?, ?, 'draft', ?, ?)"
-        ).run(name, type === 'sms' ? 'sms' : 'email', text, meta, wsId);
+          "INSERT INTO es_campaigns (id, name, type, content, status, metadata, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)"
+        ).run(campId, name, type === 'sms' ? 'sms' : 'email', text, campaignStatus, meta, wsId);
         break;
       }
       case 'adjust_budget': {
@@ -357,13 +367,12 @@ async function saveToModuleDatabase(rule, wsId, text, actionLogId) {
       }
       case 'respond_review': {
         await db.prepare(
-          "INSERT INTO rv_responses (id, workspace_id, review_id, content, status, metadata) VALUES (?, ?, 'auto', ?, 'draft', ?)"
-        ).run(id, wsId, text, meta);
+          "INSERT INTO rv_generated (workspace_id, tool_type, input_data, output, platform, tone) VALUES (?, 'auto_response', ?, ?, ?, ?)"
+        ).run(wsId, meta, text, actionConfig.platform || 'google', actionConfig.tone || 'professional');
         break;
       }
       case 'optimize_keywords':
       case 'update_meta': {
-        // Save as content project (SEO report/audit)
         const seoTitle = `Auto: ${rule.name}`.slice(0, 100);
         const seoType = rule.action_type === 'update_meta' ? 'seo_audit' : 'seo_report';
         await db.prepare(
@@ -372,23 +381,33 @@ async function saveToModuleDatabase(rule, wsId, text, actionLogId) {
         break;
       }
       case 'generate_report': {
-        // Save reports as content projects too so they're visible
         const reportTitle = `Auto: ${rule.name}`.slice(0, 100);
         await db.prepare(
           'INSERT INTO cc_projects (id, type, title, prompt, content, metadata, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
         ).run(id, 'report', reportTitle, rule.name, text, meta, wsId);
         break;
       }
+      case 'analyze_competitor': {
+        const compTitle = `Auto: ${rule.name}`.slice(0, 100);
+        await db.prepare(
+          'INSERT INTO ci_reports (competitor_id, type, title, content, raw_response, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
+        ).run(actionConfig.competitor_id || null, actionConfig.analysis_type || 'comprehensive', compTitle, text, text, wsId);
+        break;
+      }
       default:
-        return;
+        // Fallback: save as content project so nothing is lost
+        await db.prepare(
+          'INSERT INTO cc_projects (id, type, title, prompt, content, metadata, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        ).run(id, 'automation', `Auto: ${rule.name}`.slice(0, 100), rule.name, text, meta, wsId);
+        break;
     }
-    console.log(`  [rule-engine] Saved ${rule.action_type} draft to module DB (ws: ${wsId})`);
+    console.log(`  [rule-engine] Saved ${rule.action_type} (${mode}) to module DB (ws: ${wsId})`);
   } catch (err) {
     console.warn(`  [rule-engine] Failed to save to module DB: ${err.message}`);
   }
 }
 
-async function executeAction(rule, wsId) {
+async function executeAction(rule, wsId, mode = 'autopilot') {
   const startTime = Date.now();
   const prompt = buildPromptForRule(rule);
 
@@ -404,22 +423,22 @@ async function executeAction(rule, wsId) {
     // Log the completed action
     const result = await db.prepare(`
       INSERT INTO ae_action_log (module_id, action_type, mode, description, output_data, status, duration_ms, created_at, completed_at, workspace_id)
-      VALUES (?, ?, 'autopilot', ?, ?, 'completed', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?) RETURNING id
-    `).run(rule.module_id, rule.action_type, `Auto: ${rule.name}`, text, durationMs, wsId);
+      VALUES (?, ?, ?, ?, ?, 'completed', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?) RETURNING id
+    `).run(rule.module_id, rule.action_type, mode, `Auto: ${rule.name}`, text, durationMs, wsId);
 
-    // Save generated content as draft in the target module's database
-    await saveToModuleDatabase(rule, wsId, text, result.lastInsertRowid);
+    // Save generated content to the target module's database
+    await saveToModuleDatabase(rule, wsId, text, result.lastInsertRowid, mode);
 
-    createNotification('action_completed', `Auto: ${rule.name}`, `Autopilot executed "${rule.name}" successfully`, rule.module_id, wsId);
+    createNotification('action_completed', `Auto: ${rule.name}`, `${mode === 'autopilot' ? 'Autopilot' : 'Copilot'} executed "${rule.name}" successfully`, rule.module_id, wsId);
 
-    return { success: true, durationMs };
+    return { success: true, durationMs, content: text };
   } catch (err) {
     const durationMs = Date.now() - startTime;
 
     await db.prepare(`
       INSERT INTO ae_action_log (module_id, action_type, mode, description, error, status, duration_ms, created_at, completed_at, workspace_id)
-      VALUES (?, ?, 'autopilot', ?, ?, 'failed', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
-    `).run(rule.module_id, rule.action_type, `Auto: ${rule.name}`, err.message, durationMs, wsId);
+      VALUES (?, ?, ?, ?, ?, 'failed', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
+    `).run(rule.module_id, rule.action_type, mode, `Auto: ${rule.name}`, err.message, durationMs, wsId);
 
     createNotification('action_failed', `Auto: ${rule.name} failed`, err.message, rule.module_id, wsId);
 
@@ -593,4 +612,4 @@ async function triggerEvent(eventType, moduleId, wsId, eventData = {}) {
   return triggered;
 }
 
-module.exports = { startRuleEngine, stopRuleEngine, triggerEvent };
+module.exports = { startRuleEngine, stopRuleEngine, triggerEvent, executeAction, saveToModuleDatabase, buildPromptForRule };

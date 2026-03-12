@@ -158,13 +158,15 @@ async function executeStep(step, wsId, workflowName) {
   const { text } = await generateTextWithClaude(promptParts.join('\n'));
 
   // Save generated content to the appropriate module database
+  const crypto = require('crypto');
+  const genId = () => crypto.randomUUID();
   const saveTargets = {
-    content: { table: 'cc_projects', cols: '(title, content, type, status, workspace_id)', vals: [workflowName + ' — generated', text, action === 'publish_blog' ? 'blog' : 'brief', 'draft', wsId] },
-    social: { table: 'sm_posts', cols: '(content, platform, status, workspace_id)', vals: [text, config.platforms || 'instagram', 'draft', wsId] },
-    'email-sms': { table: 'es_campaigns', cols: '(name, content, type, status, workspace_id)', vals: [workflowName + ' — email', text, 'newsletter', 'draft', wsId] },
-    seo: { table: 'cc_projects', cols: '(title, content, type, status, workspace_id)', vals: [workflowName + ' — SEO', text, 'seo_brief', 'draft', wsId] },
-    reviews: { table: 'cc_projects', cols: '(title, content, type, status, workspace_id)', vals: [workflowName + ' — review response', text, 'review_response', 'draft', wsId] },
-    reports: { table: 'cc_projects', cols: '(title, content, type, status, workspace_id)', vals: [workflowName + ' — report', text, 'report', 'draft', wsId] },
+    content: { table: 'cc_projects', cols: '(id, title, content, type, workspace_id)', vals: [genId(), workflowName + ' — generated', text, action === 'publish_blog' ? 'blog' : 'brief', wsId] },
+    social: { table: 'sm_posts', cols: '(platform, post_type, caption, status, workspace_id)', vals: [config.platforms || 'instagram', 'feed', text, 'draft', wsId] },
+    'email-sms': { table: 'es_campaigns', cols: '(id, name, content, type, status, workspace_id)', vals: [genId(), workflowName + ' — email', text, 'email', 'draft', wsId] },
+    seo: { table: 'cc_projects', cols: '(id, title, content, type, workspace_id)', vals: [genId(), workflowName + ' — SEO', text, 'seo_brief', wsId] },
+    reviews: { table: 'cc_projects', cols: '(id, title, content, type, workspace_id)', vals: [genId(), workflowName + ' — review response', text, 'review_response', wsId] },
+    reports: { table: 'cc_projects', cols: '(id, title, content, type, workspace_id)', vals: [genId(), workflowName + ' — report', text, 'report', wsId] },
   };
 
   const target = saveTargets[mod];

@@ -3,6 +3,7 @@ const router = express.Router();
 const { db, logActivity } = require('../../../db/database');
 const { createNotification } = require('../db/schema');
 const { generateTextWithClaude } = require('../../../services/claude');
+const { executeAction } = require('../../../services/ruleEngine');
 
 // GET /approvals — list queue items
 router.get('/approvals', async (req, res) => {
@@ -94,28 +95,35 @@ router.get('/approvals/:id', async (req, res) => {
   });
 });
 
-// POST /approvals/:id/approve
+// POST /approvals/:id/approve — approve AND execute the action
 router.post('/approvals/:id/approve', async (req, res) => {
   const wsId = req.workspace.id;
   const item = await db.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
   if (!item) return res.status(404).json({ error: 'Approval item not found' });
   if (item.status !== 'pending') return res.status(400).json({ error: 'Item is not pending' });
 
-  await db.transaction(async (tx) => {
-    await tx.prepare(`
-      UPDATE ae_approval_queue SET status = 'approved', reviewed_at = CURRENT_TIMESTAMP, reviewed_by = ? WHERE id = ? AND workspace_id = ?
-    `).run(req.user?.id || 'system', req.params.id, wsId);
+  // Mark as approved
+  await db.prepare(`
+    UPDATE ae_approval_queue SET status = 'approved', reviewed_at = CURRENT_TIMESTAMP, reviewed_by = ? WHERE id = ? AND workspace_id = ?
+  `).run(req.user?.id || 'system', req.params.id, wsId);
 
-    await tx.prepare(`
-      INSERT INTO ae_action_log (module_id, action_type, mode, description, status, approval_id, created_at, completed_at, workspace_id)
-      VALUES (?, ?, 'copilot', ?, 'completed', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
-    `).run(item.module_id, item.action_type, `Approved: ${item.title}`, item.id, wsId);
-  });
+  // Build a rule-like object from the approval item so executeAction can process it
+  const payload = item.payload ? JSON.parse(item.payload) : {};
+  const ruleObj = {
+    id: payload.rule_id || null,
+    name: item.title.replace(/^Rule:\s*/, ''),
+    module_id: item.module_id,
+    action_type: item.action_type,
+    action_config: JSON.stringify(payload),
+    trigger_config: payload.trigger ? JSON.stringify(payload.trigger) : '{}',
+  };
 
-  await logActivity(item.module_id, 'approved', item.title, `Approved automation action: ${item.description}`, null, wsId);
-  createNotification('action_completed', `Approved: ${item.title}`, item.description, item.module_id, wsId);
+  // Execute the action (generates content via Claude + saves to module DB)
+  const result = await executeAction(ruleObj, wsId, 'copilot');
 
-  res.json({ success: true, id: Number(req.params.id) });
+  await logActivity(item.module_id, 'approved', item.title, `Approved & executed: ${item.description}`, null, wsId);
+
+  res.json({ success: true, id: Number(req.params.id), executed: result.success, content: result.content || null });
 });
 
 // POST /approvals/:id/reject
@@ -143,7 +151,7 @@ router.post('/approvals/:id/reject', async (req, res) => {
   res.json({ success: true, id: Number(req.params.id) });
 });
 
-// POST /approvals/:id/edit — edit payload then approve
+// POST /approvals/:id/edit — edit payload then approve & execute
 router.post('/approvals/:id/edit', async (req, res) => {
   const wsId = req.workspace.id;
   const item = await db.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
@@ -152,18 +160,23 @@ router.post('/approvals/:id/edit', async (req, res) => {
 
   const { payload } = req.body;
 
-  await db.transaction(async (tx) => {
-    await tx.prepare(`
-      UPDATE ae_approval_queue SET status = 'approved', payload = ?, reviewed_at = CURRENT_TIMESTAMP, reviewed_by = ?, review_notes = 'edited' WHERE id = ? AND workspace_id = ?
-    `).run(JSON.stringify(payload), req.user?.id || 'system', req.params.id, wsId);
+  // Mark as approved with edited payload
+  await db.prepare(`
+    UPDATE ae_approval_queue SET status = 'approved', payload = ?, reviewed_at = CURRENT_TIMESTAMP, reviewed_by = ?, review_notes = 'edited' WHERE id = ? AND workspace_id = ?
+  `).run(JSON.stringify(payload), req.user?.id || 'system', req.params.id, wsId);
 
-    await tx.prepare(`
-      INSERT INTO ae_action_log (module_id, action_type, mode, description, status, approval_id, created_at, completed_at, workspace_id)
-      VALUES (?, ?, 'copilot', ?, 'completed', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
-    `).run(item.module_id, item.action_type, `Edited & approved: ${item.title}`, item.id, wsId);
-  });
+  // Execute with the edited payload
+  const ruleObj = {
+    id: payload.rule_id || null,
+    name: item.title.replace(/^Rule:\s*/, ''),
+    module_id: item.module_id,
+    action_type: item.action_type,
+    action_config: JSON.stringify(payload),
+    trigger_config: payload.trigger ? JSON.stringify(payload.trigger) : '{}',
+  };
+  const result = await executeAction(ruleObj, wsId, 'copilot');
 
-  res.json({ success: true, id: Number(req.params.id) });
+  res.json({ success: true, id: Number(req.params.id), executed: result.success, content: result.content || null });
 });
 
 // POST /approvals/:id/generate — generate full content for an approved item
@@ -280,7 +293,7 @@ Write comprehensive, ready-to-use content based on these details.`;
   }
 }
 
-// POST /approvals/batch — batch approve/reject
+// POST /approvals/batch — batch approve/reject with execution
 router.post('/approvals/batch', async (req, res) => {
   const wsId = req.workspace.id;
   const { ids, action } = req.body;
@@ -289,41 +302,43 @@ router.post('/approvals/batch', async (req, res) => {
   }
 
   const newStatus = action === 'approve' ? 'approved' : 'rejected';
-  const logStatus = action === 'approve' ? 'completed' : 'cancelled';
   const reviewer = req.user?.id || 'system';
+  let updated = 0;
+  const executed = [];
 
-  const updated = await db.transaction(async (tx) => {
-    const updateStmt = tx.prepare(`
-      UPDATE ae_approval_queue SET status = ?, reviewed_at = CURRENT_TIMESTAMP, reviewed_by = ? WHERE id = ? AND status = 'pending' AND workspace_id = ?
-    `);
-    const logStmt = tx.prepare(`
-      INSERT INTO ae_action_log (module_id, action_type, mode, description, status, approval_id, created_at, completed_at, workspace_id)
-      VALUES (?, ?, 'copilot', ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
-    `);
+  for (const id of ids) {
+    const item = await db.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND status = ? AND workspace_id = ?').get(id, 'pending', wsId);
+    if (!item) continue;
 
-    let count = 0;
-    for (const id of ids) {
-      const item = await tx.prepare('SELECT * FROM ae_approval_queue WHERE id = ? AND status = ? AND workspace_id = ?').get(id, 'pending', wsId);
-      if (!item) continue;
+    await db.prepare(`
+      UPDATE ae_approval_queue SET status = ?, reviewed_at = CURRENT_TIMESTAMP, reviewed_by = ? WHERE id = ? AND workspace_id = ?
+    `).run(newStatus, reviewer, id, wsId);
+    updated++;
 
-      const result = await updateStmt.run(newStatus, reviewer, id, wsId);
-      count += result.changes;
-
-      if (result.changes > 0) {
-        const prefix = action === 'approve' ? 'Approved' : 'Rejected';
-        await logStmt.run(item.module_id, item.action_type, `${prefix}: ${item.title}`, logStatus, id, wsId);
-        createNotification(
-          action === 'approve' ? 'action_completed' : 'action_failed',
-          `${prefix}: ${item.title}`,
-          item.description,
-          item.module_id,
-          wsId
-        );
-      }
+    if (action === 'approve') {
+      // Execute the approved action
+      const payload = item.payload ? JSON.parse(item.payload) : {};
+      const ruleObj = {
+        id: payload.rule_id || null,
+        name: item.title.replace(/^Rule:\s*/, ''),
+        module_id: item.module_id,
+        action_type: item.action_type,
+        action_config: JSON.stringify(payload),
+        trigger_config: payload.trigger ? JSON.stringify(payload.trigger) : '{}',
+      };
+      const result = await executeAction(ruleObj, wsId, 'copilot');
+      executed.push({ id, success: result.success });
+    } else {
+      // Log rejection
+      await db.prepare(`
+        INSERT INTO ae_action_log (module_id, action_type, mode, description, status, approval_id, created_at, completed_at, workspace_id)
+        VALUES (?, ?, 'copilot', ?, 'cancelled', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
+      `).run(item.module_id, item.action_type, `Rejected: ${item.title}`, id, wsId);
+      createNotification('action_failed', `Rejected: ${item.title}`, item.description, item.module_id, wsId);
     }
-    return count;
-  });
-  res.json({ success: true, updated });
+  }
+
+  res.json({ success: true, updated, executed });
 });
 
 module.exports = router;
