@@ -10,6 +10,7 @@ const videoManager = require('../services/videoManager');
 const { getVideoQueries } = require('../db/queries');
 const { generateWithClaude, generateTextWithClaude } = require('../../../services/claude');
 const { getVideoPromptOptimizerPrompt } = require('../prompts/videoPromptOptimizer');
+const { generateImageFromReference } = require('../../../services/gemini');
 
 const router = express.Router();
 
@@ -120,6 +121,52 @@ router.post('/generate-quick', async (req, res) => {
     videoQueries.updateVideoJob(jobId, result.success ? 'completed' : 'failed', result);
   } catch (error) {
     videoQueries.updateVideoJob(jobId, 'failed', { error: error.message });
+  }
+});
+
+// POST /generate-scene-frame — use Gemini to create a unique starting frame for a scene
+// Takes a reference image + scene visual prompt, returns a new image with varied composition
+router.post('/generate-scene-frame', async (req, res) => {
+  const { scenePrompt, referenceImageUrl, aspectRatio = '9:16' } = req.body;
+  if (!scenePrompt) return res.status(400).json({ error: 'scenePrompt required' });
+  if (!referenceImageUrl) return res.status(400).json({ error: 'referenceImageUrl required' });
+
+  try {
+    // Fetch the reference image and convert to base64
+    let base64, mimeType;
+    if (referenceImageUrl.startsWith('data:')) {
+      const match = referenceImageUrl.match(/^data:([^;]+);base64,(.+)$/s);
+      if (!match) return res.status(400).json({ error: 'Invalid data URL' });
+      mimeType = match[1];
+      base64 = match[2];
+    } else {
+      // It's a URL (local /uploads/... or external) — fetch it
+      const imgUrl = referenceImageUrl.startsWith('/')
+        ? `${req.headers['x-forwarded-proto'] || req.protocol}://${req.headers['x-forwarded-host'] || req.get('host')}${referenceImageUrl}`
+        : referenceImageUrl;
+      const imgRes = await fetch(imgUrl);
+      if (!imgRes.ok) return res.status(400).json({ error: `Failed to fetch reference image: HTTP ${imgRes.status}` });
+      const buf = Buffer.from(await imgRes.arrayBuffer());
+      base64 = buf.toString('base64');
+      mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
+    }
+
+    const framePrompt = `Generate a new image based on this reference. Keep the SAME person/product identity, appearance, and features but place them in a completely NEW pose, angle, and composition as described below.
+
+SCENE DIRECTION: ${scenePrompt}
+
+CRITICAL RULES:
+- The person/product must look identical to the reference — same face, body, clothing, colors, materials
+- But the POSE, CAMERA ANGLE, FRAMING, and SETTING must match the scene direction above
+- This is a starting frame for a video — make it feel like a frozen moment of action, not a static portrait
+- Cinematic quality, professional lighting as described in the scene direction`;
+
+    const result = await generateImageFromReference(framePrompt, [{ base64, mimeType }], aspectRatio);
+    console.log(`[SceneFrame] Generated frame for scene: ${result.url}`);
+    res.json({ success: true, imageUrl: result.url, dataUrl: result.dataUrl });
+  } catch (err) {
+    console.error('[SceneFrame] Error:', err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 

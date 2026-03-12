@@ -189,6 +189,7 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
   const [sceneErrors, setSceneErrors] = useState({});
   const [sceneJobIds, setSceneJobIds] = useState({});
   const [sceneLipsync, setSceneLipsync] = useState({});
+  const [sceneFrames, setSceneFrames] = useState({});  // Gemini-generated starting frames per scene
   const [generatingAll, setGeneratingAll] = useState(false);
   const activeRef = useRef(true);
   useEffect(() => {
@@ -294,10 +295,36 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
   const fireScene = async (scene, i) => {
     setSceneGenerating(prev => ({ ...prev, [i]: true }));
     setSceneErrors(prev => ({ ...prev, [i]: null }));
+    setSceneFrames(prev => ({ ...prev, [i]: null }));
     try {
-      const sceneImage = scene.useRefImage !== false
-        ? (scene.imgSrc === 'product' && productPhoto ? productPhoto : (activeImage?.url || null))
-        : null;
+      const refImage = scene.imgSrc === 'product' && productPhoto ? productPhoto : (activeImage?.url || null);
+      let sceneImage = null;
+
+      if (scene.useRefImage !== false && refImage) {
+        // Generate a unique starting frame using Gemini before video generation
+        setSceneFrames(prev => ({ ...prev, [i]: { status: 'generating' } }));
+        try {
+          const frameRes = await postJSON('/api/video/generate-scene-frame', {
+            scenePrompt: scene.visual,
+            referenceImageUrl: refImage,
+            aspectRatio,
+          });
+          if (frameRes.success && frameRes.imageUrl) {
+            sceneImage = frameRes.imageUrl;
+            setSceneFrames(prev => ({ ...prev, [i]: { status: 'done', url: frameRes.imageUrl, dataUrl: frameRes.dataUrl } }));
+          } else {
+            // Frame generation failed — fall back to original reference image
+            console.warn('[UGC] Frame generation failed, falling back to original image');
+            sceneImage = refImage;
+            setSceneFrames(prev => ({ ...prev, [i]: { status: 'fallback' } }));
+          }
+        } catch (frameErr) {
+          console.warn('[UGC] Frame generation error, falling back:', frameErr.message);
+          sceneImage = refImage;
+          setSceneFrames(prev => ({ ...prev, [i]: { status: 'fallback' } }));
+        }
+      }
+
       const { jobId } = await postJSON('/api/video/generate-quick', {
         hookText: buildScenePrompt(scene, productName, moods, scene.enableAudio),
         productImageUrl: sceneImage,
@@ -317,6 +344,7 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
     setSceneResults({});
     setSceneErrors({});
     setSceneLipsync({});
+    setSceneFrames({});
     setSceneGenerating({});
     setGeneratingAll(true);
     setStep(5);
@@ -331,6 +359,7 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
     setSceneResults(prev => { const n = { ...prev }; delete n[i]; return n; });
     setSceneErrors(prev => { const n = { ...prev }; delete n[i]; return n; });
     setSceneLipsync(prev => { const n = { ...prev }; delete n[i]; return n; });
+    setSceneFrames(prev => { const n = { ...prev }; delete n[i]; return n; });
     fireScene(scenes[i], i);
   };
 
@@ -718,7 +747,7 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
                     <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    {scene.useRefImage ? 'Using reference image (image-to-video)' : 'Prompt only (text-to-video) — unique composition'}
+                    {scene.useRefImage ? 'AI generates scene-specific starting frame from your image' : 'Prompt only (text-to-video) — no reference image'}
                   </button>
                 )}
 
@@ -982,15 +1011,43 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
                 )}
 
                 {isGen && !result && (
-                  <div className="flex items-center justify-center gap-3 py-8"
+                  <div className="py-6 space-y-3"
                     style={{ background: dark ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)' }}>
-                    <div className="flex gap-1.5">
-                      {[0, 150, 300].map(delay => (
-                        <div key={delay} className="w-1.5 h-1.5 rounded-full animate-bounce"
-                          style={{ background: accent, animationDelay: `${delay}ms` }} />
-                      ))}
-                    </div>
-                    <span className="text-xs" style={{ color: textSecondary }}>Generating scene {i + 1}… up to 7 min</span>
+                    {/* Frame generation step */}
+                    {sceneFrames[i]?.status === 'generating' && (
+                      <div className="flex items-center justify-center gap-3">
+                        <div className="flex gap-1.5">
+                          {[0, 150, 300].map(delay => (
+                            <div key={delay} className="w-1.5 h-1.5 rounded-full animate-bounce"
+                              style={{ background: accent, animationDelay: `${delay}ms` }} />
+                          ))}
+                        </div>
+                        <span className="text-xs" style={{ color: textSecondary }}>Creating starting frame with AI… ~15s</span>
+                      </div>
+                    )}
+                    {/* Show generated frame preview */}
+                    {sceneFrames[i]?.status === 'done' && sceneFrames[i]?.dataUrl && (
+                      <div className="flex flex-col items-center gap-2 px-4">
+                        <img src={sceneFrames[i].dataUrl} alt={`Scene ${i + 1} starting frame`}
+                          className="rounded-lg object-cover"
+                          style={{ maxHeight: 120, border: `1px solid ${accentBorder}` }} />
+                        <span className="text-[10px]" style={{ color: accent }}>Starting frame ready</span>
+                      </div>
+                    )}
+                    {/* Video generation step */}
+                    {sceneFrames[i]?.status !== 'generating' && (
+                      <div className="flex items-center justify-center gap-3">
+                        <div className="flex gap-1.5">
+                          {[0, 150, 300].map(delay => (
+                            <div key={delay} className="w-1.5 h-1.5 rounded-full animate-bounce"
+                              style={{ background: accent, animationDelay: `${delay}ms` }} />
+                          ))}
+                        </div>
+                        <span className="text-xs" style={{ color: textSecondary }}>
+                          Generating video {i + 1}… up to 7 min
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
 
