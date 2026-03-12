@@ -1,0 +1,1609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overload Automation Engine — Architecture Documentation</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --surface3: #222233;
+    --border: #2a2a3d;
+    --border2: #3a3a50;
+    --text: #e4e4ef;
+    --text2: #9999b3;
+    --text3: #6a6a85;
+    --accent: #6c5ce7;
+    --accent2: #a29bfe;
+    --green: #00b894;
+    --green2: #55efc4;
+    --amber: #fdcb6e;
+    --amber2: #ffeaa7;
+    --red: #ff6b6b;
+    --red2: #fab1a0;
+    --blue: #3b82f6;
+    --blue2: #74b9ff;
+    --purple: #8b5cf6;
+    --pink: #fd79a8;
+    --cyan: #0984e3;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── Hero ─────────────────────────────────── */
+  .hero {
+    position: relative;
+    padding: 80px 40px 60px;
+    text-align: center;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(108,92,231,0.15), transparent 70%),
+                radial-gradient(ellipse 60% 50% at 30% 100%, rgba(0,184,148,0.08), transparent 60%);
+    pointer-events: none;
+  }
+  .hero h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    background: linear-gradient(135deg, var(--accent2), var(--green2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+  .hero p {
+    font-size: 1.15rem;
+    color: var(--text2);
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  .hero-stats {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 36px;
+    flex-wrap: wrap;
+  }
+  .hero-stat {
+    text-align: center;
+  }
+  .hero-stat .num {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--accent2);
+  }
+  .hero-stat .label {
+    font-size: 0.8rem;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-top: 4px;
+  }
+
+  /* ── Navigation ───────────────────────────── */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    overflow-x: auto;
+  }
+  .nav-inner {
+    display: flex;
+    gap: 4px;
+    max-width: 1200px;
+    margin: 0 auto;
+    white-space: nowrap;
+  }
+  .nav a {
+    display: block;
+    padding: 14px 16px;
+    color: var(--text2);
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .nav a:hover, .nav a.active {
+    color: var(--accent2);
+    border-color: var(--accent);
+  }
+
+  /* ── Layout ───────────────────────────────── */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  section {
+    padding: 72px 0 0;
+  }
+  section h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  section h2 .icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  section > .subtitle {
+    color: var(--text2);
+    margin-bottom: 32px;
+    font-size: 0.95rem;
+  }
+  h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 32px 0 12px;
+    color: var(--text);
+  }
+  h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 20px 0 8px;
+    color: var(--text2);
+  }
+  p { margin-bottom: 12px; color: var(--text2); }
+
+  /* ── Cards ────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+  .card-sm {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .card-sm h4 { margin: 0 0 8px; color: var(--text); }
+
+  /* ── Mode Cards ───────────────────────────── */
+  .mode-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 24px 0;
+  }
+  @media (max-width: 768px) {
+    .mode-cards { grid-template-columns: 1fr; }
+    .card-grid { grid-template-columns: 1fr; }
+  }
+  .mode-card {
+    border-radius: 14px;
+    padding: 28px;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .mode-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .mode-card.manual { background: var(--surface); }
+  .mode-card.manual::before { background: var(--text3); }
+  .mode-card.copilot { background: linear-gradient(to bottom, rgba(59,130,246,0.06), var(--surface)); }
+  .mode-card.copilot::before { background: var(--blue); }
+  .mode-card.autopilot { background: linear-gradient(to bottom, rgba(0,184,148,0.06), var(--surface)); }
+  .mode-card.autopilot::before { background: var(--green); }
+  .mode-card .mode-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .mode-card .mode-desc {
+    color: var(--text2);
+    font-size: 0.88rem;
+    margin-bottom: 16px;
+  }
+  .mode-card ul { list-style: none; padding: 0; }
+  .mode-card li {
+    font-size: 0.85rem;
+    color: var(--text2);
+    padding: 5px 0;
+    padding-left: 20px;
+    position: relative;
+  }
+  .mode-card li::before {
+    content: '>';
+    position: absolute;
+    left: 0;
+    color: var(--text3);
+    font-family: monospace;
+  }
+
+  /* ── Tables ───────────────────────────────── */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 16px 0;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  thead { background: var(--surface2); }
+  th {
+    text-align: left;
+    padding: 12px 16px;
+    font-weight: 600;
+    color: var(--text2);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(108,92,231,0.03); }
+  td code {
+    background: var(--surface3);
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.8rem;
+    color: var(--accent2);
+  }
+
+  /* ── Code Blocks ──────────────────────────── */
+  pre {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.82rem;
+    line-height: 1.65;
+    margin: 16px 0;
+    color: var(--text2);
+  }
+  code {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.82rem;
+  }
+  .kw { color: var(--purple); }
+  .fn { color: var(--blue2); }
+  .str { color: var(--green2); }
+  .num { color: var(--amber); }
+  .cm { color: var(--text3); font-style: italic; }
+  .op { color: var(--text3); }
+
+  /* ── Flow Diagram ─────────────────────────── */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 24px 0;
+    position: relative;
+    padding-left: 32px;
+  }
+  .flow::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 20px;
+    bottom: 20px;
+    width: 2px;
+    background: var(--border2);
+  }
+  .flow-step {
+    position: relative;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 12px;
+  }
+  .flow-step::before {
+    content: '';
+    position: absolute;
+    left: -25px;
+    top: 22px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg);
+  }
+  .flow-step .step-num {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--accent2);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 4px;
+  }
+  .flow-step .step-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+  }
+  .flow-step .step-detail {
+    font-size: 0.84rem;
+    color: var(--text3);
+  }
+  .flow-step.decision { border-color: var(--amber); }
+  .flow-step.decision::before { background: var(--amber); }
+  .flow-step.action { border-color: var(--green); }
+  .flow-step.action::before { background: var(--green); }
+  .flow-step.queue { border-color: var(--blue); }
+  .flow-step.queue::before { background: var(--blue); }
+
+  /* ── Badges & Tags ────────────────────────── */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .badge-green { background: rgba(0,184,148,0.15); color: var(--green); }
+  .badge-blue { background: rgba(59,130,246,0.15); color: var(--blue); }
+  .badge-amber { background: rgba(253,203,110,0.15); color: var(--amber); }
+  .badge-purple { background: rgba(139,92,246,0.15); color: var(--purple); }
+  .badge-red { background: rgba(255,107,107,0.15); color: var(--red); }
+  .badge-pink { background: rgba(253,121,168,0.15); color: var(--pink); }
+  .badge-gray { background: rgba(106,106,133,0.15); color: var(--text3); }
+
+  /* ── Confidence Meter ─────────────────────── */
+  .conf-meter {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0;
+  }
+  .conf-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--surface3);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .conf-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+  .conf-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    min-width: 40px;
+    text-align: right;
+  }
+
+  /* ── Recipe Grid ──────────────────────────── */
+  .recipe-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+    margin: 20px 0;
+  }
+  .recipe {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .recipe-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .recipe-icon {
+    font-size: 1.4rem;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface3);
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+  .recipe-name { font-weight: 600; font-size: 0.92rem; }
+  .recipe-desc { font-size: 0.82rem; color: var(--text3); }
+  .recipe-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: auto;
+  }
+
+  /* ── Collapsible ──────────────────────────── */
+  details {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin: 12px 0;
+    overflow: hidden;
+  }
+  summary {
+    padding: 16px 20px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+  }
+  summary:hover { background: var(--surface2); }
+  summary::marker { color: var(--accent2); }
+  details[open] summary { border-bottom: 1px solid var(--border); }
+  details .inner { padding: 20px; }
+
+  /* ── Endpoint Block ───────────────────────── */
+  .endpoint {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin: 12px 0;
+    overflow: hidden;
+  }
+  .endpoint-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .method {
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    font-family: monospace;
+    letter-spacing: 0.5px;
+  }
+  .method-get { background: rgba(0,184,148,0.2); color: var(--green); }
+  .method-post { background: rgba(59,130,246,0.2); color: var(--blue); }
+  .method-put { background: rgba(253,203,110,0.2); color: var(--amber); }
+  .method-delete { background: rgba(255,107,107,0.2); color: var(--red); }
+  .endpoint-path {
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+  .endpoint-body { padding: 14px 16px; font-size: 0.85rem; color: var(--text2); }
+
+  /* ── Footer ───────────────────────────────── */
+  footer {
+    margin-top: 80px;
+    padding: 32px 0;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    color: var(--text3);
+    font-size: 0.82rem;
+  }
+
+  .highlight-box {
+    background: linear-gradient(135deg, rgba(108,92,231,0.08), rgba(0,184,148,0.05));
+    border: 1px solid rgba(108,92,231,0.2);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 16px 0;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 768px) {
+    .two-col { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 2rem; }
+    .hero-stats { gap: 20px; }
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 40px 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ HERO ═══════════════════════════════════════════ -->
+<div class="hero">
+  <h1>Automation Engine</h1>
+  <p>A workspace-scoped, multi-module automation system with AI-powered content generation, approval workflows, confidence scoring, and safety rails.</p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="num">25</div>
+      <div class="label">Automatable Modules</div>
+    </div>
+    <div class="hero-stat">
+      <div class="num">3</div>
+      <div class="label">Operating Modes</div>
+    </div>
+    <div class="hero-stat">
+      <div class="num">20</div>
+      <div class="label">Marketplace Recipes</div>
+    </div>
+    <div class="hero-stat">
+      <div class="num">60s</div>
+      <div class="label">Tick Interval</div>
+    </div>
+    <div class="hero-stat">
+      <div class="num">6</div>
+      <div class="label">Database Tables</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ NAV ═══════════════════════════════════════════ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#modes">Modes</a>
+    <a href="#database">Database</a>
+    <a href="#tick-loop">Tick Loop</a>
+    <a href="#triggers">Triggers</a>
+    <a href="#confidence">Confidence</a>
+    <a href="#risk">Risk Levels</a>
+    <a href="#safety">Safety Limits</a>
+    <a href="#approval">Approval Queue</a>
+    <a href="#execution">Execution</a>
+    <a href="#marketplace">Marketplace</a>
+    <a href="#settings">Settings</a>
+    <a href="#notifications">Notifications</a>
+    <a href="#api">API Reference</a>
+    <a href="#frontend">Frontend</a>
+    <a href="#walkthrough">Walkthrough</a>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════ MODES ═══════════════════════════════════════════ -->
+<section id="modes">
+  <h2><span class="icon" style="background:rgba(108,92,231,0.15);color:var(--accent2)">&#9881;</span> Three Operating Modes</h2>
+  <p class="subtitle">Each of the 25 automatable modules can independently be set to one of three modes per workspace. Stored in <code>ae_module_modes</code>.</p>
+
+  <div class="mode-cards">
+    <div class="mode-card manual">
+      <div class="mode-name" style="color:var(--text3)">Manual</div>
+      <div class="mode-desc">Default. Zero automation — full human control.</div>
+      <ul>
+        <li>Rules exist but never fire automatically</li>
+        <li>No tick loop evaluation</li>
+        <li>User triggers actions explicitly</li>
+        <li>Safest option for sensitive modules</li>
+        <li>All new modules start here</li>
+      </ul>
+    </div>
+    <div class="mode-card copilot">
+      <div class="mode-name" style="color:var(--blue)">Copilot</div>
+      <div class="mode-desc">AI-assisted — everything goes through approval.</div>
+      <ul>
+        <li>Rules fire automatically per triggers</li>
+        <li>Every action queued to approval queue</li>
+        <li>User reviews, edits, approves, or rejects</li>
+        <li>Confidence scores inform review priority</li>
+        <li>Auto-set when marketplace recipe installed</li>
+      </ul>
+    </div>
+    <div class="mode-card autopilot">
+      <div class="mode-name" style="color:var(--green)">Autopilot</div>
+      <div class="mode-desc">Autonomous execution — with safety rails.</div>
+      <ul>
+        <li>Rules fire and execute without approval</li>
+        <li>Subject to confidence threshold (default 70%)</li>
+        <li>Risk level can override to require approval</li>
+        <li>Safety limits enforced (daily, hourly, budget)</li>
+        <li>Low-confidence actions still get queued</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Automatable Modules (25)</h3>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin:12px 0">
+    <span class="badge badge-purple">content</span>
+    <span class="badge badge-purple">video-marketing</span>
+    <span class="badge badge-purple">creative</span>
+    <span class="badge badge-pink">email-sms</span>
+    <span class="badge badge-blue">social</span>
+    <span class="badge badge-amber">ads</span>
+    <span class="badge badge-green">seo</span>
+    <span class="badge badge-blue">pr-press</span>
+    <span class="badge badge-purple">influencers</span>
+    <span class="badge badge-green">reviews</span>
+    <span class="badge badge-blue">customer-ai</span>
+    <span class="badge badge-amber">reports</span>
+    <span class="badge badge-green">crm</span>
+    <span class="badge badge-purple">affiliates</span>
+    <span class="badge badge-amber">ab-testing</span>
+    <span class="badge badge-amber">budget-optimizer</span>
+    <span class="badge badge-pink">referral-loyalty</span>
+    <span class="badge badge-red">competitors</span>
+    <span class="badge badge-blue">knowledge-base</span>
+    <span class="badge badge-green">goal-tracker</span>
+    <span class="badge badge-purple">chatbot</span>
+    <span class="badge badge-amber">ecommerce-hub</span>
+    <span class="badge badge-blue">audience-builder</span>
+    <span class="badge badge-green">funnel-builder</span>
+    <span class="badge badge-purple">brand-hub</span>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ DATABASE ═══════════════════════════════════════════ -->
+<section id="database">
+  <h2><span class="icon" style="background:rgba(0,184,148,0.15);color:var(--green)">&#9731;</span> Database Schema</h2>
+  <p class="subtitle">Six PostgreSQL tables power the automation engine. All scoped by <code>workspace_id</code> for multi-tenant isolation.</p>
+
+  <details>
+    <summary>ae_module_modes &mdash; Module mode configuration</summary>
+    <div class="inner">
+      <p>Tracks which mode (manual/copilot/autopilot) each module is in, per workspace.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Column</th><th>Type</th><th>Default</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td>SERIAL</td><td>auto</td><td>Primary key</td></tr>
+          <tr><td><code>workspace_id</code></td><td>TEXT</td><td>&mdash;</td><td>Workspace scope</td></tr>
+          <tr><td><code>module_id</code></td><td>TEXT</td><td>&mdash;</td><td>One of 25 automatable modules</td></tr>
+          <tr><td><code>mode</code></td><td>TEXT</td><td>'manual'</td><td>manual | copilot | autopilot</td></tr>
+          <tr><td><code>config</code></td><td>TEXT</td><td>NULL</td><td>JSON config (optional)</td></tr>
+          <tr><td><code>risk_level</code></td><td>TEXT</td><td>'conservative'</td><td>conservative | balanced | aggressive</td></tr>
+          <tr><td><code>updated_at</code></td><td>TEXT</td><td>CURRENT_TIMESTAMP</td><td>&mdash;</td></tr>
+          <tr><td><code>created_at</code></td><td>TEXT</td><td>CURRENT_TIMESTAMP</td><td>&mdash;</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>Constraints:</strong> UNIQUE(module_id, workspace_id) &bull; INDEX: idx_ae_module_modes_ws</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>ae_rules &mdash; Automation rule definitions</summary>
+    <div class="inner">
+      <p>The core rule table. Each rule defines a trigger condition, an action to take, and whether it requires approval.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Column</th><th>Type</th><th>Default</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td>SERIAL</td><td>auto</td><td>Primary key</td></tr>
+          <tr><td><code>workspace_id</code></td><td>TEXT</td><td>&mdash;</td><td>Workspace scope</td></tr>
+          <tr><td><code>module_id</code></td><td>TEXT</td><td>&mdash;</td><td>Target module</td></tr>
+          <tr><td><code>name</code></td><td>TEXT</td><td>&mdash;</td><td>Rule display name</td></tr>
+          <tr><td><code>trigger_type</code></td><td>TEXT</td><td>&mdash;</td><td>schedule | event | threshold</td></tr>
+          <tr><td><code>trigger_config</code></td><td>TEXT</td><td>&mdash;</td><td>JSON trigger parameters</td></tr>
+          <tr><td><code>action_type</code></td><td>TEXT</td><td>&mdash;</td><td>e.g. generate_content, send_campaign</td></tr>
+          <tr><td><code>action_config</code></td><td>TEXT</td><td>NULL</td><td>JSON action parameters</td></tr>
+          <tr><td><code>requires_approval</code></td><td>INTEGER</td><td>1</td><td>0 or 1 — explicit override</td></tr>
+          <tr><td><code>status</code></td><td>TEXT</td><td>'active'</td><td>active | inactive</td></tr>
+          <tr><td><code>last_triggered</code></td><td>TEXT</td><td>NULL</td><td>ISO timestamp of last fire</td></tr>
+          <tr><td><code>run_count</code></td><td>INTEGER</td><td>0</td><td>Total times fired</td></tr>
+          <tr><td><code>created_at</code></td><td>TEXT</td><td>CURRENT_TIMESTAMP</td><td>&mdash;</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>ae_approval_queue &mdash; Pending action approvals</summary>
+    <div class="inner">
+      <p>Actions awaiting human review before execution. Populated by copilot mode and low-confidence autopilot actions.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Column</th><th>Type</th><th>Default</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td>SERIAL</td><td>auto</td><td>Primary key</td></tr>
+          <tr><td><code>workspace_id</code></td><td>TEXT</td><td>&mdash;</td><td>Workspace scope</td></tr>
+          <tr><td><code>module_id</code></td><td>TEXT</td><td>&mdash;</td><td>Source module</td></tr>
+          <tr><td><code>action_type</code></td><td>TEXT</td><td>&mdash;</td><td>What action to perform</td></tr>
+          <tr><td><code>title</code></td><td>TEXT</td><td>&mdash;</td><td>Display title</td></tr>
+          <tr><td><code>description</code></td><td>TEXT</td><td>NULL</td><td>Detailed description</td></tr>
+          <tr><td><code>payload</code></td><td>TEXT</td><td>&mdash;</td><td>JSON — action config + trigger config + rule_id</td></tr>
+          <tr><td><code>ai_confidence</code></td><td>REAL</td><td>NULL</td><td>0.0&ndash;1.0 confidence score</td></tr>
+          <tr><td><code>priority</code></td><td>TEXT</td><td>'medium'</td><td>urgent | high | medium | low</td></tr>
+          <tr><td><code>status</code></td><td>TEXT</td><td>'pending'</td><td>pending | approved | rejected</td></tr>
+          <tr><td><code>reviewed_by</code></td><td>TEXT</td><td>NULL</td><td>User ID of reviewer</td></tr>
+          <tr><td><code>review_notes</code></td><td>TEXT</td><td>NULL</td><td>Optional notes or 'edited'</td></tr>
+          <tr><td><code>source</code></td><td>TEXT</td><td>NULL</td><td>'rule' | 'ai' | 'manual'</td></tr>
+          <tr><td><code>expires_at</code></td><td>TEXT</td><td>NULL</td><td>Optional expiration</td></tr>
+          <tr><td><code>reviewed_at</code></td><td>TEXT</td><td>NULL</td><td>When reviewed</td></tr>
+          <tr><td><code>created_at</code></td><td>TEXT</td><td>CURRENT_TIMESTAMP</td><td>&mdash;</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>ae_action_log &mdash; Execution history (audit trail)</summary>
+    <div class="inner">
+      <p>Complete record of every automated and manual action. Used for auditing, stats, and the execution log UI.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td>SERIAL</td><td>Primary key</td></tr>
+          <tr><td><code>workspace_id</code></td><td>TEXT</td><td>Workspace scope</td></tr>
+          <tr><td><code>module_id</code></td><td>TEXT</td><td>Which module</td></tr>
+          <tr><td><code>action_type</code></td><td>TEXT</td><td>Action performed</td></tr>
+          <tr><td><code>mode</code></td><td>TEXT</td><td>manual | copilot | autopilot</td></tr>
+          <tr><td><code>description</code></td><td>TEXT</td><td>Human-readable summary</td></tr>
+          <tr><td><code>input_data</code></td><td>TEXT</td><td>JSON input (prompt, config)</td></tr>
+          <tr><td><code>output_data</code></td><td>TEXT</td><td>JSON output (generated content)</td></tr>
+          <tr><td><code>status</code></td><td>TEXT</td><td>completed | failed | cancelled | queued</td></tr>
+          <tr><td><code>error</code></td><td>TEXT</td><td>Error message if failed</td></tr>
+          <tr><td><code>approval_id</code></td><td>INTEGER</td><td>FK to ae_approval_queue</td></tr>
+          <tr><td><code>duration_ms</code></td><td>INTEGER</td><td>Execution time in milliseconds</td></tr>
+          <tr><td><code>created_at</code></td><td>TEXT</td><td>&mdash;</td></tr>
+          <tr><td><code>completed_at</code></td><td>TEXT</td><td>&mdash;</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>ae_notifications &mdash; Activity notifications</summary>
+    <div class="inner">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td>SERIAL</td><td>Primary key</td></tr>
+          <tr><td><code>workspace_id</code></td><td>TEXT</td><td>&mdash;</td></tr>
+          <tr><td><code>type</code></td><td>TEXT</td><td>action_completed | suggestion_ready | action_failed | rule_triggered</td></tr>
+          <tr><td><code>title</code></td><td>TEXT</td><td>Notification title</td></tr>
+          <tr><td><code>message</code></td><td>TEXT</td><td>Body text</td></tr>
+          <tr><td><code>module_id</code></td><td>TEXT</td><td>Related module (optional)</td></tr>
+          <tr><td><code>read</code></td><td>INTEGER</td><td>0 (unread) or 1 (read)</td></tr>
+          <tr><td><code>created_at</code></td><td>TEXT</td><td>&mdash;</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>ae_settings &mdash; Workspace automation settings</summary>
+    <div class="inner">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td>SERIAL</td><td>Primary key</td></tr>
+          <tr><td><code>key</code></td><td>TEXT</td><td>Setting key (see Settings section)</td></tr>
+          <tr><td><code>workspace_id</code></td><td>TEXT</td><td>&mdash;</td></tr>
+          <tr><td><code>value</code></td><td>TEXT</td><td>String value</td></tr>
+          <tr><td><code>updated_at</code></td><td>TEXT</td><td>&mdash;</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>Constraint:</strong> UNIQUE(key, workspace_id)</p>
+    </div>
+  </details>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ TICK LOOP ═══════════════════════════════════════════ -->
+<section id="tick-loop">
+  <h2><span class="icon" style="background:rgba(59,130,246,0.15);color:var(--blue)">&#8635;</span> The 60-Second Tick Loop</h2>
+  <p class="subtitle">The heart of the engine. Every 60 seconds, <code>ruleEngine.js</code> evaluates all active rules across all workspaces.</p>
+
+  <div class="flow">
+    <div class="flow-step">
+      <div class="step-num">Step 1</div>
+      <div class="step-title">Fetch All Workspaces</div>
+      <div class="step-detail">Query all workspace IDs from the database. Each workspace is evaluated independently.</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">Step 2</div>
+      <div class="step-title">Load Module Modes</div>
+      <div class="step-detail">For each workspace, fetch <code>ae_module_modes</code> to determine which modules are manual, copilot, or autopilot.</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">Step 3</div>
+      <div class="step-title">Fetch Active Rules</div>
+      <div class="step-detail">Query <code>ae_rules WHERE status = 'active' AND workspace_id = ?</code>. Parse trigger_config and action_config from JSON.</div>
+    </div>
+    <div class="flow-step decision">
+      <div class="step-num">Step 4 &mdash; Decision</div>
+      <div class="step-title">Skip Manual Modules</div>
+      <div class="step-detail">If the rule's module is in <strong>manual mode</strong>, skip it entirely. No evaluation, no execution.</div>
+    </div>
+    <div class="flow-step decision">
+      <div class="step-num">Step 5 &mdash; Decision</div>
+      <div class="step-title">Evaluate Trigger</div>
+      <div class="step-detail">Check if the rule's trigger condition is met: schedule time match, threshold metric exceeded, or event received. If not triggered, skip.</div>
+    </div>
+    <div class="flow-step decision">
+      <div class="step-num">Step 6 &mdash; Decision</div>
+      <div class="step-title">Check Safety Limits</div>
+      <div class="step-detail">Verify: pauseAll not set, actions today &lt; maxActionsPerDay, actions this hour &lt; maxActionsPerHour, monthly budget not exceeded.</div>
+    </div>
+    <div class="flow-step decision">
+      <div class="step-num">Step 7 &mdash; Decision</div>
+      <div class="step-title">Mode Routing</div>
+      <div class="step-detail"><strong>Copilot:</strong> always queue. <strong>Autopilot:</strong> compute confidence, check risk level, decide execute vs. queue.</div>
+    </div>
+    <div class="flow-step queue">
+      <div class="step-num">Path A &mdash; Queue</div>
+      <div class="step-title">Queue for Approval</div>
+      <div class="step-detail">Insert into <code>ae_approval_queue</code> with confidence score, priority, payload. Create <code>suggestion_ready</code> notification.</div>
+    </div>
+    <div class="flow-step action">
+      <div class="step-num">Path B &mdash; Execute</div>
+      <div class="step-title">Execute Action</div>
+      <div class="step-detail">Call Claude API to generate content. Log to <code>ae_action_log</code>. Save draft to target module's database. Create <code>action_completed</code> notification.</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">Step 8</div>
+      <div class="step-title">Mark Rule Triggered</div>
+      <div class="step-detail">Update <code>last_triggered</code> timestamp and increment <code>run_count</code>.</div>
+    </div>
+  </div>
+
+  <div class="highlight-box">
+    <strong>Startup:</strong> The tick loop starts 30 seconds after server boot (<code>startRuleEngine()</code>), giving all modules time to initialize their databases.
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ TRIGGERS ═══════════════════════════════════════════ -->
+<section id="triggers">
+  <h2><span class="icon" style="background:rgba(253,203,110,0.15);color:var(--amber)">&#9889;</span> Trigger Types</h2>
+  <p class="subtitle">Three mechanisms determine when a rule fires.</p>
+
+  <div class="card-grid">
+    <div class="card-sm">
+      <h4><span class="badge badge-blue">schedule</span> Schedule Triggers</h4>
+      <p>Cron-like timing. Fires within a 2-minute window of the scheduled time.</p>
+      <pre><span class="cm">// trigger_config shape:</span>
+{
+  <span class="str">"frequency"</span>: <span class="str">"daily"</span> | <span class="str">"weekly"</span> | <span class="str">"biweekly"</span> | <span class="str">"monthly"</span>,
+  <span class="str">"day"</span>: <span class="str">"monday"</span> | <span class="num">1</span>,  <span class="cm">// day of week or month</span>
+  <span class="str">"time"</span>: <span class="str">"09:00"</span>       <span class="cm">// HH:MM format</span>
+}</pre>
+      <p><strong>Cooldowns:</strong> daily = 23h, weekly = 6d, biweekly = 13d, monthly = 27d</p>
+    </div>
+
+    <div class="card-sm">
+      <h4><span class="badge badge-purple">threshold</span> Threshold Triggers</h4>
+      <p>Fires when a metric crosses a boundary. Currently implemented for the ads module via <code>pa_campaign_metrics</code>.</p>
+      <pre><span class="cm">// trigger_config shape:</span>
+{
+  <span class="str">"metric"</span>: <span class="str">"roas"</span> | <span class="str">"ctr"</span> | <span class="str">"cpa"</span> | <span class="str">"spend"</span>,
+  <span class="str">"operator"</span>: <span class="str">">"</span> | <span class="str">"<"</span> | <span class="str">">="</span> | <span class="str">"<="</span>,
+  <span class="str">"value"</span>: <span class="num">2.0</span>,
+  <span class="str">"window"</span>: <span class="str">"7d"</span>
+}</pre>
+      <p><strong>Cooldown:</strong> 24 hours between threshold fires.</p>
+    </div>
+
+    <div class="card-sm">
+      <h4><span class="badge badge-amber">event</span> Event Triggers</h4>
+      <p>Triggered externally via <code>POST /rules/trigger-event</code> from webhooks or other modules. Not evaluated by the tick loop.</p>
+      <pre><span class="cm">// trigger_config shape:</span>
+{
+  <span class="str">"event"</span>: <span class="str">"new_review"</span> | <span class="str">"content_published"</span> | <span class="str">"new_contact"</span>,
+  <span class="str">"condition"</span>: <span class="str">"rating >= 4"</span>  <span class="cm">// optional filter</span>
+}</pre>
+      <p><strong>Cooldown:</strong> 1 hour per rule per event type.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ CONFIDENCE ═══════════════════════════════════════════ -->
+<section id="confidence">
+  <h2><span class="icon" style="background:rgba(139,92,246,0.15);color:var(--purple)">&#127919;</span> Confidence Scoring</h2>
+  <p class="subtitle">Deterministic scoring based on rule maturity and configuration. Determines whether autopilot actions execute or get queued.</p>
+
+  <div class="card">
+    <h4>computeConfidence(rule) &rarr; 0.50 &ndash; 0.95</h4>
+
+    <div class="table-wrap"><table>
+      <thead><tr><th>Factor</th><th>Points</th><th>Condition</th></tr></thead>
+      <tbody>
+        <tr><td>Base score</td><td><code>+0.50</code></td><td>Always</td></tr>
+        <tr><td>Has been run before</td><td><code>+0.10</code></td><td><code>run_count > 0</code></td></tr>
+        <tr><td>Well-proven (5+ runs)</td><td><code>+0.05</code></td><td><code>run_count >= 5</code></td></tr>
+        <tr><td>Trigger well-configured</td><td><code>+0.10</code></td><td>Has <code>time</code> or <code>metric</code> in trigger_config</td></tr>
+        <tr><td>Rich action config</td><td><code>+0.10</code></td><td>action_config has 2+ parameters</td></tr>
+        <tr><td>Has description</td><td><code>+0.05</code></td><td>Rule name or description &gt; 10 chars</td></tr>
+        <tr><td>Threshold specificity</td><td><code>+0.10</code></td><td>Threshold trigger has both <code>operator</code> and <code>value</code></td></tr>
+        <tr style="background:var(--surface2)"><td><strong>Maximum</strong></td><td><strong>0.95</strong></td><td>Hard cap</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>Example Confidence Progression</h4>
+    <div style="display:flex;flex-direction:column;gap:12px;margin:16px 0">
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:4px">
+          <span style="color:var(--text3)">New rule, minimal config</span>
+          <span class="conf-label" style="color:var(--red)">50%</span>
+        </div>
+        <div class="conf-bar"><div class="conf-fill" style="width:50%;background:var(--red)"></div></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:4px">
+          <span style="color:var(--text3)">After first run + good config</span>
+          <span class="conf-label" style="color:var(--amber)">70%</span>
+        </div>
+        <div class="conf-bar"><div class="conf-fill" style="width:70%;background:var(--amber)"></div></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:4px">
+          <span style="color:var(--text3)">5+ runs, well-configured, threshold</span>
+          <span class="conf-label" style="color:var(--green)">90%</span>
+        </div>
+        <div class="conf-bar"><div class="conf-fill" style="width:90%;background:var(--green)"></div></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <strong>Default threshold: 70%.</strong> Rules scoring below this get queued for approval even in autopilot mode. Configurable per workspace via <code>ae_settings.confidenceThreshold</code>.
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ RISK ═══════════════════════════════════════════ -->
+<section id="risk">
+  <h2><span class="icon" style="background:rgba(255,107,107,0.15);color:var(--red)">&#9888;</span> Risk Levels</h2>
+  <p class="subtitle">Three risk profiles modify autopilot behavior. Stored per-module in <code>ae_module_modes.risk_level</code> and globally in <code>ae_settings.riskLevel</code>.</p>
+
+  <div class="card-grid">
+    <div class="card-sm" style="border-color:var(--red)">
+      <h4 style="color:var(--red)">Conservative</h4>
+      <p>ALL actions require approval — autopilot effectively becomes copilot.</p>
+      <p>Best for: brand-sensitive modules, new deployments, regulated industries.</p>
+    </div>
+    <div class="card-sm" style="border-color:var(--amber)">
+      <h4 style="color:var(--amber)">Balanced <span class="badge badge-gray">default</span></h4>
+      <p>High-impact actions (<code>adjust_budget</code>, <code>send_campaign</code>, <code>publish_blog</code>) require approval on first run (<code>run_count = 0</code>). Proven rules execute freely.</p>
+      <p>Best for: most teams. Good safety/automation balance.</p>
+    </div>
+    <div class="card-sm" style="border-color:var(--green)">
+      <h4 style="color:var(--green)">Aggressive</h4>
+      <p>Only rules explicitly flagged <code>requires_approval = 1</code> need approval. Everything else executes immediately.</p>
+      <p>Best for: power users with proven, well-tested rules.</p>
+    </div>
+  </div>
+
+  <h3>Decision Logic (Autopilot Mode)</h3>
+  <pre><span class="kw">if</span> (riskLevel === <span class="str">'conservative'</span>) {
+  <span class="cm">// ALL actions queued — overrides autopilot</span>
+  <span class="fn">queueForApproval</span>(rule, wsId);
+
+} <span class="kw">else if</span> (riskLevel === <span class="str">'balanced'</span>) {
+  <span class="kw">const</span> highImpact = [<span class="str">'adjust_budget'</span>, <span class="str">'send_campaign'</span>, <span class="str">'publish_blog'</span>];
+
+  <span class="kw">if</span> (highImpact.includes(rule.action_type) && rule.run_count === <span class="num">0</span>) {
+    <span class="fn">queueForApproval</span>(rule, wsId);  <span class="cm">// untested high-impact</span>
+  } <span class="kw">else if</span> (rule.requires_approval) {
+    <span class="fn">queueForApproval</span>(rule, wsId);  <span class="cm">// explicit flag</span>
+  } <span class="kw">else</span> {
+    <span class="fn">executeAction</span>(rule, wsId);     <span class="cm">// trusted rule</span>
+  }
+
+} <span class="kw">else if</span> (riskLevel === <span class="str">'aggressive'</span>) {
+  <span class="kw">if</span> (rule.requires_approval) {
+    <span class="fn">queueForApproval</span>(rule, wsId);
+  } <span class="kw">else</span> {
+    <span class="fn">executeAction</span>(rule, wsId);     <span class="cm">// execute everything else</span>
+  }
+}</pre>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ SAFETY ═══════════════════════════════════════════ -->
+<section id="safety">
+  <h2><span class="icon" style="background:rgba(0,184,148,0.15);color:var(--green)">&#128737;</span> Safety Limits</h2>
+  <p class="subtitle">Enforced before any autopilot execution to prevent runaway automation.</p>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Limit</th><th>Default</th><th>Setting Key</th><th>Behavior When Exceeded</th></tr></thead>
+    <tbody>
+      <tr><td>Global pause</td><td><code>false</code></td><td><code>pauseAll</code></td><td>All automation stops immediately</td></tr>
+      <tr><td>Max actions per day</td><td><code>50</code></td><td><code>maxActionsPerDay</code></td><td>No more actions until next UTC day</td></tr>
+      <tr><td>Max actions per hour</td><td><code>10</code></td><td><code>maxActionsPerHour</code></td><td>Throttled until next hour</td></tr>
+      <tr><td>Monthly budget limit</td><td><code>0</code> (unlimited)</td><td><code>monthlyBudgetLimit</code></td><td>Actions counted as cost proxy; stops if limit reached</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>The <code>checkSafetyLimits(wsId)</code> function queries <code>ae_action_log</code> to count today's and this hour's completed actions, then compares against settings. Returns <code>{ allowed: boolean, reason: string }</code>.</p>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ APPROVAL ═══════════════════════════════════════════ -->
+<section id="approval">
+  <h2><span class="icon" style="background:rgba(59,130,246,0.15);color:var(--blue)">&#9745;</span> Approval Queue</h2>
+  <p class="subtitle">The human-in-the-loop layer. All copilot actions and low-confidence autopilot actions land here.</p>
+
+  <h3>User Actions</h3>
+  <div class="card-grid">
+    <div class="card-sm">
+      <h4 style="color:var(--green)">Approve</h4>
+      <p>Mark as approved. Logs to <code>ae_action_log</code> with mode: 'copilot', status: 'completed'. Creates <code>action_completed</code> notification.</p>
+    </div>
+    <div class="card-sm">
+      <h4 style="color:var(--red)">Reject</h4>
+      <p>Mark as rejected with optional notes. Logs as 'cancelled'. Creates <code>action_failed</code> notification.</p>
+    </div>
+    <div class="card-sm">
+      <h4 style="color:var(--amber)">Edit &amp; Approve</h4>
+      <p>Modify the payload JSON (tweak budget, change copy, etc.), then auto-approve. Logged with review_notes: 'edited'.</p>
+    </div>
+    <div class="card-sm">
+      <h4 style="color:var(--purple)">Generate Content</h4>
+      <p>Call Claude to produce full content from the approval's context. Caches result in <code>payload.generated_content</code>. Only available after approval.</p>
+    </div>
+    <div class="card-sm">
+      <h4 style="color:var(--blue)">Batch Operations</h4>
+      <p>Approve or reject multiple items at once. Wrapped in a transaction for consistency. Each item individually logged and notified.</p>
+    </div>
+  </div>
+
+  <h3>Queue Sort Order</h3>
+  <p>Priority ranking: <span class="badge badge-red">urgent</span> &rarr; <span class="badge badge-amber">high</span> &rarr; <span class="badge badge-blue">medium</span> &rarr; <span class="badge badge-gray">low</span>, then by <code>created_at DESC</code> within each priority.</p>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ EXECUTION ═══════════════════════════════════════════ -->
+<section id="execution">
+  <h2><span class="icon" style="background:rgba(0,184,148,0.15);color:var(--green)">&#9654;</span> Action Execution</h2>
+  <p class="subtitle">What happens when an action actually runs — either via autopilot direct execution or approved copilot.</p>
+
+  <h3>Execution Pipeline</h3>
+  <div class="card">
+    <ol style="list-style:none;counter-reset:steps;padding:0">
+      <li style="counter-increment:steps;padding:10px 0 10px 40px;position:relative;border-left:2px solid var(--border);margin-left:14px">
+        <span style="position:absolute;left:-12px;top:10px;width:24px;height:24px;background:var(--surface3);border:2px solid var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:var(--accent2)">1</span>
+        <strong>Build Prompt</strong> &mdash; <code>buildPromptForRule(rule)</code> creates a context-aware prompt based on action_type and action_config.
+      </li>
+      <li style="counter-increment:steps;padding:10px 0 10px 40px;position:relative;border-left:2px solid var(--border);margin-left:14px">
+        <span style="position:absolute;left:-12px;top:10px;width:24px;height:24px;background:var(--surface3);border:2px solid var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:var(--accent2)">2</span>
+        <strong>Call Claude API</strong> &mdash; <code>generateTextWithClaude()</code> with system prompt, temperature 0.7, maxTokens 2048.
+      </li>
+      <li style="counter-increment:steps;padding:10px 0 10px 40px;position:relative;border-left:2px solid var(--border);margin-left:14px">
+        <span style="position:absolute;left:-12px;top:10px;width:24px;height:24px;background:var(--surface3);border:2px solid var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:var(--accent2)">3</span>
+        <strong>Log Action</strong> &mdash; Insert into <code>ae_action_log</code> with input_data, output_data, duration_ms, status.
+      </li>
+      <li style="counter-increment:steps;padding:10px 0 10px 40px;position:relative;border-left:2px solid var(--border);margin-left:14px">
+        <span style="position:absolute;left:-12px;top:10px;width:24px;height:24px;background:var(--surface3);border:2px solid var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:var(--accent2)">4</span>
+        <strong>Save to Module DB</strong> &mdash; <code>saveToModuleDatabase()</code> routes content to the target module's table as a draft.
+      </li>
+      <li style="counter-increment:steps;padding:10px 0 10px 40px;position:relative;margin-left:14px">
+        <span style="position:absolute;left:-12px;top:10px;width:24px;height:24px;background:var(--surface3);border:2px solid var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:var(--green)">5</span>
+        <strong>Notify</strong> &mdash; Create <code>action_completed</code> notification.
+      </li>
+    </ol>
+  </div>
+
+  <h3>Action Types &amp; Module Routing</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Action Type</th><th>Target Table</th><th>Saved As</th></tr></thead>
+    <tbody>
+      <tr><td><code>generate_content</code> / <code>publish_blog</code></td><td>cc_projects</td><td>Blog draft (status: draft)</td></tr>
+      <tr><td><code>schedule_post</code></td><td>sm_posts</td><td>Social media post draft</td></tr>
+      <tr><td><code>send_campaign</code></td><td>es_campaigns</td><td>Email/SMS campaign draft</td></tr>
+      <tr><td><code>adjust_budget</code></td><td>pa_campaigns</td><td>Budget adjustment record</td></tr>
+      <tr><td><code>respond_review</code></td><td>rv_responses</td><td>Review response draft</td></tr>
+      <tr><td><code>generate_report</code></td><td>cc_projects</td><td>Report (type: report)</td></tr>
+      <tr><td><code>optimize_keywords</code></td><td>cc_projects</td><td>SEO report (type: seo_report)</td></tr>
+      <tr><td><code>update_meta</code></td><td>cc_projects</td><td>SEO audit (type: seo_audit)</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>All saved records include metadata: <code>{ source: 'autopilot', ruleId, actionLogId }</code></p>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ MARKETPLACE ═══════════════════════════════════════════ -->
+<section id="marketplace">
+  <h2><span class="icon" style="background:rgba(253,121,168,0.15);color:var(--pink)">&#10024;</span> Marketplace Recipes</h2>
+  <p class="subtitle">20 pre-built automation templates. One-click install creates a working <code>ae_rules</code> entry and auto-upgrades the module to copilot if needed.</p>
+
+  <div class="recipe-grid">
+    <div class="recipe">
+      <div class="recipe-header"><span class="recipe-icon">&#128640;</span><span class="recipe-name">Blog &rarr; Social Blast</span></div>
+      <div class="recipe-desc">New blog &rarr; 5 social posts across Instagram, Twitter, LinkedIn</div>
+      <div class="recipe-meta"><span class="badge badge-purple">event</span><span class="badge badge-green">starter</span><span class="badge badge-gray">3 hrs/wk</span></div>
+    </div>
+    <div class="recipe">
+      <div class="recipe-header"><span class="recipe-icon">&#128197;</span><span class="recipe-name">Weekly Content Calendar</span></div>
+      <div class="recipe-desc">Monday 8am &rarr; generate full week content plan</div>
+      <div class="recipe-meta"><span class="badge badge-blue">schedule</span><span class="badge badge-green">starter</span><span class="badge badge-gray">2 hrs/wk</span></div>
+    </div>
+    <div class="recipe">
+      <div class="recipe-header"><span class="recipe-icon">&#9997;</span><span class="recipe-name">Daily Content Brief</span></div>
+      <div class="recipe-desc">Daily at 7:30am &rarr; 3 content topic briefs</div>
+      <div class="recipe-meta"><span class="badge badge-blue">schedule</span><span class="badge badge-green">starter</span><span class="badge badge-gray">1 hr/day</span></div>
+    </div>
+    <div class="recipe">
+      <div class="recipe-header"><span class="recipe-icon">&#11088;</span><span class="recipe-name">Auto Review Responder</span></div>
+      <div class="recipe-desc">New 4-5 star review &rarr; grateful, personalized response</div>
+      <div class="recipe-meta"><span class="badge badge-purple">event</span><span class="badge badge-green">starter</span><span class="badge badge-gray">4 hrs/wk</span></div>
+    </div>
+    <div class="recipe">
+      <div class="recipe-header"><span class="recipe-icon">&#128680;</span><span class="recipe-name">Low Rating Alert</span></div>
+      <div class="recipe-desc">Rating &lt; 3 &rarr; empathetic response + escalation</div>
+      <div class="recipe-meta"><span class="badge badge-purple">event</span><span class="badge badge-green">starter</span><span class="badge badge-gray">2 hrs/wk</span></div>
+    </div>
+    <div class="recipe">
+      <div class="recipe-header"><span class="recipe-icon">&#128075;</span><span class="recipe-name">New Lead Welcome</span></div>
+      <div class="recipe-desc">New CRM contact &rarr; personalized welcome email</div>
+      <div class="recipe-meta"><span class="badge badge-purple">event</span><span class="badge badge-amber">intermediate</span><span class="badge badge-gray">3 hrs/wk</span></div>
+    </div>
+    <div class="recipe">
+      <div class="recipe-header"><span class="recipe-icon">&#128269;</span><span class="recipe-name">Weekly SEO Briefs</span></div>
+      <div class="recipe-desc">Tuesday 9am &rarr; 5 keyword-optimized content briefs</div>
+      <div class="recipe-meta"><span class="badge badge-blue">schedule</span><span class="badge badge-amber">intermediate</span><span class="badge badge-gray">4 hrs/wk</span></div>
+    </div>
+    <div class="recipe">
+      <div class="recipe-header"><span class="recipe-icon">&#128200;</span><span class="recipe-name">Monthly Meta Audit</span></div>
+      <div class="recipe-desc">1st of month &rarr; full meta tag audit + recommendations</div>
+      <div class="recipe-meta"><span class="badge badge-blue">schedule</span><span class="badge badge-amber">intermediate</span><span class="badge badge-gray">3 hrs/mo</span></div>
+    </div>
+    <div class="recipe">
+      <div class="recipe-header"><span class="recipe-icon">&#128161;</span><span class="recipe-name">Competitor Keyword Gap</span></div>
+      <div class="recipe-desc">Wednesday 10am &rarr; gap analysis report</div>
+      <div class="recipe-meta"><span class="badge badge-blue">schedule</span><span class="badge badge-purple">advanced</span><span class="badge badge-gray">5 hrs/wk</span></div>
+    </div>
+    <div class="recipe">
+      <div class="recipe-header"><span class="recipe-icon">&#128176;</span><span class="recipe-name">ROAS Guardian</span></div>
+      <div class="recipe-desc">ROAS &lt; 2.0 &rarr; auto-reallocate budget</div>
+      <div class="recipe-meta"><span class="badge badge-amber">threshold</span><span class="badge badge-purple">advanced</span><span class="badge badge-gray">10 hrs/mo</span></div>
+    </div>
+    <div class="recipe">
+      <div class="recipe-header"><span class="recipe-icon">&#9878;</span><span class="recipe-name">Weekly Budget Rebalancer</span></div>
+      <div class="recipe-desc">Friday 4pm &rarr; rebalance ad budgets based on 7-day data</div>
+      <div class="recipe-meta"><span class="badge badge-blue">schedule</span><span class="badge badge-amber">intermediate</span><span class="badge badge-gray">3 hrs/wk</span></div>
+    </div>
+    <div class="recipe">
+      <div class="recipe-header"><span class="recipe-icon">&#128202;</span><span class="recipe-name">Ad Performance Report</span></div>
+      <div class="recipe-desc">Friday 5pm &rarr; weekly ad performance summary</div>
+      <div class="recipe-meta"><span class="badge badge-blue">schedule</span><span class="badge badge-green">starter</span><span class="badge badge-gray">2 hrs/wk</span></div>
+    </div>
+    <div class="recipe">
+      <div class="recipe-header"><span class="recipe-icon">&#128140;</span><span class="recipe-name">Re-engagement Campaign</span></div>
+      <div class="recipe-desc">30-day inactive subscriber &rarr; 3-email win-back sequence</div>
+      <div class="recipe-meta"><span class="badge badge-purple">event</span><span class="badge badge-amber">intermediate</span><span class="badge badge-gray">4 hrs/wk</span></div>
+    </div>
+    <div class="recipe">
+      <div class="recipe-header"><span class="recipe-icon">&#128232;</span><span class="recipe-name">Monthly Newsletter</span></div>
+      <div class="recipe-desc">1st of month &rarr; newsletter with top content highlights</div>
+      <div class="recipe-meta"><span class="badge badge-blue">schedule</span><span class="badge badge-green">starter</span><span class="badge badge-gray">4 hrs/mo</span></div>
+    </div>
+    <div class="recipe">
+      <div class="recipe-header"><span class="recipe-icon">&#128203;</span><span class="recipe-name">Weekly Performance Report</span></div>
+      <div class="recipe-desc">Monday 8am &rarr; cross-module performance summary</div>
+      <div class="recipe-meta"><span class="badge badge-blue">schedule</span><span class="badge badge-green">starter</span><span class="badge badge-gray">2 hrs/wk</span></div>
+    </div>
+    <div class="recipe">
+      <div class="recipe-header"><span class="recipe-icon">&#127919;</span><span class="recipe-name">Friday Goal Progress</span></div>
+      <div class="recipe-desc">Friday 3pm &rarr; goal progress update with risk highlights</div>
+      <div class="recipe-meta"><span class="badge badge-blue">schedule</span><span class="badge badge-green">starter</span><span class="badge badge-gray">1 hr/wk</span></div>
+    </div>
+    <div class="recipe">
+      <div class="recipe-header"><span class="recipe-icon">&#128218;</span><span class="recipe-name">KB Gap Filler</span></div>
+      <div class="recipe-desc">15th of month &rarr; 3 knowledge base articles for coverage gaps</div>
+      <div class="recipe-meta"><span class="badge badge-blue">schedule</span><span class="badge badge-amber">intermediate</span><span class="badge badge-gray">5 hrs/mo</span></div>
+    </div>
+    <div class="recipe">
+      <div class="recipe-header"><span class="recipe-icon">&#127911;</span><span class="recipe-name">Ticket &rarr; FAQ Article</span></div>
+      <div class="recipe-desc">Closed support ticket &rarr; auto-draft FAQ article</div>
+      <div class="recipe-meta"><span class="badge badge-purple">event</span><span class="badge badge-amber">intermediate</span><span class="badge badge-gray">3 hrs/wk</span></div>
+    </div>
+    <div class="recipe">
+      <div class="recipe-header"><span class="recipe-icon">&#129309;</span><span class="recipe-name">Influencer Outreach</span></div>
+      <div class="recipe-desc">New influencer campaign &rarr; personalized outreach emails</div>
+      <div class="recipe-meta"><span class="badge badge-purple">event</span><span class="badge badge-amber">intermediate</span><span class="badge badge-gray">6 hrs/campaign</span></div>
+    </div>
+    <div class="recipe">
+      <div class="recipe-header"><span class="recipe-icon">&#128184;</span><span class="recipe-name">Monthly Affiliate Report</span></div>
+      <div class="recipe-desc">Last day of month &rarr; affiliate performance + payouts</div>
+      <div class="recipe-meta"><span class="badge badge-blue">schedule</span><span class="badge badge-green">starter</span><span class="badge badge-gray">3 hrs/mo</span></div>
+    </div>
+  </div>
+
+  <h3>Installation Flow</h3>
+  <pre><span class="cm">// 1. User clicks "Install" on recipe card</span>
+POST /api/automation/marketplace/install/<span class="str">blog-social-blast</span>
+
+<span class="cm">// 2. Server checks if already installed</span>
+SELECT * FROM ae_rules WHERE trigger_config LIKE <span class="str">'%"marketplace_recipe_id":"blog-social-blast"%'</span>
+
+<span class="cm">// 3. Creates ae_rules entry</span>
+INSERT INTO ae_rules (module_id, name, trigger_type, trigger_config, action_type, action_config, ...)
+
+<span class="cm">// 4. Auto-upgrades module to copilot if manual</span>
+INSERT INTO ae_module_modes ... ON CONFLICT DO UPDATE SET mode = <span class="str">'copilot'</span>
+
+<span class="cm">// 5. Returns success</span>
+{ success: <span class="kw">true</span>, rule_id: <span class="num">42</span>, mode_set: <span class="str">'copilot'</span> }</pre>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ SETTINGS ═══════════════════════════════════════════ -->
+<section id="settings">
+  <h2><span class="icon" style="background:rgba(253,203,110,0.15);color:var(--amber)">&#9881;</span> Settings</h2>
+  <p class="subtitle">Global workspace-level automation settings stored in <code>ae_settings</code>.</p>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Key</th><th>Default</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>pauseAll</code></td><td><code>'false'</code></td><td>boolean string</td><td>Global kill switch &mdash; stops all automation</td></tr>
+      <tr><td><code>defaultMode</code></td><td><code>'manual'</code></td><td>enum</td><td>Default mode for new modules</td></tr>
+      <tr><td><code>maxActionsPerDay</code></td><td><code>'50'</code></td><td>integer string</td><td>Daily action cap</td></tr>
+      <tr><td><code>maxActionsPerHour</code></td><td><code>'10'</code></td><td>integer string</td><td>Hourly action cap</td></tr>
+      <tr><td><code>monthlyBudgetLimit</code></td><td><code>'0'</code></td><td>integer string</td><td>Monthly cost limit (0 = unlimited)</td></tr>
+      <tr><td><code>confidenceThreshold</code></td><td><code>'70'</code></td><td>0-100 integer</td><td>Min confidence for autopilot execution</td></tr>
+      <tr><td><code>riskLevel</code></td><td><code>'balanced'</code></td><td>enum</td><td>conservative | balanced | aggressive</td></tr>
+      <tr><td><code>notifyNewSuggestions</code></td><td><code>'true'</code></td><td>boolean string</td><td>Notify on new approval queue items</td></tr>
+      <tr><td><code>notifyCompletedActions</code></td><td><code>'true'</code></td><td>boolean string</td><td>Notify on successful execution</td></tr>
+      <tr><td><code>notifyFailedActions</code></td><td><code>'true'</code></td><td>boolean string</td><td>Notify on execution failures</td></tr>
+      <tr><td><code>notifyRuleTriggers</code></td><td><code>'true'</code></td><td>boolean string</td><td>Notify when rules fire</td></tr>
+      <tr><td><code>previousModes</code></td><td><code>'{}'</code></td><td>JSON string</td><td>Snapshot of modes before bulk change</td></tr>
+      <tr><td><code>autopilotStrategy</code></td><td><code>''</code></td><td>string</td><td>Strategy notes (optional)</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ NOTIFICATIONS ═══════════════════════════════════════════ -->
+<section id="notifications">
+  <h2><span class="icon" style="background:rgba(139,92,246,0.15);color:var(--purple)">&#128276;</span> Notifications</h2>
+  <p class="subtitle">Real-time activity notifications stored in <code>ae_notifications</code>.</p>
+
+  <div class="card-grid">
+    <div class="card-sm">
+      <h4><span class="badge badge-green">action_completed</span></h4>
+      <p>Action executed successfully &mdash; either autopilot direct or approved copilot action.</p>
+    </div>
+    <div class="card-sm">
+      <h4><span class="badge badge-blue">suggestion_ready</span></h4>
+      <p>New item added to approval queue &mdash; from rule trigger or direct AI suggestion.</p>
+    </div>
+    <div class="card-sm">
+      <h4><span class="badge badge-red">action_failed</span></h4>
+      <p>Action execution failed or was rejected by user in approval queue.</p>
+    </div>
+    <div class="card-sm">
+      <h4><span class="badge badge-amber">rule_triggered</span></h4>
+      <p>Informational &mdash; a rule's trigger condition was met (logged for visibility).</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ API ═══════════════════════════════════════════ -->
+<section id="api">
+  <h2><span class="icon" style="background:rgba(59,130,246,0.15);color:var(--blue)">&#128268;</span> API Reference</h2>
+  <p class="subtitle">All endpoints prefixed with <code>/api/automation</code>. Require authentication (<code>requireAuth</code>) and workspace context (<code>requireWorkspace</code>).</p>
+
+  <h3>Modes</h3>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-get">GET</span><span class="endpoint-path">/modes</span></div>
+    <div class="endpoint-body">Returns all 25 module modes as <code>{ moduleId: { mode, config, riskLevel, updatedAt } }</code></div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-get">GET</span><span class="endpoint-path">/modes/:moduleId</span></div>
+    <div class="endpoint-body">Returns single module mode. Defaults to manual/conservative if not found.</div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-put">PUT</span><span class="endpoint-path">/modes/:moduleId</span></div>
+    <div class="endpoint-body">Body: <code>{ mode, config?, riskLevel? }</code>. Upserts mode. Logs change to ae_action_log.</div>
+  </div>
+
+  <h3>Rules</h3>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-get">GET</span><span class="endpoint-path">/rules</span></div>
+    <div class="endpoint-body">List all rules. Optional query: <code>?module=content</code>. Returns parsed trigger/action configs.</div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-post">POST</span><span class="endpoint-path">/rules</span></div>
+    <div class="endpoint-body">Create rule. Required: <code>module_id, name, trigger_type, trigger_config, action_type</code>.</div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-put">PUT</span><span class="endpoint-path">/rules/:id</span></div>
+    <div class="endpoint-body">Update rule. Allowed fields: name, trigger_type, action_type, requires_approval, status, module_id, trigger_config, action_config.</div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-delete">DELETE</span><span class="endpoint-path">/rules/:id</span></div>
+    <div class="endpoint-body">Delete rule. Logs deletion to activity.</div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-post">POST</span><span class="endpoint-path">/rules/trigger-event</span></div>
+    <div class="endpoint-body">External event trigger. Body: <code>{ event, moduleId, data? }</code>. Evaluates matching event rules.</div>
+  </div>
+
+  <h3>Approval Queue</h3>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-get">GET</span><span class="endpoint-path">/approvals</span></div>
+    <div class="endpoint-body">List queue items. Query: <code>?module=X&amp;status=pending&amp;priority=high&amp;limit=50&amp;offset=0</code></div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-get">GET</span><span class="endpoint-path">/approvals/count</span></div>
+    <div class="endpoint-body">Returns <code>{ total, byModule: {} }</code></div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-post">POST</span><span class="endpoint-path">/approvals/:id/approve</span></div>
+    <div class="endpoint-body">Approve item. Logs to ae_action_log. Creates notification.</div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-post">POST</span><span class="endpoint-path">/approvals/:id/reject</span></div>
+    <div class="endpoint-body">Reject item. Body: <code>{ notes? }</code>. Logs cancellation.</div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-post">POST</span><span class="endpoint-path">/approvals/:id/edit</span></div>
+    <div class="endpoint-body">Edit payload + approve. Body: <code>{ payload }</code>.</div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-post">POST</span><span class="endpoint-path">/approvals/:id/generate</span></div>
+    <div class="endpoint-body">Generate full content via Claude. Caches in payload.generated_content.</div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-post">POST</span><span class="endpoint-path">/approvals/batch</span></div>
+    <div class="endpoint-body">Body: <code>{ ids: [], action: 'approve'|'reject' }</code>. Transactional.</div>
+  </div>
+
+  <h3>Actions &amp; Stats</h3>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-get">GET</span><span class="endpoint-path">/actions</span></div>
+    <div class="endpoint-body">Execution log. Query: <code>?module=X&amp;status=completed&amp;limit=30&amp;offset=0</code></div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-get">GET</span><span class="endpoint-path">/actions/stats/:moduleId</span></div>
+    <div class="endpoint-body">Today's stats for module: <code>{ today, completed, failed, successRate }</code></div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-get">GET</span><span class="endpoint-path">/actions/stats</span></div>
+    <div class="endpoint-body">Global stats: <code>{ today, completed, failed, queued, byModule }</code></div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-get">GET</span><span class="endpoint-path">/status</span></div>
+    <div class="endpoint-body">Command Center overview: <code>{ modes, moduleStatuses, pendingApprovals, todayActions, recentActions }</code></div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-get">GET</span><span class="endpoint-path">/overview</span></div>
+    <div class="endpoint-body">Dashboard: <code>{ totalActions, actionsToday, actionsThisWeek, successRate, pendingApprovals, activeRules, autopilotModules, copilotModules }</code></div>
+  </div>
+
+  <h3>Settings, Notifications, Marketplace</h3>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-get">GET</span><span class="endpoint-path">/settings</span></div>
+    <div class="endpoint-body">All settings merged with defaults.</div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-put">PUT</span><span class="endpoint-path">/settings</span></div>
+    <div class="endpoint-body">Upsert settings. Body: <code>{ key: value, ... }</code></div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-get">GET</span><span class="endpoint-path">/notifications</span></div>
+    <div class="endpoint-body">Recent notifications. Query: <code>?limit=20</code>. Returns <code>{ items, unreadCount }</code></div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-get">GET</span><span class="endpoint-path">/marketplace/recipes</span></div>
+    <div class="endpoint-body">All 20 recipes with <code>installed</code> flag. Query: <code>?category=X&amp;search=Y</code></div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-post">POST</span><span class="endpoint-path">/marketplace/install/:recipeId</span></div>
+    <div class="endpoint-body">Install recipe. Auto-upgrades module to copilot. Returns <code>{ success, rule_id, mode_set }</code></div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method method-delete">DELETE</span><span class="endpoint-path">/marketplace/uninstall/:recipeId</span></div>
+    <div class="endpoint-body">Remove installed recipe.</div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ FRONTEND ═══════════════════════════════════════════ -->
+<section id="frontend">
+  <h2><span class="icon" style="background:rgba(253,121,168,0.15);color:var(--pink)">&#128421;</span> Frontend UI</h2>
+  <p class="subtitle"><code>AutomationRulesPage.jsx</code> &mdash; the main automation management interface.</p>
+
+  <h3>Tab Structure</h3>
+  <div class="two-col">
+    <div class="card-sm">
+      <h4>My Rules Tab</h4>
+      <ul style="list-style:none;padding:0;font-size:0.85rem;color:var(--text2)">
+        <li>&bull; Filter dropdown (all modules or specific)</li>
+        <li>&bull; "+ Create Rule" button &rarr; modal form</li>
+        <li>&bull; Rules grouped by module_id</li>
+        <li>&bull; Each rule: trigger badge, name, run count, last triggered</li>
+        <li>&bull; Toggle switch (active/inactive)</li>
+        <li>&bull; Delete with confirmation</li>
+        <li>&bull; Expandable detail: trigger_config + action_config as JSON</li>
+        <li>&bull; "Marketplace" badge on recipe-installed rules</li>
+        <li>&bull; "needs approval" indicator</li>
+      </ul>
+    </div>
+    <div class="card-sm">
+      <h4>Marketplace Tab</h4>
+      <ul style="list-style:none;padding:0;font-size:0.85rem;color:var(--text2)">
+        <li>&bull; Search input (filters by name/description)</li>
+        <li>&bull; Category pills filter (8 categories + All)</li>
+        <li>&bull; 2-column recipe card grid</li>
+        <li>&bull; Cards: icon, name, description, modules, difficulty, saves</li>
+        <li>&bull; Install / Installed toggle button</li>
+        <li>&bull; Error banner (red) for install failures</li>
+        <li>&bull; Mode notice (green) after install</li>
+        <li>&bull; Handles 409 "already installed" gracefully</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Color Coding</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Element</th><th>Colors</th></tr></thead>
+    <tbody>
+      <tr><td>Trigger badges</td><td><span class="badge badge-blue">schedule</span> <span class="badge badge-purple">event</span> <span class="badge badge-amber">threshold</span></td></tr>
+      <tr><td>Difficulty</td><td><span class="badge badge-green">starter</span> <span class="badge badge-amber">intermediate</span> <span class="badge badge-purple">advanced</span></td></tr>
+      <tr><td>Categories</td><td>Content=#3b82f6 &bull; Reviews=#8b5cf6 &bull; SEO=#5E8E6E &bull; Ads=#f59e0b &bull; Email=#ec4899 &bull; Reports=#06b6d4 &bull; KB=#f97316 &bull; Growth=#e11d48</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ WALKTHROUGH ═══════════════════════════════════════════ -->
+<section id="walkthrough">
+  <h2><span class="icon" style="background:rgba(0,184,148,0.15);color:var(--green)">&#128218;</span> End-to-End Walkthrough</h2>
+  <p class="subtitle">A complete example: "Weekly Newsletter" rule in autopilot with balanced risk.</p>
+
+  <div class="card">
+    <h4>Rule Configuration</h4>
+    <div class="table-wrap"><table>
+      <tbody>
+        <tr><td style="width:160px;font-weight:600">Rule</td><td>Weekly Newsletter</td></tr>
+        <tr><td style="font-weight:600">Module</td><td>email-sms</td></tr>
+        <tr><td style="font-weight:600">Trigger</td><td>Schedule &mdash; every Thursday at 14:00</td></tr>
+        <tr><td style="font-weight:600">Action</td><td>send_campaign</td></tr>
+        <tr><td style="font-weight:600">requires_approval</td><td>true</td></tr>
+        <tr><td style="font-weight:600">Module mode</td><td>autopilot</td></tr>
+        <tr><td style="font-weight:600">Risk level</td><td>balanced</td></tr>
+        <tr><td style="font-weight:600">Confidence threshold</td><td>70%</td></tr>
+        <tr><td style="font-weight:600">run_count</td><td>12</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="flow">
+    <div class="flow-step">
+      <div class="step-num">Thursday 14:00</div>
+      <div class="step-title">Tick loop evaluates rule</div>
+      <div class="step-detail">Schedule trigger matches (within 2-minute window). Last triggered 7 days ago &mdash; cooldown (6d minimum) passes.</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">Safety Check</div>
+      <div class="step-title">Limits verified</div>
+      <div class="step-detail">pauseAll = false. Actions today: 8 / 50 max. Actions this hour: 2 / 10 max. All clear.</div>
+    </div>
+    <div class="flow-step decision">
+      <div class="step-num">Confidence</div>
+      <div class="step-title">Score computed: 80%</div>
+      <div class="step-detail">Base 0.50 + run_count>0 (+0.10) + run_count>=5 (+0.05) + has time config (+0.10) + has action params (+0.10) &minus; no threshold bonus = <strong>0.80 (80%)</strong>. Above 70% threshold.</div>
+    </div>
+    <div class="flow-step decision">
+      <div class="step-num">Risk Check</div>
+      <div class="step-title">Balanced policy evaluation</div>
+      <div class="step-detail"><code>send_campaign</code> is high-impact, but run_count=12 (not first run). However, <code>requires_approval = true</code> on the rule itself. <strong>Approval required.</strong></div>
+    </div>
+    <div class="flow-step queue">
+      <div class="step-num">Queued</div>
+      <div class="step-title">Inserted into approval queue</div>
+      <div class="step-detail">ae_approval_queue entry created: confidence=0.80, priority='medium', source='rule'. Notification: "suggestion_ready". Rule marked: last_triggered=now, run_count=13.</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">User Review</div>
+      <div class="step-title">User sees pending approval</div>
+      <div class="step-detail">In Automation Rules &rarr; Approvals tab. Shows 80% confidence, action details, payload.</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">Generate</div>
+      <div class="step-title">User clicks "Generate"</div>
+      <div class="step-detail">Claude generates full newsletter HTML. Cached in payload.generated_content. User previews the email.</div>
+    </div>
+    <div class="flow-step action">
+      <div class="step-num">Approved</div>
+      <div class="step-title">User approves</div>
+      <div class="step-detail">Status &rarr; 'approved'. Logged to ae_action_log (mode: copilot, status: completed). Draft saved to es_campaigns with metadata {source: 'autopilot', ruleId}. Notification: "action_completed".</div>
+    </div>
+  </div>
+
+  <div class="highlight-box">
+    <strong>Key Insight:</strong> Even in autopilot mode, the <code>requires_approval</code> flag on the rule itself always wins. This lets users create high-confidence rules that still require a human sign-off &mdash; the best of both worlds.
+  </div>
+</section>
+
+</div>
+
+<footer>
+  <div class="container">
+    Overload Automation Engine &mdash; Architecture Documentation<br>
+    <span style="color:var(--text3)">6 tables &bull; 25 modules &bull; 20 recipes &bull; 60s tick &bull; 3 modes &bull; 3 risk levels</span>
+  </div>
+</footer>
+
+<script>
+  // Sticky nav active state
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav a');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const link = document.querySelector(`.nav a[href="#${entry.target.id}"]`);
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-80px 0px -60% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+
+  // Smooth scroll
+  navLinks.forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+</script>
+
+</body>
+</html>
