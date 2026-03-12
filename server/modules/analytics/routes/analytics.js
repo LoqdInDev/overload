@@ -17,7 +17,7 @@ router.get('/overview', async (req, res) => {
   else if (days) { const safeDays = Math.min(Math.max(parseInt(days) || 7, 1), 365); dateCond += ` AND created_at >= NOW() - INTERVAL '${safeDays} days'`; }
   if (end_date) { dateCond += ' AND created_at <= ?'; params.push(end_date); }
 
-  const stats = db.prepare(`
+  const stats = await db.prepare(`
     SELECT module_id, COUNT(*) as count
     FROM activity_log
     WHERE workspace_id = ?${dateCond}
@@ -88,11 +88,11 @@ router.get('/module/:moduleId', async (req, res) => {
   else if (days) { const safeDays = Math.min(Math.max(parseInt(days) || 7, 1), 365); dateCond += ` AND created_at >= NOW() - INTERVAL '${safeDays} days'`; }
   if (end_date) { dateCond += ' AND created_at <= ?'; dateParams.push(end_date); }
 
-  const total = db.prepare(
+  const totalRow = await db.prepare(
     `SELECT COUNT(*) as count FROM activity_log WHERE module_id = ? AND workspace_id = ?${dateCond}`
   ).get(...baseParams, ...dateParams);
 
-  const actions = db.prepare(`
+  const actions = await db.prepare(`
     SELECT action, COUNT(*) as count
     FROM activity_log
     WHERE module_id = ? AND workspace_id = ?${dateCond}
@@ -107,7 +107,7 @@ router.get('/module/:moduleId', async (req, res) => {
     LIMIT 10
   `).all(...baseParams, ...dateParams);
 
-  res.json({ module_id: moduleId, total: total.count, actions, recent });
+  res.json({ module_id: moduleId, total: totalRow.count, actions, recent });
 });
 
 // ══════════════════════════════════════════════════════
