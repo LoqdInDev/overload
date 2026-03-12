@@ -52,7 +52,7 @@ const app = express();
 
 // Modules that require owner or admin role
 const ADMIN_MODULES = new Set([
-  'team', 'integrations', 'api-manager', 'webhooks', 'workflow-builder',
+  'team', 'integrations', 'workflow-builder',
   'autopilot', 'automation-settings',
 ]);
 const PORT = process.env.PORT || 3000;

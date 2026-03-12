@@ -16,8 +16,7 @@ const QWEN_MODEL = 'qwen/qwen3.5-397b-a17b';
 const CLAUDE_MODULES = new Set([
   'autopilot', 'brand-strategy', 'budget-optimizer', 'chatbot',
   'crm', 'customer-intelligence', 'competitors', 'the-advisor',
-  'calendar', 'client-manager', 'goal-tracker', 'knowledge-base',
-  'referral-loyalty',
+  'calendar', 'client-manager',
 ]);
 
 const MAX_RETRIES = 3;

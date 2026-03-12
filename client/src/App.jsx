@@ -48,18 +48,13 @@ const AbTestingPage = lazy(() => import('./modules/ab-testing/AbTestingPage'));
 const BudgetOptimizerPage = lazy(() => import('./modules/budget-optimizer/BudgetOptimizerPage'));
 const AudienceBuilderPage = lazy(() => import('./modules/audience-builder/AudienceBuilderPage'));
 const IntegrationsPage = lazy(() => import('./modules/integrations/IntegrationsPage'));
-const ApiManagerPage = lazy(() => import('./modules/api-manager/ApiManagerPage'));
-const WebhooksPage = lazy(() => import('./modules/webhooks/WebhooksPage'));
 const WorkflowBuilderPage = lazy(() => import('./modules/workflow-builder/WorkflowBuilderPage'));
 const AutopilotPage = lazy(() => import('./modules/autopilot/AutopilotPage'));
 const CustomerAiPage = lazy(() => import('./modules/customer-ai/CustomerAiPage'));
 const BrandHubPage = lazy(() => import('./modules/brand-hub/BrandHubPage'));
 const TeamPage = lazy(() => import('./modules/team/TeamPage'));
 const PrPressPage = lazy(() => import('./modules/pr-press/PrPressPage'));
-const ReferralLoyaltyPage = lazy(() => import('./modules/referral-loyalty/ReferralLoyaltyPage'));
-const GoalTrackerPage = lazy(() => import('./modules/goal-tracker/GoalTrackerPage'));
 const EcommerceHubPage = lazy(() => import('./modules/ecommerce-hub/EcommerceHubPage'));
-const KnowledgeBasePage = lazy(() => import('./modules/knowledge-base/KnowledgeBasePage'));
 const TheAdvisorPage = lazy(() => import('./modules/the-advisor/TheAdvisorPage'));
 const ClientManagerPage = lazy(() => import('./modules/client-manager/ClientManagerPage'));
 const ApprovalsPage = lazy(() => import('./modules/approvals/ApprovalsPage'));
@@ -460,8 +455,6 @@ export default function App() {
                     <Route path="/budget-optimizer/*" element={<M component={BudgetOptimizerPage} name="Budget Optimizer" />} />
                     <Route path="/audience-builder/*" element={<M component={AudienceBuilderPage} name="Audience Builder" />} />
                     <Route path="/integrations/*" element={<M component={IntegrationsPage} name="Integrations" />} />
-                    <Route path="/api-manager/*" element={<M component={ApiManagerPage} name="API Manager" />} />
-                    <Route path="/webhooks/*" element={<M component={WebhooksPage} name="Webhooks" />} />
                     <Route path="/workflow-builder/*" element={<M component={WorkflowBuilderPage} name="Workflow Builder" />} />
                     <Route path="/autopilot/*" element={<M component={AutopilotPage} name="Autopilot" />} />
                     <Route path="/brand-profile/*" element={<Navigate to="/brand-hub" replace />} />
@@ -469,12 +462,9 @@ export default function App() {
                     <Route path="/brand-hub/*" element={<M component={BrandHubPage} name="Brand Hub" />} />
                     <Route path="/team/*" element={<M component={TeamPage} name="Team" />} />
                     <Route path="/pr-press/*" element={<M component={PrPressPage} name="PR & Press" />} />
-                    <Route path="/referral-loyalty/*" element={<M component={ReferralLoyaltyPage} name="Referral & Loyalty" />} />
-                    <Route path="/goal-tracker/*" element={<M component={GoalTrackerPage} name="Goal Tracker" />} />
                     <Route path="/ecommerce-hub/*" element={<M component={EcommerceHubPage} name="E-commerce Hub" />} />
                     <Route path="/customer-intelligence/*" element={<Navigate to="/crm" replace />} />
                     <Route path="/support-center/*" element={<Navigate to="/customer-ai" replace />} />
-                    <Route path="/knowledge-base/*" element={<M component={KnowledgeBasePage} name="Knowledge Base" />} />
                     <Route path="/the-advisor/*" element={<M component={TheAdvisorPage} name="The Advisor" />} />
                     <Route path="/client-manager/*" element={<M component={ClientManagerPage} name="Client Manager" />} />
                     <Route path="/billing" element={<BillingPage />} />

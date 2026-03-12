@@ -22,7 +22,7 @@ const CHAPTERS = [
       },
       {
         title: 'Navigating the Sidebar',
-        text: 'The left sidebar organizes all 36 modules into categories: Create, Advertise, Analyze, Manage, Connect, Automate, and Settings. Click any module to open it. The sidebar collapses on smaller screens — use the hamburger menu to toggle it. Your 3 most-used modules appear at the top for quick access. At the top of the sidebar, you\'ll see the Workspace Switcher — use it to switch between workspaces if you manage multiple brands or clients.',
+        text: 'The left sidebar organizes all 31 modules into categories: Create, Advertise, Analyze, Manage, Connect, Automate, and Settings. Click any module to open it. The sidebar collapses on smaller screens — use the hamburger menu to toggle it. Your 3 most-used modules appear at the top for quick access. At the top of the sidebar, you\'ll see the Workspace Switcher — use it to switch between workspaces if you manage multiple brands or clients.',
       },
       {
         title: 'Dark Mode & Theme',
@@ -131,12 +131,12 @@ const CHAPTERS = [
       },
       {
         title: 'Reports & Goal Tracking',
-        text: 'Build custom reports combining data from any module. Schedule automatic weekly or monthly reports. The Goal Tracker lets you set KPIs (revenue, traffic, leads) and tracks progress with visual dashboards and forecasting.',
+        text: 'Build custom reports combining data from any module. Schedule automatic weekly or monthly reports. The Analytics dashboard includes a built-in Goal Tracker widget to set KPIs (revenue, traffic, leads) and track progress with visual progress bars.',
         path: '/reports',
         cta: 'Open Reports',
       },
     ],
-    tip: 'Pro tip: Set up Goal Tracker first with your key KPIs. The AI Advisor uses these goals to prioritize its daily recommendations.',
+    tip: 'Pro tip: Set up goals in the Analytics dashboard first with your key KPIs. The AI Advisor uses these goals to prioritize its daily recommendations.',
   },
   {
     id: 'automation',
@@ -196,16 +196,10 @@ const CHAPTERS = [
         text: 'Each integration syncs different data. E-commerce platforms (Shopify, BigCommerce) sync orders, revenue, and product data. Ad platforms sync campaign performance, spend, and ROAS. Email tools sync subscriber counts and campaign metrics. All this data feeds into Analytics and The Advisor.',
       },
       {
-        title: 'API Manager',
-        text: 'For advanced users, the API Manager lets you create and manage custom API connections. Generate API keys for external tools to push data into Overload, or configure custom webhooks to trigger actions in other systems when events occur in Overload.',
-        path: '/api-manager',
-        cta: 'Open API Manager',
-      },
-      {
-        title: 'Webhooks & Zapier',
-        text: 'Webhooks send real-time notifications to external URLs when events occur. Zapier integration lets you connect Overload to 5,000+ apps without code. Set up triggers like "when Overload publishes a blog post, add it to my Notion database" or "when a campaign fails, message me on Slack".',
-        path: '/webhooks',
-        cta: 'Open Webhooks',
+        title: 'Workflow Automations',
+        text: 'Use the Workflow Builder to create cross-module automations. Set up triggers like "when Overload publishes a blog post, share it on social media" or "when a campaign underperforms, notify the team". Chain actions across modules without code.',
+        path: '/workflow-builder',
+        cta: 'Open Workflow Builder',
       },
     ],
     tip: 'Pro tip: Connect Shopify/Stripe first for revenue data, then your ad platforms. This lets the AI calculate true ROAS from day one.',

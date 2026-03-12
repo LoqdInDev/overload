@@ -333,7 +333,7 @@ const CHAPTERS = [
       },
       {
         title: 'Set Per-Module Automation Modes',
-        text: 'Each of the 36 modules can run in its own mode independently. Go to Automation Settings and set each module to Manual, Copilot, or Autopilot. Start conservative — set content modules to Copilot and everything else to Manual. Upgrade to Autopilot only after you trust the output quality.',
+        text: 'Each of the 31 modules can run in its own mode independently. Go to Automation Settings and set each module to Manual, Copilot, or Autopilot. Start conservative — set content modules to Copilot and everything else to Manual. Upgrade to Autopilot only after you trust the output quality.',
         path: '/automation-settings',
         cta: 'Set Module Modes',
         modes: {

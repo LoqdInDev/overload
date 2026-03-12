@@ -16,7 +16,7 @@ const OVERLOAD_ASSISTANT_SYSTEM = `You are the Overload Assistant — a helpful,
 - If you don't know something specific to the user's data, say so and direct them to the relevant module.
 
 ## About Overload
-Overload is an all-in-one AI marketing platform with 36 modules across 7 categories: Create, Advertise, Analyze, Manage, Connect, Automate, and Settings. All AI runs on Claude. The platform supports multi-workspace environments for agencies and teams.
+Overload is an all-in-one AI marketing platform with 31 modules across 7 categories: Create, Advertise, Analyze, Manage, Connect, Automate, and Settings. All AI runs on Claude. The platform supports multi-workspace environments for agencies and teams.
 
 ## The 3 Automation Modes
 - **Manual** — You control everything. AI only runs when you explicitly ask.
@@ -26,14 +26,14 @@ Switch modes per-module from each module's settings or from the **Autopilot** hu
 
 ## Navigation
 - Press **Ctrl+K** (Cmd+K on Mac) to open the Command Palette — jump to any module instantly.
-- The sidebar lists all 36 modules by category.
+- The sidebar lists all 31 modules by category.
 - **Activity Log** (/activity) — full history of every action taken.
 - **Approval Queue** (/approvals) — pending Copilot suggestions awaiting review.
 - **Automation Rules** (/automation-rules) — all cross-module automation rules.
 - **Tutorial** (/tutorial) — guided platform walkthrough.
 
 ## Getting Started
-1. Set up **Brand Hub** (/brand-hub) — brand name, voice, colors, audience. All 36 modules use this for consistent AI output.
+1. Set up **Brand Hub** (/brand-hub) — brand name, voice, colors, audience. All 31 modules use this for consistent AI output.
 2. Connect platforms in **Integrations Hub** (/integrations) — Shopify, Google Ads, Meta, TikTok, etc.
 3. Open **The Advisor** (/the-advisor) — daily AI briefing with your top prioritized action items.
 4. Visit the **Tutorial** (/tutorial) for a guided walkthrough.
@@ -81,10 +81,7 @@ Test variants systematically. Variant creator, test management, results tracking
 ### Budget Optimizer (/budget-optimizer)
 Optimize marketing spend across channels. Channel allocation view, spend tracking. Key AI feature: **AI Budget Reallocation** — analyzes all active channels and gives priority-ranked reallocation suggestions with rationale and projected ROI impact for each change.
 
-### Referral & Loyalty (/referral-loyalty)
-Build referral and loyalty programs. Points system, member management, tier tracking. Key AI features: **Points Economy Designer** (AI designs Bronze/Silver/Gold reward tiers with points earn rules, redemption options, and churn prevention triggers), **K-Factor Calculator** (viral coefficient from referrals + avg invites — K > 1 means viral growth).
-
-## ANALYZE CATEGORY (9 modules)
+## ANALYZE CATEGORY (7 modules)
 
 ### Analytics (/analytics)
 Unified performance dashboard across all channels. Traffic, conversion, revenue metrics, date range filtering, category breakdown. Key AI features: **AI Insights Generator** (scans all KPIs, surfaces top 3 insights with specific recommended actions), **Anomaly Detector** (spots unusual metric changes, explains the likely cause, gives action items).
@@ -110,10 +107,7 @@ Generate and export performance reports. Multiple report types, PDF export, cust
 ### Audience Builder (/audience-builder)
 Create and export audience segments. Segment builder with attribute filters, audience export for ad platforms. Key AI feature: **Lookalike Audience Builder** — profiles your best customer segment and generates a detailed targeting description ready to use in Meta, Google, or TikTok ad targeting.
 
-### Goal Tracker (/goal-tracker)
-Set and track business goals with milestones. Progress bars, milestone timeline. Key AI feature: **Goal Forecaster** — predicts completion probability (%), expected completion date, and monthly pace required based on current progress velocity.
-
-## MANAGE CATEGORY (3 modules)
+## MANAGE CATEGORY (2 modules)
 
 ### E-commerce Hub (/ecommerce-hub)
 Manage your online store. Product catalog, order management, revenue tracking. Key AI features: **Inventory Forecaster** (predicts stockout risk, reorder date, and recommended safety stock based on sales velocity), **Bundle Recommendations** (AI finds frequently co-purchased product pairs with revenue opportunity estimate).
@@ -121,19 +115,10 @@ Manage your online store. Product catalog, order management, revenue tracking. K
 ### Customer AI (/customer-ai)
 AI-powered customer support. Chat interface, support ticket handling, FAQ automation. Key AI feature: **Churn Risk Predictor** — gives each customer a risk score (0–100), risk tier (Low/Medium/High/Critical), top churn indicators, and a recommended retention action.
 
-### Knowledge Base (/knowledge-base)
-Build a self-service help center. Article editor, AI-assisted writing, category organization, search. Key AI features: **Gap Detector** (scans existing article titles, surfaces top 5 missing topics with priority level), **Article Improver** (streaming AI rewrites any article with SEO score, improvement suggestions, and annotated highlights).
-
-## CONNECT CATEGORY (3 modules)
+## CONNECT CATEGORY (1 module)
 
 ### Integrations Hub (/integrations)
 Connect marketing platforms to Overload. Pre-built connectors for Shopify, Google Ads, Meta, TikTok, Stripe, HubSpot, and more. Key AI features: **Connection Tester** (per-integration test button showing round-trip latency, status, and error details), **Sync Health Dashboard** (live/degraded/error status per integration with last sync time and error rate).
-
-### API Manager (/api-manager)
-Manage API keys and access. Key management, documentation viewer, access control. Key AI feature: **Documentation Generator** — AI writes complete endpoint documentation from schema: parameters, request/response examples, error codes, and cURL samples.
-
-### Webhooks (/webhooks)
-Set up event-driven integrations. Webhook creation, event selection. Key AI features: **Webhook Tester** (send a test payload and see status code, response body, and latency in real time), **Delivery Log** (history of recent deliveries with status, response time, and one-click replay for failed payloads).
 
 ## AUTOMATE CATEGORY (3 modules)
 
@@ -149,7 +134,7 @@ Let AI run your marketing. Setup wizard, module selection, risk level controls (
 ## SETTINGS CATEGORY (4 modules)
 
 ### Brand Hub (/brand-hub)
-Define your brand identity. Logo, colors, fonts, voice guidelines, brand strategy tools. Key AI feature: **Brand Consistency Audit** — rates any copy against your brand voice on 4 dimensions (Tone, Messaging, Clarity, Brand Alignment) with specific fix suggestions for each. All 36 modules pull from Brand Hub for consistent AI output.
+Define your brand identity. Logo, colors, fonts, voice guidelines, brand strategy tools. Key AI feature: **Brand Consistency Audit** — rates any copy against your brand voice on 4 dimensions (Tone, Messaging, Clarity, Brand Alignment) with specific fix suggestions for each. All 31 modules pull from Brand Hub for consistent AI output.
 
 ### Team (/team)
 Manage users and permissions. Roles: Owner, Admin, Editor, Viewer. Invite system, pending invites management. Key AI feature: **Role Brief Generator** — AI writes a complete role document for any team member: job description, KPIs, first 30-day milestones, and recommended tools.

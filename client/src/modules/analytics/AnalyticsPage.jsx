@@ -3,8 +3,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { MODULE_REGISTRY, CATEGORIES } from '../../config/modules';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
-import { postJSON } from '../../lib/api';
-import { connectSSE } from '../../lib/api';
+import { fetchJSON, postJSON, connectSSE } from '../../lib/api';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -39,6 +38,8 @@ export default function AnalyticsPage() {
   const [anomalyResult, setAnomalyResult] = useState(null);
   const [aiInsights, setAiInsights] = useState('');
   const [insightsLoading, setInsightsLoading] = useState(false);
+  const [goals, setGoals] = useState([]);
+  const [goalsLoading, setGoalsLoading] = useState(false);
 
   useEffect(() => {
     const daysMap = { '24h': 1, '7d': 7, '30d': 30, 'All': null };
@@ -48,6 +49,14 @@ export default function AnalyticsPage() {
     const actQs = d ? `?limit=50&days=${d}` : '?limit=50';
     fetch(`${API_BASE}/api/analytics/activity${actQs}`).then(r => r.json()).then(d => setActivity(Array.isArray(d) ? d : [])).catch(() => {});
   }, [timeRange]);
+
+  useEffect(() => {
+    setGoalsLoading(true);
+    fetchJSON('/api/goal-tracker/')
+      .then(data => setGoals(Array.isArray(data) ? data : []))
+      .catch(() => setGoals([]))
+      .finally(() => setGoalsLoading(false));
+  }, []);
 
   const moduleStats = MODULE_REGISTRY.filter(m => m.id !== 'analytics').map(mod => {
     const stat = overview.modules?.find(s => s.module_id === mod.id);
@@ -310,6 +319,62 @@ export default function AnalyticsPage() {
                 <div className="py-3 text-center">
                   <span className={`text-[11px] font-medium ${muted}`}>+{activity.length - 15} more events</span>
                 </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Goal Tracker Widget */}
+        <div className={`rounded-2xl mt-6 ${card}`} style={{ boxShadow: cardShadow }}>
+          <div className={`flex items-center justify-between px-5 sm:px-6 py-4 ${dark ? 'border-b border-gray-200' : 'border-b border-[#e8e0d4]'}`}>
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(245,158,11,0.12)' }}>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ color: '#f59e0b' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v1.5M3 21v-6m0 0l2.77-.693a9 9 0 016.208.682l.108.054a9 9 0 006.086.71l3.114-.732a48.524 48.524 0 01-.005-10.499l-3.11.732a9 9 0 01-6.085-.711l-.108-.054a9 9 0 00-6.208-.682L3 4.5M3 15V4.5" />
+                </svg>
+              </div>
+              <p className={`text-[10px] uppercase tracking-[0.15em] font-semibold ${dark ? 'text-[#f59e0b]/70' : 'text-[#f59e0b]'}`}>Goal Tracker</p>
+            </div>
+            <span className={`text-[10px] font-medium ${subtle}`}>{goals.length} goals</span>
+          </div>
+
+          {goalsLoading ? (
+            <div className="py-8 text-center">
+              <p className={`text-xs ${muted}`}>Loading goals...</p>
+            </div>
+          ) : goals.length === 0 ? (
+            <div className="py-8 text-center">
+              <p className={`text-xs font-medium ${muted}`}>No goals set yet</p>
+              <p className={`text-[11px] mt-0.5 ${subtle}`}>Goals can be created via the Goal Tracker API</p>
+            </div>
+          ) : (
+            <div className="p-5 space-y-4">
+              {goals.slice(0, 5).map(goal => {
+                const pct = goal.target_value > 0 ? Math.min(100, (goal.current_value / goal.target_value) * 100) : 0;
+                const sc = goal.status === 'active' || goal.status === 'on-track' ? '#22c55e' : goal.status === 'at-risk' ? '#f59e0b' : goal.status === 'behind' ? '#ef4444' : '#6b7280';
+                return (
+                  <div key={goal.id}>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-semibold ${ink}`}>{goal.name}</span>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${sc}15`, color: sc, border: `1px solid ${sc}25` }}>
+                          {goal.status}
+                        </span>
+                      </div>
+                      <span className={`text-[10px] font-mono ${subtle}`}>{pct.toFixed(0)}%</span>
+                    </div>
+                    <div className={`h-1.5 rounded-full overflow-hidden ${dark ? 'bg-white/[0.04]' : 'bg-[#EDE5DA]'}`}>
+                      <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: sc }} />
+                    </div>
+                    <div className="flex justify-between mt-0.5">
+                      <span className={`text-[10px] ${subtle}`}>{goal.metric || ''} {goal.current_value}</span>
+                      <span className={`text-[10px] ${subtle}`}>Target: {goal.target_value}{goal.deadline ? ` by ${goal.deadline}` : ''}</span>
+                    </div>
+                  </div>
+                );
+              })}
+              {goals.length > 5 && (
+                <p className={`text-[11px] text-center font-medium ${muted}`}>+{goals.length - 5} more goals</p>
               )}
             </div>
           )}
