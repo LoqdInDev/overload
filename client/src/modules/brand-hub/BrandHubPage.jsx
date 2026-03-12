@@ -38,21 +38,6 @@ const STRATEGY_TOOLS = [
   { id: 'messaging', name: 'Mission/Vision & Taglines', icon: 'M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z', desc: 'Mission statements, vision, and memorable taglines' },
 ];
 
-const ARCHETYPES = [
-  { id: 'hero', name: 'Hero', desc: 'Courageous, bold, driven to prove worth through mastery', emoji: 'Brave' },
-  { id: 'explorer', name: 'Explorer', desc: 'Freedom-seeking, adventurous, authentic', emoji: 'Free' },
-  { id: 'creator', name: 'Creator', desc: 'Innovative, artistic, visionary', emoji: 'Artistic' },
-  { id: 'sage', name: 'Sage', desc: 'Wise, knowledgeable, truth-seeking', emoji: 'Wise' },
-  { id: 'rebel', name: 'Rebel', desc: 'Revolutionary, disruptive, liberating', emoji: 'Bold' },
-  { id: 'magician', name: 'Magician', desc: 'Transformative, visionary, charismatic', emoji: 'Visionary' },
-  { id: 'lover', name: 'Lover', desc: 'Passionate, sensual, intimate', emoji: 'Passion' },
-  { id: 'jester', name: 'Jester', desc: 'Fun, playful, irreverent', emoji: 'Playful' },
-  { id: 'caregiver', name: 'Caregiver', desc: 'Nurturing, generous, compassionate', emoji: 'Caring' },
-  { id: 'ruler', name: 'Ruler', desc: 'Authoritative, commanding, premium', emoji: 'Power' },
-  { id: 'everyman', name: 'Everyman', desc: 'Relatable, honest, down-to-earth', emoji: 'Real' },
-  { id: 'innocent', name: 'Innocent', desc: 'Optimistic, pure, simple', emoji: 'Pure' },
-];
-
 const STRATEGY_INDUSTRIES = [
   'Technology', 'Healthcare', 'Finance', 'E-commerce', 'SaaS', 'Education',
   'Fashion', 'Food & Beverage', 'Real Estate', 'Fitness', 'Travel', 'Entertainment',
@@ -104,7 +89,6 @@ export default function BrandHubPage() {
   const [stratBrandName, setStratBrandName] = useState('');
   const [stratIndustry, setStratIndustry] = useState('');
   const [stratAudience, setStratAudience] = useState('');
-  const [archetype, setArchetype] = useState(null);
   const [toneValues, setToneValues] = useState({ formal: 50, serious: 50, respectful: 50, enthusiastic: 70 });
   const [generating, setGenerating] = useState(false);
   const [streamText, setStreamText] = useState('');
@@ -236,7 +220,6 @@ export default function BrandHubPage() {
     setResult('');
     setStreamText('');
 
-    const archetypeInfo = archetype ? ARCHETYPES.find(a => a.id === archetype) : null;
     const toneDesc = TONE_SPECTRUM.map(t => {
       const val = toneValues[t.id];
       return val < 40 ? t.opposite : val > 60 ? t.name : `Balanced ${t.name}/${t.opposite}`;
@@ -253,8 +236,6 @@ export default function BrandHubPage() {
           elementType: activeTool,
           toolInputs: toolInputs[activeTool] || {},
           currentBrand: {
-            archetype: archetypeInfo ? archetypeInfo.name : null,
-            archetypeDesc: archetypeInfo ? archetypeInfo.desc : null,
             toneProfile: toneDesc,
           },
         }),
@@ -778,31 +759,6 @@ export default function BrandHubPage() {
               ))}
             </div>
 
-            {/* Archetype Templates */}
-            <div className="mb-6 sm:mb-8">
-              <div className="flex items-center gap-3 mb-4">
-                <p className="hud-label text-[11px]">BRAND ARCHETYPE TEMPLATES</p>
-                <div className="flex-1 hud-line" />
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                {ARCHETYPES.map(arc => (
-                  <button key={arc.id} onClick={() => { setArchetype(arc.id); setActiveTool('voice'); }}
-                    className="panel-interactive rounded-lg p-5 text-left group">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <div className="w-8 h-8 rounded-md flex items-center justify-center text-xs font-bold"
-                        style={{ background: `${COLOR}12`, color: COLOR }}>
-                        {arc.name.charAt(0)}
-                      </div>
-                      <p className={`text-xs font-bold ${dark ? 'text-gray-300 group-hover:text-white' : 'text-gray-700'} transition-colors`}>{arc.name}</p>
-                    </div>
-                    <p className="text-[9px] text-gray-500 leading-relaxed">{arc.desc}</p>
-                    <span className="inline-block mt-1.5 text-[10px] px-1.5 py-0.5 rounded-full"
-                      style={{ background: `${COLOR}10`, color: COLOR, border: `1px solid ${COLOR}20` }}>{arc.emoji}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Industry Quick Start */}
             <div>
               <div className="flex items-center gap-3 mb-4">
@@ -811,8 +767,9 @@ export default function BrandHubPage() {
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {STRATEGY_INDUSTRIES.map(ind => (
-                  <button key={ind} onClick={() => { setStratIndustry(ind); setActiveTool('voice'); }}
-                    className={`chip text-[10px] ${dark ? '' : 'bg-gray-100 border-gray-200 text-gray-600 hover:bg-gray-200'}`}>
+                  <button key={ind} onClick={() => setStratIndustry(ind)}
+                    className={`chip text-[10px] ${stratIndustry === ind ? 'active' : ''} ${dark ? '' : 'bg-gray-100 border-gray-200 text-gray-600 hover:bg-gray-200'}`}
+                    style={stratIndustry === ind ? { background: `${COLOR}15`, borderColor: `${COLOR}30`, color: COLOR } : {}}>
                     {ind}
                   </button>
                 ))}
@@ -1096,26 +1053,6 @@ export default function BrandHubPage() {
                   </div>
                 </div>
 
-                {/* Brand Archetype — shown for voice, guidelines, messaging */}
-                {['voice', 'guidelines', 'messaging'].includes(activeTool) && (
-                  <div className="panel rounded-2xl p-4 sm:p-6">
-                    <p className="hud-label text-[11px] mb-3">BRAND ARCHETYPE</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
-                      {ARCHETYPES.map(arc => (
-                        <button key={arc.id} onClick={() => setArchetype(arc.id)}
-                          className={`text-center px-1.5 py-2 rounded-lg border text-[9px] transition-all ${
-                            archetype === arc.id
-                              ? ''
-                              : dark ? 'border-indigo-500/8 bg-white/[0.01] text-gray-500 hover:text-gray-300' : 'border-gray-200 text-gray-500 hover:text-gray-700'
-                          }`}
-                          style={archetype === arc.id ? { background: `${COLOR}12`, borderColor: `${COLOR}30`, color: COLOR } : {}}>
-                          <p className="font-bold">{arc.name}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 {/* Tone Spectrum — shown for voice, messaging */}
                 {['voice', 'messaging'].includes(activeTool) && (
                   <div className="panel rounded-2xl p-4 sm:p-6">
@@ -1146,7 +1083,7 @@ export default function BrandHubPage() {
                     {activeTool === 'voice' && (
                       <>
                         <p>Your brand voice should be consistent across all channels — social media, email, website, and ads.</p>
-                        <p>Select an archetype above to give your voice a strong personality foundation.</p>
+                        <p>Use the tone sliders to fine-tune how formal, serious, or enthusiastic your voice should be.</p>
                         <p>The more specific your personality traits, the more distinctive your voice guide will be.</p>
                       </>
                     )}
@@ -1175,7 +1112,7 @@ export default function BrandHubPage() {
                       <>
                         <p>Your mission says what you do today. Your vision says where you're going. Both should inspire.</p>
                         <p>Great taglines are 3-7 words, memorable, and capture your brand's essence.</p>
-                        <p>Select an archetype and adjust tone sliders to shape the emotional feel of your messaging.</p>
+                        <p>Adjust tone sliders to shape the emotional feel of your messaging.</p>
                       </>
                     )}
                   </div>
@@ -1198,12 +1135,6 @@ export default function BrandHubPage() {
                         <span className="text-gray-500">Tool</span>
                         <span className="font-semibold" style={{ color: COLOR }}>{currentTool?.name}</span>
                       </div>
-                      {archetype && (
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-500">Archetype</span>
-                          <span className="font-semibold" style={{ color: COLOR }}>{ARCHETYPES.find(a => a.id === archetype)?.name}</span>
-                        </div>
-                      )}
                     </div>
                   </div>
                 )}
