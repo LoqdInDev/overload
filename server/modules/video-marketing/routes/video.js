@@ -407,7 +407,7 @@ router.get('/test-wavespeed', async (req, res) => {
 router.get('/test-poll/:taskId', async (req, res) => {
   const apiKey = process.env.WAVESPEED_API_KEY;
   try {
-    const response = await fetch(`https://api.wavespeed.ai/api/v3/predictions/${req.params.taskId}/result`, {
+    const response = await fetch(`https://api.wavespeed.ai/api/v3/predictions/${req.params.taskId}`, {
       headers: { Authorization: `Bearer ${apiKey}` },
     });
     const data = await response.json();

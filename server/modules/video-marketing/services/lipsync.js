@@ -35,7 +35,7 @@ class LipSyncService {
     for (let i = 0; i < maxAttempts; i++) {
       await new Promise(r => setTimeout(r, interval));
       try {
-        const res = await fetchWithTimeout(`${BASE_URL}/predictions/${taskId}/result`, {
+        const res = await fetchWithTimeout(`${BASE_URL}/predictions/${taskId}`, {
           headers: { Authorization: `Bearer ${this.apiKey}` },
         }, 15000);
         const data = await res.json();
