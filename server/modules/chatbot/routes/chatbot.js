@@ -322,7 +322,7 @@ router.post('/bots', async (req, res) => {
       return res.status(400).json({ error: 'Name is required' });
     }
 
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO cb_bots (name, description, personality, knowledge_base, welcome_message, channels, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(
       name,
@@ -353,7 +353,7 @@ router.get('/bots/:id', async (req, res) => {
     }
 
     const flows = await db.prepare('SELECT * FROM cb_flows WHERE bot_id = ? AND workspace_id = ? ORDER BY created_at ASC').all(req.params.id, wsId);
-    const conversationCount = db.prepare('SELECT COUNT(*) as count FROM cb_conversations WHERE bot_id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    const conversationCount = await db.prepare('SELECT COUNT(*) as count FROM cb_conversations WHERE bot_id = ? AND workspace_id = ?').get(req.params.id, wsId);
 
     res.json({ ...bot, flows, conversationCount: conversationCount.count });
   } catch (error) {
@@ -401,7 +401,7 @@ Return a JSON object: { "response": "your response text", "confidence": 0.95, "i
     // Save conversation
     if (bot_id) {
       const messages = [...(history || []), { role: 'user', content: message }, { role: 'bot', content: parsed?.response || raw }];
-      db.prepare(
+      await db.prepare(
         'INSERT INTO cb_conversations (bot_id, messages, workspace_id) VALUES (?, ?, ?)'
       ).run(bot_id, JSON.stringify(messages), wsId);
     }

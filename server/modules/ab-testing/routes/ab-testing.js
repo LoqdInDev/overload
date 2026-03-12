@@ -38,7 +38,7 @@ router.post('/tests', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { name, type, status, variants, start_date, end_date } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO abt_tests (name, type, status, variants, start_date, end_date, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(name, type, status || 'draft', variants ? JSON.stringify(variants) : null, start_date, end_date, wsId);
     await logActivity('ab-testing', 'create', `Created test: ${name}`, 'Test created', null, wsId);

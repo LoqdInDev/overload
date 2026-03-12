@@ -180,7 +180,7 @@ router.post('/contacts', async (req, res) => {
     const { name, email, phone, company, title, status, score, tags, segment, source, notes } = req.body;
     if (!name) return res.status(400).json({ error: 'name is required' });
     const id = uuidv4();
-    db.prepare(
+    await db.prepare(
       'INSERT INTO crm_contacts (id, name, email, phone, company, title, status, score, tags, segment, source, notes, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(id, name, email || null, phone || null, company || null, title || null, status || 'lead', score || 0, tags || null, segment || null, source || null, notes || null, wsId);
     const contact = await db.prepare('SELECT * FROM crm_contacts WHERE id = ? AND workspace_id = ?').get(id, wsId);
@@ -333,7 +333,7 @@ router.post('/deals', async (req, res) => {
 
     if (!name) return res.status(400).json({ error: 'name is required' });
     const dealId = uuidv4();
-    db.prepare(
+    await db.prepare(
       'INSERT INTO crm_deals (id, contact_id, name, value, stage, pipeline, probability, expected_close, notes, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(dealId, contact_id, name, value || 0, stage || 'lead', pipeline || 'default', probability || 0, expected_close || null, notes || null, wsId);
     const deal = await db.prepare('SELECT * FROM crm_deals WHERE id = ? AND workspace_id = ?').get(dealId, wsId);
@@ -429,7 +429,7 @@ router.post('/activities', async (req, res) => {
   try {
     const { contact_id, deal_id, type, title, description } = req.body;
     const actId = uuidv4();
-    db.prepare(
+    await db.prepare(
       'INSERT INTO crm_activities (id, contact_id, deal_id, type, title, description, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(actId, contact_id || null, deal_id || null, type, title, description || null, wsId);
     const activity = await db.prepare('SELECT * FROM crm_activities WHERE id = ? AND workspace_id = ?').get(actId, wsId);
@@ -493,7 +493,7 @@ router.post('/segments', async (req, res) => {
   const wsId = req.workspace.id;
   try {
     const { name, rules, color } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO crm_segments (name, rules, color, workspace_id) VALUES (?, ?, ?, ?)'
     ).run(name, rules ? JSON.stringify(rules) : null, color || null, wsId);
     const segment = await db.prepare('SELECT * FROM crm_segments WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
