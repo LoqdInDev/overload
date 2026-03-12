@@ -10,6 +10,15 @@ const localStorageMock = {
 };
 Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock });
 
+// Mock sessionStorage (same shape as localStorage mock)
+const sessionStore = {};
+const sessionStorageMock = {
+  getItem: vi.fn((key) => sessionStore[key] || null),
+  setItem: vi.fn((key, val) => { sessionStore[key] = val; }),
+  removeItem: vi.fn((key) => { delete sessionStore[key]; }),
+};
+Object.defineProperty(globalThis, 'sessionStorage', { value: sessionStorageMock });
+
 // Mock window and window.location
 globalThis.window = globalThis.window || {};
 globalThis.window.location = { href: '' };
@@ -19,6 +28,7 @@ globalThis.location = globalThis.window.location;
 beforeEach(() => {
   vi.restoreAllMocks();
   Object.keys(storage).forEach(k => delete storage[k]);
+  Object.keys(sessionStore).forEach(k => delete sessionStore[k]);
   globalThis.location.href = '';
 });
 
