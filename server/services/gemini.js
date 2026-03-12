@@ -86,11 +86,23 @@ async function generateImage(prompt, aspectRatio = '1:1') {
     },
   };
 
-  const res = await fetch(`${API_URL}?key=${GEMINI_API_KEY}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 90_000);
+
+  let res;
+  try {
+    res = await fetch(`${API_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    clearTimeout(timeout);
+    if (err.name === 'AbortError') throw new Error('Gemini image generation timed out after 90s — try again or use a simpler prompt');
+    throw err;
+  }
+  clearTimeout(timeout);
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -191,11 +203,23 @@ async function generateImageFromReference(promptText, referenceImages, aspectRat
     },
   };
 
-  const res = await fetch(`${API_URL}?key=${GEMINI_API_KEY}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 90_000);
+
+  let res;
+  try {
+    res = await fetch(`${API_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    clearTimeout(timeout);
+    if (err.name === 'AbortError') throw new Error('Gemini image generation timed out after 90s — try again or use a simpler prompt');
+    throw err;
+  }
+  clearTimeout(timeout);
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
