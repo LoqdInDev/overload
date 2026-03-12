@@ -75,13 +75,13 @@ router.post('/signup', authLimiter, validate(schemas.signup), async (req, res, n
     const { email, password, displayName } = req.body;
 
     const user = await createUser(email, password, displayName);
-    const tokens = generateTokenPair(user.id);
+    const tokens = await generateTokenPair(user.id);
 
     // Send welcome and verification emails (fire-and-forget, don't block signup)
     const appUrl = process.env.APP_URL || process.env.CORS_ORIGIN || 'http://localhost:5173';
     sendWelcome(user.email, user.displayName).catch(err => console.error('[EMAIL] Failed to send welcome email:', err.message));
 
-    const verification = createEmailVerificationToken(user.id);
+    const verification = await createEmailVerificationToken(user.id);
     if (verification) {
       const verifyLink = `${appUrl}/verify-email?token=${encodeURIComponent(verification.token)}`;
       sendVerification(user.email, user.displayName, verifyLink).catch(err => console.error('[EMAIL] Failed to send verification email:', err.message));
@@ -118,7 +118,7 @@ router.post('/login', authLimiter, validate(schemas.login), async (req, res, nex
     // Successful login — reset failed attempts
     clearFailedLogins(email.toLowerCase());
 
-    const tokens = generateTokenPair(user.id);
+    const tokens = await generateTokenPair(user.id);
 
     res.json({
       user: { id: user.id, email: user.email, displayName: user.displayName, role: user.role, avatarUrl: user.avatarUrl },
@@ -181,15 +181,15 @@ router.post('/refresh', async (req, res) => {
     return res.status(400).json({ error: 'Refresh token is required', code: 'VALIDATION_ERROR' });
   }
 
-  const userId = verifyRefreshToken(refreshToken);
+  const userId = await verifyRefreshToken(refreshToken);
   if (!userId) {
     return res.status(401).json({ error: 'Invalid or expired refresh token', code: 'TOKEN_INVALID' });
   }
 
   // Revoke old token and issue new pair
-  revokeRefreshToken(refreshToken);
-  const tokens = generateTokenPair(userId);
-  const user = getUser(userId);
+  await revokeRefreshToken(refreshToken);
+  const tokens = await generateTokenPair(userId);
+  const user = await getUser(userId);
 
   res.json({
     user: user ? { id: user.id, email: user.email, displayName: user.displayName, role: user.role, avatarUrl: user.avatarUrl } : null,
@@ -202,7 +202,7 @@ router.post('/refresh', async (req, res) => {
 router.post('/logout', async (req, res) => {
   const { refreshToken } = req.body;
   if (refreshToken) {
-    revokeRefreshToken(refreshToken);
+    await revokeRefreshToken(refreshToken);
   }
   res.json({ success: true });
 });
@@ -223,7 +223,7 @@ router.post('/auto-login', async (req, res, next) => {
       user = await createUser('owner@overload.local', randomPass, 'Owner');
     }
 
-    const tokens = generateTokenPair(user.id);
+    const tokens = await generateTokenPair(user.id);
 
     res.json({
       user: { id: user.id, email: user.email, displayName: user.display_name || user.displayName, role: user.role },
@@ -256,7 +256,7 @@ router.post('/forgot-password', resetLimiter, validate(schemas.forgotPassword), 
   try {
     const { email } = req.body;
 
-    const result = createPasswordResetToken(email);
+    const result = await createPasswordResetToken(email);
 
     // Always return success to avoid leaking whether email exists
     if (result) {
@@ -299,7 +299,7 @@ router.post('/reset-password', resetLimiter, async (req, res, next) => {
 // POST /api/auth/send-verification
 router.post('/send-verification', requireAuth, async (req, res, next) => {
   try {
-    const result = createEmailVerificationToken(req.user.id);
+    const result = await createEmailVerificationToken(req.user.id);
     if (!result) {
       return res.status(404).json({ error: 'User not found', code: 'USER_NOT_FOUND' });
     }
@@ -323,7 +323,7 @@ router.post('/verify-email', async (req, res, next) => {
       return res.status(400).json({ error: 'Token is required', code: 'VALIDATION_ERROR' });
     }
 
-    const userId = verifyEmailToken(token);
+    const userId = await verifyEmailToken(token);
     if (!userId) {
       return res.status(400).json({ error: 'Invalid or expired verification token', code: 'TOKEN_INVALID' });
     }
