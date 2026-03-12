@@ -222,4 +222,38 @@ Be specific, actionable, and realistic. Focus on quick wins combined with strate
   }
 });
 
+// POST /strategy-pulse — SSE: Ask the Advisor a strategic question
+router.post('/strategy-pulse', async (req, res) => {
+  const { question } = req.body;
+  if (!question || !question.trim()) return res.status(400).json({ error: 'Question is required' });
+
+  const sse = setupSSE(res);
+  const wsId = req.workspace.id;
+
+  try {
+    const brandBlock = buildBrandSystemPrompt(getBrandContext(wsId));
+    const crossModuleData = buildCrossModuleContext(wsId);
+
+    const systemPrompt = `You are The Advisor — a senior marketing strategist embedded in Overload, an AI-powered marketing OS. A user is asking you a strategic marketing question. Use the real data from their connected modules to give concrete, actionable advice.
+
+${brandBlock}
+${crossModuleData}
+
+Guidelines:
+- Be direct and specific — reference their actual data when possible
+- Give 2-4 concrete recommendations with reasoning
+- Mention which Overload modules they should use to execute
+- Keep the tone confident and strategic, like a trusted CMO`;
+
+    const { text } = await generateTextWithClaude(question, {
+      system: systemPrompt,
+      onChunk: (chunk) => sse.sendChunk(chunk),
+    });
+    sse.sendResult({ content: text });
+  } catch (err) {
+    console.error('Strategy Pulse error:', err);
+    sse.sendError(err);
+  }
+});
+
 module.exports = router;
