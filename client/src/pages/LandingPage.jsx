@@ -581,7 +581,7 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [email, setEmail] = useState('');
-  const [demoToast, setDemoToast] = useState(false);
+  const [showDemo, setShowDemo] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const progressRef = useRef(null);
   const [activeSteps, setActiveSteps] = useState(new Set());
@@ -764,7 +764,7 @@ export default function LandingPage() {
               </svg>
             </button>
             <button
-              onClick={() => { setDemoToast(true); setTimeout(() => setDemoToast(false), 3500); }}
+              onClick={() => setShowDemo(true)}
               className="lp-cta lp-cta-outline"
               style={{ padding: '18px 40px', fontSize: 15 }}
             >
@@ -772,25 +772,6 @@ export default function LandingPage() {
               Watch demo
             </button>
           </div>
-
-          {/* Demo coming-soon toast */}
-          {demoToast && (
-            <div
-              className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl text-sm font-medium mt-4"
-              style={{
-                background: 'var(--lp-ink)',
-                color: 'var(--lp-cream)',
-                animation: 'lp-fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-              }}
-              role="status"
-              aria-live="polite"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--lp-terra)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-              </svg>
-              Demo coming soon — sign up to get notified!
-            </div>
-          )}
 
           {/* Social proof */}
           <div className="lp-hero-proof">
@@ -1456,6 +1437,43 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* ═══════ VIDEO DEMO MODAL ═══════ */}
+      {showDemo && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', animation: 'lp-fade-in 0.25s ease forwards' }}
+          onClick={() => setShowDemo(false)}
+        >
+          <div
+            className="relative w-full max-w-4xl"
+            style={{ animation: 'lp-fade-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setShowDemo(false)}
+              className="absolute -top-10 right-0 flex items-center gap-1.5 text-white/50 hover:text-white transition-colors"
+              style={{ fontSize: 13, fontWeight: 500 }}
+            >
+              <span>Close</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18" /><path d="M6 6l12 12" />
+              </svg>
+            </button>
+            {/* Video */}
+            <div style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 25px 80px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <video
+                src="/demo.mp4"
+                autoPlay
+                controls
+                playsInline
+                style={{ width: '100%', display: 'block', background: '#0F0D0B' }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
