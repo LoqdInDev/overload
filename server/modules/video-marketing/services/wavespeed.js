@@ -53,12 +53,15 @@ class WaveSpeedService {
       }, 30000);
 
       const data = await response.json();
+      console.log('[WaveSpeed] t2v submit response:', data.code, data.data?.id || 'no-id');
 
       if (data.code !== 200 || !data.data?.id) {
+        console.error('[WaveSpeed] t2v submit failed:', JSON.stringify(data));
         return { success: false, error: data.message || `API error (${data.code})` };
       }
 
       const taskId = data.data.id;
+      console.log(`[WaveSpeed] t2v task started: ${taskId}, polling...`);
       const result = await this.pollForResult(taskId);
       result.taskId = taskId;
       return result;
@@ -89,12 +92,15 @@ class WaveSpeedService {
       }, 30000);
 
       const data = await response.json();
+      console.log('[WaveSpeed] i2v submit response:', data.code, data.data?.id || 'no-id');
 
       if (data.code !== 200 || !data.data?.id) {
+        console.error('[WaveSpeed] i2v submit failed:', JSON.stringify(data));
         return { success: false, error: data.message || `API error (${data.code})` };
       }
 
       const taskId = data.data.id;
+      console.log(`[WaveSpeed] i2v task started: ${taskId}, polling...`);
       const result = await this.pollForResult(taskId);
       result.taskId = taskId;
       return result;
@@ -105,36 +111,42 @@ class WaveSpeedService {
     }
   }
 
-  async pollForResult(taskId, maxAttempts = 108, interval = 5000) {
+  async pollForResult(taskId, maxAttempts = 180, interval = 5000) {
     for (let i = 0; i < maxAttempts; i++) {
       await new Promise((r) => setTimeout(r, interval));
 
       try {
         const res = await fetchWithTimeout(`${BASE_URL}/predictions/${taskId}/result`, {
           headers: { Authorization: `Bearer ${this.apiKey}` },
-        }, 15000);
+        }, 30000);
 
         const data = await res.json();
         const status = data.data?.status;
+
+        if (i % 6 === 0 || status === 'completed' || status === 'failed') {
+          console.log(`[WaveSpeed] poll #${i + 1} task=${taskId} status=${status}`);
+        }
 
         if (status === 'completed') {
           const videoUrl = data.data?.outputs?.[0];
           if (videoUrl) {
             return { success: true, videoUrl, taskId };
           }
+          console.error('[WaveSpeed] Completed but no output URL. Full response:', JSON.stringify(data.data));
           return { success: false, error: 'Completed but no output URL' };
         }
 
         if (status === 'failed') {
+          console.error('[WaveSpeed] Task failed:', data.data?.error, JSON.stringify(data.data));
           return { success: false, error: data.data?.error || 'Generation failed' };
         }
       } catch (error) {
-        console.error('[WaveSpeed] poll error:', error.name, error.message);
+        console.error(`[WaveSpeed] poll #${i + 1} error:`, error.name, error.message);
         // Continue polling on transient errors
       }
     }
 
-    return { success: false, error: 'Generation timed out after 9 minutes. Try again.', taskId, timedOut: true };
+    return { success: false, error: 'Generation timed out after 15 minutes. Use Recover to check later.', taskId, timedOut: true };
   }
   async checkTask(taskId) {
     try {
