@@ -223,6 +223,41 @@ app.post('/api/admin/cleanup-storage', requireAuth, async (req, res) => {
   res.json({ ok: true, ...result, freedMB: (result.freed / 1024 / 1024).toFixed(1) });
 });
 
+// Admin: DB size analysis
+app.get('/api/admin/db-size', requireAuth, async (req, res) => {
+  try {
+    const tables = await db.pool.query(`
+      SELECT schemaname, tablename,
+        pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS total_size,
+        pg_total_relation_size(schemaname||'.'||tablename) AS total_bytes,
+        pg_size_pretty(pg_relation_size(schemaname||'.'||tablename)) AS table_size,
+        pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename) - pg_relation_size(schemaname||'.'||tablename)) AS index_size
+      FROM pg_tables WHERE schemaname = 'public'
+      ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC
+    `);
+    const dbSize = await db.pool.query(`SELECT pg_size_pretty(pg_database_size(current_database())) AS db_size, pg_database_size(current_database()) AS db_bytes`);
+    const rowCounts = await db.pool.query(`
+      SELECT relname AS tablename, n_live_tup AS estimated_rows
+      FROM pg_stat_user_tables ORDER BY n_live_tup DESC
+    `);
+    res.json({ database: dbSize.rows[0], tables: tables.rows, rowCounts: rowCounts.rows });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Admin: DB backup (JSON dump of all tables)
+app.get('/api/admin/db-backup', requireAuth, async (req, res) => {
+  try {
+    const tablesResult = await db.pool.query(`SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename`);
+    const backup = {};
+    for (const { tablename } of tablesResult.rows) {
+      const data = await db.pool.query(`SELECT * FROM "${tablename}"`);
+      backup[tablename] = data.rows;
+    }
+    res.setHeader('Content-Disposition', `attachment; filename="overload-backup-${new Date().toISOString().slice(0,10)}.json"`);
+    res.json(backup);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // Catch-all 404 for unmatched /api/* routes
 app.all('/api/*', async (req, res) => {
   res.status(404).json({ error: 'Not found', code: 'NOT_FOUND' });
