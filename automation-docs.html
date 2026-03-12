@@ -553,6 +553,133 @@
     background: var(--border);
     margin: 40px 0;
   }
+
+  /* ── Module Cards ──────────────────────────── */
+  .module-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .mod-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .mod-card:hover { border-color: var(--border2); }
+  .mod-header {
+    padding: 18px 22px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .mod-header:hover { background: var(--surface2); }
+  .mod-icon {
+    font-size: 1.6rem;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface3);
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+  .mod-title-row {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .mod-name {
+    font-weight: 700;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .mod-category {
+    font-size: 0.75rem;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .mod-body { padding: 0 22px 22px; }
+  .mod-section-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--accent2);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin: 16px 0 8px;
+  }
+  .mod-section-title:first-child { margin-top: 0; }
+  .mod-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .mod-list li {
+    padding: 5px 0;
+    font-size: 0.88rem;
+    color: var(--text2);
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .mod-list li::before {
+    content: '›';
+    color: var(--accent2);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .mod-tag-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .cat-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 40px 0 16px;
+    padding: 14px 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .cat-header:first-child { margin-top: 20px; }
+  .cat-icon { font-size: 1.4rem; }
+  .cat-name { font-weight: 700; font-size: 1.1rem; }
+  .cat-count { font-size: 0.8rem; color: var(--text3); margin-left: auto; }
+  .no-auto {
+    background: rgba(255,107,107,0.08);
+    border-color: rgba(255,107,107,0.2);
+  }
+  .no-auto .mod-name { color: var(--text3); }
+  .user-flow {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 10px 0;
+    font-size: 0.88rem;
+    color: var(--text2);
+    line-height: 1.8;
+  }
+  .user-flow strong { color: var(--text); }
+  .user-flow code {
+    background: var(--surface3);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: var(--accent2);
+    font-size: 0.8rem;
+  }
 </style>
 </head>
 <body>
@@ -602,6 +729,7 @@
     <a href="#notifications">Notifications</a>
     <a href="#api">API Reference</a>
     <a href="#frontend">Frontend</a>
+    <a href="#modules">All Modules</a>
     <a href="#walkthrough">Walkthrough</a>
   </div>
 </nav>
@@ -1499,6 +1627,1190 @@ INSERT INTO ae_module_modes ... ON CONFLICT DO UPDATE SET mode = <span class="st
 
 <div class="divider"></div>
 
+<!-- ═══════════════════════════════════════════ ALL MODULES ═══════════════════════════════════════════ -->
+<section id="modules">
+  <h2><span class="icon" style="background:rgba(108,92,231,0.15);color:var(--accent2)">&#128640;</span> All Modules &amp; Automation</h2>
+  <p class="subtitle">Every module in the platform, how it integrates with the automation engine, what triggers fire, what actions execute, and how users interact with each module's automation. Modules marked <span class="tag" style="background:rgba(255,107,107,0.15);color:var(--red)">No Automation</span> operate in manual-only mode.</p>
+
+  <!-- ═══════ CREATE CATEGORY ═══════ -->
+  <div class="cat-header">
+    <span class="cat-icon">&#9997;&#65039;</span>
+    <span class="cat-name">Create</span>
+    <span class="cat-count">6 modules</span>
+  </div>
+
+  <!-- ── Content ── -->
+  <details class="mod-card" open>
+    <summary class="mod-header">
+      <span class="mod-icon">&#128196;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">AI Content <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green)">Automatable</span></div>
+        <div class="mod-category">Create</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">AI-powered content generation — blog posts, articles, content briefs, content calendars, and SEO-optimized copy. Stores drafts in <code>cc_projects</code>.</p>
+
+      <div class="mod-section-title">Triggers</div>
+      <ul class="mod-list">
+        <li><strong>Schedule:</strong> Daily, weekly, biweekly, or monthly content generation on a set cadence</li>
+        <li><strong>Event:</strong> <code>content_milestone</code> — fires when a piece reaches a views threshold (e.g., 1,000 views)</li>
+        <li><strong>Event:</strong> <code>content_published</code> — fires when any blog post is published (used cross-module by Social)</li>
+      </ul>
+
+      <div class="mod-section-title">Automated Actions</div>
+      <ul class="mod-list">
+        <li><code>generate_content</code> — Creates blog posts, articles, content briefs, content calendars, SEO briefs via Claude</li>
+        <li><code>publish_blog</code> — Auto-publishes generated blog content to the platform</li>
+      </ul>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Manual:</strong> User opens AI Content → picks a content type (blog, brief, calendar) → Claude generates it → user edits and publishes.<br>
+        <strong>Copilot:</strong> Install "Daily Content Brief" or "Weekly Content Calendar" recipe → engine generates drafts on schedule → drafts appear in Approval Queue → user reviews, edits, approves → saved to <code>cc_projects</code>.<br>
+        <strong>Autopilot:</strong> Set Content to autopilot → engine generates and saves drafts automatically. High-confidence briefs execute directly; full blog posts may still queue for review depending on risk level.
+      </div>
+
+      <div class="mod-section-title">Linked Recipes</div>
+      <div class="mod-tag-row">
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Blog → Social Blast</span>
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Weekly Content Calendar</span>
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Daily Content Brief</span>
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">SEO Content Briefs</span>
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">KB Gap Filler</span>
+      </div>
+    </div>
+  </details>
+
+  <!-- ── Video Marketing ── -->
+  <details class="mod-card">
+    <summary class="mod-header">
+      <span class="mod-icon">&#127909;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Video Marketing <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green)">Automatable</span></div>
+        <div class="mod-category">Create</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Full video production pipeline — UGC-style videos from image + script. Includes angle generation, script writing, hook creation, storyboarding, and AI video generation with lip-sync.</p>
+
+      <div class="mod-section-title">Triggers</div>
+      <ul class="mod-list">
+        <li><strong>Schedule:</strong> Weekly or monthly video script generation</li>
+        <li><strong>Event:</strong> Triggered via cross-module rules (e.g., new product launch → generate product video)</li>
+      </ul>
+
+      <div class="mod-section-title">Automated Actions</div>
+      <ul class="mod-list">
+        <li><code>generate_content</code> — AI-generates video scripts, angles, hooks, and storyboards</li>
+        <li>Video rendering itself is not automated (requires image input + generation credits)</li>
+      </ul>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Manual:</strong> User opens Video Marketing → UGC Studio tab → uploads image → builds scenes → generates video.<br>
+        <strong>Copilot:</strong> Schedule weekly script generation → engine creates scripts with angles/hooks → queued for approval → user picks best script and generates video manually.<br>
+        <strong>Autopilot:</strong> Script and storyboard generation runs automatically. Actual video generation stays manual (resource-intensive, requires credits).
+      </div>
+    </div>
+  </details>
+
+  <!-- ── Creative & Design ── -->
+  <details class="mod-card">
+    <summary class="mod-header">
+      <span class="mod-icon">&#127912;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Creative &amp; Design <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green)">Automatable</span></div>
+        <div class="mod-category">Create</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">AI image generation for marketing creatives — ads, social posts, product shots, lifestyle imagery. Guided prompt builder with style/mood/setting chips. Gallery with history and favorites.</p>
+
+      <div class="mod-section-title">Triggers</div>
+      <ul class="mod-list">
+        <li><strong>Schedule:</strong> Weekly creative batch generation for upcoming campaigns</li>
+        <li><strong>Event:</strong> Cross-module — new ad campaign created → generate ad creative variants</li>
+      </ul>
+
+      <div class="mod-section-title">Automated Actions</div>
+      <ul class="mod-list">
+        <li><code>generate_content</code> — Creates image prompts and queues generation via AI providers</li>
+        <li>Creative variants auto-saved to gallery for review</li>
+      </ul>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Manual:</strong> User opens Creative → uses prompt builder (style chips, mood, setting) → generates images → saves to gallery.<br>
+        <strong>Copilot:</strong> Rule triggers creative generation → AI builds prompt from brand profile → generated images queued for approval → user picks winners.<br>
+        <strong>Autopilot:</strong> Generates creative variants automatically. Always queues for visual review (images can't be auto-approved reliably).
+      </div>
+    </div>
+  </details>
+
+  <!-- ── Email & SMS ── -->
+  <details class="mod-card">
+    <summary class="mod-header">
+      <span class="mod-icon">&#128231;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Email &amp; SMS <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green)">Automatable</span></div>
+        <div class="mod-category">Create</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Email and SMS campaign management — newsletters, welcome sequences, re-engagement, promotional blasts. Stores campaigns in <code>es_campaigns</code> with HTML content, subject lines, and scheduling.</p>
+
+      <div class="mod-section-title">Triggers</div>
+      <ul class="mod-list">
+        <li><strong>Schedule:</strong> Daily, weekly, or monthly newsletter generation (e.g., every Monday 9am)</li>
+        <li><strong>Event:</strong> <code>new_subscriber</code> — fires when a new email subscriber is added</li>
+        <li><strong>Event:</strong> <code>subscriber_inactive</code> — fires when subscriber hasn't engaged in 30+ days</li>
+      </ul>
+
+      <div class="mod-section-title">Automated Actions</div>
+      <ul class="mod-list">
+        <li><code>send_campaign</code> — Generates and queues email campaigns (newsletter, welcome, reengagement, promotional)</li>
+        <li><code>generate_content</code> — Creates email body HTML, subject lines, A/B variants via Claude</li>
+      </ul>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Manual:</strong> User opens Email & SMS → creates campaign → writes content or uses AI → schedules send.<br>
+        <strong>Copilot:</strong> Install "Weekly Newsletter" recipe → engine generates newsletter draft every week → appears in Approval Queue with preview → user approves or edits → saved as draft in <code>es_campaigns</code>.<br>
+        <strong>Autopilot:</strong> Newsletters auto-generated and saved as drafts. Re-engagement emails can auto-send if confidence is high enough. Welcome emails execute immediately (high confidence, low risk).
+      </div>
+
+      <div class="mod-section-title">Linked Recipes</div>
+      <div class="mod-tag-row">
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Weekly Newsletter</span>
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Monthly Newsletter</span>
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Re-engagement Campaign</span>
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">New Lead Welcome</span>
+      </div>
+    </div>
+  </details>
+
+  <!-- ── Social Media ── -->
+  <details class="mod-card">
+    <summary class="mod-header">
+      <span class="mod-icon">&#128241;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Social Media <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green)">Automatable</span></div>
+        <div class="mod-category">Create</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Multi-platform social media management — post scheduling, content generation with hashtags/captions, engagement tracking. Stores posts in <code>sm_posts</code> across Instagram, Twitter/X, LinkedIn, Facebook, TikTok.</p>
+
+      <div class="mod-section-title">Triggers</div>
+      <ul class="mod-list">
+        <li><strong>Schedule:</strong> Daily or weekly social post generation and scheduling</li>
+        <li><strong>Event:</strong> <code>content_published</code> — when a blog post is published, auto-generate social posts promoting it</li>
+      </ul>
+
+      <div class="mod-section-title">Automated Actions</div>
+      <ul class="mod-list">
+        <li><code>schedule_post</code> — Generates and schedules posts across multiple platforms with platform-specific formatting</li>
+        <li>AI generates captions, hashtags, and optimal posting times per platform</li>
+      </ul>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Manual:</strong> User opens Social → creates post → selects platforms → writes caption or uses AI → schedules.<br>
+        <strong>Copilot:</strong> Install "Blog → Social Blast" recipe → when a blog post is published, engine auto-generates social posts for each platform → queued for approval → user tweaks captions and approves.<br>
+        <strong>Autopilot:</strong> Social posts auto-generated and scheduled. Blog-to-social blasts execute automatically. Engine respects platform character limits and hashtag best practices.
+      </div>
+
+      <div class="mod-section-title">Linked Recipes</div>
+      <div class="mod-tag-row">
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Blog → Social Blast</span>
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Daily Social Post</span>
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Weekly Content Calendar</span>
+      </div>
+    </div>
+  </details>
+
+  <!-- ── PR & Press ── -->
+  <details class="mod-card">
+    <summary class="mod-header">
+      <span class="mod-icon">&#128240;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">PR &amp; Press <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green)">Automatable</span></div>
+        <div class="mod-category">Create</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">AI-assisted press release writing, media pitch generation, journalist outreach management, and press coverage tracking.</p>
+
+      <div class="mod-section-title">Triggers</div>
+      <ul class="mod-list">
+        <li><strong>Schedule:</strong> Monthly press release drafting for upcoming launches</li>
+        <li><strong>Event:</strong> Product launch or major announcement → auto-draft press release</li>
+      </ul>
+
+      <div class="mod-section-title">Automated Actions</div>
+      <ul class="mod-list">
+        <li><code>generate_content</code> — Drafts press releases, media pitches, and journalist outreach emails</li>
+        <li>Outreach emails use brand voice from Brand Hub context</li>
+      </ul>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Manual:</strong> User opens PR & Press → creates press release or pitch → AI assists with writing → user sends to media contacts.<br>
+        <strong>Copilot:</strong> Schedule monthly PR drafts → engine generates press release templates → queued for review → user customizes and distributes.<br>
+        <strong>Autopilot:</strong> PR drafts auto-generated on schedule. Distribution always requires manual approval (external-facing content).
+      </div>
+    </div>
+  </details>
+
+  <!-- ═══════ ADVERTISE CATEGORY ═══════ -->
+  <div class="cat-header">
+    <span class="cat-icon">&#128226;</span>
+    <span class="cat-name">Advertise</span>
+    <span class="cat-count">8 modules</span>
+  </div>
+
+  <!-- ── Paid Advertising ── -->
+  <details class="mod-card" open>
+    <summary class="mod-header">
+      <span class="mod-icon">&#127919;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Paid Advertising <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green)">Automatable</span></div>
+        <div class="mod-category">Advertise</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Campaign management across Google Ads, Meta Ads, TikTok Ads. Real-time metrics tracking (ROAS, CPA, CPC, CTR, spend), AI-powered optimization, and budget management. Stores metrics in <code>pa_campaign_metrics</code>.</p>
+
+      <div class="mod-section-title">Triggers</div>
+      <ul class="mod-list">
+        <li><strong>Threshold:</strong> <code>roas &lt; 2.0</code> — ROAS drops below target (7-day average)</li>
+        <li><strong>Threshold:</strong> <code>cpa &gt; $50</code> — Cost per acquisition exceeds limit</li>
+        <li><strong>Threshold:</strong> <code>cpc &gt; $3</code>, <code>ctr &lt; 1%</code> — Click cost or rate out of bounds</li>
+        <li><strong>Threshold:</strong> <code>spend &gt; $500/day</code> — Daily spend exceeds budget cap</li>
+        <li><strong>Schedule:</strong> Weekly or monthly budget reviews and performance reports</li>
+      </ul>
+
+      <div class="mod-section-title">Automated Actions</div>
+      <ul class="mod-list">
+        <li><code>adjust_budget</code> — Increase/decrease daily spend by percentage, reallocate across campaigns</li>
+        <li><code>create_ad_copy</code> — Generate new ad copy variants (headlines, descriptions, CTAs)</li>
+        <li><code>generate_report</code> — Weekly ad performance analysis with ROAS breakdown</li>
+        <li>Campaign pause/enable decisions via <code>adsOptimizer</code> service</li>
+      </ul>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Manual:</strong> User monitors dashboards → manually adjusts budgets and pauses underperforming campaigns.<br>
+        <strong>Copilot:</strong> Install "ROAS Guardian" recipe → when ROAS drops below 2.0, engine suggests budget reallocation → queued for approval → user reviews and applies changes.<br>
+        <strong>Autopilot:</strong> Budget adjustments execute automatically within safety limits. The <code>adsOptimizer</code> runs real-time analysis: pause campaigns with ROAS &lt; 1.0, scale up campaigns with ROAS &gt; 3.0. Monthly budget cap prevents runaway spend.
+      </div>
+
+      <div class="mod-section-title">Linked Recipes</div>
+      <div class="mod-tag-row">
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">ROAS Guardian</span>
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Weekly Budget Rebalancer</span>
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Weekly Ad Performance Report</span>
+      </div>
+
+      <div class="mod-section-title">Special Integration</div>
+      <p style="font-size:0.88rem;color:var(--text2)">The <code>adsOptimizer</code> service (<code>server/modules/paid-advertising/services/adsOptimizer.js</code>) provides a dedicated optimization loop that feeds into the automation engine. It computes optimization decisions independently and queues them through the approval pipeline or executes directly based on module mode.</p>
+    </div>
+  </details>
+
+  <!-- ── Funnel Builder ── -->
+  <details class="mod-card no-auto">
+    <summary class="mod-header">
+      <span class="mod-icon">&#128200;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Funnel Builder <span class="tag" style="background:rgba(255,107,107,0.15);color:var(--red)">No Automation</span></div>
+        <div class="mod-category">Advertise</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <p style="font-size:0.88rem;color:var(--text3)">Visual drag-and-drop funnel builder for sales and marketing funnels. Operates in manual mode only — funnels require hands-on design and configuration. Not included in <code>AUTOMATABLE_MODULES</code>.</p>
+    </div>
+  </details>
+
+  <!-- ── Influencer Finder ── -->
+  <details class="mod-card">
+    <summary class="mod-header">
+      <span class="mod-icon">&#11088;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Influencer Finder <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green)">Automatable</span></div>
+        <div class="mod-category">Advertise</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Discover and manage influencer partnerships — find influencers by niche, track campaigns, manage outreach, and measure ROI.</p>
+
+      <div class="mod-section-title">Triggers</div>
+      <ul class="mod-list">
+        <li><strong>Event:</strong> <code>campaign_created</code> (influencer type) — when a new influencer campaign is launched</li>
+      </ul>
+
+      <div class="mod-section-title">Automated Actions</div>
+      <ul class="mod-list">
+        <li><code>generate_content</code> — Creates personalized outreach emails for influencer partnerships</li>
+        <li>Outreach templates adapt to influencer niche, follower count, and brand voice</li>
+      </ul>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Manual:</strong> User searches for influencers → builds outreach list → writes emails manually.<br>
+        <strong>Copilot:</strong> Install "Influencer Outreach Sequence" recipe → when a campaign is created, engine drafts personalized outreach emails → queued for approval → user reviews and sends.<br>
+        <strong>Autopilot:</strong> Outreach drafts generated automatically. Sending always requires approval (external communications).
+      </div>
+
+      <div class="mod-section-title">Linked Recipes</div>
+      <div class="mod-tag-row">
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Influencer Outreach Sequence</span>
+      </div>
+    </div>
+  </details>
+
+  <!-- ── Affiliate Manager ── -->
+  <details class="mod-card">
+    <summary class="mod-header">
+      <span class="mod-icon">&#129309;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Affiliate Manager <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green)">Automatable</span></div>
+        <div class="mod-category">Advertise</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Manage affiliate programs — track referrals, commissions, payouts, and affiliate performance across partners.</p>
+
+      <div class="mod-section-title">Triggers</div>
+      <ul class="mod-list">
+        <li><strong>Schedule:</strong> Monthly affiliate performance report generation</li>
+      </ul>
+
+      <div class="mod-section-title">Automated Actions</div>
+      <ul class="mod-list">
+        <li><code>generate_report</code> — Monthly affiliate performance summaries with commission breakdowns</li>
+      </ul>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Manual:</strong> User opens Affiliates → views dashboard → manually generates reports.<br>
+        <strong>Copilot/Autopilot:</strong> Install "Monthly Affiliate Report" recipe → report auto-generated on the 1st of each month → saved to Reports module.
+      </div>
+
+      <div class="mod-section-title">Linked Recipes</div>
+      <div class="mod-tag-row">
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Monthly Affiliate Report</span>
+      </div>
+    </div>
+  </details>
+
+  <!-- ── Product Feeds ── -->
+  <details class="mod-card no-auto">
+    <summary class="mod-header">
+      <span class="mod-icon">&#128230;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Product Feeds <span class="tag" style="background:rgba(255,107,107,0.15);color:var(--red)">No Automation</span></div>
+        <div class="mod-category">Advertise</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <p style="font-size:0.88rem;color:var(--text3)">Product catalog management and feed optimization for Google Shopping, Meta Commerce, etc. Manual-only — feed structure and product data require direct management. Not included in <code>AUTOMATABLE_MODULES</code>.</p>
+    </div>
+  </details>
+
+  <!-- ── A/B Testing ── -->
+  <details class="mod-card">
+    <summary class="mod-header">
+      <span class="mod-icon">&#9878;&#65039;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">A/B Testing <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green)">Automatable</span></div>
+        <div class="mod-category">Advertise</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Run split tests on ads, emails, landing pages, and content. AI generates test variants, tracks statistical significance, and recommends winners.</p>
+
+      <div class="mod-section-title">Triggers</div>
+      <ul class="mod-list">
+        <li><strong>Event:</strong> Test reaches statistical significance → auto-declare winner</li>
+        <li><strong>Schedule:</strong> Periodic variant generation for active campaigns</li>
+      </ul>
+
+      <div class="mod-section-title">Automated Actions</div>
+      <ul class="mod-list">
+        <li><code>generate_content</code> — Creates A/B test variants (headlines, copy, CTAs) via Claude</li>
+        <li>Winner auto-declaration when confidence interval crosses threshold</li>
+      </ul>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Manual:</strong> User creates test → defines variants → waits for results → manually picks winner.<br>
+        <strong>Copilot:</strong> Engine generates variant suggestions → queued for approval → once approved, test runs → results auto-analyzed.<br>
+        <strong>Autopilot:</strong> Variants generated and test started automatically. Winner auto-applied when significance reached.
+      </div>
+    </div>
+  </details>
+
+  <!-- ── Budget Optimizer ── -->
+  <details class="mod-card">
+    <summary class="mod-header">
+      <span class="mod-icon">&#128176;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Budget Optimizer <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green)">Automatable</span></div>
+        <div class="mod-category">Advertise</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Cross-channel budget allocation and optimization. Analyzes performance across all ad platforms and recommends optimal spend distribution.</p>
+
+      <div class="mod-section-title">Triggers</div>
+      <ul class="mod-list">
+        <li><strong>Threshold:</strong> ROAS or CPA crossing defined limits across any channel</li>
+        <li><strong>Schedule:</strong> Weekly budget rebalancing review</li>
+      </ul>
+
+      <div class="mod-section-title">Automated Actions</div>
+      <ul class="mod-list">
+        <li><code>adjust_budget</code> — Smart reallocation across campaigns and channels based on performance</li>
+        <li>Works in tandem with Paid Advertising module's <code>adsOptimizer</code></li>
+      </ul>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Manual:</strong> User reviews cross-channel performance → manually redistributes budget.<br>
+        <strong>Copilot:</strong> Install "Weekly Budget Rebalancer" → engine analyzes 7-day performance → suggests optimal allocation → user approves rebalancing.<br>
+        <strong>Autopilot:</strong> Budget shifts execute automatically within defined guardrails (max % change per cycle, monthly cap).
+      </div>
+
+      <div class="mod-section-title">Linked Recipes</div>
+      <div class="mod-tag-row">
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Weekly Budget Rebalancer</span>
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">ROAS Guardian</span>
+      </div>
+    </div>
+  </details>
+
+  <!-- ── Referral & Loyalty ── -->
+  <details class="mod-card">
+    <summary class="mod-header">
+      <span class="mod-icon">&#127873;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Referral &amp; Loyalty <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green)">Automatable</span></div>
+        <div class="mod-category">Advertise</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Referral program management and loyalty rewards — track referrals, manage reward tiers, automate point accrual and redemption.</p>
+
+      <div class="mod-section-title">Triggers</div>
+      <ul class="mod-list">
+        <li><strong>Event:</strong> New referral completed → trigger reward notification</li>
+        <li><strong>Threshold:</strong> Customer reaches loyalty tier milestone</li>
+      </ul>
+
+      <div class="mod-section-title">Automated Actions</div>
+      <ul class="mod-list">
+        <li>Reward notification generation and tier upgrade communications</li>
+        <li>Cross-module: triggers Email & SMS for reward notification emails</li>
+      </ul>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Manual:</strong> User manages referral program settings → manually tracks and awards points.<br>
+        <strong>Copilot/Autopilot:</strong> Referral completions and tier upgrades trigger automatic notifications and reward processing.
+      </div>
+    </div>
+  </details>
+
+  <!-- ═══════ ANALYZE CATEGORY ═══════ -->
+  <div class="cat-header">
+    <span class="cat-icon">&#128202;</span>
+    <span class="cat-name">Analyze</span>
+    <span class="cat-count">9 modules</span>
+  </div>
+
+  <!-- ── Analytics ── -->
+  <details class="mod-card no-auto">
+    <summary class="mod-header">
+      <span class="mod-icon">&#128200;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Analytics <span class="tag" style="background:rgba(255,107,107,0.15);color:var(--red)">No Automation</span></div>
+        <div class="mod-category">Analyze</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <p style="font-size:0.88rem;color:var(--text3)">Unified analytics dashboard aggregating data across all modules. Read-only dashboards — no actions to automate. Provides the data that other modules' threshold triggers consume. Not included in <code>AUTOMATABLE_MODULES</code>.</p>
+    </div>
+  </details>
+
+  <!-- ── SEO Suite ── -->
+  <details class="mod-card">
+    <summary class="mod-header">
+      <span class="mod-icon">&#128269;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">SEO Suite <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green)">Automatable</span></div>
+        <div class="mod-category">Analyze</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Comprehensive SEO management — keyword tracking, meta tag optimization, site audits, competitor keyword analysis, and content gap identification.</p>
+
+      <div class="mod-section-title">Triggers</div>
+      <ul class="mod-list">
+        <li><strong>Schedule:</strong> Weekly or monthly SEO audits and keyword reports</li>
+        <li><strong>Threshold:</strong> Keyword ranking drops below position threshold</li>
+        <li><strong>Event:</strong> Competitor gains ranking on tracked keywords</li>
+      </ul>
+
+      <div class="mod-section-title">Automated Actions</div>
+      <ul class="mod-list">
+        <li><code>optimize_keywords</code> — Run gap analysis, generate keyword recommendations</li>
+        <li><code>update_meta</code> — Suggest or auto-update meta titles, descriptions, and H1 tags</li>
+        <li><code>generate_report</code> — Comprehensive SEO audit reports with action items</li>
+      </ul>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Manual:</strong> User runs SEO audits → reviews keyword positions → manually updates meta tags and content.<br>
+        <strong>Copilot:</strong> Install "Monthly Meta Audit" → engine scans all pages for SEO issues on the 1st → generates improvement suggestions → queued for approval → user applies fixes.<br>
+        <strong>Autopilot:</strong> Audit reports auto-generated. Meta tag updates can auto-apply for low-risk changes (description length fixes). Keyword gap analysis feeds into Content module for automated brief generation.
+      </div>
+
+      <div class="mod-section-title">Linked Recipes</div>
+      <div class="mod-tag-row">
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Monthly Meta Audit</span>
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Competitor Keyword Gap</span>
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Weekly SEO Content Briefs</span>
+      </div>
+    </div>
+  </details>
+
+  <!-- ── CRM ── -->
+  <details class="mod-card">
+    <summary class="mod-header">
+      <span class="mod-icon">&#128101;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">CRM <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green)">Automatable</span></div>
+        <div class="mod-category">Analyze</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Customer relationship management — contact management, deal pipeline, interaction tracking, and lead scoring.</p>
+
+      <div class="mod-section-title">Triggers</div>
+      <ul class="mod-list">
+        <li><strong>Event:</strong> <code>new_contact</code> — fires when a new lead/contact is added to CRM</li>
+        <li><strong>Threshold:</strong> Lead score reaches qualification threshold</li>
+      </ul>
+
+      <div class="mod-section-title">Automated Actions</div>
+      <ul class="mod-list">
+        <li>Cross-module trigger: <code>new_contact</code> → kicks off Email & SMS welcome sequence</li>
+        <li>Lead scoring updates and pipeline stage transitions</li>
+      </ul>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Manual:</strong> User manages contacts → moves deals through pipeline → manually sends follow-up emails.<br>
+        <strong>Copilot:</strong> Install "New Lead Welcome Sequence" → when a contact is added, engine triggers welcome email in Email & SMS → queued for approval → user reviews and sends.<br>
+        <strong>Autopilot:</strong> Welcome sequences fire automatically. Lead scoring updates in real-time. Pipeline stage suggestions auto-applied.
+      </div>
+
+      <div class="mod-section-title">Linked Recipes</div>
+      <div class="mod-tag-row">
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">New Lead Welcome Sequence</span>
+      </div>
+    </div>
+  </details>
+
+  <!-- ── Reviews & Reputation ── -->
+  <details class="mod-card">
+    <summary class="mod-header">
+      <span class="mod-icon">&#11088;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Reviews &amp; Reputation <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green)">Automatable</span></div>
+        <div class="mod-category">Analyze</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Monitor and respond to customer reviews across Google, Trustpilot, Yelp, and other platforms. AI-powered response generation with sentiment analysis.</p>
+
+      <div class="mod-section-title">Triggers</div>
+      <ul class="mod-list">
+        <li><strong>Event:</strong> <code>new_review</code> with <code>rating &gt;= 4</code> — positive review received</li>
+        <li><strong>Event:</strong> <code>new_review</code> with <code>rating &lt; 3</code> — negative review received (escalation trigger)</li>
+        <li><strong>Event:</strong> <code>new_review</code> with <code>rating &gt;= 3</code> — any review for general response</li>
+      </ul>
+
+      <div class="mod-section-title">Automated Actions</div>
+      <ul class="mod-list">
+        <li><code>respond_review</code> — AI drafts personalized responses (grateful tone for positive, empathetic for negative, max 100 words)</li>
+        <li>Low-rating reviews auto-escalate to Customer AI for support ticket creation</li>
+      </ul>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Manual:</strong> User monitors review dashboard → reads reviews → writes responses manually.<br>
+        <strong>Copilot:</strong> Install "Auto Review Responder" → new 4+ star reviews get AI-drafted responses → queued for approval → user tweaks and posts. Install "Low Rating Alert" → negative reviews trigger immediate notification + draft empathetic response.<br>
+        <strong>Autopilot:</strong> Positive review responses auto-post (high confidence). Negative review responses always queue for approval (high-impact, external-facing). Low ratings auto-escalate to support.
+      </div>
+
+      <div class="mod-section-title">Linked Recipes</div>
+      <div class="mod-tag-row">
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Auto Review Responder</span>
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Low Rating Alert & Response</span>
+      </div>
+    </div>
+  </details>
+
+  <!-- ── Competitor Intel ── -->
+  <details class="mod-card">
+    <summary class="mod-header">
+      <span class="mod-icon">&#128373;&#65039;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Competitor Intel <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green)">Automatable</span></div>
+        <div class="mod-category">Analyze</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Track competitor websites, social media, ads, pricing, and keyword strategies. AI-generated competitive analysis reports.</p>
+
+      <div class="mod-section-title">Triggers</div>
+      <ul class="mod-list">
+        <li><strong>Schedule:</strong> Weekly or monthly competitor analysis runs</li>
+        <li><strong>Event:</strong> Competitor pricing change or new campaign detected</li>
+      </ul>
+
+      <div class="mod-section-title">Automated Actions</div>
+      <ul class="mod-list">
+        <li><code>generate_report</code> — Competitive analysis reports with insights and recommendations</li>
+        <li>Cross-module: feeds keyword data into SEO's "Competitor Keyword Gap" recipe</li>
+      </ul>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Manual:</strong> User adds competitors → views comparison dashboards → generates analysis reports on demand.<br>
+        <strong>Copilot/Autopilot:</strong> Scheduled competitor scans generate weekly intelligence briefs. Keyword gap data auto-feeds into SEO module.
+      </div>
+    </div>
+  </details>
+
+  <!-- ── Marketing Calendar ── -->
+  <details class="mod-card no-auto">
+    <summary class="mod-header">
+      <span class="mod-icon">&#128197;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Marketing Calendar <span class="tag" style="background:rgba(255,107,107,0.15);color:var(--red)">No Automation</span></div>
+        <div class="mod-category">Analyze</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <p style="font-size:0.88rem;color:var(--text3)">Visual calendar for planning and scheduling marketing activities across all channels. Aggregates scheduled items from Email & SMS, Social, Content, and Ads modules. Read/write UI — no automation triggers. Not included in <code>AUTOMATABLE_MODULES</code>.</p>
+    </div>
+  </details>
+
+  <!-- ── Client Reports ── -->
+  <details class="mod-card">
+    <summary class="mod-header">
+      <span class="mod-icon">&#128203;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Client Reports <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green)">Automatable</span></div>
+        <div class="mod-category">Analyze</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Generate white-label performance reports across all modules. Customizable templates, scheduled delivery, and multi-client support.</p>
+
+      <div class="mod-section-title">Triggers</div>
+      <ul class="mod-list">
+        <li><strong>Schedule:</strong> Weekly, biweekly, or monthly report generation</li>
+      </ul>
+
+      <div class="mod-section-title">Automated Actions</div>
+      <ul class="mod-list">
+        <li><code>generate_report</code> — Cross-module performance summaries with AI-written insights</li>
+        <li>White-label formatting with client branding</li>
+        <li>Scheduled auto-delivery via email</li>
+      </ul>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Manual:</strong> User opens Reports → selects modules to include → generates report → downloads or shares.<br>
+        <strong>Copilot:</strong> Install "Weekly Performance Report" → engine compiles data from all active modules every Monday → generates AI summary → queued for review → user approves and sends to clients.<br>
+        <strong>Autopilot:</strong> Reports auto-generated and saved. Delivery to clients can be auto-scheduled if enabled.
+      </div>
+
+      <div class="mod-section-title">Linked Recipes</div>
+      <div class="mod-tag-row">
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Weekly Performance Report</span>
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Friday Goal Progress Update</span>
+      </div>
+    </div>
+  </details>
+
+  <!-- ── Audience Builder ── -->
+  <details class="mod-card">
+    <summary class="mod-header">
+      <span class="mod-icon">&#127919;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Audience Builder <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green)">Automatable</span></div>
+        <div class="mod-category">Analyze</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Create and manage audience segments based on behavior, demographics, purchase history, and engagement. AI-powered lookalike audience generation.</p>
+
+      <div class="mod-section-title">Triggers</div>
+      <ul class="mod-list">
+        <li><strong>Schedule:</strong> Periodic audience refresh and segment recalculation</li>
+        <li><strong>Threshold:</strong> Segment size crosses minimum/maximum bounds</li>
+      </ul>
+
+      <div class="mod-section-title">Automated Actions</div>
+      <ul class="mod-list">
+        <li>Audience segment auto-refresh based on latest data</li>
+        <li>Cross-module: updated segments feed into Ads targeting and Email & SMS campaigns</li>
+      </ul>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Manual:</strong> User creates segments with filters → syncs to ad platforms → manually refreshes.<br>
+        <strong>Copilot/Autopilot:</strong> Segments auto-refresh on schedule. New lookalike audiences suggested when source segments grow significantly.
+      </div>
+    </div>
+  </details>
+
+  <!-- ── Goal Tracker ── -->
+  <details class="mod-card">
+    <summary class="mod-header">
+      <span class="mod-icon">&#127942;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Goal Tracker <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green)">Automatable</span></div>
+        <div class="mod-category">Analyze</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Set and track marketing goals — KPIs, OKRs, milestones. Visual progress bars, AI-powered risk assessment, and achievement notifications.</p>
+
+      <div class="mod-section-title">Triggers</div>
+      <ul class="mod-list">
+        <li><strong>Schedule:</strong> Friday afternoon — weekly goal progress check</li>
+        <li><strong>Threshold:</strong> Goal falls behind projected pace (at-risk detection)</li>
+      </ul>
+
+      <div class="mod-section-title">Automated Actions</div>
+      <ul class="mod-list">
+        <li><code>generate_report</code> — Weekly goal progress summary with risk highlighting and recommendations</li>
+        <li>At-risk goals flagged with suggested corrective actions</li>
+      </ul>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Manual:</strong> User sets goals → monitors progress bars → reviews at team meetings.<br>
+        <strong>Copilot:</strong> Install "Friday Goal Progress Update" → every Friday, engine generates progress report highlighting at-risk goals → queued for review.<br>
+        <strong>Autopilot:</strong> Weekly progress reports auto-generated and delivered. At-risk alerts auto-sent to stakeholders.
+      </div>
+
+      <div class="mod-section-title">Linked Recipes</div>
+      <div class="mod-tag-row">
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Friday Goal Progress Update</span>
+      </div>
+    </div>
+  </details>
+
+  <!-- ═══════ MANAGE CATEGORY ═══════ -->
+  <div class="cat-header">
+    <span class="cat-icon">&#9881;&#65039;</span>
+    <span class="cat-name">Manage</span>
+    <span class="cat-count">3 modules</span>
+  </div>
+
+  <!-- ── E-commerce Hub ── -->
+  <details class="mod-card">
+    <summary class="mod-header">
+      <span class="mod-icon">&#128722;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">E-commerce Hub <span class="tag" style="background:rgba(253,203,110,0.15);color:var(--amber)">Limited</span></div>
+        <div class="mod-category">Manage</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Shopify and e-commerce integration — order syncing, product management, store performance dashboards, and inventory tracking.</p>
+
+      <div class="mod-section-title">Automation Status</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Not in <code>AUTOMATABLE_MODULES</code> but has automated sync operations. Order data feeds into other modules (Ads ROAS calculations, CRM contact enrichment, Reports).</p>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Sync:</strong> Connects to Shopify via OAuth → auto-syncs orders and products on schedule → data flows to Analytics, Ads (ROAS), and CRM.<br>
+        <strong>Manual:</strong> User views order dashboard, manages product catalog, monitors store health metrics.
+      </div>
+    </div>
+  </details>
+
+  <!-- ── Customer AI ── -->
+  <details class="mod-card">
+    <summary class="mod-header">
+      <span class="mod-icon">&#129302;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Customer AI <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green)">Automatable</span></div>
+        <div class="mod-category">Manage</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">AI-powered customer support — chatbot configuration, support ticket management, FAQ generation, and automated response suggestions. The chatbot uses brand context from Brand Hub.</p>
+
+      <div class="mod-section-title">Triggers</div>
+      <ul class="mod-list">
+        <li><strong>Event:</strong> <code>ticket_closed</code> — when a support ticket is resolved, suggest KB article creation</li>
+        <li><strong>Event:</strong> Low-rating review escalated from Reviews module</li>
+      </ul>
+
+      <div class="mod-section-title">Automated Actions</div>
+      <ul class="mod-list">
+        <li>Auto-suggest Knowledge Base articles from resolved tickets</li>
+        <li>Chatbot auto-responds to common queries using trained knowledge</li>
+        <li>Escalation routing for complex issues</li>
+      </ul>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Manual:</strong> User configures chatbot → manages support tickets → writes FAQ manually.<br>
+        <strong>Copilot:</strong> Install "Support Ticket → FAQ Article" → when tickets are closed, engine drafts a KB article → queued for approval → user reviews and publishes to Knowledge Base.<br>
+        <strong>Autopilot:</strong> FAQ suggestions auto-generated. Chatbot handles Tier 1 queries autonomously. Escalation rules auto-route complex issues.
+      </div>
+
+      <div class="mod-section-title">Linked Recipes</div>
+      <div class="mod-tag-row">
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Support Ticket → FAQ Article</span>
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Low Rating Escalation</span>
+      </div>
+    </div>
+  </details>
+
+  <!-- ── Knowledge Base ── -->
+  <details class="mod-card">
+    <summary class="mod-header">
+      <span class="mod-icon">&#128218;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Knowledge Base <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green)">Automatable</span></div>
+        <div class="mod-category">Manage</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Self-service knowledge base for customers and internal teams. AI-generated articles, category management, search analytics, and gap detection.</p>
+
+      <div class="mod-section-title">Triggers</div>
+      <ul class="mod-list">
+        <li><strong>Schedule:</strong> Monthly knowledge gap analysis — identifies topics with high search volume but no articles</li>
+        <li><strong>Event:</strong> <code>ticket_closed</code> — resolved support tickets suggest new FAQ articles</li>
+      </ul>
+
+      <div class="mod-section-title">Automated Actions</div>
+      <ul class="mod-list">
+        <li><code>generate_content</code> — Creates KB articles and FAQ entries via Claude</li>
+        <li>Gap analysis identifies missing topics from search queries and support tickets</li>
+      </ul>
+
+      <div class="mod-section-title">How Users Use It</div>
+      <div class="user-flow">
+        <strong>Manual:</strong> User writes articles → organizes into categories → monitors search analytics.<br>
+        <strong>Copilot:</strong> Install "KB Gap Filler" → engine monthly scans search queries with no matching articles → generates draft articles for gaps → queued for approval.<br>
+        <strong>Autopilot:</strong> Gap analysis runs automatically. Draft articles generated but always queue for review (published content needs human oversight).
+      </div>
+
+      <div class="mod-section-title">Linked Recipes</div>
+      <div class="mod-tag-row">
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">KB Gap Filler</span>
+        <span class="tag" style="background:rgba(59,130,246,0.15);color:var(--blue2)">Support Ticket → FAQ</span>
+      </div>
+    </div>
+  </details>
+
+  <!-- ═══════ CONNECT & AUTOMATE CATEGORY ═══════ -->
+  <div class="cat-header">
+    <span class="cat-icon">&#128279;</span>
+    <span class="cat-name">Connect &amp; Automate</span>
+    <span class="cat-count">6 modules</span>
+  </div>
+
+  <!-- ── Integrations Hub ── -->
+  <details class="mod-card no-auto">
+    <summary class="mod-header">
+      <span class="mod-icon">&#128268;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Integrations Hub <span class="tag" style="background:rgba(255,107,107,0.15);color:var(--red)">No Automation</span></div>
+        <div class="mod-category">Connect & Automate</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <p style="font-size:0.88rem;color:var(--text3)">Central hub for connecting third-party services — Shopify, Google Ads, Meta, Slack, HubSpot, Mailchimp, etc. OAuth2 flows, API key management, and connection health monitoring. Configuration-only — no automated actions. Not included in <code>AUTOMATABLE_MODULES</code>.</p>
+    </div>
+  </details>
+
+  <!-- ── API Manager ── -->
+  <details class="mod-card no-auto">
+    <summary class="mod-header">
+      <span class="mod-icon">&#128272;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">API Manager <span class="tag" style="background:rgba(255,107,107,0.15);color:var(--red)">No Automation</span></div>
+        <div class="mod-category">Connect & Automate</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <p style="font-size:0.88rem;color:var(--text3)">Manage API keys, rate limits, and usage tracking for the Overload API. Developer-facing configuration tool. Not included in <code>AUTOMATABLE_MODULES</code>.</p>
+    </div>
+  </details>
+
+  <!-- ── Webhooks ── -->
+  <details class="mod-card no-auto">
+    <summary class="mod-header">
+      <span class="mod-icon">&#128232;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Webhooks <span class="tag" style="background:rgba(253,203,110,0.15);color:var(--amber)">Trigger Source</span></div>
+        <div class="mod-category">Connect & Automate</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Receive and send webhooks to/from external services. While not automatable itself, Webhooks serve as a <strong>trigger source</strong> for the automation engine — external events (Shopify order, Stripe payment, form submission) can fire automation rules.</p>
+
+      <div class="mod-section-title">Role in Automation</div>
+      <div class="user-flow">
+        Incoming webhooks can trigger <code>event</code>-type rules in the automation engine. For example:<br>
+        &bull; Shopify <code>orders/create</code> webhook → triggers "New Order" event → CRM contact creation + welcome email<br>
+        &bull; Stripe <code>payment_succeeded</code> webhook → triggers revenue milestone check<br>
+        &bull; External form submission → triggers lead capture → CRM + Email sequence
+      </div>
+    </div>
+  </details>
+
+  <!-- ── Workflow Builder ── -->
+  <details class="mod-card no-auto">
+    <summary class="mod-header">
+      <span class="mod-icon">&#9889;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Workflow Builder <span class="tag" style="background:rgba(253,203,110,0.15);color:var(--amber)">Orchestrator</span></div>
+        <div class="mod-category">Connect & Automate</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Visual workflow builder for creating multi-step automation sequences. Drag-and-drop nodes, conditional branching, delays, and cross-module actions.</p>
+
+      <div class="mod-section-title">Role in Automation</div>
+      <div class="user-flow">
+        Workflow Builder is the <strong>visual interface</strong> for the automation engine. While the Rule Engine runs on 60s ticks with single trigger → action pairs, Workflow Builder allows users to create complex multi-step sequences:<br>
+        &bull; <strong>Trigger:</strong> New review with rating &lt; 3<br>
+        &bull; <strong>Step 1:</strong> Generate empathetic response (Reviews module)<br>
+        &bull; <strong>Step 2:</strong> Wait 5 minutes<br>
+        &bull; <strong>Step 3:</strong> Create support ticket (Customer AI)<br>
+        &bull; <strong>Step 4:</strong> Send internal alert (Email & SMS)<br>
+        &bull; <strong>Step 5:</strong> If not resolved in 24h → escalate to team lead
+      </div>
+    </div>
+  </details>
+
+  <!-- ── The Advisor ── -->
+  <details class="mod-card no-auto">
+    <summary class="mod-header">
+      <span class="mod-icon">&#129504;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">The Advisor <span class="tag" style="background:rgba(255,107,107,0.15);color:var(--red)">No Automation</span></div>
+        <div class="mod-category">Connect & Automate</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <p style="font-size:0.88rem;color:var(--text3)">AI-powered daily marketing briefing and strategic recommendations. Read-only — generates actionable insights based on platform-wide data. No automated actions; advisory role only. Not included in <code>AUTOMATABLE_MODULES</code>.</p>
+    </div>
+  </details>
+
+  <!-- ── Autopilot Mode ── -->
+  <details class="mod-card no-auto">
+    <summary class="mod-header">
+      <span class="mod-icon">&#128640;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Autopilot Mode <span class="tag" style="background:rgba(253,203,110,0.15);color:var(--amber)">Control Plane</span></div>
+        <div class="mod-category">Connect & Automate</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">The control center for the entire automation engine. Not a module that gets automated — it <strong>controls</strong> automation for all other modules.</p>
+
+      <div class="mod-section-title">Features</div>
+      <ul class="mod-list">
+        <li><strong>Setup Wizard:</strong> Guided onboarding to select which modules to automate</li>
+        <li><strong>Mode Toggles:</strong> Switch each module between Manual → Copilot → Autopilot</li>
+        <li><strong>Risk Level:</strong> Set global risk appetite (Conservative / Balanced / Aggressive)</li>
+        <li><strong>Dashboard:</strong> Real-time view of all automated actions, pending approvals, and system health</li>
+        <li><strong>Confidence Threshold:</strong> Set minimum confidence score for auto-execution (default 70%)</li>
+        <li><strong>Emergency Stop:</strong> One-click pause all automation across every module</li>
+      </ul>
+    </div>
+  </details>
+
+  <!-- ═══════ SETTINGS CATEGORY ═══════ -->
+  <div class="cat-header">
+    <span class="cat-icon">&#9881;&#65039;</span>
+    <span class="cat-name">Settings &amp; Configuration</span>
+    <span class="cat-count">4 modules</span>
+  </div>
+
+  <!-- ── Brand Hub ── -->
+  <details class="mod-card">
+    <summary class="mod-header">
+      <span class="mod-icon">&#127912;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Brand Hub <span class="tag" style="background:rgba(253,203,110,0.15);color:var(--amber)">Context Provider</span></div>
+        <div class="mod-category">Settings</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Central brand identity management — brand voice, tone, values, target audience, visual guidelines, and competitive positioning.</p>
+
+      <div class="mod-section-title">Role in Automation</div>
+      <div class="user-flow">
+        Brand Hub is the <strong>context provider</strong> for all AI-generated automation content. When any module generates content (blog posts, emails, social posts, ad copy, review responses), Claude receives the brand profile as system context. This ensures:<br>
+        &bull; Consistent brand voice across all automated outputs<br>
+        &bull; Target audience awareness in messaging<br>
+        &bull; Brand values reflected in generated content<br>
+        &bull; Visual guidelines respected in creative generation<br><br>
+        <strong>Impact:</strong> A well-configured Brand Hub dramatically improves the quality of all automated content. Without it, generated content is generic.
+      </div>
+    </div>
+  </details>
+
+  <!-- ── Team & Permissions ── -->
+  <details class="mod-card no-auto">
+    <summary class="mod-header">
+      <span class="mod-icon">&#128101;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Team &amp; Permissions <span class="tag" style="background:rgba(255,107,107,0.15);color:var(--red)">No Automation</span></div>
+        <div class="mod-category">Settings</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <p style="font-size:0.88rem;color:var(--text3)">Workspace member management — invite users, assign roles (owner, admin, member, viewer), manage permissions. Configuration-only. Not included in <code>AUTOMATABLE_MODULES</code>.</p>
+    </div>
+  </details>
+
+  <!-- ── Client Manager ── -->
+  <details class="mod-card no-auto">
+    <summary class="mod-header">
+      <span class="mod-icon">&#128188;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Client Manager <span class="tag" style="background:rgba(255,107,107,0.15);color:var(--red)">No Automation</span></div>
+        <div class="mod-category">Settings</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <p style="font-size:0.88rem;color:var(--text3)">Multi-client workspace management for agencies. Switch between client workspaces, manage client profiles, and scope module access per client. Configuration-only. Not included in <code>AUTOMATABLE_MODULES</code>.</p>
+    </div>
+  </details>
+
+  <!-- ── Automation Settings ── -->
+  <details class="mod-card no-auto">
+    <summary class="mod-header">
+      <span class="mod-icon">&#128736;&#65039;</span>
+      <div class="mod-title-row">
+        <div class="mod-name">Automation Settings <span class="tag" style="background:rgba(253,203,110,0.15);color:var(--amber)">Config</span></div>
+        <div class="mod-category">Settings</div>
+      </div>
+    </summary>
+    <div class="mod-body">
+      <div class="mod-section-title">What It Does</div>
+      <p style="font-size:0.88rem;color:var(--text2)">Global automation configuration — controls safety limits, notification preferences, and system behavior across all modules.</p>
+
+      <div class="mod-section-title">Settings</div>
+      <ul class="mod-list">
+        <li><code>pauseAll</code> — Emergency stop. Halts all automation engine activity immediately</li>
+        <li><code>maxActionsPerDay</code> — Daily action cap across all modules (default: 50)</li>
+        <li><code>maxActionsPerHour</code> — Hourly burst limit (default: 10)</li>
+        <li><code>monthlyBudgetLimit</code> — Total monthly spend cap for ad-related automation</li>
+        <li><code>confidenceThreshold</code> — Minimum AI confidence for auto-execution (default: 70%)</li>
+        <li><code>riskLevel</code> — Global risk appetite: conservative, balanced, or aggressive</li>
+        <li><code>notifyNewSuggestions</code> — Alert when new automation suggestions are generated</li>
+        <li><code>notifyCompletedActions</code> — Alert when automated actions complete</li>
+        <li><code>notifyFailedActions</code> — Alert when automated actions fail</li>
+      </ul>
+    </div>
+  </details>
+
+  <!-- ═══════ CROSS-MODULE AUTOMATION FLOWS ═══════ -->
+  <h3 style="margin-top:48px;margin-bottom:16px;color:var(--accent2)">&#128256; Cross-Module Automation Flows</h3>
+  <p class="subtitle">The real power of the automation engine comes from modules triggering each other. Here are the key cross-module flows:</p>
+
+  <div class="module-grid">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px">
+      <strong style="color:var(--green2)">Blog → Social → Email</strong>
+      <p style="font-size:0.85rem;color:var(--text2);margin-top:8px">
+        Content publishes blog post → <code>content_published</code> event fires → Social generates platform-specific posts → Email includes blog link in weekly newsletter.
+      </p>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px">
+      <strong style="color:var(--green2)">CRM → Email → Content</strong>
+      <p style="font-size:0.85rem;color:var(--text2);margin-top:8px">
+        New contact added to CRM → <code>new_contact</code> event fires → Email sends welcome sequence → Content generates personalized onboarding materials.
+      </p>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px">
+      <strong style="color:var(--green2)">Reviews → Customer AI → Knowledge Base</strong>
+      <p style="font-size:0.85rem;color:var(--text2);margin-top:8px">
+        Negative review received → Reviews drafts response → low rating escalates to Customer AI → support ticket created → when resolved, <code>ticket_closed</code> event generates KB article.
+      </p>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px">
+      <strong style="color:var(--green2)">SEO → Content → Social</strong>
+      <p style="font-size:0.85rem;color:var(--text2);margin-top:8px">
+        SEO audit finds keyword gaps → generates content briefs → Content module creates blog posts → Social promotes published content across platforms.
+      </p>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px">
+      <strong style="color:var(--green2)">Ads → Budget Optimizer → Reports</strong>
+      <p style="font-size:0.85rem;color:var(--text2);margin-top:8px">
+        ROAS drops below threshold → Ads module alerts Budget Optimizer → budget reallocated to top performers → weekly performance report captures the changes.
+      </p>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px">
+      <strong style="color:var(--green2)">Webhooks → CRM → Email → Reports</strong>
+      <p style="font-size:0.85rem;color:var(--text2);margin-top:8px">
+        External form submission webhook → CRM creates contact → Email sends welcome → Goal Tracker updates lead count → Reports includes in weekly summary.
+      </p>
+    </div>
+  </div>
+
+  <div class="highlight-box">
+    <strong>Module Interdependency:</strong> The automation engine acts as a central message bus. Modules don't call each other directly — they emit events and the Rule Engine routes them. This means any module can trigger any other module's actions through rules, creating unlimited workflow possibilities from 20 pre-built recipes or custom user-defined rules.
+  </div>
+
+</section>
+
+<div class="divider"></div>
+
 <!-- ═══════════════════════════════════════════ WALKTHROUGH ═══════════════════════════════════════════ -->
 <section id="walkthrough">
   <h2><span class="icon" style="background:rgba(0,184,148,0.15);color:var(--green)">&#128218;</span> End-to-End Walkthrough</h2>
@@ -1574,7 +2886,7 @@ INSERT INTO ae_module_modes ... ON CONFLICT DO UPDATE SET mode = <span class="st
 <footer>
   <div class="container">
     Overload Automation Engine &mdash; Architecture Documentation<br>
-    <span style="color:var(--text3)">6 tables &bull; 25 modules &bull; 20 recipes &bull; 60s tick &bull; 3 modes &bull; 3 risk levels</span>
+    <span style="color:var(--text3)">6 tables &bull; 36 modules (25 automatable) &bull; 20 recipes &bull; 6 cross-module flows &bull; 60s tick &bull; 3 modes &bull; 3 risk levels</span>
   </div>
 </footer>
 
