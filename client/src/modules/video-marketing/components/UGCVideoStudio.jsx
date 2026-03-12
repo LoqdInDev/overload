@@ -787,8 +787,8 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
             </div>
           </div>
 
-          {/* Voice picker — for lip-sync on silent scenes */}
-          <div className="rounded-xl p-4 space-y-2.5" style={{ background: card, border: `1px solid ${border}` }}>
+          {/* Voice picker — only show when some scenes have audio and others are silent (lip-sync applies to silent ones) */}
+          {scenes.some(s => s.enableAudio) && scenes.some(s => !s.enableAudio) && <div className="rounded-xl p-4 space-y-2.5" style={{ background: card, border: `1px solid ${border}` }}>
             <div>
               <p className="text-sm font-semibold" style={{ color: textPrimary }}>Lip-Sync Voice</p>
               <p className="text-xs mt-0.5" style={{ color: textSecondary }}>
@@ -820,7 +820,7 @@ export default function UGCVideoStudio({ image, onClose, onImageClear, inline = 
                 </button>
               ))}
             </div>
-          </div>
+          </div>}
 
           {/* Package summary */}
           <div className="rounded-xl p-4 space-y-2.5"
