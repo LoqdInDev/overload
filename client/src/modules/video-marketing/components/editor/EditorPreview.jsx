@@ -265,7 +265,7 @@ export default function EditorPreview({ editor, mobile }) {
         style={{
           aspectRatio: ratioObj.css,
           maxHeight: mobile ? '30vh' : '50vh',
-          maxWidth: ratioObj.w >= ratioObj.h ? '100%' : `calc(${mobile ? '30vh' : '50vh'} * ${ratioObj.w / ratioObj.h})`,
+          maxWidth: `calc(${mobile ? '30vh' : '50vh'} * ${ratioObj.w / ratioObj.h})`,
           margin: '0 auto',
         }}
       >
