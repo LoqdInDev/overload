@@ -86,64 +86,84 @@ async function generateImage(prompt, aspectRatio = '1:1') {
     },
   };
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 90_000);
+  const MAX_RETRIES = 2;
+  let lastError;
 
-  let res;
-  try {
-    res = await fetch(`${API_URL}?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-  } catch (err) {
-    clearTimeout(timeout);
-    if (err.name === 'AbortError') throw new Error('Gemini image generation timed out after 90s — try again or use a simpler prompt');
-    throw err;
-  }
-  clearTimeout(timeout);
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 150_000);
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    const msg = err.error?.message || `Gemini API error ${res.status}`;
-    console.error('[gemini] API error:', res.status, msg);
-    throw new Error(msg);
-  }
-
-  const data = await res.json();
-  const parts = data.candidates?.[0]?.content?.parts || [];
-  const imagePart = parts.find(p => p.inlineData);
-
-  if (!imagePart) {
-    // Log what we actually got back so we can debug
-    const textPart = parts.find(p => p.text);
-    console.error('[gemini] No inlineData in response. Parts:', JSON.stringify(parts.map(p => ({ hasInlineData: !!p.inlineData, hasText: !!p.text, textPreview: p.text?.slice(0, 100) }))));
-    if (textPart) {
-      throw new Error(`Gemini returned text instead of image: ${textPart.text?.slice(0, 120)}`);
+    let res;
+    try {
+      res = await fetch(`${API_URL}?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } catch (err) {
+      clearTimeout(timeout);
+      lastError = err;
+      if (err.name === 'AbortError') {
+        if (attempt < MAX_RETRIES) { console.warn(`[gemini] Attempt ${attempt + 1} timed out, retrying...`); continue; }
+        throw new Error('Gemini image generation timed out after retries — try a simpler prompt');
+      }
+      if (attempt < MAX_RETRIES) { console.warn(`[gemini] Attempt ${attempt + 1} failed (${err.message}), retrying...`); continue; }
+      throw err;
     }
-    throw new Error('No image returned from Gemini — check model name and API key permissions');
+    clearTimeout(timeout);
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      const msg = errData.error?.message || `Gemini API error ${res.status}`;
+      console.error('[gemini] API error:', res.status, msg);
+      // Retry on 429 (rate limit) or 503 (overloaded)
+      if ((res.status === 429 || res.status === 503) && attempt < MAX_RETRIES) {
+        const delay = (attempt + 1) * 3000;
+        console.warn(`[gemini] Rate limited / overloaded, retrying in ${delay}ms...`);
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      throw new Error(msg);
+    }
+
+    const data = await res.json();
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const imagePart = parts.find(p => p.inlineData);
+
+    if (!imagePart) {
+      const textPart = parts.find(p => p.text);
+      console.error('[gemini] No inlineData in response. Parts:', JSON.stringify(parts.map(p => ({ hasInlineData: !!p.inlineData, hasText: !!p.text, textPreview: p.text?.slice(0, 100) }))));
+      if (textPart) {
+        lastError = new Error(`Gemini returned text instead of image: ${textPart.text?.slice(0, 120)}`);
+        if (attempt < MAX_RETRIES) { console.warn(`[gemini] No image in response, retrying...`); continue; }
+        throw lastError;
+      }
+      throw new Error('No image returned from Gemini — check model name and API key permissions');
+    }
+
+    const { data: base64, mimeType } = imagePart.inlineData;
+    const rawBuffer = Buffer.from(base64, 'base64');
+
+    // Compress: convert to JPEG at quality 92 — typically 5-10x smaller than raw PNG
+    const filename = `${crypto.randomUUID()}.jpg`;
+    const filepath = path.join(uploadsDir, filename);
+    const compressed = await sharp(rawBuffer).jpeg({ quality: 92, mozjpeg: true }).toBuffer();
+    fs.writeFileSync(filepath, compressed);
+
+    const compressedBase64 = compressed.toString('base64');
+    const savedMime = 'image/jpeg';
+
+    console.log(`[gemini] Saved image: ${filename} (${mimeType} → jpeg, ${(rawBuffer.length / 1024).toFixed(0)}KB → ${(compressed.length / 1024).toFixed(0)}KB, ${aspectRatio})`);
+
+    return {
+      url: `/uploads/creatives/${filename}`,
+      dataUrl: `data:${savedMime};base64,${compressedBase64}`,
+      mimeType: savedMime,
+    };
   }
-
-  const { data: base64, mimeType } = imagePart.inlineData;
-  const rawBuffer = Buffer.from(base64, 'base64');
-
-  // Compress: convert to JPEG at quality 85 — typically 5-10x smaller than raw PNG
-  const filename = `${crypto.randomUUID()}.jpg`;
-  const filepath = path.join(uploadsDir, filename);
-  const compressed = await sharp(rawBuffer).jpeg({ quality: 92, mozjpeg: true }).toBuffer();
-  fs.writeFileSync(filepath, compressed);
-
-  const compressedBase64 = compressed.toString('base64');
-  const savedMime = 'image/jpeg';
-
-  console.log(`[gemini] Saved image: ${filename} (${mimeType} → jpeg, ${(rawBuffer.length / 1024).toFixed(0)}KB → ${(compressed.length / 1024).toFixed(0)}KB, ${aspectRatio})`);
-
-  return {
-    url: `/uploads/creatives/${filename}`,
-    dataUrl: `data:${savedMime};base64,${compressedBase64}`,
-    mimeType: savedMime,
-  };
+  // All retries exhausted
+  throw lastError || new Error('Gemini image generation failed after retries');
 }
 
 /**
@@ -154,19 +174,34 @@ async function generateImage(prompt, aspectRatio = '1:1') {
  */
 async function generateImages(prompts, { aspectRatio, dimension } = {}) {
   const ratio = aspectRatio || (dimension ? dimensionToAspectRatio(dimension) : '1:1');
+  const CONCURRENCY = 2; // Max simultaneous requests to avoid rate limits
+  const results = new Array(prompts.length);
 
-  const results = await Promise.allSettled(
-    prompts.map(async (prompt) => {
-      const result = await generateImage(prompt, ratio);
-      return { ...result, prompt };
-    })
-  );
+  for (let i = 0; i < prompts.length; i += CONCURRENCY) {
+    const batch = prompts.slice(i, i + CONCURRENCY);
+    const batchResults = await Promise.allSettled(
+      batch.map(async (prompt) => {
+        const result = await generateImage(prompt, ratio);
+        return { ...result, prompt };
+      })
+    );
+    for (let j = 0; j < batchResults.length; j++) {
+      const r = batchResults[j];
+      const idx = i + j;
+      if (r.status === 'fulfilled') {
+        results[idx] = r.value;
+      } else {
+        console.error(`[gemini] Image ${idx + 1}/${prompts.length} failed:`, r.reason?.message);
+        results[idx] = { url: null, mimeType: null, prompt: prompts[idx], error: r.reason?.message };
+      }
+    }
+    // Small delay between batches to avoid rate limiting
+    if (i + CONCURRENCY < prompts.length) {
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  }
 
-  return results.map((r, i) => {
-    if (r.status === 'fulfilled') return r.value;
-    console.error(`[gemini] Image ${i + 1}/${prompts.length} failed:`, r.reason?.message);
-    return { url: null, mimeType: null, prompt: prompts[i], error: r.reason?.message };
-  });
+  return results;
 }
 
 /**
@@ -203,59 +238,81 @@ async function generateImageFromReference(promptText, referenceImages, aspectRat
     },
   };
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 90_000);
+  const MAX_RETRIES = 2;
+  let lastError;
 
-  let res;
-  try {
-    res = await fetch(`${API_URL}?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-  } catch (err) {
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 150_000);
+
+    let res;
+    try {
+      res = await fetch(`${API_URL}?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } catch (err) {
+      clearTimeout(timeout);
+      lastError = err;
+      if (err.name === 'AbortError') {
+        if (attempt < MAX_RETRIES) { console.warn(`[gemini ref] Attempt ${attempt + 1} timed out, retrying...`); continue; }
+        throw new Error('Gemini image generation timed out after retries — try a simpler prompt');
+      }
+      if (attempt < MAX_RETRIES) { console.warn(`[gemini ref] Attempt ${attempt + 1} failed (${err.message}), retrying...`); continue; }
+      throw err;
+    }
     clearTimeout(timeout);
-    if (err.name === 'AbortError') throw new Error('Gemini image generation timed out after 90s — try again or use a simpler prompt');
-    throw err;
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      const msg = errData.error?.message || `Gemini API error ${res.status}`;
+      console.error('[gemini] API error (reference):', res.status, msg);
+      if ((res.status === 429 || res.status === 503) && attempt < MAX_RETRIES) {
+        const delay = (attempt + 1) * 3000;
+        console.warn(`[gemini ref] Rate limited / overloaded, retrying in ${delay}ms...`);
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      throw new Error(msg);
+    }
+
+    const data = await res.json();
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const imagePart = parts.find(p => p.inlineData);
+
+    if (!imagePart) {
+      const textPart = parts.find(p => p.text);
+      if (textPart) {
+        lastError = new Error(`Gemini returned text instead of image: ${textPart.text?.slice(0, 120)}`);
+        if (attempt < MAX_RETRIES) { console.warn(`[gemini ref] No image in response, retrying...`); continue; }
+        throw lastError;
+      }
+      throw new Error('No image returned from Gemini for reference variation');
+    }
+
+    const { data: base64, mimeType } = imagePart.inlineData;
+    const rawBuffer = Buffer.from(base64, 'base64');
+
+    const filename = `${crypto.randomUUID()}.jpg`;
+    const filepath = path.join(uploadsDir, filename);
+    const compressed = await sharp(rawBuffer).jpeg({ quality: 92, mozjpeg: true }).toBuffer();
+    fs.writeFileSync(filepath, compressed);
+
+    const compressedBase64 = compressed.toString('base64');
+    const savedMime = 'image/jpeg';
+
+    console.log(`[gemini] Saved variation: ${filename} (${mimeType} → jpeg, ${(rawBuffer.length / 1024).toFixed(0)}KB → ${(compressed.length / 1024).toFixed(0)}KB)`);
+
+    return {
+      url: `/uploads/creatives/${filename}`,
+      dataUrl: `data:${savedMime};base64,${compressedBase64}`,
+      mimeType: savedMime,
+    };
   }
-  clearTimeout(timeout);
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    const msg = err.error?.message || `Gemini API error ${res.status}`;
-    console.error('[gemini] API error (reference):', res.status, msg);
-    throw new Error(msg);
-  }
-
-  const data = await res.json();
-  const parts = data.candidates?.[0]?.content?.parts || [];
-  const imagePart = parts.find(p => p.inlineData);
-
-  if (!imagePart) {
-    const textPart = parts.find(p => p.text);
-    if (textPart) throw new Error(`Gemini returned text instead of image: ${textPart.text?.slice(0, 120)}`);
-    throw new Error('No image returned from Gemini for reference variation');
-  }
-
-  const { data: base64, mimeType } = imagePart.inlineData;
-  const rawBuffer = Buffer.from(base64, 'base64');
-
-  const filename = `${crypto.randomUUID()}.jpg`;
-  const filepath = path.join(uploadsDir, filename);
-  const compressed = await sharp(rawBuffer).jpeg({ quality: 92, mozjpeg: true }).toBuffer();
-  fs.writeFileSync(filepath, compressed);
-
-  const compressedBase64 = compressed.toString('base64');
-  const savedMime = 'image/jpeg';
-
-  console.log(`[gemini] Saved variation: ${filename} (${mimeType} → jpeg, ${(rawBuffer.length / 1024).toFixed(0)}KB → ${(compressed.length / 1024).toFixed(0)}KB)`);
-
-  return {
-    url: `/uploads/creatives/${filename}`,
-    dataUrl: `data:${savedMime};base64,${compressedBase64}`,
-    mimeType: savedMime,
-  };
+  // All retries exhausted
+  throw lastError || new Error('Gemini reference image generation failed after retries');
 }
 
 module.exports = { generateImage, generateImages, generateImageFromReference, dimensionToAspectRatio };
