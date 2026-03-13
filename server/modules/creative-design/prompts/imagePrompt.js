@@ -93,6 +93,11 @@ Generate ${count} prompt variation${count === 1 ? '' : 's'}. Each must be highly
 - Mood and tone
 - Any text overlay suggestions (describe placement and style, NOT the actual text content)
 
+PRODUCT REALISM — CRITICAL:
+- Jewelry (chains, necklaces, bracelets, rings, earrings) must be shown WORN NATURALLY on the body at realistic scale. A chain goes around the neck and hangs on the chest — it does NOT float, stretch across the frame, or appear oversized.
+- Products must obey real-world physics: correct proportions, gravity, and natural drape/fit on the human body.
+- Always add to negative_prompt: "unrealistic product scale, floating product, oversized jewelry, distorted proportions, product stretching across frame"
+
 Return ONLY the JSON object.`;
 }
 

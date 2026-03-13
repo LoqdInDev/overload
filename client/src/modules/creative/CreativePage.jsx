@@ -56,14 +56,14 @@ const MODEL_POSES = [
   { id: 'profile', label: 'Side Profile', prompt: 'dramatic side profile view, product catching the light' },
 ];
 const PRODUCT_PLACEMENTS = [
-  { id: 'neck', label: 'Necklace / Chain', prompt: 'wearing a necklace/chain prominently on neck' },
-  { id: 'wrist', label: 'Bracelet / Watch', prompt: 'wearing bracelet or watch on wrist, hand positioned to show it off' },
-  { id: 'ears', label: 'Earrings', prompt: 'wearing earrings, tilted head to show them off' },
-  { id: 'fingers', label: 'Rings', prompt: 'wearing rings, hands positioned elegantly to display them' },
-  { id: 'holding', label: 'Holding Product', prompt: 'holding the product up toward camera' },
-  { id: 'wearing', label: 'Wearing (General)', prompt: 'naturally wearing the product in a lifestyle setting' },
-  { id: 'on-surface', label: 'Product on Surface', prompt: 'product placed on a textured surface with dramatic lighting' },
-  { id: 'unboxing', label: 'Unboxing', prompt: 'unboxing the product, showing packaging and first reveal' },
+  { id: 'neck', label: 'Necklace / Chain', prompt: 'wearing a necklace/chain naturally around neck hanging on chest at realistic scale, not floating or oversized' },
+  { id: 'wrist', label: 'Bracelet / Watch', prompt: 'wearing bracelet or watch snug on wrist at realistic size, hand positioned to show it off' },
+  { id: 'ears', label: 'Earrings', prompt: 'wearing earrings at natural scale on earlobes, tilted head to show them off' },
+  { id: 'fingers', label: 'Rings', prompt: 'wearing rings at realistic size on fingers, hands positioned elegantly to display them' },
+  { id: 'holding', label: 'Holding Product', prompt: 'holding the product naturally in hand at realistic proportions toward camera' },
+  { id: 'wearing', label: 'Wearing (General)', prompt: 'naturally wearing the product fitted to body at correct real-world scale in a lifestyle setting' },
+  { id: 'on-surface', label: 'Product on Surface', prompt: 'product placed on a textured surface at real-world proportions with dramatic lighting' },
+  { id: 'unboxing', label: 'Unboxing', prompt: 'unboxing the product at natural scale, showing packaging and first reveal' },
 ];
 const SETTINGS = [
   { id: 'studio', emoji: '🎬', name: 'Studio', prompt: 'professional studio setting' },
