@@ -104,34 +104,34 @@ export default function VideoEditor() {
         onTemplates={() => setShowTemplates(true)}
       />
 
-      {/* Main area: side panel + preview */}
+      {/* Main area: icon sidebar + panel content + preview */}
       <div className="flex flex-1 overflow-hidden min-h-0">
-        {/* Left panel tabs */}
-        <div className={`w-72 flex-shrink-0 flex flex-col border-r ${border} ${panelBg}`}>
-          {/* Panel switcher — scrollable */}
-          <div className={`flex overflow-x-auto border-b ${border} scrollbar-hide`} style={{ scrollbarWidth: 'none' }}>
-            {PANELS.map(p => {
-              const active = activePanel === p.key;
-              return (
-                <button
-                  key={p.key}
-                  onClick={() => setActivePanel(p.key)}
-                  className={`flex-shrink-0 flex flex-col items-center justify-center gap-0.5 px-2.5 py-2 text-[9px] font-medium transition-all ${
-                    active
-                      ? dark ? 'text-violet-300 border-b-2 border-violet-400' : 'text-[#C45D3E] border-b-2 border-[#C45D3E]'
-                      : dark ? 'text-gray-500 hover:text-gray-300' : 'text-[#94908A] hover:text-[#332F2B]'
-                  }`}
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d={p.icon} />
-                  </svg>
-                  {p.label}
-                </button>
-              );
-            })}
-          </div>
+        {/* Icon sidebar */}
+        <div className={`w-14 flex-shrink-0 flex flex-col items-center py-2 gap-0.5 border-r ${border} ${panelBg} overflow-y-auto`} style={{ scrollbarWidth: 'none' }}>
+          {PANELS.map(p => {
+            const active = activePanel === p.key;
+            return (
+              <button
+                key={p.key}
+                onClick={() => setActivePanel(p.key)}
+                title={p.label}
+                className={`w-10 h-10 flex flex-col items-center justify-center gap-0.5 rounded-lg text-[8px] font-medium transition-all ${
+                  active
+                    ? dark ? 'bg-violet-500/15 text-violet-300' : 'bg-[#C45D3E]/10 text-[#C45D3E]'
+                    : dark ? 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.04]' : 'text-[#94908A] hover:text-[#332F2B] hover:bg-black/[0.04]'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d={p.icon} />
+                </svg>
+                <span className="leading-none">{p.label}</span>
+              </button>
+            );
+          })}
+        </div>
 
-          {/* Panel content */}
+        {/* Panel content */}
+        <div className={`w-72 flex-shrink-0 flex flex-col border-r ${border} ${panelBg}`}>
           <div className="flex-1 overflow-y-auto p-3">
             {activePanel === 'clip' && <ClipPanel editor={editor} />}
             {activePanel === 'filters' && <FiltersPanel editor={editor} />}
