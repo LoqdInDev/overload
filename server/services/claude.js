@@ -42,12 +42,28 @@ function stripThinkBlocks(text) {
 }
 
 // ─── CLAUDE (Anthropic) ────────────────────────────
-async function callClaude(prompt, { onChunk, system, temperature, maxTokens } = {}) {
+async function callClaude(prompt, { onChunk, system, temperature, maxTokens, images } = {}) {
+  // Build user content — text-only or multimodal with images
+  let userContent;
+  if (images && images.length > 0) {
+    userContent = [];
+    for (const img of images) {
+      if (img.base64 && img.mediaType) {
+        userContent.push({ type: 'image', source: { type: 'base64', media_type: img.mediaType, data: img.base64 } });
+      } else if (img.url) {
+        userContent.push({ type: 'image', source: { type: 'url', url: img.url } });
+      }
+    }
+    userContent.push({ type: 'text', text: prompt });
+  } else {
+    userContent = prompt;
+  }
+
   const params = {
     model: CLAUDE_MODEL,
     max_tokens: maxTokens,
     temperature,
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ role: 'user', content: userContent }],
   };
   if (system) {
     params.system = [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }];
@@ -135,14 +151,14 @@ async function generateWithClaude(prompt, { onChunk, system, temperature = 0.9, 
   throw lastError;
 }
 
-async function generateTextWithClaude(prompt, { onChunk, system, temperature = 0.9, maxTokens = 4096, provider = 'auto', moduleId } = {}) {
+async function generateTextWithClaude(prompt, { onChunk, system, temperature = 0.9, maxTokens = 4096, provider = 'auto', moduleId, images } = {}) {
   const chosen = pickProvider(provider, moduleId);
   const callFn = chosen === 'claude' ? callClaude : callQwen;
   let lastError;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
-      const raw = await callFn(prompt, { onChunk, system, temperature, maxTokens });
+      const raw = await callFn(prompt, { onChunk, system, temperature, maxTokens, images });
       return { text: raw };
     } catch (error) {
       lastError = error;

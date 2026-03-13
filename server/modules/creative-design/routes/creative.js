@@ -393,9 +393,28 @@ ${brand.words_to_use ? `Words to Use: ${brand.words_to_use}` : ''}
 ${brand.words_to_avoid ? `Words to Avoid: ${brand.words_to_avoid}` : ''}`.replace(/\n+/g, '\n').trim();
   }
 
-  const { shotType, productPlacement, modelDirection, platform } = req.body;
+  const { shotType, productPlacement, modelDirection, platform, referenceImageUrl, referenceImageBase64, referenceImageMediaType } = req.body;
 
-  const prompt = `You are a senior creative director specializing in product photography and lifestyle campaigns. Generate a detailed creative brief for:
+  // Load reference image as base64 if it's a local upload path, or use directly if sent from client
+  let briefImages = [];
+  if (referenceImageBase64 && referenceImageMediaType) {
+    briefImages.push({ base64: referenceImageBase64, mediaType: referenceImageMediaType });
+  } else if (referenceImageUrl) {
+    if (referenceImageUrl.startsWith('/uploads/')) {
+      const imgPath = path.join(dataDir, referenceImageUrl);
+      try {
+        const imgBuf = fs.readFileSync(imgPath);
+        const ext = path.extname(imgPath).toLowerCase();
+        const mimeMap = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.gif': 'image/gif' };
+        briefImages.push({ base64: imgBuf.toString('base64'), mediaType: mimeMap[ext] || 'image/jpeg' });
+      } catch {}
+    } else if (referenceImageUrl.startsWith('http')) {
+      briefImages.push({ url: referenceImageUrl });
+    }
+  }
+  const hasRefImage = briefImages.length > 0;
+
+  const prompt = `You are a senior creative director specializing in product photography and lifestyle campaigns.${hasRefImage ? ' I\'ve attached a reference image — analyze its style, composition, lighting, color palette, and mood, then incorporate those visual elements into the brief.' : ''} Generate a detailed creative brief for:
 
 Product: ${product}
 Goal: ${goal || 'Brand Awareness'}
@@ -439,6 +458,7 @@ Be specific, actionable, and inspiring. Focus on creating shots that feel authen
   try {
     await generateTextWithClaude(prompt, {
       onChunk: (chunk) => sse.sendChunk(chunk),
+      images: briefImages.length > 0 ? briefImages : undefined,
     });
     sse.sendResult({ done: true });
   } catch (err) {
