@@ -104,10 +104,11 @@ export default function VideoEditor() {
         onTemplates={() => setShowTemplates(true)}
       />
 
-      {/* Main area: icon sidebar + panel content + preview */}
-      <div className="flex flex-1 overflow-hidden min-h-0">
-        {/* Icon sidebar */}
-        <div className={`w-14 flex-shrink-0 flex flex-col items-center py-2 gap-0.5 border-r ${border} ${panelBg} overflow-y-auto`} style={{ scrollbarWidth: 'none' }}>
+      {/* Main area — mobile: stacked, desktop: sidebar */}
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0">
+
+        {/* === Desktop icon sidebar (hidden on mobile) === */}
+        <div className={`hidden md:flex w-14 flex-shrink-0 flex-col items-center py-2 gap-0.5 border-r ${border} ${panelBg} overflow-y-auto`} style={{ scrollbarWidth: 'none' }}>
           {PANELS.map(p => {
             const active = activePanel === p.key;
             return (
@@ -130,8 +131,8 @@ export default function VideoEditor() {
           })}
         </div>
 
-        {/* Panel content */}
-        <div className={`w-72 flex-shrink-0 flex flex-col border-r ${border} ${panelBg}`}>
+        {/* === Desktop panel content (hidden on mobile) === */}
+        <div className={`hidden md:flex w-72 flex-shrink-0 flex-col border-r ${border} ${panelBg}`}>
           <div className="flex-1 overflow-y-auto p-3">
             {activePanel === 'clip' && <ClipPanel editor={editor} />}
             {activePanel === 'filters' && <FiltersPanel editor={editor} />}
@@ -146,9 +147,54 @@ export default function VideoEditor() {
           </div>
         </div>
 
-        {/* Preview */}
-        <div className="flex-1 flex items-center justify-center overflow-hidden">
+        {/* === Desktop preview === */}
+        <div className="hidden md:flex flex-1 items-center justify-center overflow-hidden">
           <EditorPreview editor={editor} />
+        </div>
+
+        {/* === Mobile layout (hidden on desktop) === */}
+        <div className="flex flex-col flex-1 md:hidden overflow-hidden min-h-0">
+          {/* Mobile preview */}
+          <div className="flex-shrink-0 flex items-center justify-center overflow-hidden" style={{ maxHeight: '35vh' }}>
+            <EditorPreview editor={editor} mobile />
+          </div>
+
+          {/* Mobile horizontal tab bar */}
+          <div className={`flex-shrink-0 flex items-center overflow-x-auto border-y ${border} ${panelBg}`} style={{ scrollbarWidth: 'none' }}>
+            {PANELS.map(p => {
+              const active = activePanel === p.key;
+              return (
+                <button
+                  key={p.key}
+                  onClick={() => setActivePanel(p.key)}
+                  className={`flex-shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-2 text-[9px] font-medium transition-all ${
+                    active
+                      ? dark ? 'text-violet-300 border-b-2 border-violet-400' : 'text-[#C45D3E] border-b-2 border-[#C45D3E]'
+                      : dark ? 'text-gray-500' : 'text-[#94908A]'
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d={p.icon} />
+                  </svg>
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Mobile panel content */}
+          <div className={`flex-1 overflow-y-auto p-3 min-h-0 ${panelBg}`}>
+            {activePanel === 'clip' && <ClipPanel editor={editor} />}
+            {activePanel === 'filters' && <FiltersPanel editor={editor} />}
+            {activePanel === 'color' && <ColorGradingPanel editor={editor} />}
+            {activePanel === 'text' && <TextOverlayPanel editor={editor} />}
+            {activePanel === 'stickers' && <StickersPanel editor={editor} />}
+            {activePanel === 'music' && <MusicPanel editor={editor} />}
+            {activePanel === 'voice' && <VoiceoverPanel editor={editor} />}
+            {activePanel === 'logo' && <LogoPanel editor={editor} />}
+            {activePanel === 'stock' && <StockMediaPanel editor={editor} />}
+            {activePanel === 'export' && <ExportPanel editor={editor} />}
+          </div>
         </div>
       </div>
 
@@ -193,7 +239,7 @@ function SaveLoadModal({ dark, border, editor, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} className={`w-full max-w-md max-h-[70vh] rounded-2xl border ${border} ${dark ? 'bg-[#12121a]' : 'bg-white'} flex flex-col overflow-hidden shadow-2xl`}>
+      <div onClick={e => e.stopPropagation()} className={`w-full max-w-md max-h-[85vh] sm:max-h-[70vh] mx-2 sm:mx-0 rounded-2xl border ${border} ${dark ? 'bg-[#12121a]' : 'bg-white'} flex flex-col overflow-hidden shadow-2xl`}>
         <div className={`flex items-center justify-between px-5 py-3 border-b ${border}`}>
           <h3 className={`text-sm font-semibold ${dark ? 'text-white' : 'text-[#332F2B]'}`}>Save / Load Project</h3>
           <button onClick={onClose} className={`p-1 rounded-lg ${dark ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-[#EDE5DA] text-[#94908A]'}`}>
@@ -260,7 +306,7 @@ function TemplatesModal({ dark, border, editor, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} className={`w-full max-w-lg max-h-[70vh] rounded-2xl border ${border} ${dark ? 'bg-[#12121a]' : 'bg-white'} flex flex-col overflow-hidden shadow-2xl`}>
+      <div onClick={e => e.stopPropagation()} className={`w-full max-w-lg max-h-[85vh] sm:max-h-[70vh] mx-2 sm:mx-0 rounded-2xl border ${border} ${dark ? 'bg-[#12121a]' : 'bg-white'} flex flex-col overflow-hidden shadow-2xl`}>
         <div className={`flex items-center justify-between px-5 py-3 border-b ${border}`}>
           <h3 className={`text-sm font-semibold ${dark ? 'text-white' : 'text-[#332F2B]'}`}>Templates</h3>
           <button onClick={onClose} className={`p-1 rounded-lg ${dark ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-[#EDE5DA] text-[#94908A]'}`}>

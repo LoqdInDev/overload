@@ -124,7 +124,7 @@ export default function EditorTimeline({ editor }) {
   return (
     <div className={`flex-shrink-0 border-t ${border} ${dark ? 'bg-[#08080d]' : 'bg-[#f0ebe4]'}`}>
       <div className="flex">
-        <div className={`w-20 flex-shrink-0 border-r ${border}`}>
+        <div className={`w-10 sm:w-20 flex-shrink-0 border-r ${border}`}>
           <div style={{ height: RULER_HEIGHT }} />
           <div className={`flex items-center justify-center text-[10px] font-medium ${dark ? 'text-gray-500' : 'text-[#94908A]'}`} style={{ height: TRACK_HEIGHT }}>
             Video

@@ -65,7 +65,7 @@ const getAnimationStyle = (animation, progress) => {
   }
 };
 
-export default function EditorPreview({ editor }) {
+export default function EditorPreview({ editor, mobile }) {
   const { dark } = useTheme();
   const videoRef = useRef(null);
   const animRef = useRef(null);
@@ -228,9 +228,9 @@ export default function EditorPreview({ editor }) {
   };
 
   return (
-    <div className="flex flex-col items-center gap-3 p-4 w-full">
+    <div className={`flex flex-col items-center w-full ${mobile ? 'gap-1.5 p-2' : 'gap-3 p-4'}`}>
       {/* Aspect ratio picker */}
-      <div className="flex items-center gap-1.5 flex-wrap justify-center">
+      <div className={`flex items-center gap-1.5 flex-wrap justify-center ${mobile ? 'hidden' : ''}`}>
         {ASPECT_RATIOS.map(r => {
           const active = aspectRatio === r.key;
           return (
@@ -264,8 +264,8 @@ export default function EditorPreview({ editor }) {
         className="relative bg-black rounded-xl overflow-hidden shadow-2xl w-full"
         style={{
           aspectRatio: ratioObj.css,
-          maxHeight: '50vh',
-          maxWidth: ratioObj.w >= ratioObj.h ? '100%' : `calc(50vh * ${ratioObj.w / ratioObj.h})`,
+          maxHeight: mobile ? '30vh' : '50vh',
+          maxWidth: ratioObj.w >= ratioObj.h ? '100%' : `calc(${mobile ? '30vh' : '50vh'} * ${ratioObj.w / ratioObj.h})`,
           margin: '0 auto',
         }}
       >
@@ -415,14 +415,16 @@ export default function EditorPreview({ editor }) {
         </span>
       </div>
 
-      {/* Shortcuts hint */}
-      <div className={`flex items-center gap-3 text-[9px] ${dark ? 'text-gray-600' : 'text-[#b0a99f]'}`}>
-        <span>Space: play</span>
-        <span>Del: remove</span>
-        <span>Ctrl+D: duplicate</span>
-        <span>Ctrl+S: split</span>
-        <span>Arrows: scrub</span>
-      </div>
+      {/* Shortcuts hint — desktop only */}
+      {!mobile && (
+        <div className={`flex items-center gap-3 text-[9px] ${dark ? 'text-gray-600' : 'text-[#b0a99f]'}`}>
+          <span>Space: play</span>
+          <span>Del: remove</span>
+          <span>Ctrl+D: duplicate</span>
+          <span>Ctrl+S: split</span>
+          <span>Arrows: scrub</span>
+        </div>
+      )}
     </div>
   );
 }
