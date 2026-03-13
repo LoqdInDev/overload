@@ -1,4 +1,4 @@
-import { useRef, useEffect, useMemo } from 'react';
+import { useRef, useEffect, useMemo, useCallback } from 'react';
 import { useTheme } from '../../../../context/ThemeContext';
 import { ASPECT_RATIOS } from './hooks/useEditorState';
 
@@ -41,9 +41,12 @@ export default function EditorPreview({ editor }) {
   const { dark } = useTheme();
   const videoRef = useRef(null);
   const animRef = useRef(null);
+  const viewportRef = useRef(null);
 
   const { clips, textOverlays, logos, playheadTime, setPlayheadTime, playing, setPlaying,
-          getClipAtTime, totalDuration, aspectRatio, setAspectRatio } = editor;
+          getClipAtTime, totalDuration, aspectRatio, setAspectRatio,
+          updateOverlay, updateLogo, selectedOverlayId, setSelectedOverlayId,
+          selectedLogoId, setSelectedLogoId } = editor;
 
   const current = getClipAtTime(playheadTime);
   const ratioObj = ASPECT_RATIOS.find(r => r.key === aspectRatio) || ASPECT_RATIOS[0];
@@ -123,6 +126,43 @@ export default function EditorPreview({ editor }) {
 
   const activeOverlays = textOverlays.filter(o => playheadTime >= o.startTime && playheadTime <= o.endTime);
 
+  const handleDragStart = useCallback((e, type, id) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    if (type === 'overlay') setSelectedOverlayId(id);
+    else setSelectedLogoId(id);
+
+    const rect = viewport.getBoundingClientRect();
+    const startX = e.clientX;
+    const startY = e.clientY;
+
+    const item = type === 'overlay'
+      ? textOverlays.find(o => o.id === id)
+      : logos.find(l => l.id === id);
+    if (!item) return;
+
+    const origX = item.x;
+    const origY = item.y;
+
+    const onMove = (ev) => {
+      const dx = ((ev.clientX - startX) / rect.width) * 100;
+      const dy = ((ev.clientY - startY) / rect.height) * 100;
+      const newX = Math.max(0, Math.min(100, origX + dx));
+      const newY = Math.max(0, Math.min(100, origY + dy));
+      if (type === 'overlay') updateOverlay(id, { x: Math.round(newX), y: Math.round(newY) });
+      else updateLogo(id, { x: Math.round(newX), y: Math.round(newY) });
+    };
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }, [textOverlays, logos, updateOverlay, updateLogo, setSelectedOverlayId, setSelectedLogoId]);
+
   const formatTime = (s) => {
     const m = Math.floor(s / 60);
     const sec = Math.floor(s % 60);
@@ -162,6 +202,7 @@ export default function EditorPreview({ editor }) {
 
       {/* Video viewport */}
       <div
+        ref={viewportRef}
         className="relative bg-black rounded-xl overflow-hidden shadow-2xl w-full"
         style={{
           aspectRatio: ratioObj.css,
@@ -210,19 +251,24 @@ export default function EditorPreview({ editor }) {
           </div>
         )}
 
-        {/* Text overlays with animations */}
+        {/* Text overlays with animations — draggable */}
         {activeOverlays.map(o => {
           const elapsed = playheadTime - o.startTime;
           const animStyle = getAnimationStyle(o.animation, elapsed);
+          const selected = o.id === selectedOverlayId;
           return (
             <div
               key={o.id}
-              className="absolute pointer-events-none"
+              className="absolute cursor-grab active:cursor-grabbing z-20"
+              onMouseDown={(e) => handleDragStart(e, 'overlay', o.id)}
               style={{
                 left: `${o.x}%`,
                 top: `${o.y}%`,
                 transform: 'translate(-50%, -50%)',
                 ...animStyle,
+                outline: selected ? '2px solid rgba(196,93,62,0.8)' : 'none',
+                outlineOffset: '2px',
+                borderRadius: '6px',
               }}
             >
               <span style={{
@@ -234,6 +280,7 @@ export default function EditorPreview({ editor }) {
                 borderRadius: '6px',
                 whiteSpace: 'nowrap',
                 display: 'inline-block',
+                userSelect: 'none',
               }}>
                 {o.text}
               </span>
@@ -241,26 +288,33 @@ export default function EditorPreview({ editor }) {
           );
         })}
 
-        {/* Logo/watermark overlays */}
-        {logos.map(l => (
-          <div
-            key={l.id}
-            className="absolute pointer-events-none"
-            style={{
-              left: `${l.x}%`,
-              top: `${l.y}%`,
-              transform: 'translate(-50%, -50%)',
-              opacity: l.opacity ?? 0.8,
-            }}
-          >
-            <img
-              src={l.dataUrl}
-              alt="Logo"
-              style={{ width: `${l.width || 80}px`, height: 'auto' }}
-              draggable={false}
-            />
-          </div>
-        ))}
+        {/* Logo/watermark overlays — draggable */}
+        {logos.map(l => {
+          const selected = l.id === selectedLogoId;
+          return (
+            <div
+              key={l.id}
+              className="absolute cursor-grab active:cursor-grabbing z-20"
+              onMouseDown={(e) => handleDragStart(e, 'logo', l.id)}
+              style={{
+                left: `${l.x}%`,
+                top: `${l.y}%`,
+                transform: 'translate(-50%, -50%)',
+                opacity: l.opacity ?? 0.8,
+                outline: selected ? '2px solid rgba(196,93,62,0.8)' : 'none',
+                outlineOffset: '2px',
+                borderRadius: '4px',
+              }}
+            >
+              <img
+                src={l.dataUrl}
+                alt="Logo"
+                style={{ width: `${l.width || 80}px`, height: 'auto', userSelect: 'none' }}
+                draggable={false}
+              />
+            </div>
+          );
+        })}
       </div>
 
       {/* Playback controls */}
