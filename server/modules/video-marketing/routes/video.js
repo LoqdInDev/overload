@@ -119,13 +119,17 @@ router.post('/generate-quick', async (req, res) => {
   );
   res.json({ jobId, status: 'processing' });
 
+  console.log(`[generate-quick] jobId=${jobId} method=${scene.generation_method} image=${resolvedImageUrl ? resolvedImageUrl.slice(0, 60) + '...' : 'none'}`);
+
   try {
     const result = await videoManager.generateScene(
       scene,
       resolvedImageUrl ? [resolvedImageUrl] : []
     );
+    console.log(`[generate-quick] jobId=${jobId} done: success=${result.success} videoUrl=${result.videoUrl?.slice(0, 60) || 'none'}`);
     videoQueries.updateVideoJob(jobId, result.success ? 'completed' : 'failed', result);
   } catch (error) {
+    console.error(`[generate-quick] jobId=${jobId} CRASHED:`, error.message);
     videoQueries.updateVideoJob(jobId, 'failed', { error: error.message });
   }
 });

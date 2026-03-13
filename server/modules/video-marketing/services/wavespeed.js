@@ -134,6 +134,10 @@ class WaveSpeedService {
 
         const status = data.data?.status;
 
+        // Log full response on first poll to debug structure
+        if (i === 0) {
+          console.log(`[WaveSpeed] poll #1 FULL response for task=${taskId}:`, JSON.stringify(data).slice(0, 500));
+        }
         if (i % 6 === 0 || status === 'completed' || status === 'failed') {
           console.log(`[WaveSpeed] poll #${i + 1} task=${taskId} status=${status}`);
         }
