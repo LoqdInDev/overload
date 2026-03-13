@@ -3,6 +3,34 @@ import { useTheme } from '../../../../context/ThemeContext';
 import { ASPECT_RATIOS } from './hooks/useEditorState';
 
 const ANIM_DURATION = 0.6; // seconds
+const TRANSITION_DURATION = 0.5; // seconds
+
+const getTransitionStyle = (transition, progress) => {
+  if (!transition || transition === 'none' || progress >= TRANSITION_DURATION) return {};
+  const t = Math.min(progress / TRANSITION_DURATION, 1);
+  const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+  switch (transition) {
+    case 'fade':
+      return { opacity: ease };
+    case 'dissolve':
+      return { opacity: ease, filter: `blur(${(1 - ease) * 4}px)` };
+    case 'slide-left':
+      return { opacity: 1, transform: `translateX(${(1 - ease) * 100}%)` };
+    case 'slide-right':
+      return { opacity: 1, transform: `translateX(${(ease - 1) * 100}%)` };
+    case 'slide-up':
+      return { opacity: 1, transform: `translateY(${(1 - ease) * 100}%)` };
+    case 'wipe':
+      return { clipPath: `inset(0 ${(1 - ease) * 100}% 0 0)` };
+    case 'zoom': {
+      const scale = 0.3 + ease * 0.7;
+      return { opacity: ease, transform: `scale(${scale})` };
+    }
+    default:
+      return {};
+  }
+};
 
 const getAnimationStyle = (animation, progress) => {
   if (!animation || animation === 'none' || progress >= 1) return {};
@@ -50,6 +78,19 @@ export default function EditorPreview({ editor }) {
 
   const current = getClipAtTime(playheadTime);
   const ratioObj = ASPECT_RATIOS.find(r => r.key === aspectRatio) || ASPECT_RATIOS[0];
+
+  // Calculate how far into the current clip we are (for transitions)
+  const clipElapsed = useMemo(() => {
+    if (!current) return 0;
+    let acc = 0;
+    for (const clip of clips) {
+      if (clip.id === current.clip.id) {
+        return playheadTime - acc;
+      }
+      acc += (clip.trimEnd - clip.trimStart) / (clip.speed || 1);
+    }
+    return 0;
+  }, [current?.clip?.id, playheadTime, clips]);
 
   // Build CSS filter string for current clip (filters + color grading)
   const buildFilter = (clip) => {
@@ -230,19 +271,33 @@ export default function EditorPreview({ editor }) {
       >
         {current ? (
           <>
-            <video
-              ref={videoRef}
-              className="w-full h-full object-cover"
-              style={{
-                filter: buildFilter(current.clip),
-                transform: current.clip.zoom > 1
-                  ? `scale(${current.clip.zoom}) translate(${(50 - current.clip.panX) * (current.clip.zoom - 1) / current.clip.zoom}%, ${(50 - current.clip.panY) * (current.clip.zoom - 1) / current.clip.zoom}%)`
-                  : undefined,
-                transformOrigin: 'center center',
-              }}
-              muted={false}
-              playsInline
-            />
+            {(() => {
+              const transStyle = getTransitionStyle(current.clip.transition, clipElapsed);
+              const zoomTransform = current.clip.zoom > 1
+                ? `scale(${current.clip.zoom}) translate(${(50 - current.clip.panX) * (current.clip.zoom - 1) / current.clip.zoom}%, ${(50 - current.clip.panY) * (current.clip.zoom - 1) / current.clip.zoom}%)`
+                : '';
+              const transTransform = transStyle.transform || '';
+              const combinedTransform = [transTransform, zoomTransform].filter(Boolean).join(' ') || undefined;
+              const baseFilter = buildFilter(current.clip);
+              const transFilter = transStyle.filter || '';
+              const combinedFilter = [baseFilter !== 'none' ? baseFilter : '', transFilter].filter(Boolean).join(' ') || 'none';
+
+              return (
+                <video
+                  ref={videoRef}
+                  className="w-full h-full object-cover"
+                  style={{
+                    filter: combinedFilter,
+                    transform: combinedTransform,
+                    transformOrigin: 'center center',
+                    opacity: transStyle.opacity ?? 1,
+                    clipPath: transStyle.clipPath,
+                  }}
+                  muted={false}
+                  playsInline
+                />
+              );
+            })()}
             {/* Vignette overlay */}
             {current.clip.filters?.vignette > 0 && (
               <div
