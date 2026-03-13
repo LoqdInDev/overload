@@ -811,11 +811,39 @@ export default function CreativePage() {
     });
   };
 
-  const applyBriefToGenerate = () => {
+  const applyBriefToGenerate = async () => {
     if (briefOutput) {
       setPrompt(briefOutput.slice(0, 2000));
       setActiveTab('generate');
       setShowInput(true);
+
+      // Carry the reference image to the Generate tab
+      if (briefRefImage) {
+        try {
+          let dataUrl, base64, mimeType;
+          if (briefRefImage.file) {
+            // Uploaded file — read from File object
+            const buf = await briefRefImage.file.arrayBuffer();
+            const bytes = new Uint8Array(buf);
+            base64 = btoa(bytes.reduce((s, b) => s + String.fromCharCode(b), ''));
+            mimeType = briefRefImage.file.type || 'image/jpeg';
+            dataUrl = `data:${mimeType};base64,${base64}`;
+          } else {
+            // Gallery image — fetch it
+            const imgUrl = briefRefImage.url.startsWith('http') ? briefRefImage.url : `${API_BASE}${briefRefImage.url}`;
+            const res = await fetch(imgUrl);
+            const blob = await res.blob();
+            mimeType = blob.type || 'image/jpeg';
+            const buf = await blob.arrayBuffer();
+            const bytes = new Uint8Array(buf);
+            base64 = btoa(bytes.reduce((s, b) => s + String.fromCharCode(b), ''));
+            dataUrl = `data:${mimeType};base64,${base64}`;
+          }
+          setReferenceImages([{ dataUrl, base64, mimeType, name: 'Brief Reference' }]);
+        } catch (err) {
+          console.error('Failed to carry reference image to Generate:', err);
+        }
+      }
     }
   };
 
