@@ -393,7 +393,9 @@ ${brand.words_to_use ? `Words to Use: ${brand.words_to_use}` : ''}
 ${brand.words_to_avoid ? `Words to Avoid: ${brand.words_to_avoid}` : ''}`.replace(/\n+/g, '\n').trim();
   }
 
-  const prompt = `You are a senior creative director. Generate a detailed creative brief for:
+  const { shotType, productPlacement, modelDirection, platform } = req.body;
+
+  const prompt = `You are a senior creative director specializing in product photography and lifestyle campaigns. Generate a detailed creative brief for:
 
 Product: ${product}
 Goal: ${goal || 'Brand Awareness'}
@@ -401,11 +403,18 @@ Target Audience: ${audience || 'General consumers'}
 ${keyMessage ? `Key Message: ${keyMessage}` : ''}
 ${tone ? `Tone of Voice: ${tone}` : ''}
 ${scale ? `Campaign Scale: ${scale}` : ''}
-${refStyle ? `Reference Style: ${refStyle}` : ''}${brandBlock}
+${refStyle ? `Reference Style: ${refStyle}` : ''}
+${shotType ? `Shot Type: ${shotType}` : ''}
+${productPlacement ? `Product Placement: ${productPlacement}` : ''}
+${modelDirection ? `Model Direction: ${modelDirection}` : ''}
+${platform ? `Target Platform: ${platform}` : ''}${brandBlock}
 
 Create a comprehensive creative brief with these sections:
 ## Visual Direction
-(specific visual style, mood, composition)
+(specific visual style, mood, composition — describe the exact scene, camera angle, and feel)
+
+## Model & Styling Direction
+(how the model should pose, what they're wearing, how the product is featured — be specific about body language, expression, and product visibility)
 
 ## Color Palette
 (3-5 specific colors with hex codes and rationale${brand?.colors?.primary ? ` — incorporate brand color ${brand.colors.primary}` : ''})
@@ -416,13 +425,16 @@ Create a comprehensive creative brief with these sections:
 ## Messaging Hierarchy
 (primary message, secondary, CTA)
 
+## Shot List
+(3-5 specific shot descriptions that would make a cohesive campaign — describe each shot in detail including pose, angle, lighting, and product placement)
+
 ## Do's and Don'ts
 (specific creative guidelines)
 
 ## Reference Aesthetic
-(describe the visual world — be specific and evocative)
+(describe the visual world — be specific and evocative, reference real-world campaigns or visual styles)
 
-Be specific, actionable, and inspiring.`;
+Be specific, actionable, and inspiring. Focus on creating shots that feel authentic and aspirational — think lifestyle editorial, not stock photography.`;
 
   try {
     await generateTextWithClaude(prompt, {

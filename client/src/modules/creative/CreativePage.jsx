@@ -43,6 +43,28 @@ const MODEL_GENDERS = [
 ];
 const MODEL_AGES = ['Teen 16–20', 'Young Adult 20–30', 'Adult 30–45', 'Mature 45–60', 'Senior 60+'];
 const MODEL_STYLES = ['Casual & Everyday', 'Professional', 'High Fashion / Editorial', 'Athletic / Activewear', 'Streetwear', 'Luxury / Elegant', 'Bohemian'];
+const MODEL_POSES = [
+  { id: 'mirror-selfie', label: 'Mirror Selfie', prompt: 'posing in front of a mirror, showing off the product' },
+  { id: 'walking', label: 'Walking / Motion', prompt: 'walking confidently, product visible in motion' },
+  { id: 'close-hand', label: 'Close-Up Hand/Wrist', prompt: 'close-up shot of hand or wrist prominently displaying the product' },
+  { id: 'sitting', label: 'Sitting Relaxed', prompt: 'sitting casually, product naturally visible' },
+  { id: 'action', label: 'Action Shot', prompt: 'in dynamic action pose, product featured prominently' },
+  { id: 'skateboard', label: 'Skateboarding', prompt: 'riding a skateboard in urban environment, product catching light' },
+  { id: 'leaning', label: 'Leaning / Against Wall', prompt: 'leaning against a wall with arms crossed, product prominently displayed' },
+  { id: 'looking-away', label: 'Looking Away', prompt: 'looking away from camera in candid pose, product visible' },
+  { id: 'adjusting', label: 'Adjusting Product', prompt: 'adjusting or touching the product with one hand, drawing attention to it' },
+  { id: 'profile', label: 'Side Profile', prompt: 'dramatic side profile view, product catching the light' },
+];
+const PRODUCT_PLACEMENTS = [
+  { id: 'neck', label: 'Necklace / Chain', prompt: 'wearing a necklace/chain prominently on neck' },
+  { id: 'wrist', label: 'Bracelet / Watch', prompt: 'wearing bracelet or watch on wrist, hand positioned to show it off' },
+  { id: 'ears', label: 'Earrings', prompt: 'wearing earrings, tilted head to show them off' },
+  { id: 'fingers', label: 'Rings', prompt: 'wearing rings, hands positioned elegantly to display them' },
+  { id: 'holding', label: 'Holding Product', prompt: 'holding the product up toward camera' },
+  { id: 'wearing', label: 'Wearing (General)', prompt: 'naturally wearing the product in a lifestyle setting' },
+  { id: 'on-surface', label: 'Product on Surface', prompt: 'product placed on a textured surface with dramatic lighting' },
+  { id: 'unboxing', label: 'Unboxing', prompt: 'unboxing the product, showing packaging and first reveal' },
+];
 const SETTINGS = [
   { id: 'studio', emoji: '🎬', name: 'Studio', prompt: 'professional studio setting' },
   { id: 'home', emoji: '🏠', name: 'Home', prompt: 'modern home interior' },
@@ -484,6 +506,10 @@ export default function CreativePage() {
   const [briefTone, setBriefTone] = useState('');
   const [briefScale, setBriefScale] = useState('Awareness');
   const [briefRefStyle, setBriefRefStyle] = useState('');
+  const [briefShotType, setBriefShotType] = useState('');
+  const [briefProductPlacement, setBriefProductPlacement] = useState('');
+  const [briefModelDirection, setBriefModelDirection] = useState('');
+  const [briefPlatform, setBriefPlatform] = useState('');
 
   // Visual Prompt Builder state
   const [promptMode, setPromptMode] = useState('builder'); // 'builder' | 'manual'
@@ -497,6 +523,8 @@ export default function CreativePage() {
   const [builderModelGender, setBuilderModelGender] = useState('');
   const [builderModelAge, setBuilderModelAge] = useState('');
   const [builderModelStyle, setBuilderModelStyle] = useState('');
+  const [builderModelPose, setBuilderModelPose] = useState('');
+  const [builderProductPlacement, setBuilderProductPlacement] = useState('');
   const [builderSetting, setBuilderSetting] = useState('');
   const [builderComposition, setBuilderComposition] = useState('');
   const [builderColorGrade, setBuilderColorGrade] = useState('');
@@ -545,6 +573,8 @@ export default function CreativePage() {
       if (builderModelAge) modelDesc = `${builderModelAge.toLowerCase()}, ${modelDesc}`;
       if (builderModelStyle) modelDesc += `, wearing ${builderModelStyle.toLowerCase()} clothing`;
       parts.push(`featuring a ${modelDesc}`);
+      if (builderModelPose) { const p = MODEL_POSES.find(x => x.id === builderModelPose); if (p) parts.push(p.prompt); }
+      if (builderProductPlacement) { const p = PRODUCT_PLACEMENTS.find(x => x.id === builderProductPlacement); if (p) parts.push(p.prompt); }
     }
     if (builderSetting) { const s = SETTINGS.find(x => x.id === builderSetting); if (s) parts.push(s.prompt); }
     if (builderComposition) { const c = COMPOSITIONS.find(x => x.id === builderComposition); if (c) parts.push(c.prompt); }
@@ -1207,6 +1237,48 @@ export default function CreativePage() {
                       value={briefRefStyle} onChange={e => setBriefRefStyle(e.target.value)}
                       placeholder="e.g. Apple-minimalist, Nike-bold, Glossier-soft pastel" />
                   </div>
+                  <div>
+                    <p className="hud-label text-[10px] mb-1.5">SHOT TYPE</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {['Hero Shot', 'Lifestyle', 'Action / Motion', 'Close-Up Detail', 'Flat Lay', 'Editorial', 'UGC Style', 'Behind the Scenes'].map(s => (
+                        <button key={s} onClick={() => setBriefShotType(briefShotType === s ? '' : s)}
+                          className="chip text-[10px]"
+                          style={briefShotType === s ? { background: 'rgba(74,222,128,0.12)', borderColor: 'rgba(74,222,128,0.25)', color: '#4ade80' } : {}}>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="hud-label text-[10px] mb-1.5">PRODUCT PLACEMENT</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {PRODUCT_PLACEMENTS.map(p => (
+                        <button key={p.id} onClick={() => setBriefProductPlacement(briefProductPlacement === p.id ? '' : p.id)}
+                          className="chip text-[10px]"
+                          style={briefProductPlacement === p.id ? { background: 'rgba(74,222,128,0.12)', borderColor: 'rgba(74,222,128,0.25)', color: '#4ade80' } : {}}>
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="hud-label text-[10px] mb-1.5">MODEL DIRECTION</p>
+                    <input className="w-full input-field rounded-xl px-4 py-3 text-sm"
+                      value={briefModelDirection} onChange={e => setBriefModelDirection(e.target.value)}
+                      placeholder="e.g. Model skateboarding with chain visible, posing bracelet to mirror" />
+                  </div>
+                  <div>
+                    <p className="hud-label text-[10px] mb-1.5">PLATFORM</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {['Instagram Feed', 'Instagram Story', 'TikTok', 'Facebook Ads', 'Pinterest', 'Website Hero', 'Email', 'Print'].map(p => (
+                        <button key={p} onClick={() => setBriefPlatform(briefPlatform === p ? '' : p)}
+                          className="chip text-[10px]"
+                          style={briefPlatform === p ? { background: 'rgba(74,222,128,0.12)', borderColor: 'rgba(74,222,128,0.25)', color: '#4ade80' } : {}}>
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
               </div>
@@ -1218,6 +1290,10 @@ export default function CreativePage() {
                 connectSSE('/api/creative/generate-brief', {
                   product: briefProduct, goal: briefGoal, audience: briefAudience,
                   keyMessage: briefKeyMessage, tone: briefTone, scale: briefScale, refStyle: briefRefStyle,
+                  shotType: briefShotType,
+                  productPlacement: briefProductPlacement ? PRODUCT_PLACEMENTS.find(p => p.id === briefProductPlacement)?.label : '',
+                  modelDirection: briefModelDirection,
+                  platform: briefPlatform,
                   brand: briefUseBrand && brand ? {
                     name: brand.brand_name,
                     tagline: brand.tagline,
@@ -1545,6 +1621,30 @@ export default function CreativePage() {
                                           className="chip text-[10px]"
                                           style={builderModelStyle === s ? { background: 'rgba(196,93,62,0.12)', borderColor: 'rgba(196,93,62,0.25)', color: '#C45D3E' } : {}}>
                                           {s}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <p className="hud-label text-[9px] mb-1.5">POSE / ACTION</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {MODEL_POSES.map(p => (
+                                        <button key={p.id} onClick={() => setBuilderModelPose(builderModelPose === p.id ? '' : p.id)}
+                                          className="chip text-[10px]"
+                                          style={builderModelPose === p.id ? { background: 'rgba(196,93,62,0.12)', borderColor: 'rgba(196,93,62,0.25)', color: '#C45D3E' } : {}}>
+                                          {p.label}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <p className="hud-label text-[9px] mb-1.5">PRODUCT PLACEMENT</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {PRODUCT_PLACEMENTS.map(p => (
+                                        <button key={p.id} onClick={() => setBuilderProductPlacement(builderProductPlacement === p.id ? '' : p.id)}
+                                          className="chip text-[10px]"
+                                          style={builderProductPlacement === p.id ? { background: 'rgba(196,93,62,0.12)', borderColor: 'rgba(196,93,62,0.25)', color: '#C45D3E' } : {}}>
+                                          {p.label}
                                         </button>
                                       ))}
                                     </div>
