@@ -10,13 +10,23 @@ import MusicPanel from './editor/MusicPanel';
 import TextOverlayPanel from './editor/TextOverlayPanel';
 import FiltersPanel from './editor/FiltersPanel';
 import LogoPanel from './editor/LogoPanel';
+import StockMediaPanel from './editor/StockMediaPanel';
+import StickersPanel from './editor/StickersPanel';
+import VoiceoverPanel from './editor/VoiceoverPanel';
+import ColorGradingPanel from './editor/ColorGradingPanel';
+import ExportPanel from './editor/ExportPanel';
 
 const PANELS = [
   { key: 'clip', label: 'Clip', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z' },
   { key: 'filters', label: 'Filters', icon: 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z' },
+  { key: 'color', label: 'Color', icon: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01' },
   { key: 'text', label: 'Text', icon: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' },
+  { key: 'stickers', label: 'Stickers', icon: 'M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
   { key: 'music', label: 'Music', icon: 'M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3' },
+  { key: 'voice', label: 'Voice', icon: 'M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z' },
   { key: 'logo', label: 'Logo', icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
+  { key: 'stock', label: 'Stock', icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' },
+  { key: 'export', label: 'Export', icon: 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4' },
 ];
 
 export default function VideoEditor() {
@@ -98,15 +108,15 @@ export default function VideoEditor() {
       <div className="flex flex-1 overflow-hidden min-h-0">
         {/* Left panel tabs */}
         <div className={`w-72 flex-shrink-0 flex flex-col border-r ${border} ${panelBg}`}>
-          {/* Panel switcher */}
-          <div className={`flex border-b ${border}`}>
+          {/* Panel switcher — scrollable */}
+          <div className={`flex overflow-x-auto border-b ${border} scrollbar-hide`} style={{ scrollbarWidth: 'none' }}>
             {PANELS.map(p => {
               const active = activePanel === p.key;
               return (
                 <button
                   key={p.key}
                   onClick={() => setActivePanel(p.key)}
-                  className={`flex-1 flex items-center justify-center gap-1 py-2.5 text-[10px] font-medium transition-all ${
+                  className={`flex-shrink-0 flex flex-col items-center justify-center gap-0.5 px-2.5 py-2 text-[9px] font-medium transition-all ${
                     active
                       ? dark ? 'text-violet-300 border-b-2 border-violet-400' : 'text-[#C45D3E] border-b-2 border-[#C45D3E]'
                       : dark ? 'text-gray-500 hover:text-gray-300' : 'text-[#94908A] hover:text-[#332F2B]'
@@ -125,9 +135,14 @@ export default function VideoEditor() {
           <div className="flex-1 overflow-y-auto p-3">
             {activePanel === 'clip' && <ClipPanel editor={editor} />}
             {activePanel === 'filters' && <FiltersPanel editor={editor} />}
+            {activePanel === 'color' && <ColorGradingPanel editor={editor} />}
             {activePanel === 'text' && <TextOverlayPanel editor={editor} />}
+            {activePanel === 'stickers' && <StickersPanel editor={editor} />}
             {activePanel === 'music' && <MusicPanel editor={editor} />}
+            {activePanel === 'voice' && <VoiceoverPanel editor={editor} />}
             {activePanel === 'logo' && <LogoPanel editor={editor} />}
+            {activePanel === 'stock' && <StockMediaPanel editor={editor} />}
+            {activePanel === 'export' && <ExportPanel editor={editor} />}
           </div>
         </div>
 

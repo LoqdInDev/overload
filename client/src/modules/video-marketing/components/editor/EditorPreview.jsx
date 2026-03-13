@@ -51,15 +51,32 @@ export default function EditorPreview({ editor }) {
   const current = getClipAtTime(playheadTime);
   const ratioObj = ASPECT_RATIOS.find(r => r.key === aspectRatio) || ASPECT_RATIOS[0];
 
-  // Build CSS filter string for current clip
+  // Build CSS filter string for current clip (filters + color grading)
   const buildFilter = (clip) => {
-    if (!clip?.filters) return 'none';
-    const f = clip.filters;
     const parts = [];
-    if (f.brightness !== 100) parts.push(`brightness(${f.brightness}%)`);
-    if (f.contrast !== 100) parts.push(`contrast(${f.contrast}%)`);
-    if (f.saturation !== 100) parts.push(`saturate(${f.saturation}%)`);
-    if (f.blur > 0) parts.push(`blur(${f.blur}px)`);
+    if (clip?.filters) {
+      const f = clip.filters;
+      if (f.brightness !== 100) parts.push(`brightness(${f.brightness}%)`);
+      if (f.contrast !== 100) parts.push(`contrast(${f.contrast}%)`);
+      if (f.saturation !== 100) parts.push(`saturate(${f.saturation}%)`);
+      if (f.blur > 0) parts.push(`blur(${f.blur}px)`);
+    }
+    // Color grading: temperature, tint, exposure, highlights, shadows
+    if (clip?.grading) {
+      const g = clip.grading;
+      if (g.temperature && g.temperature !== 0) {
+        // Warm = more sepia, Cool = more hue-rotate
+        if (g.temperature > 0) parts.push(`sepia(${g.temperature / 2}%)`);
+        else parts.push(`hue-rotate(${g.temperature * 0.5}deg)`);
+      }
+      if (g.exposure && g.exposure !== 0) {
+        parts.push(`brightness(${100 + g.exposure}%)`);
+      }
+      if (g.highlights && g.highlights !== 0) {
+        // Approximate highlights with contrast
+        parts.push(`contrast(${100 + g.highlights * 0.3}%)`);
+      }
+    }
     return parts.length ? parts.join(' ') : 'none';
   };
 
