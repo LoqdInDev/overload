@@ -1,13 +1,17 @@
 import { useTheme } from '../../../../context/ThemeContext';
+import { TRANSITIONS, SPEED_OPTIONS } from './hooks/useEditorState';
 
 export default function ClipPanel({ editor }) {
   const { dark } = useTheme();
-  const { clips, selectedClip, selectedClipId, setSelectedClipId, updateClip, removeClip } = editor;
+  const { clips, selectedClip, selectedClipId, setSelectedClipId, updateClip, removeClip,
+          duplicateClip, splitClip, playheadTime, getSplitPointForClip, getEffectiveDuration } = editor;
 
   const label = dark ? 'text-gray-400' : 'text-[#5c5955]';
   const inputCls = `w-full rounded-lg px-3 py-1.5 text-xs ${
     dark ? 'bg-white/[0.04] border-white/[0.08] text-white' : 'bg-[#f0ebe4] border-[#e8e0d4] text-[#332F2B]'
   } border focus:outline-none`;
+  const chipActive = dark ? 'bg-violet-500/15 border-violet-500/20 text-violet-300' : 'bg-[#C45D3E]/10 border-[#C45D3E]/20 text-[#C45D3E]';
+  const chipIdle = dark ? 'border-white/[0.08] text-gray-500 hover:text-white' : 'border-[#e8e0d4] text-[#94908A] hover:text-[#332F2B]';
 
   if (clips.length === 0) {
     return (
@@ -50,9 +54,11 @@ export default function ClipPanel({ editor }) {
               <div className="min-w-0 flex-1">
                 <p className={`text-[11px] font-medium ${dark ? 'text-gray-300' : 'text-[#332F2B]'}`}>
                   Clip {i + 1}
+                  {clip.speed !== 1 && <span className="ml-1 opacity-60">{clip.speed}x</span>}
                 </p>
                 <p className={`text-[10px] ${label}`}>
-                  {(clip.trimEnd - clip.trimStart).toFixed(1)}s
+                  {getEffectiveDuration(clip).toFixed(1)}s
+                  {clip.transition !== 'none' && <span className="ml-1">+ {clip.transition}</span>}
                 </p>
               </div>
             </button>
@@ -62,12 +68,11 @@ export default function ClipPanel({ editor }) {
     );
   }
 
-  // Selected clip detail
   const clip = selectedClip;
-  const effectiveDur = clip.trimEnd - clip.trimStart;
+  const effectiveDur = getEffectiveDuration(clip);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
         <button
           onClick={() => setSelectedClipId(null)}
@@ -92,50 +97,90 @@ export default function ClipPanel({ editor }) {
         )}
       </div>
 
+      {/* Quick actions */}
+      <div className="flex gap-1.5">
+        <button
+          onClick={() => duplicateClip(clip.id)}
+          className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-medium border transition-all ${chipIdle}`}
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          Duplicate
+        </button>
+        <button
+          onClick={() => {
+            const sp = getSplitPointForClip(playheadTime);
+            if (sp && sp.clipId === clip.id) splitClip(clip.id, sp.localTime);
+          }}
+          className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-medium border transition-all ${chipIdle}`}
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12M8 12h12M8 17h12M4 7h.01M4 12h.01M4 17h.01" />
+          </svg>
+          Split
+        </button>
+      </div>
+
       {/* Trim controls */}
-      <div>
-        <label className={`text-[10px] font-medium mb-1 block ${label}`}>Trim Start (s)</label>
-        <input
-          type="number"
-          className={inputCls}
-          value={clip.trimStart.toFixed(1)}
-          min={0}
-          max={clip.trimEnd - 0.5}
-          step={0.1}
-          onChange={(e) => updateClip(clip.id, { trimStart: Math.max(0, parseFloat(e.target.value) || 0) })}
-        />
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <label className={`text-[10px] font-medium mb-1 block ${label}`}>Trim Start</label>
+          <input type="number" className={inputCls} value={clip.trimStart.toFixed(1)} min={0} max={clip.trimEnd - 0.5} step={0.1}
+            onChange={(e) => updateClip(clip.id, { trimStart: Math.max(0, parseFloat(e.target.value) || 0) })} />
+        </div>
+        <div>
+          <label className={`text-[10px] font-medium mb-1 block ${label}`}>Trim End</label>
+          <input type="number" className={inputCls} value={clip.trimEnd.toFixed(1)} min={clip.trimStart + 0.5} max={clip.duration} step={0.1}
+            onChange={(e) => updateClip(clip.id, { trimEnd: Math.min(clip.duration, parseFloat(e.target.value) || clip.duration) })} />
+        </div>
       </div>
 
+      <p className={`text-[10px] ${label}`}>
+        Effective: {effectiveDur.toFixed(1)}s (of {clip.duration.toFixed(1)}s source)
+      </p>
+
+      {/* Speed */}
       <div>
-        <label className={`text-[10px] font-medium mb-1 block ${label}`}>Trim End (s)</label>
-        <input
-          type="number"
-          className={inputCls}
-          value={clip.trimEnd.toFixed(1)}
-          min={clip.trimStart + 0.5}
-          max={clip.duration}
-          step={0.1}
-          onChange={(e) => updateClip(clip.id, { trimEnd: Math.min(clip.duration, parseFloat(e.target.value) || clip.duration) })}
-        />
+        <label className={`text-[10px] font-medium mb-1.5 block ${label}`}>Speed</label>
+        <div className="flex flex-wrap gap-1">
+          {SPEED_OPTIONS.map(s => (
+            <button
+              key={s}
+              onClick={() => updateClip(clip.id, { speed: s })}
+              className={`px-2 py-1 rounded text-[10px] font-medium border transition-all ${
+                (clip.speed || 1) === s ? chipActive : chipIdle
+              }`}
+            >
+              {s === 1 ? '1x' : s < 1 ? `${s}x slow` : `${s}x`}
+            </button>
+          ))}
+        </div>
       </div>
 
+      {/* Transition */}
       <div>
-        <label className={`text-[10px] font-medium mb-1 block ${label}`}>Duration</label>
-        <p className={`text-xs ${dark ? 'text-white' : 'text-[#332F2B]'}`}>{effectiveDur.toFixed(1)}s (of {clip.duration.toFixed(1)}s)</p>
+        <label className={`text-[10px] font-medium mb-1.5 block ${label}`}>Transition (into this clip)</label>
+        <div className="flex flex-wrap gap-1">
+          {TRANSITIONS.map(t => (
+            <button
+              key={t.key}
+              onClick={() => updateClip(clip.id, { transition: t.key })}
+              className={`px-2 py-1 rounded text-[10px] font-medium border transition-all ${
+                (clip.transition || 'none') === t.key ? chipActive : chipIdle
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Volume */}
       <div>
         <label className={`text-[10px] font-medium mb-1 block ${label}`}>Volume</label>
-        <input
-          type="range"
-          className="w-full accent-violet-500"
-          min={0}
-          max={1}
-          step={0.05}
-          value={clip.volume}
-          onChange={(e) => updateClip(clip.id, { volume: parseFloat(e.target.value) })}
-        />
+        <input type="range" className="w-full accent-violet-500" min={0} max={1} step={0.05} value={clip.volume}
+          onChange={(e) => updateClip(clip.id, { volume: parseFloat(e.target.value) })} />
         <span className={`text-[10px] ${label}`}>{Math.round(clip.volume * 100)}%</span>
       </div>
 

@@ -1,14 +1,29 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect } from 'react';
 import { useTheme } from '../../../../context/ThemeContext';
+import { ASPECT_RATIOS } from './hooks/useEditorState';
 
 export default function EditorPreview({ editor }) {
   const { dark } = useTheme();
   const videoRef = useRef(null);
   const animRef = useRef(null);
 
-  const { clips, textOverlays, playheadTime, setPlayheadTime, playing, setPlaying, getClipAtTime, totalDuration } = editor;
+  const { clips, textOverlays, playheadTime, setPlayheadTime, playing, setPlaying,
+          getClipAtTime, totalDuration, aspectRatio, setAspectRatio } = editor;
 
   const current = getClipAtTime(playheadTime);
+  const ratioObj = ASPECT_RATIOS.find(r => r.key === aspectRatio) || ASPECT_RATIOS[0];
+
+  // Build CSS filter string for current clip
+  const buildFilter = (clip) => {
+    if (!clip?.filters) return 'none';
+    const f = clip.filters;
+    const parts = [];
+    if (f.brightness !== 100) parts.push(`brightness(${f.brightness}%)`);
+    if (f.contrast !== 100) parts.push(`contrast(${f.contrast}%)`);
+    if (f.saturation !== 100) parts.push(`saturate(${f.saturation}%)`);
+    if (f.blur > 0) parts.push(`blur(${f.blur}px)`);
+    return parts.length ? parts.join(' ') : 'none';
+  };
 
   // Sync video element with playhead
   useEffect(() => {
@@ -18,6 +33,9 @@ export default function EditorPreview({ editor }) {
     if (video.src !== current.clip.sourceUrl) {
       video.src = current.clip.sourceUrl;
     }
+
+    const speed = current.clip.speed || 1;
+    if (video.playbackRate !== speed) video.playbackRate = speed;
 
     const diff = Math.abs(video.currentTime - current.localTime);
     if (diff > 0.3) {
@@ -68,7 +86,6 @@ export default function EditorPreview({ editor }) {
     setPlaying(!playing);
   };
 
-  // Active overlays at current time
   const activeOverlays = textOverlays.filter(o => playheadTime >= o.startTime && playheadTime <= o.endTime);
 
   const formatTime = (s) => {
@@ -78,16 +95,71 @@ export default function EditorPreview({ editor }) {
   };
 
   return (
-    <div className="flex flex-col items-center gap-3 p-4 w-full max-w-xl">
+    <div className="flex flex-col items-center gap-3 p-4 w-full">
+      {/* Aspect ratio picker */}
+      <div className="flex items-center gap-1.5 flex-wrap justify-center">
+        {ASPECT_RATIOS.map(r => {
+          const active = aspectRatio === r.key;
+          return (
+            <button
+              key={r.key}
+              onClick={() => setAspectRatio(r.key)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all border ${
+                active
+                  ? dark ? 'bg-violet-500/15 border-violet-500/25 text-violet-300' : 'bg-[#C45D3E]/10 border-[#C45D3E]/20 text-[#C45D3E]'
+                  : dark ? 'border-white/[0.06] text-gray-500 hover:text-gray-300 hover:border-white/10' : 'border-[#e8e0d4] text-[#94908A] hover:text-[#332F2B] hover:border-[#d0c8bc]'
+              }`}
+              title={r.label}
+            >
+              {/* Mini ratio preview box */}
+              <div
+                className={`border rounded-sm ${active ? (dark ? 'border-violet-400' : 'border-[#C45D3E]') : (dark ? 'border-gray-600' : 'border-[#c0b8ac]')}`}
+                style={{
+                  width: Math.round(14 * (r.w / Math.max(r.w, r.h))),
+                  height: Math.round(14 * (r.h / Math.max(r.w, r.h))),
+                }}
+              />
+              {r.key}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Video viewport */}
-      <div className="relative w-full aspect-[9/16] max-h-[55vh] bg-black rounded-xl overflow-hidden shadow-2xl">
+      <div
+        className="relative bg-black rounded-xl overflow-hidden shadow-2xl w-full"
+        style={{
+          aspectRatio: ratioObj.css,
+          maxHeight: '50vh',
+          maxWidth: ratioObj.w >= ratioObj.h ? '100%' : `calc(50vh * ${ratioObj.w / ratioObj.h})`,
+          margin: '0 auto',
+        }}
+      >
         {current ? (
-          <video
-            ref={videoRef}
-            className="w-full h-full object-contain"
-            muted={false}
-            playsInline
-          />
+          <>
+            <video
+              ref={videoRef}
+              className="w-full h-full object-cover"
+              style={{ filter: buildFilter(current.clip) }}
+              muted={false}
+              playsInline
+            />
+            {/* Vignette overlay */}
+            {current.clip.filters?.vignette > 0 && (
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: `radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,${current.clip.filters.vignette / 100}) 100%)`,
+                }}
+              />
+            )}
+            {/* Speed badge */}
+            {current.clip.speed && current.clip.speed !== 1 && (
+              <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/60 text-white text-[10px] font-medium">
+                {current.clip.speed}x
+              </div>
+            )}
+          </>
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-3">
             <svg className={`w-12 h-12 ${dark ? 'text-white/10' : 'text-gray-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
@@ -97,28 +169,22 @@ export default function EditorPreview({ editor }) {
           </div>
         )}
 
-        {/* Text overlays rendered on top */}
+        {/* Text overlays */}
         {activeOverlays.map(o => (
           <div
             key={o.id}
             className="absolute pointer-events-none transition-all"
-            style={{
-              left: `${o.x}%`,
-              top: `${o.y}%`,
-              transform: 'translate(-50%, -50%)',
-            }}
+            style={{ left: `${o.x}%`, top: `${o.y}%`, transform: 'translate(-50%, -50%)' }}
           >
-            <span
-              style={{
-                fontSize: `${o.fontSize}px`,
-                color: o.color,
-                fontWeight: o.fontWeight || 'bold',
-                backgroundColor: o.bg || 'rgba(0,0,0,0.5)',
-                padding: '4px 12px',
-                borderRadius: '6px',
-                whiteSpace: 'nowrap',
-              }}
-            >
+            <span style={{
+              fontSize: `${o.fontSize}px`,
+              color: o.color,
+              fontWeight: o.fontWeight || 'bold',
+              backgroundColor: o.bg || 'rgba(0,0,0,0.5)',
+              padding: '4px 12px',
+              borderRadius: '6px',
+              whiteSpace: 'nowrap',
+            }}>
               {o.text}
             </span>
           </div>
@@ -149,6 +215,15 @@ export default function EditorPreview({ editor }) {
         <span className={`text-xs font-mono tabular-nums ${dark ? 'text-gray-400' : 'text-[#5c5955]'}`}>
           {formatTime(playheadTime)} / {formatTime(totalDuration)}
         </span>
+      </div>
+
+      {/* Shortcuts hint */}
+      <div className={`flex items-center gap-3 text-[9px] ${dark ? 'text-gray-600' : 'text-[#b0a99f]'}`}>
+        <span>Space: play</span>
+        <span>Del: remove</span>
+        <span>Ctrl+D: duplicate</span>
+        <span>Ctrl+S: split</span>
+        <span>Arrows: scrub</span>
       </div>
     </div>
   );

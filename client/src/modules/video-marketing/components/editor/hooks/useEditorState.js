@@ -5,6 +5,28 @@ const uid = () => `ed_${nextId++}_${Date.now()}`;
 
 const MAX_HISTORY = 40;
 
+export const ASPECT_RATIOS = [
+  { key: '9:16', label: 'TikTok / Reels', w: 9, h: 16, css: '9/16' },
+  { key: '1:1',  label: 'Instagram Post',  w: 1, h: 1,  css: '1/1' },
+  { key: '16:9', label: 'YouTube',          w: 16, h: 9, css: '16/9' },
+  { key: '4:5',  label: 'Facebook / IG Feed', w: 4, h: 5, css: '4/5' },
+  { key: '4:3',  label: 'Classic',           w: 4, h: 3, css: '4/3' },
+  { key: '21:9', label: 'Cinematic',         w: 21, h: 9, css: '21/9' },
+];
+
+export const TRANSITIONS = [
+  { key: 'none', label: 'None' },
+  { key: 'fade', label: 'Fade' },
+  { key: 'dissolve', label: 'Dissolve' },
+  { key: 'slide-left', label: 'Slide Left' },
+  { key: 'slide-right', label: 'Slide Right' },
+  { key: 'slide-up', label: 'Slide Up' },
+  { key: 'wipe', label: 'Wipe' },
+  { key: 'zoom', label: 'Zoom' },
+];
+
+export const SPEED_OPTIONS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3];
+
 export default function useEditorState() {
   const [clips, setClips] = useState([]);
   const [musicTracks, setMusicTracks] = useState([]);
@@ -13,6 +35,7 @@ export default function useEditorState() {
   const [selectedOverlayId, setSelectedOverlayId] = useState(null);
   const [playheadTime, setPlayheadTime] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState('9:16');
 
   // Undo/redo
   const historyRef = useRef([]);
@@ -53,7 +76,10 @@ export default function useEditorState() {
       trimStart: 0,
       trimEnd: duration || 5,
       volume: 1,
+      speed: 1,
       thumbnail,
+      transition: 'none',
+      filters: { brightness: 100, contrast: 100, saturation: 100, blur: 0, vignette: 0 },
     };
     setClips(prev => [...prev, clip]);
     return clip.id;
@@ -76,6 +102,33 @@ export default function useEditorState() {
       const arr = [...prev];
       const [removed] = arr.splice(fromIndex, 1);
       arr.splice(toIndex, 0, removed);
+      return arr;
+    });
+  }, [pushHistory]);
+
+  const duplicateClip = useCallback((id) => {
+    pushHistory();
+    setClips(prev => {
+      const idx = prev.findIndex(c => c.id === id);
+      if (idx === -1) return prev;
+      const clone = { ...prev[idx], id: uid() };
+      const arr = [...prev];
+      arr.splice(idx + 1, 0, clone);
+      return arr;
+    });
+  }, [pushHistory]);
+
+  const splitClip = useCallback((id, atLocalTime) => {
+    pushHistory();
+    setClips(prev => {
+      const idx = prev.findIndex(c => c.id === id);
+      if (idx === -1) return prev;
+      const clip = prev[idx];
+      if (atLocalTime <= clip.trimStart + 0.3 || atLocalTime >= clip.trimEnd - 0.3) return prev;
+      const first = { ...clip, trimEnd: atLocalTime };
+      const second = { ...clip, id: uid(), trimStart: atLocalTime };
+      const arr = [...prev];
+      arr.splice(idx, 1, first, second);
       return arr;
     });
   }, [pushHistory]);
@@ -104,7 +157,7 @@ export default function useEditorState() {
     const overlay = {
       id: uid(),
       text,
-      x: 50, y: 50, // percent
+      x: 50, y: 50,
       fontSize: 32,
       color: '#ffffff',
       bg: 'rgba(0,0,0,0.5)',
@@ -128,19 +181,33 @@ export default function useEditorState() {
     setTextOverlays(prev => prev.map(o => o.id === id ? { ...o, ...updates } : o));
   }, [pushHistory]);
 
-  // Computed
-  const totalDuration = clips.reduce((sum, c) => sum + (c.trimEnd - c.trimStart), 0);
+  // Computed — speed affects effective duration
+  const getEffectiveDuration = (clip) => (clip.trimEnd - clip.trimStart) / (clip.speed || 1);
+  const totalDuration = clips.reduce((sum, c) => sum + getEffectiveDuration(c), 0);
 
   const selectedClip = clips.find(c => c.id === selectedClipId) || null;
   const selectedOverlay = textOverlays.find(o => o.id === selectedOverlayId) || null;
 
-  // Get clip at a given time
   const getClipAtTime = useCallback((time) => {
     let acc = 0;
     for (const clip of clips) {
-      const dur = clip.trimEnd - clip.trimStart;
+      const dur = getEffectiveDuration(clip);
       if (time >= acc && time < acc + dur) {
-        return { clip, localTime: clip.trimStart + (time - acc) };
+        return { clip, localTime: clip.trimStart + (time - acc) * (clip.speed || 1) };
+      }
+      acc += dur;
+    }
+    return null;
+  }, [clips]);
+
+  // Get the split point for a clip given a global playhead time
+  const getSplitPointForClip = useCallback((time) => {
+    let acc = 0;
+    for (const clip of clips) {
+      const dur = getEffectiveDuration(clip);
+      if (time >= acc && time < acc + dur) {
+        const localTime = clip.trimStart + (time - acc) * (clip.speed || 1);
+        return { clipId: clip.id, localTime };
       }
       acc += dur;
     }
@@ -153,10 +220,11 @@ export default function useEditorState() {
     selectedOverlayId, setSelectedOverlayId,
     playheadTime, setPlayheadTime,
     playing, setPlaying,
+    aspectRatio, setAspectRatio,
     totalDuration,
     selectedClip, selectedOverlay,
-    getClipAtTime,
-    addClip, removeClip, updateClip, moveClip,
+    getClipAtTime, getEffectiveDuration, getSplitPointForClip,
+    addClip, removeClip, updateClip, moveClip, duplicateClip, splitClip,
     addMusic, removeMusic, updateMusic,
     addOverlay, removeOverlay, updateOverlay,
     undo, redo,
