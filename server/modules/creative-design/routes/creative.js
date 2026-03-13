@@ -414,8 +414,18 @@ ${brand.words_to_avoid ? `Words to Avoid: ${brand.words_to_avoid}` : ''}`.replac
   }
   const hasRefImage = briefImages.length > 0;
 
-  const prompt = `You are a senior creative director specializing in product photography and lifestyle campaigns.${hasRefImage ? ' I\'ve attached a reference image — analyze its style, composition, lighting, color palette, and mood, then incorporate those visual elements into the brief.' : ''} Generate a detailed creative brief for:
+  const imageBlock = hasRefImage ? `
+REFERENCE IMAGE ATTACHED — THIS IS THE MOST IMPORTANT INPUT.
+First, carefully study the attached image. Identify:
+1. The EXACT product shown (what it is, its material, color, size, distinguishing features)
+2. The setting, lighting, composition, and mood
+3. The model's pose, styling, and how the product is being worn/displayed
 
+Your entire brief MUST be built around THIS SPECIFIC PRODUCT as seen in the image. Do not generalize — describe the actual item you see. Every shot suggestion must feature this exact product.
+` : '';
+
+  const prompt = `You are a senior creative director specializing in product photography and lifestyle campaigns.
+${imageBlock}
 Product: ${product}
 Goal: ${goal || 'Brand Awareness'}
 Target Audience: ${audience || 'General consumers'}
@@ -428,15 +438,17 @@ ${productPlacement ? `Product Placement: ${productPlacement}` : ''}
 ${modelDirection ? `Model Direction: ${modelDirection}` : ''}
 ${platform ? `Target Platform: ${platform}` : ''}${brandBlock}
 
-Create a comprehensive creative brief with these sections:
+Generate a detailed creative brief with these sections:
+${hasRefImage ? `## Product Analysis
+(describe the EXACT product you see in the reference image — material, color, design details, how it looks when worn)\n` : ''}
 ## Visual Direction
-(specific visual style, mood, composition — describe the exact scene, camera angle, and feel)
+(specific visual style, mood, composition — describe the exact scene, camera angle, and feel${hasRefImage ? '. Build on what works in the reference image' : ''})
 
 ## Model & Styling Direction
 (how the model should pose, what they're wearing, how the product is featured — be specific about body language, expression, and product visibility)
 
 ## Color Palette
-(3-5 specific colors with hex codes and rationale${brand?.colors?.primary ? ` — incorporate brand color ${brand.colors.primary}` : ''})
+(3-5 specific colors with hex codes and rationale${brand?.colors?.primary ? ` — incorporate brand color ${brand.colors.primary}` : ''}${hasRefImage ? '. Pull colors from the reference image where appropriate' : ''})
 
 ## Typography
 (recommended fonts and hierarchy)
@@ -445,10 +457,10 @@ Create a comprehensive creative brief with these sections:
 (primary message, secondary, CTA)
 
 ## Shot List
-(3-5 specific shot descriptions that would make a cohesive campaign — describe each shot in detail including pose, angle, lighting, and product placement)
+(3-5 specific shot descriptions that would make a cohesive campaign — describe each shot in detail including pose, angle, lighting, and product placement${hasRefImage ? '. Each shot must feature the exact product from the reference image' : ''})
 
 ## Do's and Don'ts
-(specific creative guidelines)
+(specific creative guidelines${hasRefImage ? '. Include what the reference image gets right and what to improve' : ''})
 
 ## Reference Aesthetic
 (describe the visual world — be specific and evocative, reference real-world campaigns or visual styles)
