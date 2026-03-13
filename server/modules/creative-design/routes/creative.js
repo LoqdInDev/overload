@@ -445,18 +445,21 @@ ${brand.words_to_avoid ? `Words to Avoid: ${brand.words_to_avoid}` : ''}`.replac
   const hasRefImage = briefImages.length > 0;
 
   const imageBlock = hasRefImage ? `
-REFERENCE IMAGE ATTACHED — THIS IS THE MOST IMPORTANT INPUT.
-First, carefully study the attached image. Identify:
-1. The EXACT product shown (what it is, its material, color, size, distinguishing features)
-2. The setting, lighting, composition, and mood
-3. The model's pose, styling, and how the product is being worn/displayed
+REFERENCE IMAGE ATTACHED — THIS IS YOUR PRIMARY INPUT. THE IMAGE OVERRIDES ANY TEXT DESCRIPTION.
 
-Your entire brief MUST be built around THIS SPECIFIC PRODUCT as seen in the image. Do not generalize — describe the actual item you see. Every shot suggestion must feature this exact product.
+STEP 1 — Before reading anything else, study the attached image and describe EXACTLY what you see:
+- What is the product? Describe its material, color, texture, size, shape, and distinguishing design details.
+- How is it being worn or displayed?
+- What does the setting/background look like?
+
+STEP 2 — Use your visual analysis as the GROUND TRUTH for this brief. The "Product" field below ("${product}") is just a label/name for the product — do NOT use it to imagine what the product looks like. Only describe what you ACTUALLY SEE in the image. If the image shows a specific chain with blue stones, describe that exact chain — not a generic "sapphire tennis chain".
+
+Every prompt, shot description, and visual direction in this brief must faithfully reproduce THIS EXACT product as it appears in the photo.
 ` : '';
 
   const prompt = `You are a senior creative director specializing in product photography and lifestyle campaigns.
 ${imageBlock}
-Product: ${product}
+Product${hasRefImage ? ' Name' : ''}: ${product}
 Goal: ${goal || 'Brand Awareness'}
 Target Audience: ${audience || 'General consumers'}
 ${keyMessage ? `Key Message: ${keyMessage}` : ''}
