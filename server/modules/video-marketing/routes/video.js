@@ -72,25 +72,31 @@ router.post('/generate-quick', async (req, res) => {
   const videoQueries = getVideoQueries(wsId);
   const { campaignId, hookText, productImageUrl, provider, duration = 5, aspectRatio = '9:16', sound = false } = req.body;
 
-  // If image is a base64 data URL, save it to disk and use a public server URL.
-  // WaveSpeed requires a real HTTPS URL — it cannot accept base64 data URIs.
+  // WaveSpeed requires a real HTTPS URL — it cannot accept base64 data URIs or relative paths.
   let resolvedImageUrl = productImageUrl || null;
-  if (productImageUrl && productImageUrl.startsWith('data:')) {
-    try {
-      const match = productImageUrl.match(/^data:([^;]+);base64,(.+)$/s);
-      if (match) {
-        const ext = match[1].split('/')[1]?.replace(/[^a-z0-9]/gi, '') || 'jpg';
-        const filename = `tmp_img_${Date.now()}.${ext}`;
-        const filepath = path.join(videosDir, filename);
-        fs.writeFileSync(filepath, Buffer.from(match[2], 'base64'));
-        const proto = req.headers['x-forwarded-proto'] || req.protocol;
-        const host = req.headers['x-forwarded-host'] || req.get('host');
-        // Use public static /videos route — /api/video/download requires auth, WaveSpeed can't authenticate
-        resolvedImageUrl = `${proto}://${host}/videos/${filename}`;
+  if (productImageUrl) {
+    const proto = req.headers['x-forwarded-proto'] || req.protocol;
+    const host = req.headers['x-forwarded-host'] || req.get('host');
+
+    if (productImageUrl.startsWith('data:')) {
+      // Base64 data URL — save to disk and build a public URL
+      try {
+        const match = productImageUrl.match(/^data:([^;]+);base64,(.+)$/s);
+        if (match) {
+          const ext = match[1].split('/')[1]?.replace(/[^a-z0-9]/gi, '') || 'jpg';
+          const filename = `tmp_img_${Date.now()}.${ext}`;
+          const filepath = path.join(videosDir, filename);
+          fs.writeFileSync(filepath, Buffer.from(match[2], 'base64'));
+          resolvedImageUrl = `${proto}://${host}/videos/${filename}`;
+        }
+      } catch {
+        resolvedImageUrl = null;
       }
-    } catch {
-      resolvedImageUrl = null; // fall back to text-to-video
+    } else if (productImageUrl.startsWith('/')) {
+      // Relative server path (e.g. /uploads/creatives/abc.jpg) — convert to public URL
+      resolvedImageUrl = `${proto}://${host}${productImageUrl}`;
     }
+    // Otherwise it's already a full URL — pass through as-is
   }
 
   const scene = {
