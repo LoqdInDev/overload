@@ -80,6 +80,9 @@ export default function useEditorState() {
       thumbnail,
       transition: 'none',
       filters: { brightness: 100, contrast: 100, saturation: 100, blur: 0, vignette: 0 },
+      zoom: 1,   // 1 = no zoom, up to 3x
+      panX: 50,  // percent — 50 = centered
+      panY: 50,  // percent — 50 = centered
     };
     setClips(prev => [...prev, clip]);
     return clip.id;

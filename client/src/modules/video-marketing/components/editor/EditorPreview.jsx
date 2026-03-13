@@ -140,7 +140,13 @@ export default function EditorPreview({ editor }) {
             <video
               ref={videoRef}
               className="w-full h-full object-cover"
-              style={{ filter: buildFilter(current.clip) }}
+              style={{
+                filter: buildFilter(current.clip),
+                transform: current.clip.zoom > 1
+                  ? `scale(${current.clip.zoom}) translate(${(50 - current.clip.panX) * (current.clip.zoom - 1) / current.clip.zoom}%, ${(50 - current.clip.panY) * (current.clip.zoom - 1) / current.clip.zoom}%)`
+                  : undefined,
+                transformOrigin: 'center center',
+              }}
               muted={false}
               playsInline
             />

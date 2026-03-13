@@ -97,6 +97,45 @@ export default function ClipPanel({ editor }) {
         )}
       </div>
 
+      {/* Zoom & Pan */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <label className={`text-[10px] font-medium ${label}`}>Zoom & Focus</label>
+          {(clip.zoom || 1) > 1 && (
+            <button
+              onClick={() => updateClip(clip.id, { zoom: 1, panX: 50, panY: 50 })}
+              className={`text-[9px] px-1 rounded ${dark ? 'text-violet-400 hover:bg-violet-500/10' : 'text-[#C45D3E] hover:bg-[#C45D3E]/10'}`}
+            >
+              Reset
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-2 mb-1.5">
+          <svg className="w-3.5 h-3.5 flex-shrink-0 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+          </svg>
+          <input type="range" className="flex-1 accent-violet-500" min={1} max={3} step={0.1} value={clip.zoom || 1}
+            onChange={(e) => updateClip(clip.id, { zoom: parseFloat(e.target.value) })} />
+          <span className={`text-[10px] font-mono w-8 text-right ${dark ? 'text-gray-400' : 'text-[#5c5955]'}`}>{(clip.zoom || 1).toFixed(1)}x</span>
+        </div>
+        {(clip.zoom || 1) > 1 && (
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={`text-[9px] mb-0.5 block ${label}`}>Focus X</label>
+              <input type="range" className="w-full accent-violet-500" min={0} max={100} value={clip.panX ?? 50}
+                onChange={(e) => updateClip(clip.id, { panX: parseInt(e.target.value) })} />
+              <div className={`flex justify-between text-[8px] ${label}`}><span>Left</span><span>Right</span></div>
+            </div>
+            <div>
+              <label className={`text-[9px] mb-0.5 block ${label}`}>Focus Y</label>
+              <input type="range" className="w-full accent-violet-500" min={0} max={100} value={clip.panY ?? 50}
+                onChange={(e) => updateClip(clip.id, { panY: parseInt(e.target.value) })} />
+              <div className={`flex justify-between text-[8px] ${label}`}><span>Top</span><span>Bottom</span></div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Quick actions */}
       <div className="flex gap-1.5">
         <button
