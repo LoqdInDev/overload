@@ -8,6 +8,7 @@ import Dashboard from './components/Dashboard';
 import CampaignHistory from './components/CampaignHistory';
 import UGCVideoStudio from './components/UGCVideoStudio';
 import VideoHistory from './components/VideoHistory';
+import VideoEditor from './components/VideoEditor';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -33,6 +34,11 @@ const TABS = [
     key: 'campaigns',
     label: 'Campaigns',
     icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+  },
+  {
+    key: 'editor',
+    label: 'Editor',
+    icon: 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z',
   },
   {
     key: 'history',
@@ -172,6 +178,20 @@ export default function VideoMarketingPage() {
               image={wizardImage}
               onImageClear={() => setWizardImage(null)}
             />
+          </div>
+        </ModuleWrapper>
+      </div>
+    );
+  }
+
+  // ── Editor tab ───────────────────────────────────────────────────
+  if (mode === 'editor') {
+    return (
+      <div className="flex flex-col h-full overflow-hidden">
+        <TabBar />
+        <ModuleWrapper moduleId="video-marketing">
+          <div className="flex-1 overflow-hidden min-h-0">
+            <VideoEditor />
           </div>
         </ModuleWrapper>
       </div>

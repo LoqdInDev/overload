@@ -513,4 +513,29 @@ router.post('/recover/:jobId', async (req, res) => {
   }
 });
 
+// GET /music-search — proxy Pixabay audio API to keep key server-side
+router.get('/music-search', async (req, res) => {
+  const apiKey = process.env.PIXABAY_API_KEY;
+  if (!apiKey) return res.json({ hits: [], note: 'PIXABAY_API_KEY not configured' });
+
+  const q = req.query.q || '';
+  const page = req.query.page || 1;
+  try {
+    const url = `https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(q)}&media_type=music&per_page=20&page=${page}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    // Normalize to simple shape for frontend
+    const hits = (data.hits || []).map(h => ({
+      title: h.tags || h.user,
+      duration: h.duration,
+      audio: h.audio || h.previewURL || h.videos?.medium?.url,
+      previewUrl: h.previewURL || h.audio,
+      user: h.user,
+    }));
+    res.json({ hits, total: data.totalHits || 0 });
+  } catch (err) {
+    res.status(500).json({ error: err.message, hits: [] });
+  }
+});
+
 module.exports = router;
