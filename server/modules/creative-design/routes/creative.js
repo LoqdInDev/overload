@@ -395,21 +395,51 @@ ${brand.words_to_avoid ? `Words to Avoid: ${brand.words_to_avoid}` : ''}`.replac
 
   const { shotType, productPlacement, modelDirection, platform, referenceImageUrl, referenceImageBase64, referenceImageMediaType } = req.body;
 
-  // Load reference image as base64 if it's a local upload path, or use directly if sent from client
+  // Load reference image as base64 — try local disk first, fall back to HTTP fetch from own server
   let briefImages = [];
   if (referenceImageBase64 && referenceImageMediaType) {
     briefImages.push({ base64: referenceImageBase64, mediaType: referenceImageMediaType });
   } else if (referenceImageUrl) {
     if (referenceImageUrl.startsWith('/uploads/')) {
       const imgPath = path.join(dataDir, referenceImageUrl);
+      const ext = path.extname(imgPath).toLowerCase();
+      const mimeMap = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.gif': 'image/gif' };
+      let loaded = false;
+      // Try local file first
       try {
-        const imgBuf = fs.readFileSync(imgPath);
-        const ext = path.extname(imgPath).toLowerCase();
-        const mimeMap = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.gif': 'image/gif' };
-        briefImages.push({ base64: imgBuf.toString('base64'), mediaType: mimeMap[ext] || 'image/jpeg' });
+        if (fs.existsSync(imgPath)) {
+          const imgBuf = fs.readFileSync(imgPath);
+          briefImages.push({ base64: imgBuf.toString('base64'), mediaType: mimeMap[ext] || 'image/jpeg' });
+          loaded = true;
+        }
       } catch {}
+      // Fall back: fetch from own server via HTTP (handles production/Railway where files are on a volume)
+      if (!loaded) {
+        try {
+          const proto = req.protocol || 'http';
+          const host = req.get('host');
+          const fetchUrl = `${proto}://${host}${referenceImageUrl}`;
+          const imgRes = await fetch(fetchUrl);
+          if (imgRes.ok) {
+            const buf = Buffer.from(await imgRes.arrayBuffer());
+            briefImages.push({ base64: buf.toString('base64'), mediaType: imgRes.headers.get('content-type') || mimeMap[ext] || 'image/jpeg' });
+          }
+        } catch (err) {
+          console.error('[brief] Failed to fetch reference image via HTTP:', err.message);
+        }
+      }
     } else if (referenceImageUrl.startsWith('http')) {
-      briefImages.push({ url: referenceImageUrl });
+      // External URL — try to download and convert to base64 for Claude
+      try {
+        const imgRes = await fetch(referenceImageUrl);
+        if (imgRes.ok) {
+          const buf = Buffer.from(await imgRes.arrayBuffer());
+          const ct = imgRes.headers.get('content-type') || 'image/jpeg';
+          briefImages.push({ base64: buf.toString('base64'), mediaType: ct });
+        }
+      } catch (err) {
+        console.error('[brief] Failed to fetch external reference image:', err.message);
+      }
     }
   }
   const hasRefImage = briefImages.length > 0;
