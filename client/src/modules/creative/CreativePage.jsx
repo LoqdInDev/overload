@@ -519,7 +519,8 @@ export default function CreativePage() {
     setHistoryLoading(true);
     try {
       const data = await fetchJSON('/api/creative/projects');
-      setHistory(Array.isArray(data) ? data : []);
+      const list = data?.projects || (Array.isArray(data) ? data : []);
+      setHistory(list);
     } catch (e) {
       console.error('Failed to load history:', e);
     } finally {
@@ -925,7 +926,7 @@ export default function CreativePage() {
             /* ── GRID VIEW ── */
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {history.map(project => {
-                const imageUrls = project.image_urls ? project.image_urls.split(',').filter(Boolean) : [];
+                const imageUrls = project.images?.length ? project.images.filter(i => i.status === 'completed' && i.url).map(i => i.url) : project.image_urls ? project.image_urls.split(',').filter(Boolean) : [];
                 const typeLabel = CREATIVE_TYPES.find(t => t.id === project.type)?.name || project.type;
                 const lbImages = imageUrls.map((url, i) => ({ url: `${API_BASE}${url}`, alt: project.title || 'Creative', id: `h-${project.id}-${i}` }));
                 const displayUrls = imageUrls.slice(0, 4);
@@ -1006,7 +1007,7 @@ export default function CreativePage() {
             /* ── LIST VIEW ── */
             <div className="space-y-2">
               {history.map(project => {
-                const imageUrls = project.image_urls ? project.image_urls.split(',').filter(Boolean) : [];
+                const imageUrls = project.images?.length ? project.images.filter(i => i.status === 'completed' && i.url).map(i => i.url) : project.image_urls ? project.image_urls.split(',').filter(Boolean) : [];
                 const typeLabel = CREATIVE_TYPES.find(t => t.id === project.type)?.name || project.type;
                 const lbImages = imageUrls.map((url, i) => ({ url: `${API_BASE}${url}`, alt: project.title || 'Creative', id: `h-${project.id}-${i}` }));
 

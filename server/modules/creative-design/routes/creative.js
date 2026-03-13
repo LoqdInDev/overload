@@ -102,15 +102,25 @@ router.post('/generate', async (req, res) => {
   }
 });
 
-// List all projects (with image URLs joined)
+// List all projects with nested image arrays
 router.get('/projects', async (req, res) => {
   const wsId = req.workspace.id;
   const projects = await db.prepare(
-    `SELECT p.*, STRING_AGG(i.url, ',') as image_urls FROM cd_projects p
-     LEFT JOIN cd_images i ON i.project_id = p.id AND i.workspace_id = p.workspace_id
-     WHERE p.workspace_id = ? GROUP BY p.id ORDER BY p.created_at DESC LIMIT 30`
+    `SELECT * FROM cd_projects WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 30`
   ).all(wsId);
-  res.json(projects);
+  const images = await db.prepare(
+    `SELECT * FROM cd_images WHERE workspace_id = ? ORDER BY created_at DESC`
+  ).all(wsId);
+  const imagesByProject = {};
+  for (const img of images) {
+    if (!imagesByProject[img.project_id]) imagesByProject[img.project_id] = [];
+    imagesByProject[img.project_id].push(img);
+  }
+  const result = projects.map(p => ({
+    ...p,
+    images: imagesByProject[p.id] || [],
+  }));
+  res.json({ projects: result });
 });
 
 // Create project (with optional image URLs)
