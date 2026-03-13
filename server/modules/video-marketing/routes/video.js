@@ -24,7 +24,7 @@ router.post('/generate-scene', async (req, res) => {
   const videoQueries = getVideoQueries(wsId);
   const { campaignId, scene, productImages, provider } = req.body;
   try {
-    const jobId = videoQueries.createVideoJob(
+    const jobId = await videoQueries.createVideoJob(
       campaignId,
       scene.scene_number,
       'processing',
@@ -34,7 +34,7 @@ router.post('/generate-scene', async (req, res) => {
     res.json({ jobId, status: 'processing' });
 
     const result = await videoManager.generateScene(scene, productImages || [], provider);
-    videoQueries.updateVideoJob(jobId, result.success ? 'completed' : 'failed', result);
+    await videoQueries.updateVideoJob(jobId, result.success ? 'completed' : 'failed', result);
   } catch (error) {
     console.error('Video scene generation error:', error);
   }
@@ -45,16 +45,17 @@ router.post('/generate-all', async (req, res) => {
   const videoQueries = getVideoQueries(wsId);
   const { campaignId, scenes, productImages, provider } = req.body;
 
-  const jobs = scenes.map((scene) => ({
-    jobId: videoQueries.createVideoJob(
+  const jobs = [];
+  for (const scene of scenes) {
+    const jobId = await videoQueries.createVideoJob(
       campaignId,
       scene.scene_number,
       'queued',
       scene.ai_video_prompt,
       provider || process.env.VIDEO_PROVIDER
-    ),
-    sceneNumber: scene.scene_number,
-  }));
+    );
+    jobs.push({ jobId, sceneNumber: scene.scene_number });
+  }
 
   res.json({ jobs, status: 'processing' });
 
@@ -110,7 +111,7 @@ router.post('/generate-quick', async (req, res) => {
   // Use null for campaign_id when no real campaign — 'quick'/'ugc-studio' aren't valid FK values
   const safeCampaignId = campaignId && campaignId.length > 10 && !['quick', 'ugc-studio'].includes(campaignId)
     ? campaignId : null;
-  const jobId = videoQueries.createVideoJob(
+  const jobId = await videoQueries.createVideoJob(
     safeCampaignId,
     0,
     'processing',
@@ -127,10 +128,10 @@ router.post('/generate-quick', async (req, res) => {
       resolvedImageUrl ? [resolvedImageUrl] : []
     );
     console.log(`[generate-quick] jobId=${jobId} done: success=${result.success} videoUrl=${result.videoUrl?.slice(0, 60) || 'none'}`);
-    videoQueries.updateVideoJob(jobId, result.success ? 'completed' : 'failed', result);
+    await videoQueries.updateVideoJob(jobId, result.success ? 'completed' : 'failed', result);
   } catch (error) {
     console.error(`[generate-quick] jobId=${jobId} CRASHED:`, error.message);
-    videoQueries.updateVideoJob(jobId, 'failed', { error: error.message });
+    await videoQueries.updateVideoJob(jobId, 'failed', { error: error.message });
   }
 });
 
@@ -199,14 +200,14 @@ router.post('/optimize-prompt', async (req, res) => {
 router.get('/history', async (req, res) => {
   const wsId = req.workspace.id;
   const videoQueries = getVideoQueries(wsId);
-  const jobs = videoQueries.getAllVideoJobs();
+  const jobs = await videoQueries.getAllVideoJobs();
   res.json(jobs.map((j) => ({ ...j, result: safeParse(j.result) })));
 });
 
 router.get('/status/:jobId', async (req, res) => {
   const wsId = req.workspace.id;
   const videoQueries = getVideoQueries(wsId);
-  const job = videoQueries.getVideoJob(Number(req.params.jobId));
+  const job = await videoQueries.getVideoJob(Number(req.params.jobId));
   if (!job) return res.status(404).json({ error: 'Job not found' });
   res.json({ ...job, result: safeParse(job.result) });
 });
@@ -214,7 +215,7 @@ router.get('/status/:jobId', async (req, res) => {
 router.get('/campaign/:campaignId', async (req, res) => {
   const wsId = req.workspace.id;
   const videoQueries = getVideoQueries(wsId);
-  const jobs = videoQueries.getVideoJobs(req.params.campaignId);
+  const jobs = await videoQueries.getVideoJobs(req.params.campaignId);
   res.json(
     jobs.map((j) => ({ ...j, result: safeParse(j.result) }))
   );
@@ -289,7 +290,7 @@ router.get('/download-all/:campaignId', async (req, res) => {
 router.delete('/all', async (req, res) => {
   const wsId = req.workspace.id;
   const videoQueries = getVideoQueries(wsId);
-  const jobs = videoQueries.getAllVideoJobs();
+  const jobs = await videoQueries.getAllVideoJobs();
   let filesDeleted = 0;
   for (const job of jobs) {
     if (job.result) {
@@ -300,14 +301,14 @@ router.delete('/all', async (req, res) => {
       }
     }
   }
-  videoQueries.deleteAllVideoJobs();
+  await videoQueries.deleteAllVideoJobs();
   res.json({ deleted: jobs.length, filesDeleted });
 });
 
 router.delete('/:jobId', async (req, res) => {
   const wsId = req.workspace.id;
   const videoQueries = getVideoQueries(wsId);
-  const job = videoQueries.getVideoJob(Number(req.params.jobId));
+  const job = await videoQueries.getVideoJob(Number(req.params.jobId));
   if (job?.result) {
     const result = typeof job.result === 'string' ? safeParse(job.result) : job.result;
     if (result.filename) {
@@ -315,7 +316,7 @@ router.delete('/:jobId', async (req, res) => {
       if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
     }
   }
-  videoQueries.deleteVideoJob(Number(req.params.jobId));
+  await videoQueries.deleteVideoJob(Number(req.params.jobId));
   res.json({ deleted: true });
 });
 

@@ -54,10 +54,10 @@ function getQueries(wsId) {
 function getVideoQueries(wsId) {
   return {
     async createVideoJob(campaignId, sceneNumber, status, prompt, provider) {
-      const result = await db.prepare(
-        'INSERT INTO vm_video_jobs (campaign_id, scene_number, status, prompt, provider, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
-      ).run(campaignId, sceneNumber, status, prompt, provider, wsId);
-      return result.lastInsertRowid;
+      const row = await db.prepare(
+        'INSERT INTO vm_video_jobs (campaign_id, scene_number, status, prompt, provider, workspace_id) VALUES (?, ?, ?, ?, ?, ?) RETURNING id'
+      ).get(campaignId, sceneNumber, status, prompt, provider, wsId);
+      return row.id;
     },
 
     async updateVideoJob(jobId, status, result) {

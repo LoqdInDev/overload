@@ -70,7 +70,7 @@ class VideoManager {
     const results = [];
     for (let i = 0; i < scenes.length; i++) {
       const scene = scenes[i];
-      const jobId = dbQueries.createVideoJob(
+      const jobId = await dbQueries.createVideoJob(
         campaignId,
         scene.scene_number,
         'processing',
@@ -81,10 +81,10 @@ class VideoManager {
       try {
         if (i > 0) await new Promise((r) => setTimeout(r, 3000));
         const result = await this.generateScene(scene, productImages, providerOverride);
-        dbQueries.updateVideoJob(jobId, result.success ? 'completed' : 'failed', result);
+        await dbQueries.updateVideoJob(jobId, result.success ? 'completed' : 'failed', result);
         results.push({ scene: scene.scene_number, jobId, ...result });
       } catch (error) {
-        dbQueries.updateVideoJob(jobId, 'failed', { error: error.message });
+        await dbQueries.updateVideoJob(jobId, 'failed', { error: error.message });
         results.push({ scene: scene.scene_number, jobId, success: false, error: error.message });
       }
     }
