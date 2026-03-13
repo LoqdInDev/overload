@@ -259,6 +259,12 @@ export default function useEditorState() {
     setTextOverlays(prev => prev.map(o => o.id === id ? { ...o, ...updates } : o));
   }, [pushHistory]);
 
+  const clearAllOverlays = useCallback(() => {
+    pushHistory();
+    setTextOverlays([]);
+    setSelectedOverlayId(null);
+  }, [pushHistory]);
+
   // Logo/watermark operations
   const addLogo = useCallback((dataUrl) => {
     pushHistory();
@@ -394,7 +400,7 @@ export default function useEditorState() {
     getClipAtTime, getEffectiveDuration, getSplitPointForClip,
     addClip, removeClip, updateClip, moveClip, duplicateClip, splitClip,
     addMusic, removeMusic, updateMusic,
-    addOverlay, removeOverlay, updateOverlay,
+    addOverlay, removeOverlay, updateOverlay, clearAllOverlays,
     addLogo, removeLogo, updateLogo,
     saveProject, loadProject, listProjects, deleteProject,
     applyTemplate,

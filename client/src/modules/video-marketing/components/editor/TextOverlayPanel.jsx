@@ -4,7 +4,7 @@ import { ANIMATIONS } from './hooks/useEditorState';
 export default function TextOverlayPanel({ editor }) {
   const { dark } = useTheme();
   const { textOverlays, selectedOverlay, selectedOverlayId, setSelectedOverlayId,
-          addOverlay, removeOverlay, updateOverlay, totalDuration } = editor;
+          addOverlay, removeOverlay, updateOverlay, clearAllOverlays, totalDuration } = editor;
 
   const label = dark ? 'text-gray-400' : 'text-[#5c5955]';
   const inputCls = `w-full rounded-lg px-3 py-1.5 text-xs ${
@@ -153,25 +153,51 @@ export default function TextOverlayPanel({ editor }) {
           <p className="text-[10px] opacity-60 mt-1">Add captions, titles, or labels</p>
         </div>
       ) : (
-        <div className="space-y-1.5">
-          {textOverlays.map(o => (
+        <>
+          <div className="space-y-1.5">
+            {textOverlays.map(o => (
+              <div
+                key={o.id}
+                className={`w-full flex items-center gap-2 p-2 rounded-lg text-left transition-all ${
+                  dark ? 'hover:bg-white/[0.04]' : 'hover:bg-[#EDE5DA]'
+                }`}
+              >
+                <div
+                  className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0 cursor-pointer"
+                  style={{ background: o.bg, color: o.color, fontSize: 10, fontWeight: o.fontWeight }}
+                  onClick={() => setSelectedOverlayId(o.id)}
+                >
+                  Aa
+                </div>
+                <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setSelectedOverlayId(o.id)}>
+                  <p className={`text-[11px] font-medium truncate ${dark ? 'text-gray-300' : 'text-[#332F2B]'}`}>{o.text}</p>
+                  <p className={`text-[10px] ${label}`}>{o.startTime.toFixed(1)}s - {o.endTime.toFixed(1)}s</p>
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); removeOverlay(o.id); }}
+                  className={`flex-shrink-0 p-1 rounded-md transition-all ${
+                    dark ? 'text-gray-600 hover:text-red-400 hover:bg-red-500/10' : 'text-[#c0b8ac] hover:text-red-500 hover:bg-red-500/10'
+                  }`}
+                  title="Remove"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+          {textOverlays.length > 1 && (
             <button
-              key={o.id}
-              onClick={() => setSelectedOverlayId(o.id)}
-              className={`w-full flex items-center gap-2 p-2 rounded-lg text-left transition-all ${
-                dark ? 'hover:bg-white/[0.04]' : 'hover:bg-[#EDE5DA]'
+              onClick={clearAllOverlays}
+              className={`w-full mt-2 py-1.5 rounded-lg text-[10px] font-medium border transition-all ${
+                dark ? 'border-white/[0.08] text-gray-500 hover:text-red-400 hover:border-red-500/20' : 'border-[#e8e0d4] text-[#94908A] hover:text-red-500 hover:border-red-500/20'
               }`}
             >
-              <div className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0" style={{ background: o.bg, color: o.color, fontSize: 10, fontWeight: o.fontWeight }}>
-                Aa
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className={`text-[11px] font-medium truncate ${dark ? 'text-gray-300' : 'text-[#332F2B]'}`}>{o.text}</p>
-                <p className={`text-[10px] ${label}`}>{o.startTime.toFixed(1)}s - {o.endTime.toFixed(1)}s</p>
-              </div>
+              Clear All Overlays
             </button>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );
