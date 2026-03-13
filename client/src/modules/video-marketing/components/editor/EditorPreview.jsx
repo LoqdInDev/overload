@@ -1,13 +1,48 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { useTheme } from '../../../../context/ThemeContext';
 import { ASPECT_RATIOS } from './hooks/useEditorState';
+
+const ANIM_DURATION = 0.6; // seconds
+
+const getAnimationStyle = (animation, progress) => {
+  if (!animation || animation === 'none' || progress >= 1) return {};
+  const t = Math.min(progress / ANIM_DURATION, 1);
+  const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+  switch (animation) {
+    case 'fade-in':
+      return { opacity: ease };
+    case 'slide-up':
+      return { opacity: ease, transform: `translate(-50%, -50%) translateY(${(1 - ease) * 30}px)` };
+    case 'slide-down':
+      return { opacity: ease, transform: `translate(-50%, -50%) translateY(${(ease - 1) * 30}px)` };
+    case 'slide-left':
+      return { opacity: ease, transform: `translate(-50%, -50%) translateX(${(1 - ease) * 40}px)` };
+    case 'slide-right':
+      return { opacity: ease, transform: `translate(-50%, -50%) translateX(${(ease - 1) * 40}px)` };
+    case 'pop-in': {
+      const scale = ease < 1 ? 0.3 + ease * 0.7 + Math.sin(ease * Math.PI) * 0.15 : 1;
+      return { opacity: ease, transform: `translate(-50%, -50%) scale(${scale})` };
+    }
+    case 'bounce-in': {
+      const bounce = ease < 0.6 ? ease / 0.6 : 1 + Math.sin((ease - 0.6) / 0.4 * Math.PI * 2) * 0.12 * (1 - ease);
+      return { opacity: Math.min(ease * 2, 1), transform: `translate(-50%, -50%) scale(${0.3 + bounce * 0.7})` };
+    }
+    case 'blur-in':
+      return { opacity: ease, filter: `blur(${(1 - ease) * 8}px)` };
+    case 'typewriter':
+      return { clipPath: `inset(0 ${(1 - ease) * 100}% 0 0)` };
+    default:
+      return {};
+  }
+};
 
 export default function EditorPreview({ editor }) {
   const { dark } = useTheme();
   const videoRef = useRef(null);
   const animRef = useRef(null);
 
-  const { clips, textOverlays, playheadTime, setPlayheadTime, playing, setPlaying,
+  const { clips, textOverlays, logos, playheadTime, setPlayheadTime, playing, setPlaying,
           getClipAtTime, totalDuration, aspectRatio, setAspectRatio } = editor;
 
   const current = getClipAtTime(playheadTime);
@@ -175,24 +210,55 @@ export default function EditorPreview({ editor }) {
           </div>
         )}
 
-        {/* Text overlays */}
-        {activeOverlays.map(o => (
+        {/* Text overlays with animations */}
+        {activeOverlays.map(o => {
+          const elapsed = playheadTime - o.startTime;
+          const animStyle = getAnimationStyle(o.animation, elapsed);
+          return (
+            <div
+              key={o.id}
+              className="absolute pointer-events-none"
+              style={{
+                left: `${o.x}%`,
+                top: `${o.y}%`,
+                transform: 'translate(-50%, -50%)',
+                ...animStyle,
+              }}
+            >
+              <span style={{
+                fontSize: `${o.fontSize}px`,
+                color: o.color,
+                fontWeight: o.fontWeight || 'bold',
+                backgroundColor: o.bg || 'rgba(0,0,0,0.5)',
+                padding: '4px 12px',
+                borderRadius: '6px',
+                whiteSpace: 'nowrap',
+                display: 'inline-block',
+              }}>
+                {o.text}
+              </span>
+            </div>
+          );
+        })}
+
+        {/* Logo/watermark overlays */}
+        {logos.map(l => (
           <div
-            key={o.id}
-            className="absolute pointer-events-none transition-all"
-            style={{ left: `${o.x}%`, top: `${o.y}%`, transform: 'translate(-50%, -50%)' }}
+            key={l.id}
+            className="absolute pointer-events-none"
+            style={{
+              left: `${l.x}%`,
+              top: `${l.y}%`,
+              transform: 'translate(-50%, -50%)',
+              opacity: l.opacity ?? 0.8,
+            }}
           >
-            <span style={{
-              fontSize: `${o.fontSize}px`,
-              color: o.color,
-              fontWeight: o.fontWeight || 'bold',
-              backgroundColor: o.bg || 'rgba(0,0,0,0.5)',
-              padding: '4px 12px',
-              borderRadius: '6px',
-              whiteSpace: 'nowrap',
-            }}>
-              {o.text}
-            </span>
+            <img
+              src={l.dataUrl}
+              alt="Logo"
+              style={{ width: `${l.width || 80}px`, height: 'auto' }}
+              draggable={false}
+            />
           </div>
         ))}
       </div>

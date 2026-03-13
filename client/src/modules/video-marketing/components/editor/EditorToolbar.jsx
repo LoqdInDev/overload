@@ -4,7 +4,7 @@ import { fetchJSON } from '../../../../lib/api';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
-export default function EditorToolbar({ editor, showImport, setShowImport }) {
+export default function EditorToolbar({ editor, showImport, setShowImport, onSaveLoad, onTemplates }) {
   const { dark } = useTheme();
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -123,6 +123,24 @@ export default function EditorToolbar({ editor, showImport, setShowImport }) {
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 10H11a5 5 0 00-5 5v2m15-7l-4-4m4 4l-4 4" />
           </svg>
+        </Btn>
+
+        <div className={`w-px h-5 mx-1 ${dark ? 'bg-white/10' : 'bg-[#e8e0d4]'}`} />
+
+        {/* Save/Load */}
+        <Btn onClick={onSaveLoad}>
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+          </svg>
+          Projects
+        </Btn>
+
+        {/* Templates */}
+        <Btn onClick={onTemplates}>
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+          </svg>
+          Templates
         </Btn>
 
         <div className="flex-1" />

@@ -1,4 +1,5 @@
 import { useTheme } from '../../../../context/ThemeContext';
+import { ANIMATIONS } from './hooks/useEditorState';
 
 export default function TextOverlayPanel({ editor }) {
   const { dark } = useTheme();
@@ -93,6 +94,25 @@ export default function TextOverlayPanel({ editor }) {
                 style={{ fontWeight: w }}
               >
                 {w === 'bold' ? 'Bold' : 'Normal'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className={`text-[10px] font-medium mb-1.5 block ${label}`}>Animation</label>
+          <div className="flex flex-wrap gap-1">
+            {ANIMATIONS.map(a => (
+              <button
+                key={a.key}
+                onClick={() => updateOverlay(o.id, { animation: a.key })}
+                className={`px-2 py-1 rounded text-[10px] font-medium border transition-all ${
+                  (o.animation || 'none') === a.key
+                    ? dark ? 'bg-violet-500/15 border-violet-500/20 text-violet-300' : 'bg-[#C45D3E]/10 border-[#C45D3E]/20 text-[#C45D3E]'
+                    : dark ? 'border-white/[0.08] text-gray-500 hover:text-white' : 'border-[#e8e0d4] text-[#94908A] hover:text-[#332F2B]'
+                }`}
+              >
+                {a.label}
               </button>
             ))}
           </div>
