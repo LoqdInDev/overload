@@ -538,4 +538,56 @@ router.get('/music-search', async (req, res) => {
   }
 });
 
+// GET /stock-videos — proxy Pixabay video API
+router.get('/stock-videos', async (req, res) => {
+  const apiKey = process.env.PIXABAY_API_KEY;
+  if (!apiKey) return res.json({ hits: [], note: 'PIXABAY_API_KEY not configured' });
+  const q = req.query.q || '';
+  const page = req.query.page || 1;
+  try {
+    const url = `https://pixabay.com/api/videos/?key=${apiKey}&q=${encodeURIComponent(q)}&per_page=20&page=${page}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    const hits = (data.hits || []).map(h => ({
+      id: h.id,
+      thumbnail: h.videos?.tiny?.thumbnail || h.userImageURL,
+      preview: h.videos?.tiny?.url || h.videos?.small?.url,
+      url: h.videos?.medium?.url || h.videos?.small?.url,
+      duration: h.duration,
+      tags: h.tags,
+      user: h.user,
+      width: h.videos?.medium?.width || 1920,
+      height: h.videos?.medium?.height || 1080,
+    }));
+    res.json({ hits, total: data.totalHits || 0 });
+  } catch (err) {
+    res.status(500).json({ error: err.message, hits: [] });
+  }
+});
+
+// GET /stock-images — proxy Pixabay image API
+router.get('/stock-images', async (req, res) => {
+  const apiKey = process.env.PIXABAY_API_KEY;
+  if (!apiKey) return res.json({ hits: [], note: 'PIXABAY_API_KEY not configured' });
+  const q = req.query.q || '';
+  const page = req.query.page || 1;
+  try {
+    const url = `https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(q)}&image_type=photo&per_page=20&page=${page}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    const hits = (data.hits || []).map(h => ({
+      id: h.id,
+      thumbnail: h.previewURL,
+      url: h.largeImageURL || h.webformatURL,
+      tags: h.tags,
+      user: h.user,
+      width: h.imageWidth,
+      height: h.imageHeight,
+    }));
+    res.json({ hits, total: data.totalHits || 0 });
+  } catch (err) {
+    res.status(500).json({ error: err.message, hits: [] });
+  }
+});
+
 module.exports = router;
