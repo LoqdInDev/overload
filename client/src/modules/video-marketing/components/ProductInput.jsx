@@ -312,7 +312,7 @@ export default function ProductInput({ onSubmit, welcome }) {
                   {creativeImages.map((img, idx) => (
                     <div key={img.url} className="relative group">
                       <img
-                        src={img.url}
+                        src={img.url.startsWith('http') ? img.url : `${API_BASE}${img.url}`}
                         alt={img.alt}
                         className="w-16 h-16 object-cover rounded-lg"
                         style={{ border: dark ? '1px solid rgba(139,92,246,0.25)' : '1px solid rgba(196,93,62,0.2)' }}
@@ -381,7 +381,7 @@ export default function ProductInput({ onSubmit, welcome }) {
                             style={{ aspectRatio: '1/1' }}
                             title={img.alt}
                           >
-                            <img src={img.url} alt={img.alt} className="w-full h-full object-cover" />
+                            <img src={img.url.startsWith('http') ? img.url : `${API_BASE}${img.url}`} alt={img.alt} className="w-full h-full object-cover" />
                             {selected && (
                               <div className="absolute inset-0 flex items-center justify-center" style={{ background: dark ? 'rgba(139,92,246,0.5)' : 'rgba(196,93,62,0.5)' }}>
                                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
