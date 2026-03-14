@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
-import { postJSON } from '../../lib/api';
+import { postJSON, API_BASE, TOKEN_KEY } from '../../lib/api';
 
 const MODULE_COLOR = '#f59e0b';
 
@@ -107,6 +107,37 @@ function BlockEditor({ block, onChange, dark }) {
   const update = (key, value) => onChange({ ...block, [key]: value });
   const inputCls = 'w-full input-field rounded-lg px-3 py-2 text-xs';
   const labelCls = `text-[10px] font-semibold mb-1 block ${dark ? 'text-gray-400' : 'text-gray-500'}`;
+  const fileInputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+
+  const uploadImage = async (file) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const token = localStorage.getItem(TOKEN_KEY);
+      const wsId = localStorage.getItem('overload_workspace_id');
+      const resp = await fetch(`${API_BASE}/api/email-sms/upload-image`, {
+        method: 'POST',
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(wsId ? { 'x-workspace-id': wsId } : {}) },
+        body: formData,
+      });
+      const data = await resp.json();
+      if (data.success && data.url) update('src', data.url);
+    } catch (err) {
+      console.error('Upload failed:', err);
+    }
+    setUploading(false);
+  };
+
+  const handleFileDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer?.files?.[0];
+    if (file) uploadImage(file);
+  };
 
   return (
     <div className="space-y-3">
@@ -163,23 +194,59 @@ function BlockEditor({ block, onChange, dark }) {
                 <div className="img-error hidden items-center justify-center h-32 bg-red-500/5">
                   <span className={`text-xs ${dark ? 'text-red-400' : 'text-red-500'}`}>Could not load image</span>
                 </div>
-                <button onClick={() => update('src', '')}
-                  className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/50 text-white/80 hover:text-white hover:bg-black/70 transition-colors">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                <div className="absolute top-2 right-2 flex gap-1">
+                  <button onClick={() => fileInputRef.current?.click()}
+                    className="p-1.5 rounded-lg bg-black/50 text-white/80 hover:text-white hover:bg-black/70 transition-colors">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                    </svg>
+                  </button>
+                  <button onClick={() => update('src', '')}
+                    className="p-1.5 rounded-lg bg-black/50 text-white/80 hover:text-white hover:bg-black/70 transition-colors">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+                  onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0]); e.target.value = ''; }} />
               </div>
             ) : (
-              <div className={`flex flex-col items-center justify-center h-32 rounded-xl border-2 border-dashed transition-colors ${
-                dark ? 'border-gray-700 hover:border-gray-600' : 'border-gray-300 hover:border-gray-400'
-              }`}>
-                <svg className={`w-8 h-8 mb-2 ${dark ? 'text-gray-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
-                </svg>
-                <span className={`text-[11px] font-medium ${dark ? 'text-gray-500' : 'text-gray-400'}`}>Paste an image URL below</span>
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleFileDrop}
+                className={`flex flex-col items-center justify-center h-36 rounded-xl border-2 border-dashed transition-all cursor-pointer ${
+                  dragOver
+                    ? 'border-amber-500 bg-amber-500/10'
+                    : dark ? 'border-gray-700 hover:border-amber-500/40 hover:bg-amber-500/5' : 'border-gray-300 hover:border-amber-400 hover:bg-amber-50'
+                }`}>
+                {uploading ? (
+                  <>
+                    <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mb-2" />
+                    <span className={`text-[11px] font-medium ${dark ? 'text-gray-400' : 'text-gray-500'}`}>Uploading...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className={`w-8 h-8 mb-2 ${dragOver ? 'text-amber-500' : dark ? 'text-gray-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                    </svg>
+                    <span className={`text-[11px] font-semibold ${dragOver ? 'text-amber-500' : dark ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Click to upload or drag & drop
+                    </span>
+                    <span className={`text-[10px] mt-0.5 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>JPG, PNG, GIF, WebP (max 10MB)</span>
+                  </>
+                )}
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+                  onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0]); e.target.value = ''; }} />
               </div>
             )}
+          </div>
+          <div className={`flex items-center gap-2 my-1 ${dark ? 'text-gray-700' : 'text-gray-300'}`}>
+            <div className="flex-1 h-px bg-current" />
+            <span className="text-[9px] font-semibold uppercase">or paste URL</span>
+            <div className="flex-1 h-px bg-current" />
           </div>
           <div>
             <label className={labelCls}>IMAGE URL</label>

@@ -545,6 +545,47 @@ Return ONLY valid JSON:
 });
 
 // ══════════════════════════════════════════════════════
+// Image Upload for Email Designer
+// ══════════════════════════════════════════════════════
+
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+
+const emailMediaDir = path.join(process.cwd(), 'uploads', 'email-media');
+fs.mkdirSync(emailMediaDir, { recursive: true });
+
+const emailStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, emailMediaDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const base = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
+    cb(null, `${Date.now()}-${base}${ext}`);
+  },
+});
+
+const emailUpload = multer({
+  storage: emailStorage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (/^image\//i.test(file.mimetype)) cb(null, true);
+    else cb(new Error('Only image files are allowed'));
+  },
+});
+
+// POST /upload-image — upload an image for email designer
+router.post('/upload-image', emailUpload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No image file provided' });
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const url = `${baseUrl}/uploads/email-media/${req.file.filename}`;
+    res.json({ success: true, url, filename: req.file.filename });
+  } catch (err) {
+    console.error('Image upload error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // MJML Email Rendering
 // ══════════════════════════════════════════════════════
 
