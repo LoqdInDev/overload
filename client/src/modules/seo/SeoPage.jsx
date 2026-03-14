@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import { useTheme } from '../../context/ThemeContext';
 import { fetchJSON, deleteJSON, connectSSE } from '../../lib/api';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
+const MODULE_COLOR = '#14b8a6';
 
 const TOOLS = [
   { id: 'keywords', name: 'Keyword Research', icon: 'M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z' },
@@ -15,7 +17,7 @@ const TOOLS = [
 ];
 
 // SERP Snippet Preview component
-function SerpPreview({ title, description, url }) {
+function SerpPreview({ title, description, url, dark }) {
   const MAX_TITLE = 60;
   const MAX_DESC = 155;
   const titleLen = (title || '').length;
@@ -25,9 +27,9 @@ function SerpPreview({ title, description, url }) {
     <div className="panel rounded-xl p-4 mt-3">
       <p className="hud-label text-[10px] mb-3">SERP SNIPPET PREVIEW</p>
       <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: 600 }}>
-        <p className="text-sm" style={{ color: '#1a0dab', marginBottom: 2 }}>{title || 'Your Page Title'}</p>
-        <p className="text-xs" style={{ color: '#006621', marginBottom: 2 }}>{url || 'https://yoursite.com/page'}</p>
-        <p className="text-xs" style={{ color: '#545454' }}>{description || 'Your meta description will appear here...'}</p>
+        <p className="text-sm" style={{ color: dark ? '#8ab4f8' : '#1a0dab', marginBottom: 2 }}>{title || 'Your Page Title'}</p>
+        <p className="text-xs" style={{ color: dark ? '#aecbfa' : '#006621', marginBottom: 2 }}>{url || 'https://yoursite.com/page'}</p>
+        <p className="text-xs" style={{ color: dark ? '#9aa0a6' : '#545454' }}>{description || 'Your meta description will appear here...'}</p>
       </div>
       <div className="flex gap-4 mt-2">
         <span className={`text-[10px] ${titleLen > MAX_TITLE ? 'text-red-400' : titleLen > 50 ? 'text-amber-400' : 'text-emerald-400'}`}>
@@ -79,6 +81,7 @@ const INTENTS = ['Informational', 'Commercial', 'Navigational', 'Transactional']
 
 export default function SeoPage() {
   usePageTitle('SEO Suite');
+  const { dark } = useTheme();
   const [activeTool, setActiveTool] = useState(null);
   const [prompt, setPrompt] = useState('');
   const [country, setCountry] = useState('US');
@@ -142,7 +145,7 @@ export default function SeoPage() {
     <div className="p-4 sm:p-6 lg:p-12">
       <ModuleWrapper moduleId="seo">
       <div className="mb-6 sm:mb-8 animate-fade-in">
-        <p className="hud-label text-[11px] mb-2" style={{ color: '#14b8a6' }}>SEO SUITE</p>
+        <p className="hud-label text-[11px] mb-2" style={{ color: MODULE_COLOR }}>SEO SUITE</p>
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Choose an SEO tool</h1>
         <p className="text-base text-gray-500">AI-powered SEO analysis, keyword research, and content optimization</p>
       </div>
@@ -161,7 +164,7 @@ export default function SeoPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3 stagger">
           {Object.entries(TEMPLATES).flatMap(([tool, tmpls]) => tmpls.slice(0, 1).map(t => (
             <button key={`${tool}-${t.name}`} onClick={() => { setActiveTool(tool); setPrompt(t.prompt); }} className="panel-interactive rounded-lg p-4 sm:p-6 text-left group">
-              <p className="hud-label text-[11px] mb-1" style={{ color: '#14b8a6' }}>{TOOLS.find(x => x.id === tool)?.name}</p>
+              <p className="hud-label text-[11px] mb-1" style={{ color: MODULE_COLOR }}>{TOOLS.find(x => x.id === tool)?.name}</p>
               <p className="text-xs font-semibold text-gray-300">{t.name}</p>
               <p className="text-xs text-gray-600 mt-1 line-clamp-1">{t.prompt}</p>
             </button>
@@ -263,7 +266,7 @@ export default function SeoPage() {
           <button onClick={() => { setActiveTool(null); setBriefOutput(''); }} className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white transition-all">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
           </button>
-          <div><p className="hud-label text-[11px]" style={{ color: '#14b8a6' }}>CONTENT BRIEF</p><h2 className="text-lg font-bold text-white">AI Content Brief Generator</h2></div>
+          <div><p className="hud-label text-[11px]" style={{ color: MODULE_COLOR }}>CONTENT BRIEF</p><h2 className="text-lg font-bold text-white">AI Content Brief Generator</h2></div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -292,7 +295,7 @@ export default function SeoPage() {
               </div>
               <button
                 className="btn-accent w-full py-3 rounded-lg"
-                style={{ background: briefLoading ? '#1e1e2e' : '#14b8a6', boxShadow: briefLoading ? 'none' : '0 4px 20px -4px rgba(20,184,166,0.4)' }}
+                style={{ background: briefLoading ? '#1e1e2e' : MODULE_COLOR, boxShadow: briefLoading ? 'none' : '0 4px 20px -4px rgba(20,184,166,0.4)' }}
                 disabled={briefLoading || !briefKeyword.trim()}
                 onClick={() => {
                   if (briefLoading && briefCancelSSE) { briefCancelSSE(); return; }
@@ -379,7 +382,7 @@ export default function SeoPage() {
                 />
               </div>
               {(serpTitle || serpDescription || serpUrl) && (
-                <SerpPreview title={serpTitle} description={serpDescription} url={serpUrl} />
+                <SerpPreview title={serpTitle} description={serpDescription} url={serpUrl} dark={dark} />
               )}
             </div>
           </div>
@@ -396,7 +399,7 @@ export default function SeoPage() {
         <button onClick={() => { setActiveTool(null); setOutput(''); setPrompt(''); }} className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white transition-all">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
         </button>
-        <div><p className="hud-label text-[11px]" style={{ color: '#14b8a6' }}>{tool?.name?.toUpperCase()}</p><h2 className="text-lg font-bold text-white">{tool?.name}</h2></div>
+        <div><p className="hud-label text-[11px]" style={{ color: MODULE_COLOR }}>{tool?.name?.toUpperCase()}</p><h2 className="text-lg font-bold text-white">{tool?.name}</h2></div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
@@ -414,7 +417,7 @@ export default function SeoPage() {
             <p className="hud-label text-[11px] mb-3">{activeTool === 'optimize' ? 'PASTE CONTENT' : 'DESCRIBE YOUR QUERY'}</p>
             <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={activeTool === 'optimize' ? 6 : 3} placeholder={activeTool === 'optimize' ? 'Paste your content here for SEO analysis...' : 'Enter your topic, URL, or keyword...'} className="w-full input-field rounded-xl px-4 py-3 sm:px-5 sm:py-4 text-base resize-none" />
           </div>
-          <button onClick={generate} disabled={generating || !prompt.trim()} className="btn-accent w-full py-3 rounded-lg" style={{ background: generating ? '#1e1e2e' : '#14b8a6', boxShadow: generating ? 'none' : '0 4px 20px -4px rgba(20,184,166,0.4)' }}>
+          <button onClick={generate} disabled={generating || !prompt.trim()} className="btn-accent w-full py-3 rounded-lg" style={{ background: generating ? '#1e1e2e' : MODULE_COLOR, boxShadow: generating ? 'none' : '0 4px 20px -4px rgba(20,184,166,0.4)' }}>
             {generating ? <span className="flex items-center gap-2"><span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />ANALYZING...</span> : 'ANALYZE WITH AI'}
           </button>
         </div>
