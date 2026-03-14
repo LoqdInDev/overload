@@ -4,7 +4,7 @@ const fs = require('fs');
 const { v4: uuid } = require('uuid');
 const { generateWithClaude, generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
-const { generateImages, generateImage, generateImageFromReference, dimensionToAspectRatio } = require('../../../services/gemini');
+const { generateImages, generateImage, generateImageFromReference, dimensionToAspectRatio, generateImageWithFallback, generateImagesWithFallback } = require('../../../services/gemini');
 const { db, logActivity } = require('../../../db/database');
 const { getQueries } = require('../db/queries');
 const { buildImagePromptOptimizer } = require('../prompts/imagePrompt');
@@ -66,10 +66,10 @@ router.post('/generate', requirePlan('manual'), async (req, res) => {
 
     const imagePrompts = (parsed.prompts || []).map(p => p.prompt);
 
-    // Step 2: Generate actual images via Gemini
+    // Step 2: Generate actual images via Gemini (falls back to Pollinations)
     let generatedImages;
     try {
-      generatedImages = await generateImages(imagePrompts, { dimension });
+      generatedImages = await generateImagesWithFallback(imagePrompts, { dimension });
     } catch (genErr) {
       console.error('Image generation failed, returning prompts only:', genErr.message);
       // Fall back to prompt-only mode if Gemini is unavailable
@@ -213,7 +213,7 @@ router.post('/generate-stream', requirePlan('manual'), async (req, res) => {
       let lastErr = null;
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
-          gen = await generateImage(p.prompt + noTextSuffix, ratio);
+          gen = await generateImageWithFallback(p.prompt + noTextSuffix, ratio);
           break;
         } catch (err) {
           lastErr = err;
@@ -221,7 +221,7 @@ router.post('/generate-stream', requirePlan('manual'), async (req, res) => {
         }
       }
       if (gen) {
-        await q.createImage(imgId, projectId, gen.url, p.alt, 'gemini', 'completed', JSON.stringify(p));
+        await q.createImage(imgId, projectId, gen.url, p.alt, gen.provider || 'gemini', 'completed', JSON.stringify(p));
         sse.sendChunk(JSON.stringify({
           step: 'image', index: i,
           image: { id: imgId, prompt: p.prompt, alt: p.alt, style_notes: p.style_notes, status: 'completed', url: gen.url, dataUrl: gen.dataUrl },
@@ -249,8 +249,8 @@ router.post('/regenerate', async (req, res) => {
   if (!prompt) return sse.sendError(new Error('prompt is required'));
   try {
     const ratio = dimension ? dimensionToAspectRatio(dimension) : '1:1';
-    const gen = await generateImage(prompt, ratio);
-    sse.sendResult({ url: gen.url, dataUrl: gen.dataUrl, mimeType: gen.mimeType });
+    const gen = await generateImageWithFallback(prompt, ratio);
+    sse.sendResult({ url: gen.url, dataUrl: gen.dataUrl, mimeType: gen.mimeType, provider: gen.provider });
   } catch (err) {
     sse.sendError(err);
   }

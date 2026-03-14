@@ -315,4 +315,54 @@ async function generateImageFromReference(promptText, referenceImages, aspectRat
   throw lastError || new Error('Gemini reference image generation failed after retries');
 }
 
-module.exports = { generateImage, generateImages, generateImageFromReference, dimensionToAspectRatio };
+/**
+ * Wrapper: try Gemini first, fall back to Pollinations if Gemini fails or is unconfigured.
+ */
+async function generateImageWithFallback(prompt, aspectRatio = '1:1') {
+  // Try Gemini first
+  if (GEMINI_API_KEY) {
+    try {
+      const result = await generateImage(prompt, aspectRatio);
+      return { ...result, provider: 'gemini' };
+    } catch (err) {
+      console.warn(`[gemini] Failed, falling back to Pollinations: ${err.message}`);
+    }
+  } else {
+    console.warn('[gemini] No API key configured, using Pollinations fallback');
+  }
+
+  // Fallback to Pollinations
+  const { generateImagePollinations } = require('./pollinations');
+  return generateImagePollinations(prompt, aspectRatio);
+}
+
+async function generateImagesWithFallback(prompts, opts = {}) {
+  const ratio = opts.aspectRatio || (opts.dimension ? dimensionToAspectRatio(opts.dimension) : '1:1');
+
+  // Try Gemini first
+  if (GEMINI_API_KEY) {
+    try {
+      const results = await generateImages(prompts, { aspectRatio: ratio });
+      // If most succeeded, return as-is
+      const successCount = results.filter(r => r.url).length;
+      if (successCount > 0) {
+        return results.map(r => ({ ...r, provider: r.url ? 'gemini' : undefined }));
+      }
+    } catch (err) {
+      console.warn(`[gemini] Batch failed, falling back to Pollinations: ${err.message}`);
+    }
+  }
+
+  // Fallback to Pollinations
+  const { generateImagesPollinations } = require('./pollinations');
+  return generateImagesPollinations(prompts, { aspectRatio: ratio });
+}
+
+module.exports = {
+  generateImage,
+  generateImages,
+  generateImageFromReference,
+  dimensionToAspectRatio,
+  generateImageWithFallback,
+  generateImagesWithFallback,
+};
