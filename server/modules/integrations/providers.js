@@ -14,6 +14,7 @@ const PROVIDERS = {
     ],
     helpUrl: 'https://console.cloud.google.com/apis/credentials',
     helpText: 'Create OAuth credentials at Google Cloud Console, then use the OAuth Playground to get a refresh token.',
+    status: 'active',
   },
 
   meta: {
@@ -29,6 +30,7 @@ const PROVIDERS = {
     ],
     helpUrl: 'https://developers.facebook.com/tools/explorer/',
     helpText: 'Generate a long-lived token from the Meta Graph API Explorer or your app dashboard.',
+    status: 'active',
   },
 
   twitter: {
@@ -42,6 +44,7 @@ const PROVIDERS = {
       { key: 'api_secret', label: 'API Secret', type: 'password', required: true },
       { key: 'bearer_token', label: 'Bearer Token', type: 'password', required: true },
     ],
+    status: 'active',
   },
 
   linkedin: {
@@ -56,6 +59,7 @@ const PROVIDERS = {
     ],
     helpUrl: 'https://www.linkedin.com/developers/apps',
     helpText: 'Create an app at LinkedIn Developers, then generate an access token with posting permissions.',
+    status: 'active',
   },
 
   tiktok: {
@@ -70,6 +74,7 @@ const PROVIDERS = {
     ],
     helpUrl: 'https://business-api.tiktok.com/portal/docs',
     helpText: 'Get your access token from the TikTok Business API portal.',
+    status: 'active',
   },
 
   shopify: {
@@ -82,6 +87,7 @@ const PROVIDERS = {
       { key: 'shop_domain', label: 'Shop Domain (e.g. mystore.myshopify.com)', type: 'text', required: true },
       { key: 'access_token', label: 'Admin API Access Token', type: 'password', required: true },
     ],
+    status: 'active',
   },
 
   stripe: {
@@ -95,6 +101,7 @@ const PROVIDERS = {
     ],
     testUrl: 'https://api.stripe.com/v1/balance',
     testHeaders: (creds) => ({ 'Authorization': `Bearer ${creds.api_key}` }),
+    status: 'coming_soon',
   },
 
   mailchimp: {
@@ -106,6 +113,7 @@ const PROVIDERS = {
     credentials: [
       { key: 'api_key', label: 'API Key (ends with -usX)', type: 'password', required: true },
     ],
+    status: 'active',
   },
 
   hubspot: {
@@ -119,6 +127,7 @@ const PROVIDERS = {
     ],
     testUrl: 'https://api.hubapi.com/crm/v3/objects/contacts?limit=1',
     testHeaders: (creds) => ({ 'Authorization': `Bearer ${creds.access_token}` }),
+    status: 'coming_soon',
   },
 
   slack: {
@@ -131,6 +140,7 @@ const PROVIDERS = {
       { key: 'bot_token', label: 'Bot Token (xoxb-...)', type: 'password', required: true },
       { key: 'channel_id', label: 'Default Channel ID (optional)', type: 'text', required: false },
     ],
+    status: 'coming_soon',
   },
 
   amazon: {
@@ -144,6 +154,7 @@ const PROVIDERS = {
       { key: 'access_key', label: 'AWS Access Key', type: 'password', required: true },
       { key: 'secret_key', label: 'AWS Secret Key', type: 'password', required: true },
     ],
+    status: 'coming_soon',
   },
 
   notion: {
@@ -157,6 +168,7 @@ const PROVIDERS = {
     ],
     testUrl: 'https://api.notion.com/v1/users/me',
     testHeaders: (creds) => ({ 'Authorization': `Bearer ${creds.api_key}`, 'Notion-Version': '2022-06-28' }),
+    status: 'coming_soon',
   },
 
   airtable: {
@@ -170,6 +182,7 @@ const PROVIDERS = {
     ],
     testUrl: 'https://api.airtable.com/v0/meta/whoami',
     testHeaders: (creds) => ({ 'Authorization': `Bearer ${creds.api_key}` }),
+    status: 'coming_soon',
   },
 
   pinterest: {
@@ -181,6 +194,7 @@ const PROVIDERS = {
     credentials: [
       { key: 'access_token', label: 'Access Token', type: 'password', required: true },
     ],
+    status: 'active',
   },
 
   snapchat: {
@@ -193,6 +207,7 @@ const PROVIDERS = {
       { key: 'access_token', label: 'Access Token', type: 'password', required: true },
       { key: 'ad_account_id', label: 'Ad Account ID', type: 'text', required: true },
     ],
+    status: 'coming_soon',
   },
 
   intercom: {
@@ -206,6 +221,7 @@ const PROVIDERS = {
     ],
     testUrl: 'https://api.intercom.io/me',
     testHeaders: (creds) => ({ 'Authorization': `Bearer ${creds.access_token}` }),
+    status: 'coming_soon',
   },
 
   bigcommerce: {
@@ -218,6 +234,7 @@ const PROVIDERS = {
       { key: 'store_hash', label: 'Store Hash', type: 'text', required: true },
       { key: 'access_token', label: 'API Access Token', type: 'password', required: true },
     ],
+    status: 'coming_soon',
   },
 
   // ── API Key Platforms ─────────────────────────────
@@ -233,6 +250,7 @@ const PROVIDERS = {
     ],
     testUrl: 'https://a.klaviyo.com/api/accounts/',
     testHeaders: (creds) => ({ 'Authorization': `Klaviyo-API-Key ${creds.api_key}`, 'revision': '2024-02-15' }),
+    status: 'active',
   },
 
   segment: {
@@ -244,6 +262,7 @@ const PROVIDERS = {
     credentials: [
       { key: 'write_key', label: 'Write Key', type: 'password', required: true },
     ],
+    status: 'coming_soon',
   },
 
   mixpanel: {
@@ -256,6 +275,7 @@ const PROVIDERS = {
       { key: 'project_token', label: 'Project Token', type: 'text', required: true },
       { key: 'api_secret', label: 'API Secret', type: 'password', required: true },
     ],
+    status: 'coming_soon',
   },
 
   twilio: {
@@ -268,6 +288,7 @@ const PROVIDERS = {
       { key: 'account_sid', label: 'Account SID', type: 'text', required: true },
       { key: 'auth_token', label: 'Auth Token', type: 'password', required: true },
     ],
+    status: 'coming_soon',
   },
 
   zapier: {
@@ -279,6 +300,7 @@ const PROVIDERS = {
     credentials: [
       { key: 'webhook_url', label: 'Webhook URL', type: 'url', required: true },
     ],
+    status: 'coming_soon',
   },
 };
 
