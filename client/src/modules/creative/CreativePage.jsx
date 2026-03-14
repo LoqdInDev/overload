@@ -511,7 +511,7 @@ export default function CreativePage() {
   const [briefProductPlacement, setBriefProductPlacement] = useState('');
   const [briefModelDirection, setBriefModelDirection] = useState('');
   const [briefPlatform, setBriefPlatform] = useState('');
-  const [briefRefImage, setBriefRefImage] = useState(null); // { url, thumb }
+  const [briefRefImages, setBriefRefImages] = useState([]); // [{ url, thumb, file? }]
   const [briefGalleryOpen, setBriefGalleryOpen] = useState(false);
   const [briefGallery, setBriefGallery] = useState([]);
   const [briefGalleryLoading, setBriefGalleryLoading] = useState(false);
@@ -552,10 +552,10 @@ export default function CreativePage() {
   };
 
   const handleBriefFileUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    setBriefRefImage({ url, thumb: url, file });
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const newImages = files.map(file => ({ url: URL.createObjectURL(file), thumb: URL.createObjectURL(file), file }));
+    setBriefRefImages(prev => [...prev, ...newImages]);
     e.target.value = '';
   };
 
@@ -818,31 +818,33 @@ export default function CreativePage() {
       setActiveTab('generate');
       setShowInput(true);
 
-      // Carry the reference image to the Generate tab
-      if (briefRefImage) {
+      // Carry reference images to the Generate tab
+      if (briefRefImages.length > 0) {
         try {
-          let dataUrl, base64, mimeType;
-          if (briefRefImage.file) {
-            // Uploaded file — read from File object
-            const buf = await briefRefImage.file.arrayBuffer();
-            const bytes = new Uint8Array(buf);
-            base64 = btoa(bytes.reduce((s, b) => s + String.fromCharCode(b), ''));
-            mimeType = briefRefImage.file.type || 'image/jpeg';
-            dataUrl = `data:${mimeType};base64,${base64}`;
-          } else {
-            // Gallery image — fetch it
-            const imgUrl = briefRefImage.url.startsWith('http') ? briefRefImage.url : `${API_BASE}${briefRefImage.url}`;
-            const res = await fetch(imgUrl);
-            const blob = await res.blob();
-            mimeType = blob.type || 'image/jpeg';
-            const buf = await blob.arrayBuffer();
-            const bytes = new Uint8Array(buf);
-            base64 = btoa(bytes.reduce((s, b) => s + String.fromCharCode(b), ''));
-            dataUrl = `data:${mimeType};base64,${base64}`;
+          const converted = [];
+          for (const img of briefRefImages) {
+            let dataUrl, base64, mimeType;
+            if (img.file) {
+              const buf = await img.file.arrayBuffer();
+              const bytes = new Uint8Array(buf);
+              base64 = btoa(bytes.reduce((s, b) => s + String.fromCharCode(b), ''));
+              mimeType = img.file.type || 'image/jpeg';
+              dataUrl = `data:${mimeType};base64,${base64}`;
+            } else {
+              const imgUrl = img.url.startsWith('http') ? img.url : `${API_BASE}${img.url}`;
+              const res = await fetch(imgUrl);
+              const blob = await res.blob();
+              mimeType = blob.type || 'image/jpeg';
+              const buf = await blob.arrayBuffer();
+              const bytes = new Uint8Array(buf);
+              base64 = btoa(bytes.reduce((s, b) => s + String.fromCharCode(b), ''));
+              dataUrl = `data:${mimeType};base64,${base64}`;
+            }
+            converted.push({ dataUrl, base64, mimeType, name: 'Brief Reference' });
           }
-          setReferenceImages([{ dataUrl, base64, mimeType, name: 'Brief Reference' }]);
+          setReferenceImages(converted);
         } catch (err) {
-          console.error('Failed to carry reference image to Generate:', err);
+          console.error('Failed to carry reference images to Generate:', err);
         }
       }
     }
@@ -1337,56 +1339,69 @@ export default function CreativePage() {
                   </div>
                 </div>
 
-                {/* ── Group 4: Reference Image ── */}
+                {/* ── Group 4: Reference Images ── */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <span className="text-[9px] font-bold tracking-widest uppercase" style={{ color: '#f59e0b' }}>04</span>
-                    <p className="text-[11px] font-semibold text-gray-300">Reference Image</p>
+                    <p className="text-[11px] font-semibold text-gray-300">Reference Images</p>
                     <span className="text-[9px] text-gray-500">(optional)</span>
                     <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
                   </div>
-                  <p className="text-[10px] text-gray-500">Upload or pick an image to guide the brief's visual direction</p>
+                  <p className="text-[10px] text-gray-500">Upload or pick images to guide the brief's visual direction</p>
 
-                  {briefRefImage ? (
-                    <div className="relative inline-block">
-                      <img
-                        src={briefRefImage.thumb.startsWith('blob:') || briefRefImage.thumb.startsWith('http') ? briefRefImage.thumb : `${API_BASE}${briefRefImage.thumb}`}
-                        alt="Reference"
-                        className="w-28 h-28 object-cover rounded-xl"
-                        style={{ border: '2px solid rgba(245,158,11,0.4)' }}
-                      />
-                      <button onClick={() => setBriefRefImage(null)}
-                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold hover:bg-red-400 transition-colors">
-                        ×
-                      </button>
-                      <span className="absolute bottom-1 left-1 text-[8px] font-bold px-1.5 py-0.5 rounded-md bg-black/70 text-amber-400">REF</span>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2">
-                      <label className="chip text-[10px] cursor-pointer flex items-center gap-1.5 hover:border-amber-500/30 transition-colors"
-                        style={{ borderColor: 'rgba(245,158,11,0.2)' }}>
-                        <svg className="w-3.5 h-3.5" style={{ color: '#f59e0b' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                        </svg>
-                        <span style={{ color: '#f59e0b' }}>Upload Image</span>
-                        <input type="file" accept="image/*" onChange={handleBriefFileUpload} className="hidden" />
-                      </label>
-                      <button
-                        onClick={() => { if (briefGallery.length === 0) loadBriefGallery(); setBriefGalleryOpen(v => !v); }}
-                        className="chip text-[10px] flex items-center gap-1.5 hover:border-amber-500/30 transition-colors"
-                        style={{ borderColor: 'rgba(245,158,11,0.2)' }}>
-                        <svg className="w-3.5 h-3.5" style={{ color: '#f59e0b' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-                        </svg>
-                        <span style={{ color: '#f59e0b' }}>From Gallery</span>
-                      </button>
+                  {/* Uploaded images grid */}
+                  {briefRefImages.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {briefRefImages.map((img, idx) => (
+                        <div key={idx} className="relative inline-block">
+                          <img
+                            src={img.thumb.startsWith('blob:') || img.thumb.startsWith('http') ? img.thumb : `${API_BASE}${img.thumb}`}
+                            alt={`Reference ${idx + 1}`}
+                            className="w-24 h-24 object-cover rounded-xl"
+                            style={{ border: '2px solid rgba(245,158,11,0.4)' }}
+                          />
+                          <button onClick={() => setBriefRefImages(prev => prev.filter((_, i) => i !== idx))}
+                            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold hover:bg-red-400 transition-colors">
+                            ×
+                          </button>
+                          <span className="absolute bottom-1 left-1 text-[8px] font-bold px-1.5 py-0.5 rounded-md bg-black/70 text-amber-400">{idx + 1}</span>
+                        </div>
+                      ))}
                     </div>
                   )}
 
-                  {briefGalleryOpen && !briefRefImage && (
+                  {/* Add more buttons — always visible */}
+                  <div className="flex gap-2">
+                    <label className="chip text-[10px] cursor-pointer flex items-center gap-1.5 hover:border-amber-500/30 transition-colors"
+                      style={{ borderColor: 'rgba(245,158,11,0.2)' }}>
+                      <svg className="w-3.5 h-3.5" style={{ color: '#f59e0b' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                      </svg>
+                      <span style={{ color: '#f59e0b' }}>{briefRefImages.length ? 'Add More' : 'Upload Image'}</span>
+                      <input type="file" accept="image/*" multiple onChange={handleBriefFileUpload} className="hidden" />
+                    </label>
+                    <button
+                      onClick={() => { if (briefGallery.length === 0) loadBriefGallery(); setBriefGalleryOpen(v => !v); }}
+                      className="chip text-[10px] flex items-center gap-1.5 hover:border-amber-500/30 transition-colors"
+                      style={{ borderColor: 'rgba(245,158,11,0.2)' }}>
+                      <svg className="w-3.5 h-3.5" style={{ color: '#f59e0b' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+                      </svg>
+                      <span style={{ color: '#f59e0b' }}>From Gallery</span>
+                    </button>
+                    {briefRefImages.length > 0 && (
+                      <button onClick={() => setBriefRefImages([])}
+                        className="chip text-[10px] flex items-center gap-1.5 hover:border-red-500/30 transition-colors"
+                        style={{ borderColor: 'rgba(239,68,68,0.2)', color: '#ef4444' }}>
+                        Clear All
+                      </button>
+                    )}
+                  </div>
+
+                  {briefGalleryOpen && (
                     <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(245,158,11,0.15)', background: 'rgba(0,0,0,0.2)' }}>
                       <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <span className="text-[10px] font-semibold text-gray-400">Pick a Reference</span>
+                        <span className="text-[10px] font-semibold text-gray-400">Pick References</span>
                         <button onClick={() => setBriefGalleryOpen(false)} className="text-[10px] text-gray-500 hover:text-gray-300">✕</button>
                       </div>
                       {briefGalleryLoading ? (
@@ -1398,7 +1413,7 @@ export default function CreativePage() {
                       ) : (
                         <div className="p-2 grid grid-cols-5 gap-1.5 max-h-40 overflow-y-auto">
                           {briefGallery.map(img => (
-                            <button key={img.url} onClick={() => { setBriefRefImage({ url: img.url, thumb: img.url }); setBriefGalleryOpen(false); }}
+                            <button key={img.url} onClick={() => { setBriefRefImages(prev => [...prev, { url: img.url, thumb: img.url }]); }}
                               className="rounded-lg overflow-hidden hover:ring-2 ring-amber-500/50 transition-all" style={{ aspectRatio: '1/1' }}>
                               <img src={img.url.startsWith('http') ? img.url : `${API_BASE}${img.url}`} alt={img.alt} className="w-full h-full object-cover" />
                             </button>
@@ -1415,14 +1430,15 @@ export default function CreativePage() {
             <button onClick={async () => {
                 setBriefOutput('');
                 setBriefLoading(true);
-                // If user uploaded a file, convert to base64 for the server
-                let refImageUrl = briefRefImage && !briefRefImage.file ? briefRefImage.url : undefined;
+                // Use first reference image for the brief API (send primary reference)
+                const firstRef = briefRefImages[0] || null;
+                let refImageUrl = firstRef && !firstRef.file ? firstRef.url : undefined;
                 let refImageBase64 = undefined;
                 let refImageMediaType = undefined;
-                if (briefRefImage?.file) {
-                  const buf = await briefRefImage.file.arrayBuffer();
+                if (firstRef?.file) {
+                  const buf = await firstRef.file.arrayBuffer();
                   refImageBase64 = btoa(new Uint8Array(buf).reduce((s, b) => s + String.fromCharCode(b), ''));
-                  refImageMediaType = briefRefImage.file.type || 'image/jpeg';
+                  refImageMediaType = firstRef.file.type || 'image/jpeg';
                 }
                 connectSSE('/api/creative/generate-brief', {
                   product: briefProduct, goal: briefGoal, audience: briefAudience,
