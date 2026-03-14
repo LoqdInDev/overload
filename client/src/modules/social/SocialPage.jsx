@@ -629,16 +629,23 @@ export default function SocialPage() {
         business_type: planBusinessType || 'E-commerce',
         goal: planGoal || 'Brand awareness and engagement',
       });
-      if (!plan?.plan) { setCalGenerating(false); return; }
+      if (!plan?.plan) { setCalGenerating(false); setCalOutput('AI returned an unexpected format. Try again.'); return; }
       let added = 0;
+      let postIndex = 0;
       for (const week of plan.plan) {
         for (const post of (week.posts || [])) {
-          // Parse day from "Monday March 3" or similar
-          const dayMatch = post.day?.match(/(\d+)/);
-          const dayNum = dayMatch ? parseInt(dayMatch[1]) : null;
-          if (!dayNum || dayNum < 1 || dayNum > daysInMonth) continue;
-          if (existingTitles.includes(post.topic?.toLowerCase())) continue;
-          const platformId = (post.platform || '').toLowerCase().replace(/ .*/, '');
+          if (!post.topic) continue;
+          // Parse day: prefer day_number (number), fall back to extracting digits from day string
+          let dayNum = null;
+          if (typeof post.day_number === 'number') dayNum = post.day_number;
+          else if (post.day_number) dayNum = parseInt(String(post.day_number));
+          else if (post.day) { const m = String(post.day).match(/(\d+)/); if (m) dayNum = parseInt(m[1]); }
+          // Last resort: spread evenly across the month
+          if (!dayNum || dayNum < 1 || dayNum > daysInMonth) {
+            dayNum = Math.min(daysInMonth, Math.max(1, Math.round(((week.week - 1) * 7) + postIndex * 2 + 1)));
+          }
+          postIndex++;
+          if (existingTitles.includes(post.topic.toLowerCase())) continue;
           const typeMap = { educational: 'content', promotional: 'campaign', entertainment: 'social', ugc: 'social', 'behind-the-scenes': 'content' };
           const typeId = typeMap[(post.content_type || '').toLowerCase()] || 'social';
           const type = CAL_EVENT_TYPES.find(t => t.id === typeId) || CAL_EVENT_TYPES[2];
@@ -646,11 +653,12 @@ export default function SocialPage() {
           try {
             const created = await postJSON('/api/calendar/events', {
               title: post.topic, module_id: type.id, date, color: type.color,
-              description: `${post.platform} · ${post.content_type}${post.hook ? ` — "${post.hook}"` : ''}`,
+              description: `${post.platform || ''} · ${post.content_type || ''}${post.hook ? ` — "${post.hook}"` : ''}`,
             });
             setCalEvents(ev => [...ev, created]);
+            existingTitles.push(post.topic.toLowerCase());
             added++;
-          } catch {}
+          } catch (err) { console.error('Failed to add event:', post.topic, err); }
         }
       }
       setCalOutput(added > 0 ? `Added ${added} events to your calendar.` : 'No new events to add.');

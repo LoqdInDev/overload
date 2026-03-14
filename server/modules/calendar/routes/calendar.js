@@ -205,15 +205,16 @@ Generate a 4-week posting schedule with 3-4 posts per week. Return JSON:
     {
       "week": 1,
       "posts": [
-        { "day": "<like Monday March 3>", "platform": "<Instagram|Twitter|LinkedIn|Facebook|TikTok>", "content_type": "<Educational|Promotional|Entertainment|UGC|Behind-the-Scenes>", "topic": "<specific post topic>", "hook": "<opening hook text>" }
+        { "day_number": 3, "platform": "Instagram", "content_type": "Educational", "topic": "specific post topic", "hook": "opening hook text" }
       ]
     }
   ],
-  "theme": "<overarching monthly theme>",
-  "notes": "<2 strategic notes>"
+  "theme": "overarching monthly theme",
+  "notes": "2 strategic notes"
 }
 
-Return exactly 4 weeks with 3-4 posts each. Only return JSON.`)
+IMPORTANT: "day_number" must be a NUMBER (1-31) representing the day of the month. Spread posts across the whole month.
+Return exactly 4 weeks with 3-4 posts each. Only return valid JSON, no markdown.`)
     .then(({ text }) => {
       try { res.json(JSON.parse(stripMarkdownJSON(text))); }
       catch { res.status(500).json({ error: 'Parse failed' }); }
