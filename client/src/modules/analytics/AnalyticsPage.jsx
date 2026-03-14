@@ -74,7 +74,7 @@ export default function AnalyticsPage() {
     return { ...cat, modules: mods, total };
   });
 
-  const card = dark ? 'bg-transparent border border-gray-200' : 'bg-white border border-[#e8e0d4]';
+  const card = dark ? 'bg-transparent border border-white/[0.06]' : 'bg-white border border-[#e8e0d4]';
   const cardShadow = dark ? 'none' : '0 2px 20px -4px rgba(0,0,0,0.04)';
   const muted = dark ? 'text-gray-500' : 'text-[#94908A]';
   const ink = dark ? 'text-white' : 'text-[#332F2B]';
@@ -95,14 +95,10 @@ export default function AnalyticsPage() {
               </h1>
               <p className={`text-sm mt-1 ${muted}`}>Activity and usage across all modules</p>
             </div>
-            <div className={`flex rounded-lg p-0.5 ${dark ? 'bg-white/[0.03] border border-gray-200' : 'bg-[#F5F0E8] border border-[#e8e0d4]'}`}>
+            <div className={`flex rounded-lg p-0.5 ${dark ? 'bg-white/[0.03] border border-white/[0.06]' : 'bg-[#F5F0E8] border border-[#e8e0d4]'}`}>
               {['24h', '7d', '30d', 'All'].map(r => (
                 <button key={r} onClick={() => setTimeRange(r)}
-                  className={`px-3 py-1.5 text-[11px] font-semibold rounded-md transition-all ${
-                    timeRange === r
-                      ? dark ? 'bg-[#C45D3E]/15 text-[#C45D3E]' : 'bg-white text-[#C45D3E] shadow-sm'
-                      : dark ? 'text-gray-500 hover:text-gray-300' : 'text-[#94908A] hover:text-[#332F2B]'
-                  }`}>
+                  className={`chip ${timeRange === r ? 'active' : ''}`}>
                   {r}
                 </button>
               ))}
@@ -202,7 +198,7 @@ export default function AnalyticsPage() {
 
                     {/* Expanded module list */}
                     {isExpanded && (
-                      <div className={`mt-1 ml-4 mr-2 rounded-xl overflow-hidden ${dark ? 'border border-gray-100' : 'border border-[#e8e0d4]/60'}`}>
+                      <div className={`mt-1 ml-4 mr-2 rounded-xl overflow-hidden ${dark ? 'border border-white/[0.06]' : 'border border-[#e8e0d4]/60'}`}>
                         {cat.modules.map((mod, mi) => {
                           const modPct = totalActions > 0 ? (mod.count / totalActions) * 100 : 0;
                           return (
@@ -260,7 +256,7 @@ export default function AnalyticsPage() {
             )}
 
             {/* Module count by category - mini summary */}
-            <div className={`mt-6 pt-5 ${dark ? 'border-t border-gray-200' : 'border-t border-[#e8e0d4]'}`}>
+            <div className={`mt-6 pt-5 ${dark ? 'border-t border-white/[0.06]' : 'border-t border-[#e8e0d4]'}`}>
               <p className={`text-[10px] uppercase tracking-[0.15em] font-semibold mb-3 ${muted}`}>Module Spread</p>
               <div className="flex gap-1.5 flex-wrap">
                 {CATEGORIES.filter(c => c.id !== 'settings').map(cat => {
@@ -281,7 +277,7 @@ export default function AnalyticsPage() {
 
         {/* Activity Log */}
         <div className={`rounded-2xl ${card}`} style={{ boxShadow: cardShadow }}>
-          <div className={`flex items-center justify-between px-5 sm:px-6 py-4 ${dark ? 'border-b border-gray-200' : 'border-b border-[#e8e0d4]'}`}>
+          <div className={`flex items-center justify-between px-5 sm:px-6 py-4 ${dark ? 'border-b border-white/[0.06]' : 'border-b border-[#e8e0d4]'}`}>
             <p className={`text-[10px] uppercase tracking-[0.15em] font-semibold ${dark ? 'text-[#C45D3E]/60' : 'text-[#C45D3E]'}`}>Recent Activity</p>
             <span className={`text-[10px] font-medium ${subtle}`}>{activity.length} events</span>
           </div>
@@ -326,7 +322,7 @@ export default function AnalyticsPage() {
 
         {/* Goal Tracker Widget */}
         <div className={`rounded-2xl mt-6 ${card}`} style={{ boxShadow: cardShadow }}>
-          <div className={`flex items-center justify-between px-5 sm:px-6 py-4 ${dark ? 'border-b border-gray-200' : 'border-b border-[#e8e0d4]'}`}>
+          <div className={`flex items-center justify-between px-5 sm:px-6 py-4 ${dark ? 'border-b border-white/[0.06]' : 'border-b border-[#e8e0d4]'}`}>
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(245,158,11,0.12)' }}>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ color: '#f59e0b' }}>
@@ -433,15 +429,15 @@ export default function AnalyticsPage() {
             <div className="grid gap-3" style={{ gridTemplateColumns: '2fr 1fr 1fr' }}>
               <div>
                 <p className="hud-label text-[10px] mb-1.5">METRIC NAME</p>
-                <input className="input w-full px-4 py-3 text-sm" placeholder="e.g. Conversion Rate" value={anomalyInputs.metric_name} onChange={e => setAnomalyInputs(p => ({ ...p, metric_name: e.target.value }))} />
+                <input className="input-field w-full" placeholder="e.g. Conversion Rate" value={anomalyInputs.metric_name} onChange={e => setAnomalyInputs(p => ({ ...p, metric_name: e.target.value }))} />
               </div>
               <div>
                 <p className="hud-label text-[10px] mb-1.5">CURRENT VALUE</p>
-                <input className="input w-full px-4 py-3 text-sm" type="number" placeholder="e.g. 2.1" value={anomalyInputs.current_value} onChange={e => setAnomalyInputs(p => ({ ...p, current_value: e.target.value }))} />
+                <input className="input-field w-full" type="number" placeholder="e.g. 2.1" value={anomalyInputs.current_value} onChange={e => setAnomalyInputs(p => ({ ...p, current_value: e.target.value }))} />
               </div>
               <div>
                 <p className="hud-label text-[10px] mb-1.5">HISTORICAL AVG</p>
-                <input className="input w-full px-4 py-3 text-sm" type="number" placeholder="e.g. 3.5" value={anomalyInputs.historical_average} onChange={e => setAnomalyInputs(p => ({ ...p, historical_average: e.target.value }))} />
+                <input className="input-field w-full" type="number" placeholder="e.g. 3.5" value={anomalyInputs.historical_average} onChange={e => setAnomalyInputs(p => ({ ...p, historical_average: e.target.value }))} />
               </div>
             </div>
             <button className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all"
