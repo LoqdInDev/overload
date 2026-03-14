@@ -416,8 +416,17 @@ router.post('/platforms/send', async (req, res) => {
     if (!provider || !listId) return res.status(400).json({ success: false, error: 'provider and listId required' });
     if (!pm.isConnected(provider)) return res.status(400).json({ success: false, error: `${provider} not connected` });
 
+    // If html looks like raw text (no tags), render through MJML first
+    let finalHtml = html;
+    if (html && !html.includes('<html') && !html.includes('<table') && !html.includes('<mj-')) {
+      try {
+        const rendered = renderText(html, {});
+        if (rendered.html) finalHtml = rendered.html;
+      } catch { /* fallback to raw html */ }
+    }
+
     const data = await pm.emailSend(provider, {
-      listId, subject, fromName, fromEmail, replyTo, html, name: name || subject,
+      listId, subject, fromName, fromEmail, replyTo, html: finalHtml, name: name || subject,
     });
 
     await logActivity('email-sms', 'send', `Sent campaign via ${provider}`, subject, null, wsId);
@@ -532,6 +541,67 @@ Return ONLY valid JSON:
     res.json(JSON.parse(clean));
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ══════════════════════════════════════════════════════
+// MJML Email Rendering
+// ══════════════════════════════════════════════════════
+
+const { renderBlocks, renderText } = require('../../../services/mjmlRenderer');
+
+// POST /render-blocks — render drag-and-drop blocks to HTML
+router.post('/render-blocks', async (req, res) => {
+  try {
+    const { blocks, options } = req.body;
+    if (!blocks || !Array.isArray(blocks)) return res.status(400).json({ error: 'blocks array required' });
+
+    // Merge brand context into options
+    const wsId = req.workspace?.id;
+    let brandOptions = options || {};
+    if (wsId) {
+      const brand = getBrandContext(wsId);
+      if (brand) {
+        brandOptions = {
+          brandColor: brand.colors?.[0] || brandOptions.brandColor,
+          companyName: brand.name || brandOptions.companyName,
+          logoUrl: brand.logoUrl || brandOptions.logoUrl,
+          ...brandOptions,
+        };
+      }
+    }
+
+    const result = renderBlocks(blocks, brandOptions);
+    res.json({ success: true, html: result.html, mjml: result.mjml, errors: result.errors });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /render-text — render plain AI text to styled HTML email
+router.post('/render-text', async (req, res) => {
+  try {
+    const { text, options } = req.body;
+    if (!text) return res.status(400).json({ error: 'text required' });
+
+    const wsId = req.workspace?.id;
+    let brandOptions = options || {};
+    if (wsId) {
+      const brand = getBrandContext(wsId);
+      if (brand) {
+        brandOptions = {
+          brandColor: brand.colors?.[0] || brandOptions.brandColor,
+          companyName: brand.name || brandOptions.companyName,
+          logoUrl: brand.logoUrl || brandOptions.logoUrl,
+          ...brandOptions,
+        };
+      }
+    }
+
+    const result = renderText(text, brandOptions);
+    res.json({ success: true, html: result.html, errors: result.errors });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

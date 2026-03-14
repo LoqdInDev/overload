@@ -3,6 +3,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
 import { fetchJSON, postJSON, deleteJSON } from '../../lib/api';
+import EmailDesigner from './EmailDesigner';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 const MODULE_COLOR = '#f59e0b';
@@ -86,6 +87,9 @@ function ScoreCard({ label, score, grade, detail }) {
 export default function EmailSmsPage() {
   usePageTitle('Email & SMS');
   const { dark } = useTheme();
+
+  // Designer mode
+  const [designerMode, setDesignerMode] = useState(false);
 
   // Core generation state
   const [activeType, setActiveType] = useState(null);
@@ -271,11 +275,18 @@ export default function EmailSmsPage() {
     setSending(true);
     try {
       const content = result || streamText;
+      // Render through MJML for professional HTML, fallback to basic
+      let html = content.replace(/\n/g, '<br>');
+      try {
+        const rendered = await postJSON('/api/email-sms/render-text', { text: content });
+        if (rendered.success && rendered.html) html = rendered.html;
+      } catch { /* fallback to basic html */ }
+
       await postJSON('/api/email-sms/platforms/send', {
         provider: sendProvider,
         listId: sendListId,
         subject: subjectLine || prompt.slice(0, 80),
-        html: content.replace(/\n/g, '<br>'),
+        html,
         name: prompt.slice(0, 80) || 'AI Campaign',
       });
       setSendSuccess(true);
@@ -303,6 +314,29 @@ export default function EmailSmsPage() {
 
   const selectTemplate = (tmpl) => setPrompt(tmpl.prompt);
 
+  /* ---- DESIGNER MODE ---- */
+  if (designerMode) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-12">
+        <ModuleWrapper moduleId="email-sms">
+        <div className="flex items-center gap-3 mb-6 sm:mb-8 animate-fade-in">
+          <button onClick={() => setDesignerMode(false)}
+            className={`p-2 rounded-md border transition-all ${dark ? 'border-indigo-500/10 text-gray-500 hover:text-white hover:border-indigo-500/25' : 'border-gray-300 text-gray-400 hover:text-gray-700 hover:border-gray-400'}`}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+          </button>
+          <div>
+            <p className="hud-label text-[11px]" style={{ color: MODULE_COLOR }}>EMAIL DESIGNER</p>
+            <h2 className={`text-lg font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>Drag & Drop Email Builder</h2>
+          </div>
+        </div>
+        <EmailDesigner />
+        </ModuleWrapper>
+      </div>
+    );
+  }
+
   /* ---- LANDING SCREEN ---- */
   if (!activeType) {
     return (
@@ -314,7 +348,7 @@ export default function EmailSmsPage() {
           <p className={`text-base ${dark ? 'text-gray-500' : 'text-gray-500'}`}>Select a message type to start generating with AI</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 stagger">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3 stagger">
           {EMAIL_TYPES.map(type => (
             <button key={type.id} onClick={() => setActiveType(type.id)}
               className={`${dark ? 'panel-interactive' : 'bg-white border border-gray-200 shadow-sm hover:shadow-md hover:-translate-y-0.5'} rounded-2xl p-4 sm:p-7 text-center group transition-all`}>
@@ -328,6 +362,18 @@ export default function EmailSmsPage() {
               <p className={`text-xs mt-1 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{type.desc}</p>
             </button>
           ))}
+          <button onClick={() => setDesignerMode(true)}
+            className={`${dark ? 'panel-interactive' : 'bg-white border border-gray-200 shadow-sm hover:shadow-md hover:-translate-y-0.5'} rounded-2xl p-4 sm:p-7 text-center group transition-all`}
+            style={{ borderColor: `${MODULE_COLOR}30` }}>
+            <div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center transition-all duration-300 group-hover:scale-110"
+              style={{ background: `${MODULE_COLOR}20`, border: `1px solid ${MODULE_COLOR}35` }}>
+              <svg className="w-6 h-6" style={{ color: MODULE_COLOR }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
+              </svg>
+            </div>
+            <p className={`text-sm font-bold transition-colors ${dark ? 'text-gray-300 group-hover:text-white' : 'text-gray-700 group-hover:text-gray-900'}`}>Email Designer</p>
+            <p className={`text-xs mt-1 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>Visual drag & drop builder</p>
+          </button>
         </div>
 
         <div className="mt-10">
@@ -358,7 +404,7 @@ export default function EmailSmsPage() {
             <div className="flex-1 hud-line" />
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 stagger">
-            {['Subject Lines', 'Body Copy', 'CTAs', 'Drip Flows', 'SMS Copy', 'Quality Analysis'].map((cap, i) => (
+            {['Subject Lines', 'Body Copy', 'CTAs', 'Drip Flows', 'SMS Copy', 'Quality Analysis', 'Visual Designer'].map((cap, i) => (
               <div key={i} className={`${dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm'} rounded-lg p-4 sm:p-5 text-center`}>
                 <p className={`text-xs font-semibold ${dark ? 'text-gray-400' : 'text-gray-600'}`}>{cap}</p>
               </div>
@@ -693,7 +739,20 @@ export default function EmailSmsPage() {
                   <button onClick={copyToClipboard} className="chip text-[10px]" style={{ color: copied ? '#4ade80' : undefined }}>
                     {copied ? 'Copied!' : 'Copy'}
                   </button>
-                  <button onClick={exportAsHtml} className="chip text-[10px]">Export HTML</button>
+                  <button onClick={async () => {
+                    const content = result || streamText;
+                    try {
+                      const data = await postJSON('/api/email-sms/render-text', { text: content });
+                      if (data.success && data.html) {
+                        const blob = new Blob([data.html], { type: 'text/html' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url; a.download = 'email-styled.html'; a.click();
+                        URL.revokeObjectURL(url);
+                      }
+                    } catch (e) { exportAsHtml(); }
+                  }} className="chip text-[10px]" style={{ color: MODULE_COLOR, borderColor: `${MODULE_COLOR}40`, background: `${MODULE_COLOR}12` }}>Export Styled HTML</button>
+                  <button onClick={exportAsHtml} className="chip text-[10px]">Export Raw</button>
                   <button onClick={() => generate()} className="chip text-[10px]">Regenerate</button>
                   {activeType !== 'sms' && (
                     <>
