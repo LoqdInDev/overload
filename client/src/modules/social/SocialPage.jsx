@@ -212,6 +212,14 @@ export default function SocialPage() {
   const [bestTimesLoading, setBestTimesLoading] = useState(false);
   const [bestTimesPlatform, setBestTimesPlatform] = useState('');
 
+  // Scheduling
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [scheduleTime, setScheduleTime] = useState('');
+  const [schedulePlatform, setSchedulePlatform] = useState('');
+  const [scheduling, setScheduling] = useState(false);
+  const [queue, setQueue] = useState([]);
+  const [queueLoading, setQueueLoading] = useState(false);
+
   // Analytics
   const [analyticsData, setAnalyticsData] = useState({});
   const [analyticsLoading, setAnalyticsLoading] = useState({});
@@ -441,6 +449,59 @@ export default function SocialPage() {
     finally { setBestTimesLoading(false); }
   };
 
+  const fetchQueue = useCallback(async () => {
+    setQueueLoading(true);
+    try {
+      const data = await fetchJSON('/api/social/queue');
+      setQueue(Array.isArray(data) ? data : []);
+    } catch (e) { console.error('Fetch queue error:', e); }
+    finally { setQueueLoading(false); }
+  }, []);
+
+  useEffect(() => { if (tab === 'publish') fetchQueue(); }, [tab, fetchQueue]);
+
+  const schedulePost = async () => {
+    const text = publishText || result || streamText;
+    if (!text.trim() || !scheduleDate || !scheduleTime || !schedulePlatform) return;
+    setScheduling(true); setPublishStatus(null);
+    try {
+      const scheduled_at = new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
+      const res = await fetch(`${API_BASE}/api/social/schedule-new`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          platform: schedulePlatform,
+          caption: text,
+          media_url: publishMediaUrl || undefined,
+          scheduled_at,
+        }),
+      });
+      const data = await res.json();
+      if (data.id) {
+        setPublishStatus({ type: 'success', msg: `Scheduled for ${new Date(scheduled_at).toLocaleString()}` });
+        setScheduleDate(''); setScheduleTime(''); setSchedulePlatform('');
+        fetchQueue();
+      } else {
+        setPublishStatus({ type: 'error', msg: data.error || 'Failed to schedule' });
+      }
+    } catch (e) {
+      setPublishStatus({ type: 'error', msg: e.message });
+    } finally { setScheduling(false); }
+  };
+
+  const unschedulePost = async (id) => {
+    try {
+      await postJSON(`/api/social/posts/${id}/unschedule`, {});
+      fetchQueue();
+    } catch (e) { console.error('Unschedule error:', e); }
+  };
+
+  const retryPost = async (id) => {
+    try {
+      await postJSON(`/api/social/posts/${id}/retry`, {});
+      fetchQueue();
+    } catch (e) { console.error('Retry error:', e); }
+  };
+
   const loadAnalytics = async (providerId) => {
     setAnalyticsLoading(prev => ({ ...prev, [providerId]: true }));
     setAnalyticsError(prev => ({ ...prev, [providerId]: null }));
@@ -478,6 +539,7 @@ export default function SocialPage() {
           { id: 'repurpose', label: 'Repurpose' },
           { id: 'accounts', label: `Accounts ${socialConnected.length > 0 ? `(${socialConnected.length})` : ''}` },
           { id: 'publish', label: 'Publish' },
+          { id: 'queue', label: `Queue${queue.length > 0 ? ` (${queue.length})` : ''}` },
           { id: 'analytics', label: 'Analytics' },
           { id: 'history', label: `Drafts${posts.length > 0 ? ` (${posts.length})` : ''}` },
         ].map(t => (
@@ -808,6 +870,131 @@ export default function SocialPage() {
               </div>
             )}
           </div>
+
+          {/* Schedule for later */}
+          <div className={`${panelCls} rounded-2xl p-4 sm:p-7`}>
+            <div className="flex items-center gap-3 mb-4">
+              <p className="hud-label text-[11px]" style={{ color: MODULE_COLOR }}>SCHEDULE FOR LATER</p>
+              <div className="flex-1 hud-line" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+              <div>
+                <label className={`text-[10px] font-semibold mb-1 block ${dark ? 'text-gray-400' : 'text-gray-500'}`}>PLATFORM</label>
+                <select value={schedulePlatform} onChange={(e) => setSchedulePlatform(e.target.value)}
+                  className="w-full input-field rounded-xl px-4 py-2.5 text-sm">
+                  <option value="">Select platform...</option>
+                  {socialConnected.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={`text-[10px] font-semibold mb-1 block ${dark ? 'text-gray-400' : 'text-gray-500'}`}>DATE</label>
+                <input type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full input-field rounded-xl px-4 py-2.5 text-sm" />
+              </div>
+              <div>
+                <label className={`text-[10px] font-semibold mb-1 block ${dark ? 'text-gray-400' : 'text-gray-500'}`}>TIME</label>
+                <input type="time" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)}
+                  className="w-full input-field rounded-xl px-4 py-2.5 text-sm" />
+              </div>
+            </div>
+            <button onClick={schedulePost}
+              disabled={scheduling || !publishText.trim() || !scheduleDate || !scheduleTime || !schedulePlatform}
+              className="px-6 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
+              style={{ background: `${MODULE_COLOR}20`, color: MODULE_COLOR, border: `1px solid ${MODULE_COLOR}30` }}>
+              {scheduling ? 'Scheduling...' : 'Schedule Post'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ QUEUE TAB ═══ */}
+      {tab === 'queue' && (
+        <div className="space-y-4 sm:space-y-6 animate-fade-in">
+          <div className="flex items-center gap-3 mb-2">
+            <p className="hud-label text-[11px]" style={{ color: MODULE_COLOR }}>PUBLISHING QUEUE</p>
+            <div className="flex-1 hud-line" />
+            <button onClick={fetchQueue} className={`text-[10px] font-semibold ${dark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}>
+              Refresh
+            </button>
+          </div>
+
+          {queueLoading ? (
+            <div className="flex items-center gap-2 py-8 justify-center">
+              <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: MODULE_COLOR }} />
+              <span className="hud-label text-[11px]" style={{ color: MODULE_COLOR }}>LOADING QUEUE...</span>
+            </div>
+          ) : queue.length === 0 ? (
+            <div className={`${panelCls} rounded-2xl p-10 text-center`}>
+              <p className={`text-sm ${dark ? 'text-gray-500' : 'text-gray-400'}`}>No scheduled posts. Go to the Publish tab to schedule content.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {queue.map(post => {
+                const platform = SOCIAL_PLATFORMS.find(p => p.id === post.platform);
+                const meta = JSON.parse(post.metadata || '{}');
+                const isFailed = post.status === 'failed';
+                const schedTime = post.scheduled_at ? new Date(post.scheduled_at) : null;
+                return (
+                  <div key={post.id} className={`${panelCls} rounded-2xl p-4 sm:p-5 ${isFailed ? 'border-red-500/30' : ''}`}>
+                    <div className="flex items-start gap-4">
+                      {/* Platform icon */}
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ background: `${platform?.color || '#666'}15`, border: `1px solid ${platform?.color || '#666'}25` }}>
+                        {platform ? <PlatformIcon id={platform.id} size={20} /> : <span className="text-xs">{post.platform}</span>}
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-xs font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{platform?.name || post.platform}</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                            isFailed
+                              ? 'bg-red-500/15 text-red-400 border border-red-500/20'
+                              : 'bg-blue-500/15 text-blue-400 border border-blue-500/20'
+                          }`}>
+                            {isFailed ? 'Failed' : 'Scheduled'}
+                          </span>
+                          {meta.retry_count > 0 && (
+                            <span className="text-[10px] text-amber-400">Retry {meta.retry_count}/3</span>
+                          )}
+                        </div>
+                        <p className={`text-sm mb-2 line-clamp-2 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>
+                          {post.caption?.slice(0, 200) || 'No caption'}
+                        </p>
+                        <div className="flex items-center gap-3">
+                          {schedTime && (
+                            <span className={`text-[10px] font-mono ${dark ? 'text-gray-500' : 'text-gray-400'}`}>
+                              {schedTime.toLocaleDateString()} at {schedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          )}
+                          {isFailed && meta.last_error && (
+                            <span className="text-[10px] text-red-400 truncate max-w-[200px]" title={meta.last_error}>
+                              {meta.last_error}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex gap-2 flex-shrink-0">
+                        {isFailed && (
+                          <button onClick={() => retryPost(post.id)}
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold ${dark ? 'bg-amber-500/15 text-amber-400 border border-amber-500/20 hover:bg-amber-500/25' : 'bg-amber-50 text-amber-600 border border-amber-200 hover:bg-amber-100'}`}>
+                            Retry
+                          </button>
+                        )}
+                        <button onClick={() => unschedulePost(post.id)}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold ${dark ? 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20' : 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'}`}>
+                          {isFailed ? 'Discard' : 'Cancel'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

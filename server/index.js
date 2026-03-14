@@ -473,6 +473,10 @@ startAdsOptimizer();
 const { startSyncScheduler } = require('./services/syncScheduler');
 startSyncScheduler();
 
+// Start the social media post scheduler (publishes scheduled posts every 60s)
+const { startSocialScheduler } = require('./services/socialScheduler');
+startSocialScheduler();
+
 const server = app.listen(PORT, () => {
   logger.info(`Overload server running on http://localhost:${PORT}`, { modules: loadedModules.length });
 });

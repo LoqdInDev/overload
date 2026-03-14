@@ -665,6 +665,114 @@ router.post('/best-times', async (req, res) => {
   }
 });
 
+// POST /posts/:id/schedule — schedule a post for future publishing
+router.post('/posts/:id/schedule', async (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const { scheduled_at } = req.body;
+    if (!scheduled_at) return res.status(400).json({ error: 'scheduled_at is required (ISO 8601 datetime)' });
+
+    const post = await db.prepare('SELECT * FROM sm_posts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+
+    // Validate the date is in the future
+    const schedDate = new Date(scheduled_at);
+    if (isNaN(schedDate.getTime())) return res.status(400).json({ error: 'Invalid date format' });
+    if (schedDate <= new Date()) return res.status(400).json({ error: 'scheduled_at must be in the future' });
+
+    await db.prepare(
+      "UPDATE sm_posts SET status = 'scheduled', scheduled_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?"
+    ).run(scheduled_at, req.params.id, wsId);
+
+    const updated = await db.prepare('SELECT * FROM sm_posts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    await logActivity('social', 'schedule', `Scheduled ${post.platform} post for ${scheduled_at}`, (post.caption || '').slice(0, 80), String(post.id), wsId);
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /posts/:id/unschedule — cancel a scheduled post (revert to draft)
+router.post('/posts/:id/unschedule', async (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const post = await db.prepare('SELECT * FROM sm_posts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+    if (post.status !== 'scheduled') return res.status(400).json({ error: 'Post is not scheduled' });
+
+    await db.prepare(
+      "UPDATE sm_posts SET status = 'draft', scheduled_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?"
+    ).run(req.params.id, wsId);
+
+    const updated = await db.prepare('SELECT * FROM sm_posts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    await logActivity('social', 'unschedule', `Unscheduled ${post.platform} post`, null, String(post.id), wsId);
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /posts/:id/retry — retry a failed post (re-schedule for now + 1 min)
+router.post('/posts/:id/retry', async (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const post = await db.prepare('SELECT * FROM sm_posts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+    if (post.status !== 'failed') return res.status(400).json({ error: 'Only failed posts can be retried' });
+
+    const meta = JSON.parse(post.metadata || '{}');
+    const updatedMeta = JSON.stringify({ ...meta, retry_count: 0, last_error: null });
+
+    await db.prepare(
+      "UPDATE sm_posts SET status = 'scheduled', scheduled_at = (NOW() + INTERVAL '1 minute')::text, metadata = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?"
+    ).run(updatedMeta, req.params.id, wsId);
+
+    const updated = await db.prepare('SELECT * FROM sm_posts WHERE id = ? AND workspace_id = ?').get(req.params.id, wsId);
+    await logActivity('social', 'retry', `Retrying failed ${post.platform} post`, null, String(post.id), wsId);
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /queue — get all scheduled and failed posts (the publishing queue)
+router.get('/queue', async (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const posts = await db.prepare(
+      "SELECT * FROM sm_posts WHERE workspace_id = ? AND status IN ('scheduled', 'failed') ORDER BY scheduled_at ASC"
+    ).all(wsId);
+    res.json(posts);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /schedule-new — create + schedule a post in one step
+router.post('/schedule-new', async (req, res) => {
+  try {
+    const wsId = req.workspace.id;
+    const { platform, caption, hashtags, media_url, media_notes, scheduled_at, metadata } = req.body;
+    if (!platform) return res.status(400).json({ error: 'platform is required' });
+    if (!caption) return res.status(400).json({ error: 'caption is required' });
+    if (!scheduled_at) return res.status(400).json({ error: 'scheduled_at is required' });
+
+    const schedDate = new Date(scheduled_at);
+    if (isNaN(schedDate.getTime())) return res.status(400).json({ error: 'Invalid date format' });
+    if (schedDate <= new Date()) return res.status(400).json({ error: 'scheduled_at must be in the future' });
+
+    const result = await db.prepare(
+      "INSERT INTO sm_posts (platform, post_type, caption, hashtags, media_url, media_notes, scheduled_at, status, metadata, workspace_id) VALUES (?, 'feed', ?, ?, ?, ?, ?, 'scheduled', ?, ?)"
+    ).run(platform, caption, hashtags || null, media_url || null, media_notes || null, scheduled_at, metadata ? JSON.stringify(metadata) : null, wsId);
+
+    const post = await db.prepare('SELECT * FROM sm_posts WHERE id = ? AND workspace_id = ?').get(result.lastInsertRowid, wsId);
+    await logActivity('social', 'schedule', `Scheduled new ${platform} post for ${scheduled_at}`, (caption || '').slice(0, 80), String(post.id), wsId);
+    res.status(201).json(post);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // POST /hashtag-intelligence — get smart hashtag recommendations
 router.post('/hashtag-intelligence', async (req, res) => {
   const { topic, platform } = req.body;
