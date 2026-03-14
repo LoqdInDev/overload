@@ -619,13 +619,44 @@ export default function SocialPage() {
     try { await deleteJSON(`/api/calendar/events/${id}`); setCalEvents(e => e.filter(ev => ev.id !== id)); } catch (e) { console.error(e); }
   };
 
-  const calFillAI = () => {
+  const calFillAI = async () => {
     setCalGenerating(true); setCalOutput('');
-    connectSSE('/api/calendar/generate', { type: 'fill', prompt: `Generate a marketing content calendar for ${CAL_MONTHS[calMonth]} ${calYear}. Include social media posts, blog content, email campaigns, and deadlines. Format each event as: [Day] - [Type: campaign|content|social|email|deadline] - [Title]` }, {
-      onChunk: (text) => setCalOutput(p => p + text),
-      onResult: (data) => { setCalOutput(data.content); setCalGenerating(false); },
-      onError: () => setCalGenerating(false),
-    });
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    const existingTitles = calEvents.map(e => e.title.toLowerCase());
+    try {
+      const plan = await postJSON('/api/calendar/suggest-content-plan', {
+        month: `${CAL_MONTHS[calMonth]} ${calYear}`,
+        business_type: planBusinessType || 'E-commerce',
+        goal: planGoal || 'Brand awareness and engagement',
+      });
+      if (!plan?.plan) { setCalGenerating(false); return; }
+      let added = 0;
+      for (const week of plan.plan) {
+        for (const post of (week.posts || [])) {
+          // Parse day from "Monday March 3" or similar
+          const dayMatch = post.day?.match(/(\d+)/);
+          const dayNum = dayMatch ? parseInt(dayMatch[1]) : null;
+          if (!dayNum || dayNum < 1 || dayNum > daysInMonth) continue;
+          if (existingTitles.includes(post.topic?.toLowerCase())) continue;
+          const platformId = (post.platform || '').toLowerCase().replace(/ .*/, '');
+          const typeMap = { educational: 'content', promotional: 'campaign', entertainment: 'social', ugc: 'social', 'behind-the-scenes': 'content' };
+          const typeId = typeMap[(post.content_type || '').toLowerCase()] || 'social';
+          const type = CAL_EVENT_TYPES.find(t => t.id === typeId) || CAL_EVENT_TYPES[2];
+          const date = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+          try {
+            const created = await postJSON('/api/calendar/events', {
+              title: post.topic, module_id: type.id, date, color: type.color,
+              description: `${post.platform} · ${post.content_type}${post.hook ? ` — "${post.hook}"` : ''}`,
+            });
+            setCalEvents(ev => [...ev, created]);
+            added++;
+          } catch {}
+        }
+      }
+      setCalOutput(added > 0 ? `Added ${added} events to your calendar.` : 'No new events to add.');
+      if (plan.theme) setCalOutput(prev => `${plan.theme}\n${prev}`);
+    } catch (e) { setCalOutput('Failed to generate. Please try again.'); }
+    setCalGenerating(false);
   };
 
   // ─── NAV CONFIG ──────────────────────────────────────────────────────────
@@ -1351,110 +1382,164 @@ export default function SocialPage() {
                 </div>
               </div>
 
-              {/* AI Content Planner */}
+              {/* Draft Posts — quick schedule */}
               <div className={`${panelCls} rounded-2xl overflow-hidden`}>
                 <div className={`px-4 py-3 border-b ${dark ? 'border-white/[0.06]' : 'border-gray-100'}`}>
-                  <p className="hud-label text-[10px]" style={{ color: MODULE_COLOR }}>AI CONTENT PLANNER</p>
+                  <p className="hud-label text-[10px]" style={{ color: MODULE_COLOR }}>DRAFT POSTS</p>
+                </div>
+                <div className="px-3 py-2">
+                  {(() => {
+                    const drafts = posts.filter(p => p.status === 'draft').slice(0, 5);
+                    if (!drafts.length) return <p className={`text-xs text-center py-4 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>No drafts — create one in the Create tab</p>;
+                    return (
+                      <div className="space-y-0.5">
+                        {drafts.map(p => {
+                          const plat = SOCIAL_PLATFORMS.find(sp => sp.id === p.platform);
+                          return (
+                            <div key={p.id} className={`group flex items-center gap-2.5 px-2 py-2 rounded-xl transition-all duration-200 ${dark ? 'hover:bg-white/[0.03]' : 'hover:bg-gray-50'}`}>
+                              <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: `${plat?.color || MODULE_COLOR}15` }}>
+                                <PlatformIcon id={p.platform} size={12} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-[11px] font-semibold truncate ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{p.caption?.slice(0, 40) || 'Untitled draft'}</p>
+                              </div>
+                              {calSelectedDay && (
+                                <button onClick={async () => {
+                                  const date = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(calSelectedDay).padStart(2, '0')}T10:00:00`;
+                                  try {
+                                    await postJSON(`/api/social/posts/${p.id}/schedule`, { scheduled_at: date });
+                                    fetchQueue();
+                                    fetchCalEvents();
+                                  } catch {}
+                                }}
+                                  className="opacity-0 group-hover:opacity-100 text-[9px] font-bold px-2 py-1 rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0"
+                                  style={{ background: `${MODULE_COLOR}12`, color: MODULE_COLOR, border: `1px solid ${MODULE_COLOR}25` }}>
+                                  → {CAL_MONTHS[calMonth].slice(0, 3)} {calSelectedDay}
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Content Insights */}
+              <div className={`${panelCls} rounded-2xl overflow-hidden`}>
+                <div className={`px-4 py-3 border-b ${dark ? 'border-white/[0.06]' : 'border-gray-100'}`}>
+                  <p className="hud-label text-[10px]">THIS MONTH</p>
+                </div>
+                <div className="px-4 py-3 space-y-3">
+                  {(() => {
+                    const totalEvents = calEvents.length;
+                    const totalScheduled = queue.filter(p => {
+                      if (!p.scheduled_at) return false;
+                      const d = new Date(p.scheduled_at);
+                      return d.getFullYear() === calYear && d.getMonth() === calMonth;
+                    }).length;
+                    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+                    const daysWithContent = new Set();
+                    calEvents.forEach(e => { const d = new Date(e.date).getDate(); daysWithContent.add(d); });
+                    queue.forEach(p => { if (p.scheduled_at) { const d = new Date(p.scheduled_at); if (d.getFullYear() === calYear && d.getMonth() === calMonth) daysWithContent.add(d.getDate()); }});
+                    const coverage = Math.round((daysWithContent.size / daysInMonth) * 100);
+                    const byType = {};
+                    calEvents.forEach(e => {
+                      const t = CAL_EVENT_TYPES.find(ct => ct.id === e.module_id || ct.id === e.type);
+                      const name = t?.name || 'Other';
+                      byType[name] = (byType[name] || 0) + 1;
+                    });
+                    // Find empty stretches
+                    let maxGap = 0, gapStart = 0;
+                    for (let d = 1; d <= daysInMonth; d++) {
+                      if (daysWithContent.has(d)) { gapStart = d; }
+                      else if (d - gapStart > maxGap) { maxGap = d - gapStart; }
+                    }
+                    return (
+                      <>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className={`rounded-xl p-2.5 text-center ${dark ? 'bg-white/[0.03]' : 'bg-gray-50'}`}>
+                            <p className={`text-lg font-bold font-mono ${dark ? 'text-white' : 'text-gray-900'}`}>{totalEvents + totalScheduled}</p>
+                            <p className={`text-[9px] ${dark ? 'text-gray-500' : 'text-gray-400'}`}>Total items</p>
+                          </div>
+                          <div className={`rounded-xl p-2.5 text-center ${dark ? 'bg-white/[0.03]' : 'bg-gray-50'}`}>
+                            <p className={`text-lg font-bold font-mono ${coverage >= 40 ? 'text-emerald-400' : coverage >= 20 ? 'text-amber-400' : 'text-red-400'}`}>{coverage}%</p>
+                            <p className={`text-[9px] ${dark ? 'text-gray-500' : 'text-gray-400'}`}>Day coverage</p>
+                          </div>
+                        </div>
+                        {Object.keys(byType).length > 0 && (
+                          <div>
+                            <p className={`text-[10px] font-semibold mb-1.5 ${dark ? 'text-gray-500' : 'text-gray-400'}`}>CONTENT MIX</p>
+                            <div className="space-y-1">
+                              {Object.entries(byType).sort((a, b) => b[1] - a[1]).map(([name, count]) => {
+                                const t = CAL_EVENT_TYPES.find(ct => ct.name === name);
+                                return (
+                                  <div key={name} className="flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: t?.color || MODULE_COLOR }} />
+                                    <span className={`text-[10px] flex-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{name}</span>
+                                    <span className={`text-[10px] font-mono font-bold ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{count}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                        {maxGap > 3 && (
+                          <div className={`flex items-start gap-2 px-3 py-2.5 rounded-xl text-[10px] ${dark ? 'bg-amber-500/8 text-amber-400' : 'bg-amber-50 text-amber-600'}`}>
+                            <svg className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+                            <span className="font-semibold">{maxGap}-day content gap detected — use AI Fill to plug it</span>
+                          </div>
+                        )}
+                        {totalEvents + totalScheduled === 0 && (
+                          <div className={`text-center py-2 text-[11px] ${dark ? 'text-gray-600' : 'text-gray-400'}`}>
+                            Empty month — hit <span className="font-bold" style={{ color: MODULE_COLOR }}>AI Fill Calendar</span> to get started
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* AI Fill settings */}
+              <div className={`${panelCls} rounded-2xl overflow-hidden`}>
+                <div className={`px-4 py-3 border-b ${dark ? 'border-white/[0.06]' : 'border-gray-100'}`}>
+                  <p className="hud-label text-[10px]" style={{ color: MODULE_COLOR }}>AI FILL SETTINGS</p>
                 </div>
                 <div className="px-4 py-3 space-y-2">
-                  <input className="w-full input-field rounded-xl px-3 py-2 text-xs" placeholder="Month (e.g. March 2026)" value={planMonth} onChange={e => setPlanMonth(e.target.value)} />
                   <input className="w-full input-field rounded-xl px-3 py-2 text-xs" placeholder="Business type" value={planBusinessType} onChange={e => setPlanBusinessType(e.target.value)} />
                   <input className="w-full input-field rounded-xl px-3 py-2 text-xs" placeholder="Main goal" value={planGoal} onChange={e => setPlanGoal(e.target.value)} />
-                  <button disabled={planLoading} className="w-full py-2 rounded-xl text-xs font-bold transition-all duration-200 disabled:opacity-40"
-                    style={{ background: `${MODULE_COLOR}15`, color: MODULE_COLOR, border: `1px solid ${MODULE_COLOR}25` }}
-                    onClick={async () => {
-                      setPlanLoading(true); setContentPlan(null);
-                      try { const r = await postJSON('/api/calendar/suggest-content-plan', { month: planMonth, business_type: planBusinessType, goal: planGoal }); setContentPlan(r); } catch {}
-                      setPlanLoading(false);
-                    }}>
-                    {planLoading ? 'Generating...' : 'Generate Plan'}
-                  </button>
+                  <p className={`text-[10px] ${dark ? 'text-gray-600' : 'text-gray-400'}`}>These settings are used when you click "AI Fill Calendar"</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* AI Content Plan results */}
-          {contentPlan && (
-            <div className={`${panelCls} rounded-2xl p-5 mt-5 animate-fade-up`}>
-              {contentPlan.theme && (
-                <div className={`flex items-center gap-2 px-4 py-3 rounded-xl mb-4 ${dark ? 'bg-blue-500/8' : 'bg-blue-50'}`}>
-                  <svg className="w-4 h-4 flex-shrink-0" style={{ color: MODULE_COLOR }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
-                  <div>
-                    <p className="text-[10px] font-bold" style={{ color: MODULE_COLOR }}>MONTHLY THEME</p>
-                    <p className={`text-sm font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>{contentPlan.theme}</p>
-                  </div>
-                </div>
+          {/* AI Fill status toast */}
+          {(calGenerating || calOutput) && (
+            <div className={`flex items-center gap-3 mt-4 px-4 py-3 rounded-xl animate-fade-up ${
+              calGenerating
+                ? (dark ? 'bg-blue-500/8 border border-blue-500/20' : 'bg-blue-50 border border-blue-200')
+                : calOutput.includes('Added')
+                  ? (dark ? 'bg-emerald-500/8 border border-emerald-500/20' : 'bg-emerald-50 border border-emerald-200')
+                  : (dark ? 'bg-white/[0.03] border border-white/[0.06]' : 'bg-gray-50 border border-gray-200')
+            }`}>
+              {calGenerating ? (
+                <span className="w-3 h-3 border-2 border-t-transparent rounded-full animate-spin flex-shrink-0" style={{ borderColor: `${MODULE_COLOR}40`, borderTopColor: 'transparent' }} />
+              ) : (
+                <svg className={`w-4 h-4 flex-shrink-0 ${calOutput.includes('Added') ? 'text-emerald-400' : dark ? 'text-gray-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  {calOutput.includes('Added')
+                    ? <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    : <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />}
+                </svg>
               )}
-              {contentPlan.plan?.map((week, wi) => {
-                const PLATFORM_COLORS = { Instagram: '#ee2a7b', Twitter: '#000000', LinkedIn: '#0a66c2', Facebook: '#1877f2', TikTok: '#010101' };
-                const TYPE_COLORS = { Educational: '#8b5cf6', Promotional: '#f97316', Entertainment: '#10b981', UGC: '#f59e0b', 'Behind-the-Scenes': '#6366f1' };
-                return (
-                  <div key={wi} className="mb-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="hud-label text-[10px]" style={{ color: MODULE_COLOR }}>WEEK {week.week}</span>
-                      <div className="flex-1 hud-line" />
-                    </div>
-                    <div className="space-y-2">
-                      {week.posts?.map((post, pi) => {
-                        const pColor = PLATFORM_COLORS[post.platform] || '#64748b';
-                        const tColor = TYPE_COLORS[post.content_type] || '#64748b';
-                        return (
-                          <div key={pi} className={`group flex items-start gap-3 p-3 rounded-xl border transition-all duration-200 ${dark ? 'border-white/[0.06] hover:border-white/[0.1]' : 'border-gray-200 hover:border-gray-300'}`}>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: pColor }}>{post.platform}</span>
-                                <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full" style={{ background: `${tColor}15`, color: tColor }}>{post.content_type}</span>
-                                <span className={`text-[10px] ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{post.day}</span>
-                              </div>
-                              <p className={`text-sm font-semibold ${dark ? 'text-gray-200' : 'text-gray-700'}`}>{post.topic}</p>
-                              {post.hook && <p className={`text-xs mt-0.5 italic ${dark ? 'text-gray-500' : 'text-gray-400'}`}>"{post.hook}"</p>}
-                            </div>
-                            <button className="flex-shrink-0 opacity-0 group-hover:opacity-100 text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all duration-200"
-                              style={{ background: `${MODULE_COLOR}12`, color: MODULE_COLOR, border: `1px solid ${MODULE_COLOR}25` }}
-                              onClick={async () => {
-                                const monthParts = planMonth.match(/(\w+)\s+(\d{4})/);
-                                let date = new Date().toISOString().slice(0, 10);
-                                if (monthParts) {
-                                  const mIdx = CAL_MONTHS.indexOf(monthParts[1]);
-                                  const yr = parseInt(monthParts[2]);
-                                  if (mIdx >= 0) {
-                                    const dayNum = Math.min((week.week - 1) * 7 + pi + 1, 28);
-                                    date = `${yr}-${String(mIdx + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-                                  }
-                                }
-                                try {
-                                  const type = CAL_EVENT_TYPES.find(t => t.name.toLowerCase() === (post.content_type || '').toLowerCase()) || CAL_EVENT_TYPES[1];
-                                  const created = await postJSON('/api/calendar/events', { title: post.topic, module_id: type.id, date, color: type.color, description: post.hook || '' });
-                                  setCalEvents(ev => [...ev, created]);
-                                } catch {}
-                              }}>+ Add</button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-              {contentPlan.notes && (
-                <div className={`px-4 py-3 rounded-xl text-xs ${dark ? 'bg-blue-500/8 text-gray-400' : 'bg-blue-50 text-gray-500'}`}>
-                  <p className="font-bold text-[10px] mb-1" style={{ color: MODULE_COLOR }}>STRATEGIC NOTES</p>
-                  <p className="leading-relaxed">{contentPlan.notes}</p>
-                </div>
+              <p className={`text-xs font-semibold flex-1 whitespace-pre-wrap ${calGenerating ? (dark ? 'text-blue-300' : 'text-blue-600') : calOutput.includes('Added') ? (dark ? 'text-emerald-300' : 'text-emerald-700') : (dark ? 'text-gray-400' : 'text-gray-600')}`}>
+                {calGenerating ? 'Generating content plan and adding events...' : calOutput}
+              </p>
+              {!calGenerating && (
+                <button onClick={() => setCalOutput('')} className={`text-[10px] font-bold flex-shrink-0 ${dark ? 'text-gray-600 hover:text-gray-400' : 'text-gray-400 hover:text-gray-600'}`}>Dismiss</button>
               )}
-            </div>
-          )}
-
-          {/* AI Fill output */}
-          {calOutput && (
-            <div className={`${panelCls} rounded-2xl p-5 mt-5 animate-fade-up`}>
-              <div className="flex items-center gap-2 mb-3">
-                <div className={`w-2 h-2 rounded-full ${calGenerating ? 'animate-pulse' : 'bg-emerald-400'}`} style={calGenerating ? { background: MODULE_COLOR } : {}} />
-                <span className="hud-label text-[11px]" style={{ color: calGenerating ? MODULE_COLOR : '#4ade80' }}>{calGenerating ? 'GENERATING...' : 'AI SUGGESTIONS'}</span>
-              </div>
-              <div className={`${dark ? 'bg-black/40' : 'bg-gray-50'} rounded-xl p-4 text-sm whitespace-pre-wrap leading-relaxed max-h-[40vh] overflow-y-auto ${dark ? 'text-gray-300' : 'text-gray-700'}`}>
-                {calOutput}{calGenerating && <span className="inline-block w-[2px] h-4 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}
-              </div>
             </div>
           )}
         </div>
