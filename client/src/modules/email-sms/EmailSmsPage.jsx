@@ -71,12 +71,12 @@ function formatDate(dateStr) {
 function ScoreCard({ label, score, grade, detail }) {
   const color = GRADE_COLOR[grade] || '#94a3b8';
   return (
-    <div className="rounded-xl border p-3 space-y-1.5" style={{ borderColor: `${color}25`, background: `${color}08` }}>
+    <div className="rounded-xl border p-3 space-y-1.5" style={{ borderColor: `${color}30`, background: `${color}12` }}>
       <div className="flex justify-between items-center">
-        <span className="text-[10px] font-bold uppercase tracking-wide opacity-70" style={{ color }}>{label}</span>
+        <span className="text-[10px] font-bold uppercase tracking-wide opacity-80" style={{ color }}>{label}</span>
         <span className="text-xs font-bold" style={{ color }}>{grade}</span>
       </div>
-      <div className="h-1 rounded-full bg-white/5">
+      <div className="h-1 rounded-full" style={{ background: `${color}15` }}>
         <div className="h-full rounded-full" style={{ width: `${Math.max(2, score || 0)}%`, background: color }} />
       </div>
       {detail && <p className="text-[10px] text-gray-500 truncate">{detail}</p>}

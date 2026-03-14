@@ -17,12 +17,12 @@ const TOOLS = [
 const DEPTHS = ['Quick Scan', 'Standard', 'Deep Dive'];
 
 // Initials avatar for a competitor name
-function Avatar({ name, size = 9, color = '#ef4444' }) {
+function Avatar({ name, size = 36, color = '#ef4444' }) {
   const bg = color + '18';
   return (
     <div
-      className={`w-${size} h-${size} rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0`}
-      style={{ background: bg, color, border: `1px solid ${color}22` }}
+      className="rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0"
+      style={{ width: size, height: size, background: bg, color, border: `1px solid ${color}22` }}
     >
       {name.slice(0, 2).toUpperCase()}
     </div>
@@ -255,7 +255,7 @@ export default function CompetitorsPage() {
                       </div>
 
                       <div className="flex items-center gap-3 mb-3">
-                        <Avatar name={c.name} size={9} color="#ef4444" />
+                        <Avatar name={c.name} size={36} color="#ef4444" />
                         <div className="min-w-0">
                           <p className="text-sm font-bold text-white truncate">{c.name}</p>
                           <p className="text-[11px] text-gray-500 truncate">{c.website || c.industry || 'No details'}</p>
@@ -299,7 +299,7 @@ export default function CompetitorsPage() {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
         </button>
 
-        <Avatar name={competitorName} size={9} color="#ef4444" />
+        <Avatar name={competitorName} size={36} color="#ef4444" />
 
         <div className="flex-1 min-w-0">
           <h2 className="text-base font-bold text-white leading-tight truncate">{competitorName}</h2>
