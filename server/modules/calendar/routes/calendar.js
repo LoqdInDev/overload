@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { db, logActivity } = require('../../../db/database');
-const { generateWithClaude, generateTextWithClaude } = require('../../../services/claude');
+const { generateWithClaude, generateTextWithClaude, stripMarkdownJSON } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
 
 // SSE - AI campaign planning
@@ -94,7 +94,7 @@ router.post('/events', async (req, res) => {
       return res.status(400).json({ error: 'Title and date are required' });
     }
 
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO mc_events (title, description, module_id, date, end_date, color, recurrence, status, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(title, description || null, module_id || null, date, end_date || null, color || null, recurrence || null, status || 'planned', wsId);
 
@@ -176,7 +176,7 @@ router.post('/campaigns', async (req, res) => {
       return res.status(400).json({ error: 'Name, start_date, and end_date are required' });
     }
 
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO mc_campaigns (name, start_date, end_date, modules, notes, workspace_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(name, start_date, end_date, modules ? JSON.stringify(modules) : null, notes || null, wsId);
 
@@ -215,7 +215,7 @@ Generate a 4-week posting schedule with 3-4 posts per week. Return JSON:
 
 Return exactly 4 weeks with 3-4 posts each. Only return JSON.`)
     .then(({ text }) => {
-      try { res.json(JSON.parse(text.trim())); }
+      try { res.json(JSON.parse(stripMarkdownJSON(text))); }
       catch { res.status(500).json({ error: 'Parse failed' }); }
     })
     .catch(err => res.status(500).json({ error: err.message }));

@@ -12,7 +12,7 @@ module.exports = {
   apiPrefix: '/api/calendar',
 
   initDatabase() {
-    initDatabase();
+    return initDatabase();
   },
 
   getRouter() {
