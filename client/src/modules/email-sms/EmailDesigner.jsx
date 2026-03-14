@@ -357,7 +357,7 @@ export default function EmailDesigner({ onExportHtml, initialBlocks }) {
 
   const addBlock = (type) => {
     const def = BLOCK_TYPES.find(bt => bt.type === type);
-    const newBlock = { id: genId(), ...def.defaults };
+    const newBlock = { id: genId(), type, ...def.defaults };
     setBlocks(prev => [...prev, newBlock]);
     setSelectedId(newBlock.id);
   };
