@@ -1,34 +1,32 @@
 /**
- * Error reporting module — Sentry-ready placeholder.
- * Set VITE_SENTRY_DSN in your .env to enable Sentry integration.
+ * Error reporting module — Sentry integration.
+ * Set VITE_SENTRY_DSN in your .env to enable Sentry.
  */
+import * as Sentry from '@sentry/react';
 
 let isInitialized = false;
 
 export function initErrorReporting() {
   const dsn = import.meta.env.VITE_SENTRY_DSN;
   if (dsn) {
-    // Placeholder: replace with actual Sentry SDK initialization
-    // e.g. Sentry.init({ dsn, environment: import.meta.env.MODE })
-    console.info('[ErrorReporting] Sentry DSN detected — would initialize Sentry with DSN:', dsn);
+    Sentry.init({
+      dsn,
+      environment: import.meta.env.MODE,
+      enabled: import.meta.env.PROD,
+      tracesSampleRate: 0.1,
+    });
     isInitialized = true;
-  } else {
-    console.info('[ErrorReporting] No VITE_SENTRY_DSN set — errors will be logged to console only.');
   }
 }
 
 export function reportError(error, context = {}) {
-  const payload = {
-    message: error?.message || String(error),
-    stack: error?.stack,
-    ...context,
-    timestamp: new Date().toISOString(),
-  };
-
-  console.error('[ErrorReporting]', payload);
+  if (import.meta.env.DEV) {
+    console.error('[ErrorReporting]', error, context);
+  }
 
   if (isInitialized) {
-    // Placeholder: would send to Sentry
-    // e.g. Sentry.captureException(error, { extra: context })
+    Sentry.captureException(error instanceof Error ? error : new Error(String(error)), {
+      extra: context,
+    });
   }
 }

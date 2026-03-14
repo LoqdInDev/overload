@@ -12,7 +12,9 @@ export default class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('[ErrorBoundary]', error, errorInfo);
+    import('../../lib/errorReporting').then(({ reportError }) => {
+      reportError(error, { componentStack: errorInfo?.componentStack, source: 'ErrorBoundary' });
+    });
   }
 
   reset = () => {

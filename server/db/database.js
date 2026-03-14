@@ -5,7 +5,9 @@ const crypto = require('crypto');
 // Prefer DATABASE_URL, but fall back to individual PG* env vars (Railway provides both)
 const dbUrl = process.env.DATABASE_URL;
 const poolConfig = {
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  ssl: process.env.NODE_ENV === 'production'
+    ? { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' }
+    : false,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,

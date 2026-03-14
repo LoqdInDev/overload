@@ -19,17 +19,31 @@ const { sendWelcome, sendVerification, sendPasswordReset } = require('../service
 
 const router = express.Router();
 
-// ── Account lockout (per-email, in-memory) ──────────────────────────
+// ── Account lockout (database-backed, persists across restarts) ──────
+const { db } = require('../db/database');
 const LOCKOUT_MAX = 5;
 const LOCKOUT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-const failedLogins = new Map(); // email -> { count, firstFailAt }
 
-function checkLockout(email) {
-  const entry = failedLogins.get(email);
+// Ensure lockout table exists
+(async () => {
+  try {
+    await db.exec(`
+      CREATE TABLE IF NOT EXISTS login_lockouts (
+        email TEXT PRIMARY KEY,
+        count INTEGER DEFAULT 0,
+        first_fail_at BIGINT NOT NULL,
+        updated_at BIGINT NOT NULL
+      )
+    `);
+  } catch { /* table may already exist */ }
+})();
+
+async function checkLockout(email) {
+  const entry = await db.prepare('SELECT * FROM login_lockouts WHERE email = ?').get(email);
   if (!entry) return null;
-  const elapsed = Date.now() - entry.firstFailAt;
+  const elapsed = Date.now() - Number(entry.first_fail_at);
   if (elapsed > LOCKOUT_WINDOW_MS) {
-    failedLogins.delete(email);
+    await db.prepare('DELETE FROM login_lockouts WHERE email = ?').run(email);
     return null;
   }
   if (entry.count >= LOCKOUT_MAX) {
@@ -39,25 +53,29 @@ function checkLockout(email) {
   return null;
 }
 
-function recordFailedLogin(email) {
-  const entry = failedLogins.get(email);
-  if (!entry || Date.now() - entry.firstFailAt > LOCKOUT_WINDOW_MS) {
-    failedLogins.set(email, { count: 1, firstFailAt: Date.now() });
+async function recordFailedLogin(email) {
+  const now = Date.now();
+  const entry = await db.prepare('SELECT * FROM login_lockouts WHERE email = ?').get(email);
+  if (!entry || now - Number(entry.first_fail_at) > LOCKOUT_WINDOW_MS) {
+    await db.prepare(
+      `INSERT INTO login_lockouts (email, count, first_fail_at, updated_at) VALUES (?, 1, ?, ?)
+       ON CONFLICT(email) DO UPDATE SET count = 1, first_fail_at = excluded.first_fail_at, updated_at = excluded.updated_at`
+    ).run(email, now, now);
   } else {
-    entry.count++;
+    await db.prepare('UPDATE login_lockouts SET count = count + 1, updated_at = ? WHERE email = ?').run(now, email);
   }
 }
 
-function clearFailedLogins(email) {
-  failedLogins.delete(email);
+async function clearFailedLogins(email) {
+  await db.prepare('DELETE FROM login_lockouts WHERE email = ?').run(email);
 }
 
 // Cleanup stale lockout entries every hour
-setInterval(() => {
-  const now = Date.now();
-  for (const [email, entry] of failedLogins) {
-    if (now - entry.firstFailAt > LOCKOUT_WINDOW_MS) failedLogins.delete(email);
-  }
+setInterval(async () => {
+  try {
+    const cutoff = Date.now() - LOCKOUT_WINDOW_MS;
+    await db.prepare('DELETE FROM login_lockouts WHERE first_fail_at < ?').run(cutoff);
+  } catch { /* ignore cleanup errors */ }
 }, 60 * 60 * 1000).unref();
 
 // Stricter rate limiter for login/signup: 5 attempts per 15 minutes per IP
@@ -104,19 +122,19 @@ router.post('/login', authLimiter, validate(schemas.login), async (req, res, nex
     const { email, password } = req.body;
 
     // Account lockout check
-    const lockoutMsg = checkLockout(email.toLowerCase());
+    const lockoutMsg = await checkLockout(email.toLowerCase());
     if (lockoutMsg) {
       return res.status(429).json({ error: lockoutMsg, code: 'ACCOUNT_LOCKED' });
     }
 
     const user = await authenticateUser(email, password);
     if (!user) {
-      recordFailedLogin(email.toLowerCase());
+      await recordFailedLogin(email.toLowerCase());
       return res.status(401).json({ error: 'Invalid email or password', code: 'INVALID_CREDENTIALS' });
     }
 
     // Successful login — reset failed attempts
-    clearFailedLogins(email.toLowerCase());
+    await clearFailedLogins(email.toLowerCase());
 
     const tokens = await generateTokenPair(user.id);
 

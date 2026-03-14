@@ -36,7 +36,7 @@ if (process.env.NODE_ENV === 'production') {
     console.error('FATAL: Missing DATABASE_URL or PGHOST — cannot connect to database');
     process.exit(1);
   }
-  const recommended = ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS', 'CORS_ORIGIN'];
+  const recommended = ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS', 'CORS_ORIGIN', 'ADMIN_EMAILS'];
   const missing = required.filter(k => !process.env[k]);
   if (missing.length) {
     console.error(`FATAL: Missing required env vars in production: ${missing.join(', ')}`);
@@ -101,6 +101,24 @@ app.use(compression());
 
 // Attach unique request ID to every request
 app.use(requestIdMiddleware);
+
+// Request access logging
+app.use((req, res, next) => {
+  if (req.path === '/api/health') return next(); // skip health check noise
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const level = res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info';
+    logger[level](`${req.method} ${req.path} ${res.statusCode} ${duration}ms`, {
+      requestId: req.id,
+      method: req.method,
+      path: req.path,
+      status: res.statusCode,
+      duration,
+    });
+  });
+  next();
+});
 
 // Standardized API response helpers (res.success, res.paginated, res.error)
 app.use(apiResponse);
@@ -208,11 +226,27 @@ app.get('/api/activity', async (req, res) => {
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
+  let dbStatus = 'ok';
+  let dbLatency = 0;
+  try {
+    const start = Date.now();
+    await db.prepare('SELECT 1').get();
+    dbLatency = Date.now() - start;
+  } catch {
+    dbStatus = 'error';
+  }
+  const mem = process.memoryUsage();
   res.json({
-    status: 'ok',
+    status: dbStatus === 'ok' ? 'ok' : 'degraded',
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
     modules: loadedModules.length,
+    database: { status: dbStatus, latencyMs: dbLatency },
+    memory: {
+      heapUsedMB: Math.round(mem.heapUsed / 1048576),
+      heapTotalMB: Math.round(mem.heapTotal / 1048576),
+      rssMB: Math.round(mem.rss / 1048576),
+    },
   });
 });
 
@@ -223,9 +257,13 @@ app.post('/api/admin/cleanup-storage', requireAuth, async (req, res) => {
   res.json({ ok: true, ...result, freedMB: (result.freed / 1024 / 1024).toFixed(1) });
 });
 
-// Admin-only middleware (locked to platform owner)
+// Admin-only middleware (locked to platform owner via env var)
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 const requireSuperAdmin = (req, res, next) => {
-  if (req.user?.email !== 'danieleini@hotmail.com') return res.status(403).json({ error: 'Forbidden' });
+  if (!ADMIN_EMAILS.length || !ADMIN_EMAILS.includes(req.user?.email?.toLowerCase())) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  logger.info(`[Admin] ${req.user.email} accessed ${req.method} ${req.path}`, { userId: req.user.id });
   next();
 };
 
