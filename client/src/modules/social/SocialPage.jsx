@@ -195,6 +195,8 @@ export default function SocialPage() {
   const { dark } = useTheme();
   const [tab, setTab] = useState('create');
   const [activeType, setActiveType] = useState(null);
+  const [selectedPlatforms, setSelectedPlatforms] = useState(['instagram', 'twitter', 'linkedin']);
+  const togglePlatform = (id) => setSelectedPlatforms(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
   // Core generation
   const [tone, setTone] = useState('Casual');
@@ -401,14 +403,16 @@ export default function SocialPage() {
   };
 
   const generate = async () => {
-    if (!prompt.trim() || !activeType) return;
+    const platform = activeType || selectedPlatforms[0];
+    if (!prompt.trim() || !platform) return;
+    if (!activeType) setActiveType(platform);
     setGenerating(true); setResult(''); setStreamText(''); setGenError(null);
     setCrossResult(''); setCrossStream(''); setShowPreview(false);
     try {
-      const fullPrompt = `[Platform: ${activeType}] [Tone: ${tone}] [Length: ${postLength}] [Hashtags: ${includeHashtags ? 'Yes' : 'No'}] [Emojis: ${includeEmojis ? 'Yes' : 'No'}]\n\n${prompt}`;
+      const fullPrompt = `[Platform: ${platform}] [Tone: ${tone}] [Length: ${postLength}] [Hashtags: ${includeHashtags ? 'Yes' : 'No'}] [Emojis: ${includeEmojis ? 'Yes' : 'No'}]\n\n${prompt}`;
       await sseStream(
         '/api/social/generate',
-        { platform: activeType, prompt: fullPrompt, tone, includeHashtags, includeEmojis, postLength },
+        { platform, prompt: fullPrompt, tone, includeHashtags, includeEmojis, postLength },
         (text) => setStreamText(text),
         async (data, fullText) => {
           const finalText = data?.content || fullText;
@@ -416,7 +420,7 @@ export default function SocialPage() {
           try {
             await fetch(`${API_BASE}/api/social/posts`, {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ platform: activeType, post_type: 'feed', caption: finalText, status: 'draft' }),
+              body: JSON.stringify({ platform, post_type: 'feed', caption: finalText, status: 'draft' }),
             });
           } catch {}
         }
@@ -1604,103 +1608,43 @@ export default function SocialPage() {
         </div>
       )}
 
-      {/* ═══ CREATE TAB — Platform Selection ═══ */}
-      {tab === 'create' && !activeType && (
-        <div className="animate-fade-in space-y-8">
-          {/* Platform cards */}
-          <div>
-            <p className="hud-label text-[11px] mb-4">CHOOSE A PLATFORM</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {SOCIAL_PLATFORMS.filter(p => !['youtube', 'pinterest'].includes(p.id)).map(type => {
-                const connected = getProviderStatus(type.provider);
-                return (
-                  <button key={type.id} onClick={() => setActiveType(type.id)}
-                    className={`group relative overflow-hidden ${dark ? 'panel-interactive' : 'bg-white border border-gray-200 shadow-sm hover:shadow-lg'} rounded-2xl p-5 text-left transition-all duration-200 hover:-translate-y-0.5`}>
-                    {/* Left accent bar */}
-                    <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl transition-all duration-200 group-hover:w-1.5" style={{ background: type.color }} />
-                    <div className="flex items-center gap-4 pl-3">
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110" style={platformIconBg()}>
-                        <PlatformIcon id={type.id} size={24} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{type.name}</p>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <div className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-emerald-400' : dark ? 'bg-gray-700' : 'bg-gray-300'}`} />
-                          <p className={`text-[10px] ${connected ? 'text-emerald-400/70' : dark ? 'text-gray-600' : 'text-gray-400'}`}>
-                            {connected ? 'Connected' : 'Not connected'}
-                          </p>
-                        </div>
-                      </div>
-                      <svg className={`w-5 h-5 transition-transform duration-200 group-hover:translate-x-1 ${dark ? 'text-gray-600 group-hover:text-gray-400' : 'text-gray-300 group-hover:text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                      </svg>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Quick templates */}
-          <div>
-            <div className="flex items-center gap-3 mb-4">
-              <p className="hud-label text-[11px]">QUICK START TEMPLATES</p>
-              <div className="flex-1 hud-line" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-              {Object.entries(TEMPLATES).slice(0, 4).map(([type, tmpls]) => {
-                const ct = SOCIAL_PLATFORMS.find(c => c.id === type);
-                const t = tmpls[0];
-                return (
-                  <button key={`${type}-${t.name}`} onClick={() => { setActiveType(type); setPrompt(t.prompt); }}
-                    className={`group ${dark ? 'panel-interactive' : 'bg-white border border-gray-200 shadow-sm hover:shadow-md'} rounded-xl p-4 text-left transition-all duration-200`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: `${ct?.color}12` }}>
-                        <PlatformIcon id={type} size={14} />
-                      </div>
-                      <span className="text-[10px] font-bold uppercase" style={{ color: ct?.color }}>{ct?.name}</span>
-                    </div>
-                    <p className={`text-sm font-semibold ${dark ? 'text-gray-300 group-hover:text-white' : 'text-gray-700'}`}>{t.name}</p>
-                    <p className={`text-xs mt-1 line-clamp-2 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{t.prompt}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══ CREATE TAB — Generator ═══ */}
-      {tab === 'create' && activeType && (() => {
-        const currentType = SOCIAL_PLATFORMS.find(t => t.id === activeType);
-        const templates = TEMPLATES[activeType] || [];
-        const charCount = (result || streamText).length;
-        const maxChars = charLimits[activeType] || 2200;
-        const isConnected = getProviderStatus(currentType?.provider);
+      {/* ═══ CREATE TAB — Unified Composer ═══ */}
+      {tab === 'create' && (() => {
+        const primaryPlatform = selectedPlatforms[0] || 'instagram';
+        const currentType = SOCIAL_PLATFORMS.find(t => t.id === primaryPlatform);
+        const templates = TEMPLATES[primaryPlatform] || [];
+        const contentText = result || streamText || '';
+        const charCount = contentText.length;
+        const maxChars = charLimits[primaryPlatform] || 2200;
+        const isConnected = currentType ? getProviderStatus(currentType.provider) : false;
 
         return (
           <div className="animate-fade-in">
-            {/* Floating platform toolbar */}
-            <div className={`${panelCls} rounded-2xl p-3 px-5 mb-6 flex items-center gap-3`}>
-              <button onClick={() => { setActiveType(null); setResult(''); setStreamText(''); setPrompt(''); setCrossResult(''); setCrossStream(''); }}
-                className={`p-1.5 rounded-lg transition-all duration-200 ${dark ? 'text-gray-500 hover:text-white hover:bg-white/[0.06]' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'}`}>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                </svg>
-              </button>
-              <div className="w-px h-6" style={{ background: dark ? 'rgba(255,255,255,0.06)' : '#e5e7eb' }} />
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${currentType?.color}12` }}>
-                <PlatformIcon id={activeType} size={18} />
+            {/* Platform toggle pills — Mixpost style */}
+            <div className={`${panelCls} rounded-2xl p-4 mb-6`}>
+              <div className="flex items-center justify-between mb-3">
+                <p className="hud-label text-[11px]">PUBLISH TO</p>
+                <span className={`text-[10px] ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{selectedPlatforms.length} platform{selectedPlatforms.length !== 1 ? 's' : ''} selected</span>
               </div>
-              <div className="flex-1">
-                <p className={`text-sm font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{currentType?.name} Post</p>
+              <div className="flex flex-wrap gap-2">
+                {SOCIAL_PLATFORMS.filter(p => !['youtube', 'pinterest'].includes(p.id)).map(p => {
+                  const isSelected = selectedPlatforms.includes(p.id);
+                  const connected = getProviderStatus(p.provider);
+                  return (
+                    <button key={p.id} onClick={() => togglePlatform(p.id)}
+                      className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-all duration-200 ${
+                        isSelected
+                          ? `${dark ? 'text-white' : 'text-gray-900'}`
+                          : `${dark ? 'border-white/[0.06] text-gray-500 hover:text-gray-300 hover:border-white/[0.12]' : 'border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300'}`
+                      }`}
+                      style={isSelected ? { borderColor: `${p.color}50`, background: `${p.color}15` } : {}}>
+                      <PlatformIcon id={p.id} size={16} />
+                      <span>{p.name}</span>
+                      {connected && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />}
+                    </button>
+                  );
+                })}
               </div>
-              {isConnected && (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(34,197,94,0.1)' }}>
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  <span className="text-[10px] font-bold text-emerald-400">Connected</span>
-                </div>
-              )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -1741,19 +1685,21 @@ export default function SocialPage() {
                         </span>
                       ) : `Generate ${currentType?.name} Post`}
                     </button>
-                    <button onClick={generateCrossPlatform} disabled={crossGenerating || !prompt.trim()}
-                      className="py-2.5 px-4 rounded-xl font-bold text-[10px] transition-all duration-200 disabled:opacity-40"
-                      style={{
-                        background: crossGenerating ? (dark ? '#1e1e2e' : '#e5e7eb') : 'transparent',
-                        border: `1px solid ${crossGenerating ? 'transparent' : `${MODULE_COLOR}30`}`,
-                        color: crossGenerating ? (dark ? '#555' : '#aaa') : MODULE_COLOR,
-                      }}>
-                      {crossGenerating ? (
-                        <span className="flex items-center gap-2">
-                          <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />All platforms...
-                        </span>
-                      ) : 'All Platforms →'}
-                    </button>
+                    {selectedPlatforms.length > 1 && (
+                      <button onClick={generateCrossPlatform} disabled={crossGenerating || !prompt.trim()}
+                        className="py-2.5 px-4 rounded-xl font-bold text-[10px] transition-all duration-200 disabled:opacity-40"
+                        style={{
+                          background: crossGenerating ? (dark ? '#1e1e2e' : '#e5e7eb') : 'transparent',
+                          border: `1px solid ${crossGenerating ? 'transparent' : `${MODULE_COLOR}30`}`,
+                          color: crossGenerating ? (dark ? '#555' : '#aaa') : MODULE_COLOR,
+                        }}>
+                        {crossGenerating ? (
+                          <span className="flex items-center gap-2">
+                            <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />All {selectedPlatforms.length} platforms...
+                          </span>
+                        ) : `All ${selectedPlatforms.length} Platforms →`}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1868,11 +1814,8 @@ export default function SocialPage() {
                       <button onClick={() => copyToClipboard(result)} className="chip text-[10px] transition-all duration-200" style={{ color: copied ? '#4ade80' : undefined }}>
                         {copied ? 'Copied!' : 'Copy'}
                       </button>
-                      <button onClick={() => { const b = new Blob([result], { type: 'text/plain' }); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = `${activeType}-post.txt`; a.click(); URL.revokeObjectURL(u); }} className="chip text-[10px]">Export</button>
+                      <button onClick={() => { const b = new Blob([result], { type: 'text/plain' }); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = `${primaryPlatform}-post.txt`; a.click(); URL.revokeObjectURL(u); }} className="chip text-[10px]">Export</button>
                       <button onClick={generate} className="chip text-[10px]">Regenerate</button>
-                      <button onClick={() => setShowPreview(!showPreview)} className="chip text-[10px]" style={showPreview ? { color: currentType?.color, borderColor: `${currentType?.color}40`, background: `${currentType?.color}12` } : {}}>
-                        {showPreview ? 'Hide Preview' : 'Preview'}
-                      </button>
                       {isConnected && (
                         <button onClick={() => { setPublishText(result); setTab('publish'); }}
                           className="chip text-[10px] font-bold" style={{ background: `${currentType?.color}20`, borderColor: `${currentType?.color}40`, color: currentType?.color }}>
@@ -1882,16 +1825,8 @@ export default function SocialPage() {
                     </div>
                   </div>
 
-                  <div className={showPreview ? 'flex gap-5 flex-col lg:flex-row' : ''}>
-                    <div className={`${dark ? 'bg-black/40' : 'bg-gray-50'} rounded-xl p-5 max-h-[60vh] overflow-y-auto text-sm whitespace-pre-wrap leading-relaxed ${dark ? 'text-gray-200' : 'text-gray-800'} ${showPreview ? 'flex-1' : ''}`}>
-                      {result}
-                    </div>
-                    {showPreview && (
-                      <div className="flex-shrink-0 animate-fade-in">
-                        <p className="hud-label text-[11px] mb-3">PREVIEW</p>
-                        <PostPreview platform={activeType} content={result} dark={dark} />
-                      </div>
-                    )}
+                  <div className={`${dark ? 'bg-black/40' : 'bg-gray-50'} rounded-xl p-5 max-h-[50vh] overflow-y-auto text-sm whitespace-pre-wrap leading-relaxed ${dark ? 'text-gray-200' : 'text-gray-800'}`}>
+                    {result}
                   </div>
                 </div>
               </div>
@@ -1929,7 +1864,7 @@ export default function SocialPage() {
                     onClick={async () => {
                       setVarLoading(true);
                       try {
-                        const res = await postJSON('/api/social/generate-variations', { caption: result, platform: activeType });
+                        const res = await postJSON('/api/social/generate-variations', { caption: result, platform: primaryPlatform });
                         setCaptionVariations(res.variations);
                       } catch {}
                       setVarLoading(false);
@@ -1964,7 +1899,7 @@ export default function SocialPage() {
                   value={hashtagTopic} onChange={e => setHashtagTopic(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && hashtagTopic && !hashLoading && (async () => {
                     setHashLoading(true);
-                    try { const res = await postJSON('/api/social/hashtag-intelligence', { topic: hashtagTopic, platform: activeType }); setHashtagData(res); }
+                    try { const res = await postJSON('/api/social/hashtag-intelligence', { topic: hashtagTopic, platform: primaryPlatform }); setHashtagData(res); }
                     catch {} setHashLoading(false);
                   })()}
                 />
@@ -1972,7 +1907,7 @@ export default function SocialPage() {
                   style={{ color: currentType?.color || MODULE_COLOR, borderColor: `${currentType?.color || MODULE_COLOR}40`, background: `${currentType?.color || MODULE_COLOR}12` }}
                   onClick={async () => {
                     setHashLoading(true);
-                    try { const res = await postJSON('/api/social/hashtag-intelligence', { topic: hashtagTopic, platform: activeType }); setHashtagData(res); }
+                    try { const res = await postJSON('/api/social/hashtag-intelligence', { topic: hashtagTopic, platform: primaryPlatform }); setHashtagData(res); }
                     catch {} setHashLoading(false);
                   }}>
                   {hashLoading ? 'Analyzing...' : 'Find Hashtags'}
@@ -2003,6 +1938,34 @@ export default function SocialPage() {
                 <p className={`text-[11px] ${dark ? 'text-gray-600' : 'text-gray-400'}`}>Enter a topic to get tiered hashtag recommendations.</p>
               )}
             </div>
+
+            {/* ═══ Inline Platform Previews — live as you type ═══ */}
+            {selectedPlatforms.length > 0 && contentText.length > 0 && (
+              <div className={`${panelCls} rounded-2xl p-5 mt-5 animate-fade-up`}>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="hud-label text-[11px]">LIVE PREVIEWS</p>
+                  <span className={`text-[10px] ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{selectedPlatforms.length} platform{selectedPlatforms.length !== 1 ? 's' : ''}</span>
+                </div>
+                <div className="flex gap-4 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin' }}>
+                  {selectedPlatforms.map(pid => {
+                    const plat = SOCIAL_PLATFORMS.find(p => p.id === pid);
+                    if (!plat) return null;
+                    const limit = charLimits[pid] || 2200;
+                    const over = contentText.length > limit;
+                    return (
+                      <div key={pid} className="flex-shrink-0 min-w-[280px] max-w-[340px]">
+                        <div className="flex items-center gap-2 mb-2">
+                          <PlatformIcon id={pid} size={14} />
+                          <span className={`text-[11px] font-bold ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{plat.name}</span>
+                          {over && <span className="text-[10px] text-red-400 font-mono">{contentText.length}/{limit}</span>}
+                        </div>
+                        <PostPreview platform={pid} content={contentText} dark={dark} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         );
       })()}
