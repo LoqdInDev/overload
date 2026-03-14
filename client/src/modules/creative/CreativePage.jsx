@@ -474,6 +474,7 @@ export default function CreativePage() {
   };
   const [activeType, setActiveType] = useState(null);
   const [prompt, setPrompt] = useState('');
+  const [variationInstructions, setVariationInstructions] = useState('');
   const [style, setStyle] = useState('minimal');
   const [dimension, setDimension] = useState(null);
   const [palette, setPalette] = useState('brand');
@@ -735,7 +736,7 @@ export default function CreativePage() {
       // Variation mode — use reference image endpoint
       connectSSE('/api/creative/generate-from-image-stream', {
         type: activeType,
-        prompt: prompt.trim(),
+        prompt: variationInstructions.trim() || prompt.trim(),
         images: referenceImages.map(r => ({ base64: r.base64, mimeType: r.mimeType })),
         style: selectedStyle?.name,
         palette: selectedPalette?.name,
@@ -938,7 +939,7 @@ export default function CreativePage() {
       <ModuleWrapper moduleId="creative">
       {/* Header */}
       <div className="flex items-center gap-3 sm:gap-5 mb-6 sm:mb-8">
-        <button onClick={() => { setActiveType(null); setImages([]); setPrompt(''); setActiveTab('generate'); setShowInput(true); setError(null); setReferenceImage(null); setImageColors([]); if (palette === 'image-colors') setPalette('brand'); }}
+        <button onClick={() => { setActiveType(null); setImages([]); setPrompt(''); setVariationInstructions(''); setActiveTab('generate'); setShowInput(true); setError(null); setReferenceImage(null); setImageColors([]); if (palette === 'image-colors') setPalette('brand'); }}
           className="p-2 rounded-md border border-indigo-500/10 text-gray-500 hover:text-white hover:border-indigo-500/25 transition-all">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
@@ -2037,7 +2038,7 @@ export default function CreativePage() {
                   {referenceImages.length > 0 && (
                     <div className="panel rounded-2xl p-4 sm:p-5">
                       <p className="hud-label text-[11px] mb-2">VARIATION INSTRUCTIONS (OPTIONAL)</p>
-                      <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={3}
+                      <textarea value={variationInstructions} onChange={e => setVariationInstructions(e.target.value)} rows={3}
                         placeholder="Describe how you want to vary this image — color mood, style changes, composition tweaks..."
                         className="w-full input-field rounded-xl px-4 py-3 text-sm resize-none" />
                     </div>
