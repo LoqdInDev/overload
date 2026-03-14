@@ -45,6 +45,33 @@ const SOCIAL_PLATFORMS = [
   { id: 'pinterest', provider: 'pinterest', name: 'Pinterest', icon: 'M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25', color: '#E60023' },
 ];
 
+const PROVIDERS_META = {
+  twitter: { credentials: [
+    { key: 'api_key', label: 'API Key', type: 'password', required: true },
+    { key: 'api_secret', label: 'API Secret', type: 'password', required: true },
+    { key: 'bearer_token', label: 'Bearer Token', type: 'password', required: true },
+  ], helpText: 'Get your API keys from the Twitter Developer Portal.' },
+  meta: { credentials: [
+    { key: 'access_token', label: 'Long-Lived Access Token', type: 'password', required: true },
+    { key: 'page_id', label: 'Page ID (optional)', type: 'text', required: false },
+  ], helpText: 'Generate a token from Meta Graph API Explorer.' },
+  linkedin: { credentials: [
+    { key: 'access_token', label: 'Access Token', type: 'password', required: true },
+    { key: 'organization_id', label: 'Organization ID (optional)', type: 'text', required: false },
+  ], helpText: 'Create an app at LinkedIn Developers.' },
+  tiktok: { credentials: [
+    { key: 'access_token', label: 'Access Token', type: 'password', required: true },
+  ], helpText: 'Get your access token from TikTok Business API.' },
+  google: { credentials: [
+    { key: 'client_id', label: 'OAuth Client ID', type: 'text', required: true },
+    { key: 'client_secret', label: 'OAuth Client Secret', type: 'password', required: true },
+    { key: 'refresh_token', label: 'Refresh Token', type: 'password', required: true },
+  ], helpText: 'Create OAuth credentials at Google Cloud Console.' },
+  pinterest: { credentials: [
+    { key: 'access_token', label: 'Access Token', type: 'password', required: true },
+  ], helpText: 'Get your access token from Pinterest Developer Portal.' },
+};
+
 const TEMPLATES = {
   instagram: [
     { name: 'Product Launch', prompt: 'Write an Instagram caption for a product launch. Include a hook, key features, CTA, and relevant hashtags. Make it visually descriptive.' },
@@ -333,26 +360,30 @@ export default function SocialPage() {
   const socialConnected = SOCIAL_PLATFORMS.filter(p => getProviderStatus(p.provider));
   const panelCls = dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm';
 
+  const [credentialsForm, setCredentialsForm] = useState(null); // { providerId, fields: { key: value } }
   const connectAccount = async (platform) => {
     const providerId = platform.provider;
     setConnectError(null);
-    const provConfig = getProviderConfig(providerId);
-    if (provConfig && !provConfig.configured) {
-      setConnectError({ providerId, message: `${platform.name} requires API credentials. Add ${providerId.toUpperCase()}_CLIENT_ID and ${providerId.toUpperCase()}_CLIENT_SECRET to your .env file.` });
-      return;
-    }
-    setConnectingId(providerId);
+    const provConfig = PROVIDERS_META[providerId];
+    if (!provConfig) { setConnectError({ providerId, message: 'Unknown provider' }); return; }
+    // Open inline credential form
+    const fields = {};
+    provConfig.credentials.forEach(c => { fields[c.key] = ''; });
+    setCredentialsForm({ providerId, fields, saving: false });
+  };
+  const saveCredentials = async () => {
+    if (!credentialsForm) return;
+    const { providerId, fields } = credentialsForm;
+    setCredentialsForm(prev => ({ ...prev, saving: true }));
+    setConnectError(null);
     try {
-      const res = await fetch(`/api/integrations/oauth/authorize/${providerId}`);
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error);
-      const popup = window.open(data.authUrl, 'oauth-connect', 'width=600,height=700,scrollbars=yes');
-      const poll = setInterval(() => {
-        if (popup?.closed) { clearInterval(poll); setConnectingId(null); fetchAccounts(); }
-      }, 1000);
+      const res = await postJSON('/api/integrations/connections/api-key', { providerId, credentials: fields });
+      if (res.success === false) throw new Error(res.error);
+      setCredentialsForm(null);
+      fetchAccounts();
     } catch (err) {
-      setConnectError({ providerId, message: err.message });
-      setConnectingId(null);
+      setConnectError({ providerId, message: err.message || 'Connection failed' });
+      setCredentialsForm(prev => ({ ...prev, saving: false }));
     }
   };
 
@@ -752,7 +783,8 @@ export default function SocialPage() {
                 const provConfig = getProviderConfig(platform.provider);
                 const isConfigured = provConfig?.configured !== false;
                 return (
-                  <div key={platform.id} className={`flex items-center gap-4 px-5 py-4 transition-colors duration-200 ${dark ? 'hover:bg-white/[0.02]' : 'hover:bg-gray-50/80'}`}>
+                  <div key={platform.id}>
+                  <div className={`flex items-center gap-4 px-5 py-4 transition-colors duration-200 ${dark ? 'hover:bg-white/[0.02]' : 'hover:bg-gray-50/80'}`}>
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={platformIconBg()}>
                       <PlatformIcon id={platform.id} size={20} />
                     </div>
@@ -787,18 +819,59 @@ export default function SocialPage() {
                           </button>
                         </>
                       ) : (
-                        <button onClick={() => connectAccount(platform)} disabled={isConnecting}
+                        <button onClick={() => connectAccount(platform)}
                           className="text-[10px] font-bold px-4 py-1.5 rounded-lg transition-all duration-200 disabled:opacity-50"
                           style={{ background: `${platform.color}15`, color: platform.color, border: `1px solid ${platform.color}25` }}>
-                          {isConnecting ? (
-                            <span className="flex items-center gap-1.5">
-                              <span className="w-2.5 h-2.5 border-[1.5px] border-current border-t-transparent rounded-full animate-spin" />Connecting...
-                            </span>
-                          ) : !isConfigured ? 'Setup Required' : 'Connect'}
+                          Connect
                         </button>
                       )}
                     </div>
                   </div>
+                  {/* Inline credential form */}
+                  {credentialsForm?.providerId === platform.provider && (() => {
+                    const meta = PROVIDERS_META[platform.provider];
+                    if (!meta) return null;
+                    return (
+                      <div className={`px-5 py-4 ${dark ? 'bg-white/[0.02] border-t border-white/[0.04]' : 'bg-gray-50/80 border-t border-gray-100'}`}>
+                        <div className="max-w-md space-y-3">
+                          <p className={`text-[11px] font-semibold ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            Enter your {platform.name} API credentials
+                          </p>
+                          {meta.credentials.map(cred => (
+                            <div key={cred.key}>
+                              <label className={`text-[10px] font-semibold block mb-1 ${dark ? 'text-gray-500' : 'text-gray-400'}`}>
+                                {cred.label} {cred.required && <span className="text-red-400">*</span>}
+                              </label>
+                              <input
+                                type={cred.type === 'password' ? 'password' : 'text'}
+                                value={credentialsForm.fields[cred.key] || ''}
+                                onChange={e => setCredentialsForm(prev => ({
+                                  ...prev, fields: { ...prev.fields, [cred.key]: e.target.value }
+                                }))}
+                                placeholder={cred.label}
+                                className="w-full input-field rounded-xl px-3 py-2 text-xs font-mono"
+                              />
+                            </div>
+                          ))}
+                          {meta.helpText && (
+                            <p className={`text-[10px] ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{meta.helpText}</p>
+                          )}
+                          <div className="flex gap-2 pt-1">
+                            <button onClick={saveCredentials} disabled={credentialsForm.saving || !meta.credentials.filter(c => c.required).every(c => credentialsForm.fields[c.key]?.trim())}
+                              className="text-[10px] font-bold px-4 py-2 rounded-lg text-white transition-all duration-200 disabled:opacity-40"
+                              style={{ background: platform.color }}>
+                              {credentialsForm.saving ? 'Connecting...' : 'Save & Connect'}
+                            </button>
+                            <button onClick={() => setCredentialsForm(null)}
+                              className={`text-[10px] font-semibold px-3 py-2 rounded-lg transition-all duration-200 ${dark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}>
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
                 );
               })}
             </div>
