@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import { useTheme } from '../../context/ThemeContext';
 import { fetchJSON, postJSON, deleteJSON, connectSSE } from '../../lib/api';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
 
@@ -25,6 +26,8 @@ const AI_TOOLS = [
 
 export default function CrmPage() {
   usePageTitle('CRM');
+  const { dark } = useTheme();
+  const panelCls = dark ? 'panel' : 'bg-white border border-gray-200 shadow-sm';
   const [tab, setTab] = useState('pipeline');
   const [contacts, setContacts] = useState([]);
   const [deals, setDeals] = useState([]);
@@ -126,7 +129,7 @@ export default function CrmPage() {
     <div className="p-4 sm:p-6 lg:p-12">
       <div className="mb-6 sm:mb-8 animate-fade-in">
         <p className="hud-label text-[11px] mb-2" style={{ color: '#6366f1' }}>CRM DASHBOARD</p>
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Customer Relationships</h1>
+        <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 ${dark ? 'text-white' : 'text-gray-900'}`}>Customer Relationships</h1>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 stagger">
@@ -138,7 +141,7 @@ export default function CrmPage() {
         ].map((s, i) => (
           <div key={i} className="panel stat-card rounded-2xl p-4 sm:p-6">
             <p className="hud-label text-[10px] mb-2">{s.label}</p>
-            <p className="text-2xl sm:text-3xl font-bold text-white font-mono tabular-nums leading-none">{s.value}</p>
+            <p className={`text-2xl sm:text-3xl font-bold font-mono tabular-nums leading-none ${dark ? 'text-white' : 'text-gray-900'}`}>{s.value}</p>
           </div>
         ))}
       </div>
@@ -216,6 +219,20 @@ export default function CrmPage() {
           )}
 
           {/* Kanban board */}
+          {deals.length === 0 ? (
+            <div className={`${panelCls} rounded-2xl p-12 text-center`}>
+              <svg className={`w-10 h-10 mx-auto mb-3 ${dark ? 'text-gray-700' : 'text-gray-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+              </svg>
+              <p className={`text-sm font-semibold ${dark ? 'text-gray-400' : 'text-gray-500'}`}>No deals yet</p>
+              <p className={`text-xs mt-1 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>Create your first deal to start tracking your pipeline</p>
+              <button onClick={() => setShowAddDeal(true)} className="mt-4 flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl transition-all mx-auto"
+                style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.25)' }}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                Add Deal
+              </button>
+            </div>
+          ) : (
           <div className="overflow-x-auto pb-2">
             <div className="grid grid-cols-6 gap-3 min-w-[900px]">
               {PIPELINE_STAGES.map(stage => {
@@ -267,6 +284,7 @@ export default function CrmPage() {
               })}
             </div>
           </div>
+          )}
         </div>
       )}
 
@@ -296,7 +314,20 @@ export default function CrmPage() {
           )}
           <div className="panel rounded-2xl overflow-hidden">
             <div className="divide-y divide-indigo-500/[0.04]">
-              {filteredContacts.length === 0 && <div className="p-6 text-center text-sm text-gray-600">{loading ? 'Loading...' : 'No contacts yet'}</div>}
+              {filteredContacts.length === 0 && (
+                loading ? (
+                  <div className="p-6 text-center text-sm text-gray-600">Loading...</div>
+                ) : (
+                  <div className={`${panelCls} rounded-2xl p-12 text-center`}>
+                    <svg className={`w-10 h-10 mx-auto mb-3 ${dark ? 'text-gray-700' : 'text-gray-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                    </svg>
+                    <p className={`text-sm font-semibold ${dark ? 'text-gray-400' : 'text-gray-500'}`}>No contacts yet</p>
+                    <p className={`text-xs mt-1 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>Add your first contact to get started</p>
+                    <button onClick={() => setShowAddContact(true)} className="mt-4 chip text-[10px]" style={{ background: 'rgba(99,102,241,0.15)', borderColor: 'rgba(99,102,241,0.3)', color: '#818cf8' }}>+ Add Contact</button>
+                  </div>
+                )
+              )}
               {filteredContacts.map(c => (
                 <div key={c.id} className="group flex flex-col px-3 sm:px-5 py-3 sm:py-4 hover:bg-white/[0.01] transition-colors">
                   <div className="flex items-center gap-2 sm:gap-3">
@@ -402,9 +433,13 @@ export default function CrmPage() {
       {tab === 'segments' && (
         <div className="animate-fade-in">
           {segments.length === 0 ? (
-            <div className="panel rounded-2xl p-8 text-center">
-              <p className="text-sm text-gray-500">No segments created yet</p>
-              <p className="text-xs text-gray-600 mt-1">Use AI Tools to analyze and generate customer segments</p>
+            <div className={`${panelCls} rounded-2xl p-12 text-center`}>
+              <svg className={`w-10 h-10 mx-auto mb-3 ${dark ? 'text-gray-700' : 'text-gray-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" />
+              </svg>
+              <p className={`text-sm font-semibold ${dark ? 'text-gray-400' : 'text-gray-500'}`}>No segments yet</p>
+              <p className={`text-xs mt-1 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>Use AI Tools to analyze and generate customer segments</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
@@ -412,7 +447,7 @@ export default function CrmPage() {
                 <div key={seg.id} className="panel rounded-2xl p-4 sm:p-6">
                   <div className="flex items-center gap-2">
                     {seg.color && <div className="w-3 h-3 rounded-full" style={{ background: seg.color }} />}
-                    <p className="text-sm font-bold text-white">{seg.name}</p>
+                    <p className={`text-sm font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{seg.name}</p>
                   </div>
                   {seg.rules && <p className="text-xs text-gray-500 mt-2">{typeof seg.rules === 'string' ? seg.rules : JSON.stringify(seg.rules)}</p>}
                 </div>
