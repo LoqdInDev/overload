@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import { useTheme } from '../../context/ThemeContext';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
 import { fetchJSON, postJSON, deleteJSON, connectSSE } from '../../lib/api';
 
@@ -20,8 +21,10 @@ function AdPlatformIcon({ id, size = 22 }) {
   return <img src={`/brands/${file}.svg`} alt={id} style={{ width: size, height: size, objectFit: 'contain' }} />;
 }
 
-function adIconBg() {
-  return { background: '#ffffff', border: '1px solid rgba(0,0,0,0.09)', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' };
+function adIconBg(id, dark) {
+  return dark
+    ? { background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }
+    : { background: '#ffffff', border: '1px solid rgba(0,0,0,0.09)', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' };
 }
 
 const OBJECTIVES = [
@@ -90,7 +93,7 @@ function slugify(s) {
 }
 
 // ── Ad Preview ───────────────────────────────────────
-function AdPreview({ platform, adContent }) {
+function AdPreview({ platform, adContent, dark }) {
   if (!adContent) return null;
   const h1 = adContent.headlines?.[0] || 'Your Headline Here';
   const h2 = adContent.headlines?.[1] || 'Second Headline';
@@ -100,37 +103,46 @@ function AdPreview({ platform, adContent }) {
   const headline = adContent.headlines?.[0] || 'Headline';
   const cta = adContent.cta || 'Learn More';
 
+  const bg = dark ? '#0f0f1a' : '#fff';
+  const textPrimary = dark ? '#e5e7eb' : '#1a1a2e';
+  const textSecondary = dark ? '#9ca3af' : '#4d5156';
+  const textMuted = dark ? '#6b7280' : '#65676b';
+  const border = dark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
+  const surfaceMuted = dark ? '#1a1a2e' : '#e2e8f0';
+  const surfaceAlt = dark ? '#161625' : '#f0f2f5';
+  const imagePlaceholder = dark ? '#1e1e30' : '#e9ebee';
+
   if (platform === 'google') return (
-    <div style={{ background: '#fff', borderRadius: 8, padding: '16px 20px', maxWidth: 580 }}>
+    <div style={{ background: bg, borderRadius: 8, padding: '16px 20px', maxWidth: 580, border: `1px solid ${border}` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-        <span style={{ background: '#fff', border: '1px solid #5f6368', color: '#202124', fontSize: 10, padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>Ad</span>
-        <span style={{ color: '#0d652d', fontSize: 13 }}>www.yourwebsite.com › page</span>
+        <span style={{ background: dark ? '#1a1a2e' : '#fff', border: `1px solid ${dark ? 'rgba(255,255,255,0.15)' : '#5f6368'}`, color: dark ? '#9ca3af' : '#202124', fontSize: 10, padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>Ad</span>
+        <span style={{ color: dark ? '#4ade80' : '#0d652d', fontSize: 13 }}>www.yourwebsite.com &rsaquo; page</span>
       </div>
-      <div style={{ color: '#1a0dab', fontSize: 18, lineHeight: 1.3, marginBottom: 4 }}>
+      <div style={{ color: dark ? '#818cf8' : '#1a0dab', fontSize: 18, lineHeight: 1.3, marginBottom: 4 }}>
         {h1} | {h2} | {h3}
       </div>
-      <div style={{ color: '#4d5156', fontSize: 14, lineHeight: 1.5 }}>{desc}</div>
+      <div style={{ color: textSecondary, fontSize: 14, lineHeight: 1.5 }}>{desc}</div>
     </div>
   );
 
   if (platform === 'meta') return (
-    <div style={{ background: '#fff', borderRadius: 8, maxWidth: 380, overflow: 'hidden' }}>
+    <div style={{ background: bg, borderRadius: 8, maxWidth: 380, overflow: 'hidden', border: `1px solid ${border}` }}>
       <div style={{ padding: '10px 12px', display: 'flex', gap: 10, alignItems: 'center' }}>
-        <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#e2e8f0', flexShrink: 0 }} />
+        <div style={{ width: 36, height: 36, borderRadius: '50%', background: surfaceMuted, flexShrink: 0 }} />
         <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#050505' }}>Your Brand</div>
-          <div style={{ fontSize: 11, color: '#65676b' }}>Sponsored · 🌐</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: textPrimary }}>Your Brand</div>
+          <div style={{ fontSize: 11, color: textMuted }}>Sponsored &middot; &#127760;</div>
         </div>
       </div>
-      <div style={{ padding: '0 12px 8px', fontSize: 13, color: '#050505', lineHeight: 1.5 }}>
+      <div style={{ padding: '0 12px 8px', fontSize: 13, color: textPrimary, lineHeight: 1.5 }}>
         {primary.substring(0, 125)}{primary.length > 125 ? '...' : ''}
       </div>
-      <div style={{ background: '#e9ebee', height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ color: '#8a8d91', fontSize: 12 }}>1200 × 628</span>
+      <div style={{ background: imagePlaceholder, height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ color: textMuted, fontSize: 12 }}>1200 &times; 628</span>
       </div>
-      <div style={{ background: '#f0f2f5', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: '#050505', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{headline.substring(0, 40)}</div>
-        <button style={{ background: '#e2e8f0', border: 'none', padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'default', color: '#050505', whiteSpace: 'nowrap', flexShrink: 0 }}>{cta}</button>
+      <div style={{ background: surfaceAlt, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: textPrimary, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{headline.substring(0, 40)}</div>
+        <button style={{ background: surfaceMuted, border: 'none', padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'default', color: textPrimary, whiteSpace: 'nowrap', flexShrink: 0 }}>{cta}</button>
       </div>
     </div>
   );
@@ -139,7 +151,7 @@ function AdPreview({ platform, adContent }) {
     <div style={{ width: 175, height: 310, background: '#000', borderRadius: 12, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.85))' }} />
       <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center' }}>
-        {['♥', '💬', '↗'].map((ic, i) => (
+        {['\u2665', '\uD83D\uDCAC', '\u2197'].map((ic, i) => (
           <div key={i} style={{ color: 'white', fontSize: 18, textAlign: 'center' }}>
             <div>{ic}</div>
             <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.7)' }}>{['12K', '834', '2.1K'][i]}</div>
@@ -151,29 +163,29 @@ function AdPreview({ platform, adContent }) {
         <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: 10, marginBottom: 5, lineHeight: 1.4 }}>
           {primary.substring(0, 55)}{primary.length > 55 ? '...' : ''}
         </div>
-        <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 9, marginBottom: 7 }}>♪ Trending Sound · Sponsored</div>
+        <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 9, marginBottom: 7 }}>&music; Trending Sound &middot; Sponsored</div>
         <button style={{ background: '#fe2c55', color: 'white', border: 'none', borderRadius: 4, padding: '5px 0', fontSize: 10, fontWeight: 700, width: '100%', cursor: 'default' }}>{cta}</button>
       </div>
     </div>
   );
 
   if (platform === 'linkedin') return (
-    <div style={{ background: '#fff', borderRadius: 8, maxWidth: 380, overflow: 'hidden' }}>
+    <div style={{ background: bg, borderRadius: 8, maxWidth: 380, overflow: 'hidden', border: `1px solid ${border}` }}>
       <div style={{ padding: '12px 16px', display: 'flex', gap: 10, alignItems: 'center' }}>
-        <div style={{ width: 42, height: 42, borderRadius: 4, background: '#e2e8f0', flexShrink: 0 }} />
+        <div style={{ width: 42, height: 42, borderRadius: 4, background: surfaceMuted, flexShrink: 0 }} />
         <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#000' }}>Your Company</div>
-          <div style={{ fontSize: 11, color: '#777' }}>Sponsored</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: textPrimary }}>Your Company</div>
+          <div style={{ fontSize: 11, color: textMuted }}>Sponsored</div>
         </div>
       </div>
-      <div style={{ padding: '0 16px 10px', fontSize: 13, color: '#333', lineHeight: 1.5 }}>
+      <div style={{ padding: '0 16px 10px', fontSize: 13, color: dark ? '#d1d5db' : '#333', lineHeight: 1.5 }}>
         {primary.substring(0, 150)}{primary.length > 150 ? '...' : ''}
       </div>
-      <div style={{ background: '#f3f2ef', height: 130, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ color: '#888', fontSize: 12 }}>1200 × 627</span>
+      <div style={{ background: dark ? '#1e1e30' : '#f3f2ef', height: 130, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ color: textMuted, fontSize: 12 }}>1200 &times; 627</span>
       </div>
-      <div style={{ padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, borderTop: '1px solid #e0e0e0' }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: '#000', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{headline.substring(0, 50)}</div>
+      <div style={{ padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, borderTop: `1px solid ${border}` }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: textPrimary, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{headline.substring(0, 50)}</div>
         <button style={{ background: 'transparent', border: '1px solid #0a66c2', color: '#0a66c2', padding: '5px 14px', borderRadius: 16, fontSize: 12, fontWeight: 700, cursor: 'default', flexShrink: 0 }}>{cta}</button>
       </div>
     </div>
@@ -195,6 +207,7 @@ function Toast({ message, type = 'error', onDismiss }) {
 
 export default function AdsPage() {
   usePageTitle('Paid Advertising');
+  const { dark } = useTheme();
   const [activePlatform, setActivePlatform] = useState(null);
   const [tab, setTab] = useState('builder'); // 'builder' | 'history' | 'optimizer'
   const [generating, setGenerating] = useState(false);
@@ -509,7 +522,7 @@ export default function AdsPage() {
         <div className="divide-y divide-indigo-500/[0.04]">
           {savedCampaigns.map(c => (
             <div key={c.id} className="group flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 sm:px-6 py-3 hover:bg-white/[0.01] transition-colors">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={adIconBg(c.platform)}>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={adIconBg(c.platform, dark)}>
                 <AdPlatformIcon id={c.platform} size={16} />
               </div>
               <div className="flex-1 min-w-0">
@@ -690,7 +703,7 @@ export default function AdsPage() {
                     className="panel-interactive rounded-2xl p-5 sm:p-7 text-left group">
                     <div className="flex items-start gap-3 sm:gap-4">
                       <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-110"
-                        style={adIconBg(p.id)}>
+                        style={adIconBg(p.id, dark)}>
                         <AdPlatformIcon id={p.id} size={28} />
                       </div>
                       <div className="pt-1">
@@ -764,7 +777,7 @@ export default function AdsPage() {
             </svg>
           </button>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={adIconBg(platform?.id)}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={adIconBg(platform?.id, dark)}>
               <AdPlatformIcon id={platform?.id} size={20} />
             </div>
             <div>
@@ -954,7 +967,7 @@ export default function AdsPage() {
                   <div className="panel rounded-2xl p-4 sm:p-6">
                     <p className="hud-label text-[11px] mb-4">AD PREVIEW</p>
                     <div className="flex justify-center">
-                      <AdPreview platform={activePlatform} adContent={result.ad_content} />
+                      <AdPreview platform={activePlatform} adContent={result.ad_content} dark={dark} />
                     </div>
                   </div>
                 )}
@@ -1062,7 +1075,7 @@ export default function AdsPage() {
                         <p className="text-sm text-gray-400 mb-1">Launch campaigns directly to {platform?.name} from Overload.</p>
                         <p className="text-xs text-gray-500 mb-5">Your current plan: <span className="font-bold text-gray-300 capitalize">{userPlan}</span></p>
                         <div className="flex items-center justify-center gap-3">
-                          <a href="/billing" className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all" style={{ background: '#22c55e', color: '#fff' }}>
+                          <a href="/billing" className="btn-accent px-5 py-2.5 rounded-xl text-sm font-semibold" style={{ background: '#22c55e', color: '#fff' }}>
                             Upgrade to Autopilot — $299/mo
                           </a>
                         </div>
@@ -1089,7 +1102,7 @@ export default function AdsPage() {
                             ))}
                           </div>
                         ) : (
-                          <input type="text" value={selectedAccount} onChange={e => setSelectedAccount(e.target.value)} placeholder={activePlatform === 'google' ? 'e.g. 1234567890' : 'e.g. act_1234567890'} className="w-full bg-black/30 border border-indigo-500/10 rounded-xl px-4 py-2.5 text-sm text-gray-200 placeholder-gray-600 focus:border-emerald-500/30 focus:outline-none" />
+                          <input type="text" value={selectedAccount} onChange={e => setSelectedAccount(e.target.value)} placeholder={activePlatform === 'google' ? 'e.g. 1234567890' : 'e.g. act_1234567890'} className="w-full input-field rounded-xl px-4 py-2.5 text-sm" />
                         )}
                       </div>
                     )}
@@ -1100,12 +1113,12 @@ export default function AdsPage() {
                         <label className="text-xs text-gray-500 font-semibold uppercase tracking-wider block mb-2">
                           {activePlatform === 'tiktok' ? 'Advertiser ID (optional if saved in settings)' : 'Ad Account ID (optional if saved in settings)'}
                         </label>
-                        <input type="text" value={selectedAccount} onChange={e => setSelectedAccount(e.target.value)} placeholder={activePlatform === 'tiktok' ? 'e.g. 7012345678901234567' : 'e.g. 12345678'} className="w-full bg-black/30 border border-indigo-500/10 rounded-xl px-4 py-2.5 text-sm text-gray-200 placeholder-gray-600 focus:border-emerald-500/30 focus:outline-none" />
+                        <input type="text" value={selectedAccount} onChange={e => setSelectedAccount(e.target.value)} placeholder={activePlatform === 'tiktok' ? 'e.g. 7012345678901234567' : 'e.g. 12345678'} className="w-full input-field rounded-xl px-4 py-2.5 text-sm" />
                       </div>
                     )}
 
                     <div className="flex items-center gap-3">
-                      <button onClick={launchToPlatform} disabled={launchLoading} className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all" style={{ background: launchLoading ? '#22c55e40' : '#22c55e', color: '#fff' }}>
+                      <button onClick={launchToPlatform} disabled={launchLoading} className="btn-accent px-5 py-2.5 rounded-xl text-sm font-semibold" style={{ background: launchLoading ? '#22c55e40' : '#22c55e', color: '#fff' }}>
                         {launchLoading ? (
                           <><div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> Launching...</>
                         ) : (
@@ -1280,7 +1293,7 @@ export default function AdsPage() {
                           className="w-full flex items-center gap-2 px-4 py-3 rounded-xl border border-indigo-500/8 bg-white/[0.01] hover:border-indigo-500/20 text-gray-400 hover:text-gray-200 transition-all text-sm"
                           style={adaptResults[p.id] ? { borderColor: `${p.color}30`, background: `${p.color}08` } : {}}
                         >
-                          <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0" style={adIconBg(p.id)}>
+                          <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0" style={adIconBg(p.id, dark)}>
                             <AdPlatformIcon id={p.id} size={13} />
                           </div>
                           <span className="font-semibold text-sm">{adaptLoading[p.id] ? 'Adapting...' : adaptResults[p.id] ? `${p.name} ✓` : `Adapt for ${p.name}`}</span>
