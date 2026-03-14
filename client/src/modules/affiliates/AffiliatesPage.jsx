@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import { fetchJSON, postJSON, putJSON, deleteJSON, connectSSE } from '../../lib/api';
 import AIInsightsPanel from '../../components/shared/AIInsightsPanel';
+import EmptyState from '../../components/shared/EmptyState';
 
 const AI_TEMPLATES = [
   { name: 'Recruitment Email', prompt: 'Write a compelling affiliate recruitment email inviting potential partners to join our program' },
@@ -189,10 +190,13 @@ export default function AffiliatesPage() {
             </div>
           )}
           {programs.length === 0 && !loading && (
-            <div className="panel rounded-2xl p-8 text-center">
-              <p className="text-sm text-gray-500">No programs yet</p>
-              <p className="text-xs text-gray-600 mt-1">Create your first affiliate program to get started</p>
-            </div>
+            <EmptyState
+              icon="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"
+              title="No affiliate programs yet"
+              description="Set up your first affiliate program to start tracking referral partnerships"
+              actionLabel="Add Program"
+              onAction={() => setShowAddProgram(true)}
+            />
           )}
           {loading && programs.length === 0 && <div className="panel rounded-2xl p-8 text-center text-sm text-gray-600">Loading...</div>}
           <div className="space-y-3">
@@ -234,10 +238,13 @@ export default function AffiliatesPage() {
             </div>
           )}
           {affiliates.length === 0 && !loading && (
-            <div className="panel rounded-2xl p-8 text-center">
-              <p className="text-sm text-gray-500">No affiliates yet</p>
-              <p className="text-xs text-gray-600 mt-1">Add affiliates to start tracking referrals</p>
-            </div>
+            <EmptyState
+              icon="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"
+              title="No affiliate programs yet"
+              description="Set up your first affiliate program to start tracking referral partnerships"
+              actionLabel="Add Affiliate"
+              onAction={() => setShowAddAffiliate(true)}
+            />
           )}
           {loading && affiliates.length === 0 && <div className="panel rounded-2xl p-8 text-center text-sm text-gray-600">Loading...</div>}
           <div className="panel rounded-2xl overflow-hidden">
