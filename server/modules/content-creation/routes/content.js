@@ -6,11 +6,12 @@ const { db, logActivity } = require('../../../db/database');
 const { getQueries } = require('../db/queries');
 const { buildContentPrompt } = require('../prompts/contentGenerator');
 const { getSeoKeywordsForContent, getContentForSocial } = require('../../../services/crossModuleData');
+const { requirePlan } = require('../../../services/stripe');
 
 const router = express.Router();
 
 // Generate content via SSE streaming
-router.post('/generate', async (req, res) => {
+router.post('/generate', requirePlan('manual'), async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
   const { type, prompt } = req.body;

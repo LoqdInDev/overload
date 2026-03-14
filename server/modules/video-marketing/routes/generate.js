@@ -12,10 +12,11 @@ const { buildHookPrompt } = require('../prompts/hookFactory');
 const { buildStoryboardPrompt } = require('../prompts/storyboarder');
 const { buildUGCPrompt } = require('../prompts/ugcBrief');
 const { buildIteratePrompt } = require('../prompts/iterateWinner');
+const { requirePlan } = require('../../../services/stripe');
 
 const MODULE_ID = 'video-marketing';
 
-router.post('/angles', async (req, res) => {
+router.post('/angles', requirePlan('manual'), async (req, res) => {
   const { campaignId, productProfile, useBrandHub } = req.body;
   const sse = setupSSE(res);
   const wsId = req.workspace.id;
@@ -40,7 +41,7 @@ router.post('/angles', async (req, res) => {
   }
 });
 
-router.post('/scripts', async (req, res) => {
+router.post('/scripts', requirePlan('manual'), async (req, res) => {
   const { campaignId, productProfile, selectedAngles, duration = 30, platform = 'tiktok', useBrandHub } = req.body;
   const sse = setupSSE(res);
   const wsId = req.workspace.id;
@@ -69,7 +70,7 @@ router.post('/scripts', async (req, res) => {
   }
 });
 
-router.post('/hooks', async (req, res) => {
+router.post('/hooks', requirePlan('manual'), async (req, res) => {
   const { campaignId, productProfile, useBrandHub } = req.body;
   const sse = setupSSE(res);
   const wsId = req.workspace.id;
@@ -95,7 +96,7 @@ router.post('/hooks', async (req, res) => {
   }
 });
 
-router.post('/storyboard', async (req, res) => {
+router.post('/storyboard', requirePlan('manual'), async (req, res) => {
   const { campaignId, scripts, useBrandHub } = req.body;
   const sse = setupSSE(res);
   const wsId = req.workspace.id;
@@ -125,7 +126,7 @@ router.post('/storyboard', async (req, res) => {
   }
 });
 
-router.post('/ugc', async (req, res) => {
+router.post('/ugc', requirePlan('manual'), async (req, res) => {
   const { campaignId, productProfile, scripts, useBrandHub } = req.body;
   const sse = setupSSE(res);
   const wsId = req.workspace.id;
@@ -151,7 +152,7 @@ router.post('/ugc', async (req, res) => {
   }
 });
 
-router.post('/iterate', async (req, res) => {
+router.post('/iterate', requirePlan('manual'), async (req, res) => {
   const { campaignId, winners, productProfile, useBrandHub } = req.body;
   const sse = setupSSE(res);
   const wsId = req.workspace.id;

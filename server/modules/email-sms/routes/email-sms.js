@@ -5,9 +5,10 @@ const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
 const pm = require('../../../services/platformManager');
 const { getBrandContext, buildBrandSystemPrompt } = require('../../../services/brandContext');
+const { requirePlan } = require('../../../services/stripe');
 
 // POST /generate - SSE: generate email or SMS content
-router.post('/generate', async (req, res) => {
+router.post('/generate', requirePlan('manual'), async (req, res) => {
   const sse = setupSSE(res);
   const wsId = req.workspace.id;
 

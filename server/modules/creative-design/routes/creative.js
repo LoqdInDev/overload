@@ -8,6 +8,7 @@ const { generateImages, generateImage, generateImageFromReference, dimensionToAs
 const { db, logActivity } = require('../../../db/database');
 const { getQueries } = require('../db/queries');
 const { buildImagePromptOptimizer } = require('../prompts/imagePrompt');
+const { requirePlan } = require('../../../services/stripe');
 
 const dataDir = process.env.DB_PATH ? path.dirname(process.env.DB_PATH) : path.join(__dirname, '..', '..', '..', '..');
 
@@ -28,7 +29,7 @@ router.get('/test-gemini', async (req, res) => {
 });
 
 // Generate creative — creates optimized prompts via Claude, then generates images via Gemini
-router.post('/generate', async (req, res) => {
+router.post('/generate', requirePlan('manual'), async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
   const { type, prompt, style, palette, paletteColors, useBrand, noText } = req.body;
@@ -173,7 +174,7 @@ router.delete('/projects/:id', async (req, res) => {
 });
 
 // POST /generate-stream — streams images one-by-one as they complete (fixes timeout)
-router.post('/generate-stream', async (req, res) => {
+router.post('/generate-stream', requirePlan('manual'), async (req, res) => {
   const wsId = req.workspace.id;
   const q = getQueries(wsId);
   const { type, prompt, style, palette, paletteColors, useBrand, noText } = req.body;

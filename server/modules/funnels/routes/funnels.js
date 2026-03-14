@@ -4,13 +4,14 @@ const { v4: uuid } = require('uuid');
 const { db, logActivity } = require('../../../db/database');
 const { generateTextWithClaude } = require('../../../services/claude');
 const { setupSSE } = require('../../../services/sse');
+const { requirePlan } = require('../../../services/stripe');
 
 // ══════════════════════════════════════════════════════
 // AI Generation Routes
 // ══════════════════════════════════════════════════════
 
 // POST /generate — SSE: generate copy for a single funnel stage
-router.post('/generate', async (req, res) => {
+router.post('/generate', requirePlan('manual'), async (req, res) => {
   const sse = setupSSE(res);
   const wsId = req.workspace.id;
 

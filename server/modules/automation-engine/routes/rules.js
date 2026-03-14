@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { db, logActivity } = require('../../../db/database');
+const { requirePlan } = require('../../../services/stripe');
 
 // GET /rules — list all rules
 router.get('/rules', async (req, res) => {
@@ -23,7 +24,7 @@ router.get('/rules', async (req, res) => {
 });
 
 // POST /rules — create rule
-router.post('/rules', async (req, res) => {
+router.post('/rules', requirePlan('copilot'), async (req, res) => {
   const wsId = req.workspace.id;
   const { module_id, name, trigger_type, trigger_config, action_type, action_config, requires_approval } = req.body;
   if (!module_id || !name || !trigger_type || !trigger_config || !action_type) {
@@ -86,7 +87,7 @@ router.delete('/rules/:id', async (req, res) => {
 });
 
 // POST /rules/trigger-event — trigger event-based rules from webhooks
-router.post('/rules/trigger-event', async (req, res) => {
+router.post('/rules/trigger-event', requirePlan('copilot'), async (req, res) => {
   const wsId = req.workspace.id;
   const { event, moduleId } = req.body;
   if (!event || !moduleId) {
