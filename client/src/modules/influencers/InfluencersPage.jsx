@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import { fetchJSON, postJSON, putJSON, deleteJSON, connectSSE } from '../../lib/api';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
+import EmptyState from '../../components/shared/EmptyState';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -376,10 +377,13 @@ export default function InfluencersPage() {
             <div className="panel rounded-2xl p-8 text-center text-sm text-gray-600">Loading campaigns...</div>
           )}
           {!campaignsLoading && campaigns.length === 0 && (
-            <div className="panel rounded-2xl p-8 text-center">
-              <p className="text-sm text-gray-500">No campaigns yet</p>
-              <p className="text-xs text-gray-600 mt-1">Create your first influencer campaign to get started</p>
-            </div>
+            <EmptyState
+              icon="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 1.5l-.5 1.5m.75-9 3-3 2.148 2.148A12.061 12.061 0 0116.5 7.605"
+              title="No campaigns yet"
+              description="Create your first influencer campaign to start tracking collaborations and measuring results."
+              actionLabel="Add Campaign"
+              onAction={() => setShowAddCampaign(true)}
+            />
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
             {campaigns.map(c => (
