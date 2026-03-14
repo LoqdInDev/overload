@@ -2,10 +2,38 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { usePageTitle } from '../../hooks/usePageTitle';
 import ModuleWrapper from '../../components/shared/ModuleWrapper';
-import { fetchJSON, deleteJSON, postJSON } from '../../lib/api';
+import { fetchJSON, deleteJSON, postJSON, connectSSE } from '../../lib/api';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 const MODULE_COLOR = '#3b82f6';
+
+// ─── Calendar Constants ──────────────────────────────────────────────────────
+const CAL_EVENT_TYPES = [
+  { id: 'campaign', name: 'Campaign', color: '#7c3aed' },
+  { id: 'content', name: 'Content', color: '#f97316' },
+  { id: 'social', name: 'Social', color: '#3b82f6' },
+  { id: 'email', name: 'Email', color: '#f59e0b' },
+  { id: 'deadline', name: 'Deadline', color: '#ef4444' },
+];
+const CAL_RECURRENCE = [
+  { id: null, name: 'One-time' },
+  { id: 'daily', name: 'Daily' },
+  { id: 'weekly', name: 'Weekly' },
+  { id: 'monthly', name: 'Monthly' },
+];
+const CAL_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const CAL_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+function getMonthData(year, month) {
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrevMonth = new Date(year, month, 0).getDate();
+  const days = [];
+  for (let i = firstDay - 1; i >= 0; i--) days.push({ day: daysInPrevMonth - i, current: false });
+  for (let i = 1; i <= daysInMonth; i++) days.push({ day: i, current: true });
+  const remaining = 42 - days.length;
+  for (let i = 1; i <= remaining; i++) days.push({ day: i, current: false });
+  return days;
+}
 
 const SOCIAL_PLATFORMS = [
   { id: 'twitter', provider: 'twitter', name: 'Twitter / X', icon: 'M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 011.037-.443 48.282 48.282 0 005.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z', color: '#1DA1F2' },
@@ -236,6 +264,23 @@ export default function SocialPage() {
   // History
   const [posts, setPosts] = useState([]);
   const [postsLoading, setPostsLoading] = useState(false);
+
+  // Calendar
+  const calNow = new Date();
+  const [calYear, setCalYear] = useState(calNow.getFullYear());
+  const [calMonth, setCalMonth] = useState(calNow.getMonth());
+  const [calSelectedDay, setCalSelectedDay] = useState(null);
+  const [calEvents, setCalEvents] = useState([]);
+  const [calLoading, setCalLoading] = useState(false);
+  const [calShowAdd, setCalShowAdd] = useState(false);
+  const [calNewEvent, setCalNewEvent] = useState({ title: '', type: 'social', recurrence: null });
+  const [calGenerating, setCalGenerating] = useState(false);
+  const [calOutput, setCalOutput] = useState('');
+  const [planMonth, setPlanMonth] = useState(calNow.toLocaleString('default', { month: 'long', year: 'numeric' }));
+  const [planBusinessType, setPlanBusinessType] = useState('E-commerce');
+  const [planGoal, setPlanGoal] = useState('Brand awareness');
+  const [contentPlan, setContentPlan] = useState(null);
+  const [planLoading, setPlanLoading] = useState(false);
 
   const fetchAccounts = useCallback(async () => {
     try {
@@ -521,12 +566,71 @@ export default function SocialPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // ─── Calendar Functions ─────────────────────────────────────────────────────
+  const fetchCalEvents = useCallback(async () => {
+    setCalLoading(true);
+    const start = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-01`;
+    const endDate = new Date(calYear, calMonth + 1, 0);
+    const end = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+    try {
+      const data = await fetchJSON(`/api/calendar/events?start=${start}&end=${end}`);
+      setCalEvents(data);
+    } catch (e) { console.error('Cal fetch error:', e); }
+    finally { setCalLoading(false); }
+  }, [calYear, calMonth]);
+
+  useEffect(() => { if (tab === 'calendar') { fetchCalEvents(); fetchQueue(); } }, [tab, fetchCalEvents, fetchQueue]);
+
+  const calDays = getMonthData(calYear, calMonth);
+  const calToday = calNow.getDate();
+  const calIsCurrentMonth = calYear === calNow.getFullYear() && calMonth === calNow.getMonth();
+  const calDayEvents = (day) => calEvents.filter(e => new Date(e.date).getDate() === day);
+  // Merge scheduled social posts into calendar view
+  const calDayPosts = (day) => queue.filter(p => {
+    if (!p.scheduled_at) return false;
+    const d = new Date(p.scheduled_at);
+    return d.getFullYear() === calYear && d.getMonth() === calMonth && d.getDate() === day;
+  });
+
+  const calPrev = () => { if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1); } else setCalMonth(m => m - 1); };
+  const calNext = () => { if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1); } else setCalMonth(m => m + 1); };
+  const calGoToday = () => { setCalYear(calNow.getFullYear()); setCalMonth(calNow.getMonth()); };
+
+  const calAddEvent = async () => {
+    if (!calNewEvent.title.trim() || !calSelectedDay) return;
+    const date = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(calSelectedDay).padStart(2, '0')}`;
+    const type = CAL_EVENT_TYPES.find(t => t.id === calNewEvent.type);
+    try {
+      const created = await postJSON('/api/calendar/events', {
+        title: calNewEvent.title, module_id: calNewEvent.type, date,
+        color: type?.color || '#3b82f6', recurrence: calNewEvent.recurrence,
+      });
+      setCalEvents(e => [...e, created]);
+      setCalNewEvent({ title: '', type: 'social', recurrence: null });
+      setCalShowAdd(false);
+    } catch (e) { console.error(e); }
+  };
+
+  const calRemoveEvent = async (id) => {
+    try { await deleteJSON(`/api/calendar/events/${id}`); setCalEvents(e => e.filter(ev => ev.id !== id)); } catch (e) { console.error(e); }
+  };
+
+  const calFillAI = () => {
+    setCalGenerating(true); setCalOutput('');
+    connectSSE('/api/calendar/generate', { type: 'fill', prompt: `Generate a marketing content calendar for ${CAL_MONTHS[calMonth]} ${calYear}. Include social media posts, blog content, email campaigns, and deadlines. Format each event as: [Day] - [Type: campaign|content|social|email|deadline] - [Title]` }, {
+      onChunk: (text) => setCalOutput(p => p + text),
+      onResult: (data) => { setCalOutput(data.content); setCalGenerating(false); },
+      onError: () => setCalGenerating(false),
+    });
+  };
+
   // ─── NAV CONFIG ──────────────────────────────────────────────────────────
   const NAV_ITEMS = [
     { id: 'create', label: 'Create', icon: 'M12 4.5v15m7.5-7.5h-15' },
     { id: 'repurpose', label: 'Repurpose', icon: 'M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 00-3.7-3.7 48.678 48.678 0 00-7.324 0 4.006 4.006 0 00-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3l-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 003.7 3.7 48.656 48.656 0 007.324 0 4.006 4.006 0 003.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3l-3 3' },
     { id: 'publish', label: 'Publish', icon: 'M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5' },
     { id: 'queue', label: `Queue${queue.length ? ` (${queue.length})` : ''}`, icon: 'M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5' },
+    { id: 'calendar', label: 'Calendar', icon: 'M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z' },
     { id: 'analytics', label: 'Analytics', icon: 'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z' },
     { id: 'accounts', label: `Accounts${socialConnected.length ? ` (${socialConnected.length})` : ''}`, icon: 'M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244' },
     { id: 'history', label: `Drafts${posts.length ? ` (${posts.length})` : ''}`, icon: 'M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z' },
@@ -1008,6 +1112,345 @@ export default function SocialPage() {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══ CALENDAR TAB ═══ */}
+      {tab === 'calendar' && (
+        <div className="animate-fade-in">
+          {/* Calendar header */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+            <div className="flex items-center gap-3">
+              <h2 className={`text-xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{CAL_MONTHS[calMonth]} {calYear}</h2>
+              <div className="flex gap-1">
+                <button onClick={calPrev} className={`p-1.5 rounded-lg transition-all duration-200 ${dark ? 'hover:bg-white/[0.06] text-gray-500 hover:text-white' : 'hover:bg-gray-100 text-gray-400 hover:text-gray-700'}`}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+                </button>
+                <button onClick={calNext} className={`p-1.5 rounded-lg transition-all duration-200 ${dark ? 'hover:bg-white/[0.06] text-gray-500 hover:text-white' : 'hover:bg-gray-100 text-gray-400 hover:text-gray-700'}`}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={calGoToday} className="chip text-[10px]">Today</button>
+              <button onClick={calFillAI} disabled={calGenerating} className="chip text-[10px] transition-all duration-200" style={{ background: `${MODULE_COLOR}12`, borderColor: `${MODULE_COLOR}30`, color: MODULE_COLOR }}>
+                {calGenerating ? 'Generating...' : 'AI Fill Calendar'}
+              </button>
+            </div>
+          </div>
+
+          {/* Event type legend */}
+          <div className="flex flex-wrap gap-3 mb-4">
+            {CAL_EVENT_TYPES.map(t => (
+              <div key={t.id} className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full" style={{ background: t.color }} />
+                <span className={`text-[10px] ${dark ? 'text-gray-500' : 'text-gray-400'}`}>{t.name}</span>
+              </div>
+            ))}
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span className={`text-[10px] ${dark ? 'text-gray-500' : 'text-gray-400'}`}>Scheduled Post</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
+            {/* Calendar grid */}
+            <div className="lg:col-span-3">
+              <div className="overflow-x-auto">
+                <div className={`${panelCls} rounded-2xl overflow-hidden min-w-[480px]`}>
+                  <div className="grid grid-cols-7">
+                    {CAL_DAYS.map(d => (
+                      <div key={d} className={`p-2 text-center text-[10px] font-bold uppercase ${dark ? 'text-gray-500 border-b border-white/[0.04]' : 'text-gray-400 border-b border-gray-100'}`}>{d}</div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-7">
+                    {calDays.map((d, i) => {
+                      const evts = d.current ? calDayEvents(d.day) : [];
+                      const schPosts = d.current ? calDayPosts(d.day) : [];
+                      const isToday = calIsCurrentMonth && d.current && d.day === calToday;
+                      const isSelected = d.current && d.day === calSelectedDay;
+                      return (
+                        <button key={i} onClick={() => d.current && setCalSelectedDay(d.day === calSelectedDay ? null : d.day)}
+                          className={`min-h-[70px] sm:min-h-[85px] p-1.5 sm:p-2 text-left transition-all duration-200 ${dark ? 'border-b border-r border-white/[0.03]' : 'border-b border-r border-gray-100'} ${d.current ? (dark ? 'hover:bg-white/[0.02]' : 'hover:bg-blue-50/40') : 'opacity-25'} ${isSelected ? (dark ? 'bg-blue-500/8' : 'bg-blue-50') : ''}`}>
+                          <span className={`text-xs font-semibold inline-flex items-center justify-center w-6 h-6 rounded-full ${isToday ? 'text-white' : d.current ? (dark ? 'text-gray-400' : 'text-gray-500') : (dark ? 'text-gray-700' : 'text-gray-300')}`}
+                            style={isToday ? { background: MODULE_COLOR } : {}}>
+                            {d.day}
+                          </span>
+                          <div className="mt-0.5 space-y-0.5">
+                            {evts.slice(0, 2).map(e => {
+                              const type = CAL_EVENT_TYPES.find(t => t.id === e.module_id || t.id === e.type);
+                              return (
+                                <div key={e.id} className="flex items-center gap-1">
+                                  <div className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: type?.color || e.color || MODULE_COLOR }} />
+                                  <span className={`text-[9px] truncate ${dark ? 'text-gray-500' : 'text-gray-400'}`}>{e.title}</span>
+                                  {e.recurrence && <svg className="w-2 h-2 flex-shrink-0 text-blue-400 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 2l4 4-4 4" /><path d="M3 11v-1a4 4 0 014-4h14" /><path d="M7 22l-4-4 4-4" /><path d="M21 13v1a4 4 0 01-4 4H3" /></svg>}
+                                </div>
+                              );
+                            })}
+                            {schPosts.slice(0, 2).map(p => {
+                              const plat = SOCIAL_PLATFORMS.find(sp => sp.id === p.platform);
+                              return (
+                                <div key={p.id} className="flex items-center gap-1">
+                                  <div className="w-1 h-1 rounded-full flex-shrink-0 bg-emerald-400" />
+                                  <span className={`text-[9px] truncate ${dark ? 'text-gray-500' : 'text-gray-400'}`}>{plat?.name?.split(' ')[0] || p.platform}</span>
+                                </div>
+                              );
+                            })}
+                            {(evts.length + schPosts.length) > 2 && <span className={`text-[9px] ${dark ? 'text-gray-600' : 'text-gray-400'}`}>+{evts.length + schPosts.length - 2}</span>}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-4">
+              {/* Selected day panel */}
+              {calSelectedDay && (
+                <div className={`${panelCls} rounded-2xl overflow-hidden animate-fade-in`}>
+                  <div className={`flex items-center justify-between px-4 py-3 border-b ${dark ? 'border-white/[0.06]' : 'border-gray-100'}`}>
+                    <div>
+                      <p className="hud-label text-[10px]" style={{ color: MODULE_COLOR }}>{CAL_MONTHS[calMonth].toUpperCase()}</p>
+                      <p className={`text-xl font-bold leading-none mt-0.5 ${dark ? 'text-white' : 'text-gray-900'}`}>{calSelectedDay}</p>
+                    </div>
+                    <button onClick={() => setCalShowAdd(!calShowAdd)}
+                      className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition-all duration-200"
+                      style={{ background: `${MODULE_COLOR}12`, color: MODULE_COLOR, border: `1px solid ${MODULE_COLOR}25` }}>
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                      Add
+                    </button>
+                  </div>
+
+                  {/* Add form */}
+                  {calShowAdd && (
+                    <div className={`px-4 py-3 space-y-3 border-b ${dark ? 'border-white/[0.06]' : 'border-gray-100'}`}>
+                      <input value={calNewEvent.title} onChange={e => setCalNewEvent({ ...calNewEvent, title: e.target.value })}
+                        onKeyDown={e => e.key === 'Enter' && calAddEvent()} placeholder="Event title..."
+                        className="w-full input-field rounded-xl px-3 py-2 text-sm" />
+                      <div>
+                        <p className={`text-[10px] font-semibold mb-1.5 ${dark ? 'text-gray-500' : 'text-gray-400'}`}>TYPE</p>
+                        <div className="flex flex-wrap gap-1">
+                          {CAL_EVENT_TYPES.map(t => (
+                            <button key={t.id} onClick={() => setCalNewEvent({ ...calNewEvent, type: t.id })}
+                              className="text-[10px] px-2 py-1 rounded-full font-semibold transition-all duration-200"
+                              style={calNewEvent.type === t.id ? { background: `${t.color}20`, color: t.color, border: `1px solid ${t.color}40` } : { border: `1px solid ${dark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`, color: dark ? '#6b7280' : '#9ca3af' }}>
+                              {t.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <p className={`text-[10px] font-semibold mb-1.5 ${dark ? 'text-gray-500' : 'text-gray-400'}`}>REPEAT</p>
+                        <div className="flex flex-wrap gap-1">
+                          {CAL_RECURRENCE.map(r => (
+                            <button key={r.id || 'once'} onClick={() => setCalNewEvent({ ...calNewEvent, recurrence: r.id })}
+                              className="text-[10px] px-2 py-1 rounded-full font-semibold transition-all duration-200"
+                              style={calNewEvent.recurrence === r.id ? { background: `${MODULE_COLOR}15`, color: MODULE_COLOR, border: `1px solid ${MODULE_COLOR}30` } : { border: `1px solid ${dark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`, color: dark ? '#6b7280' : '#9ca3af' }}>
+                              {r.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <button onClick={calAddEvent} disabled={!calNewEvent.title.trim()}
+                        className="w-full py-2 rounded-xl text-xs font-bold text-white transition-all duration-200 disabled:opacity-40"
+                        style={{ background: MODULE_COLOR }}>
+                        Save Event
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Events list for selected day */}
+                  <div className="px-4 py-3">
+                    {calDayEvents(calSelectedDay).length === 0 && calDayPosts(calSelectedDay).length === 0 ? (
+                      <p className={`text-xs text-center py-4 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>No events this day</p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {calDayEvents(calSelectedDay).map(e => {
+                          const type = CAL_EVENT_TYPES.find(t => t.id === e.module_id || t.id === e.type);
+                          const color = type?.color || e.color || MODULE_COLOR;
+                          return (
+                            <div key={e.id} className={`group flex items-center gap-2.5 px-2.5 py-2 rounded-xl transition-all duration-200 ${dark ? 'hover:bg-white/[0.03]' : 'hover:bg-gray-50'}`}>
+                              <div className="w-1 h-7 rounded-full flex-shrink-0" style={{ background: color }} />
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-xs font-semibold truncate ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{e.title}</p>
+                                <p className="text-[10px]" style={{ color }}>{type?.name || 'Event'}</p>
+                              </div>
+                              <button onClick={() => calRemoveEvent(e.id)}
+                                className={`opacity-0 group-hover:opacity-100 p-1 rounded transition-all ${dark ? 'text-gray-600 hover:text-red-400' : 'text-gray-300 hover:text-red-400'}`}>
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                              </button>
+                            </div>
+                          );
+                        })}
+                        {calDayPosts(calSelectedDay).map(p => {
+                          const plat = SOCIAL_PLATFORMS.find(sp => sp.id === p.platform);
+                          const schedTime = p.scheduled_at ? new Date(p.scheduled_at) : null;
+                          return (
+                            <div key={p.id} className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl transition-all duration-200 ${dark ? 'hover:bg-white/[0.03]' : 'hover:bg-gray-50'}`}>
+                              <div className="w-1 h-7 rounded-full flex-shrink-0 bg-emerald-400" />
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-xs font-semibold truncate ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{p.caption?.slice(0, 50) || 'Scheduled post'}</p>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px]" style={{ color: plat?.color }}>{plat?.name}</span>
+                                  {schedTime && <span className={`text-[10px] ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{schedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Upcoming events */}
+              <div className={`${panelCls} rounded-2xl overflow-hidden`}>
+                <div className={`px-4 py-3 border-b ${dark ? 'border-white/[0.06]' : 'border-gray-100'}`}>
+                  <p className="hud-label text-[10px]">UPCOMING</p>
+                </div>
+                <div className="px-3 py-2">
+                  {(() => {
+                    const upcoming = calEvents
+                      .filter(e => { const d = new Date(e.date); return calIsCurrentMonth ? d.getDate() >= calToday : true; })
+                      .sort((a, b) => new Date(a.date) - new Date(b.date))
+                      .slice(0, 6);
+                    if (!upcoming.length) return <p className={`text-xs text-center py-4 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>No upcoming events</p>;
+                    return (
+                      <div className="space-y-0.5">
+                        {upcoming.map(e => {
+                          const type = CAL_EVENT_TYPES.find(t => t.id === e.module_id || t.id === e.type);
+                          const color = type?.color || e.color || MODULE_COLOR;
+                          const d = new Date(e.date);
+                          return (
+                            <div key={e.id} className={`flex items-center gap-2.5 px-2 py-2 rounded-xl transition-all duration-200 ${dark ? 'hover:bg-white/[0.02]' : 'hover:bg-gray-50'}`}>
+                              <div className="w-8 text-center flex-shrink-0">
+                                <p className={`text-[9px] font-semibold uppercase ${dark ? 'text-gray-500' : 'text-gray-400'}`}>{CAL_DAYS[d.getDay()]}</p>
+                                <p className="text-sm font-bold" style={{ color }}>{d.getDate()}</p>
+                              </div>
+                              <div className={`w-px h-6 rounded-full ${dark ? 'bg-white/[0.06]' : 'bg-gray-200'}`} />
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-xs font-semibold truncate ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{e.title}</p>
+                                <p className="text-[10px]" style={{ color }}>{type?.name}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* AI Content Planner */}
+              <div className={`${panelCls} rounded-2xl overflow-hidden`}>
+                <div className={`px-4 py-3 border-b ${dark ? 'border-white/[0.06]' : 'border-gray-100'}`}>
+                  <p className="hud-label text-[10px]" style={{ color: MODULE_COLOR }}>AI CONTENT PLANNER</p>
+                </div>
+                <div className="px-4 py-3 space-y-2">
+                  <input className="w-full input-field rounded-xl px-3 py-2 text-xs" placeholder="Month (e.g. March 2026)" value={planMonth} onChange={e => setPlanMonth(e.target.value)} />
+                  <input className="w-full input-field rounded-xl px-3 py-2 text-xs" placeholder="Business type" value={planBusinessType} onChange={e => setPlanBusinessType(e.target.value)} />
+                  <input className="w-full input-field rounded-xl px-3 py-2 text-xs" placeholder="Main goal" value={planGoal} onChange={e => setPlanGoal(e.target.value)} />
+                  <button disabled={planLoading} className="w-full py-2 rounded-xl text-xs font-bold transition-all duration-200 disabled:opacity-40"
+                    style={{ background: `${MODULE_COLOR}15`, color: MODULE_COLOR, border: `1px solid ${MODULE_COLOR}25` }}
+                    onClick={async () => {
+                      setPlanLoading(true); setContentPlan(null);
+                      try { const r = await postJSON('/api/calendar/suggest-content-plan', { month: planMonth, business_type: planBusinessType, goal: planGoal }); setContentPlan(r); } catch {}
+                      setPlanLoading(false);
+                    }}>
+                    {planLoading ? 'Generating...' : 'Generate Plan'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* AI Content Plan results */}
+          {contentPlan && (
+            <div className={`${panelCls} rounded-2xl p-5 mt-5 animate-fade-up`}>
+              {contentPlan.theme && (
+                <div className={`flex items-center gap-2 px-4 py-3 rounded-xl mb-4 ${dark ? 'bg-blue-500/8' : 'bg-blue-50'}`}>
+                  <svg className="w-4 h-4 flex-shrink-0" style={{ color: MODULE_COLOR }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
+                  <div>
+                    <p className="text-[10px] font-bold" style={{ color: MODULE_COLOR }}>MONTHLY THEME</p>
+                    <p className={`text-sm font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>{contentPlan.theme}</p>
+                  </div>
+                </div>
+              )}
+              {contentPlan.plan?.map((week, wi) => {
+                const PLATFORM_COLORS = { Instagram: '#ee2a7b', Twitter: '#000000', LinkedIn: '#0a66c2', Facebook: '#1877f2', TikTok: '#010101' };
+                const TYPE_COLORS = { Educational: '#8b5cf6', Promotional: '#f97316', Entertainment: '#10b981', UGC: '#f59e0b', 'Behind-the-Scenes': '#6366f1' };
+                return (
+                  <div key={wi} className="mb-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="hud-label text-[10px]" style={{ color: MODULE_COLOR }}>WEEK {week.week}</span>
+                      <div className="flex-1 hud-line" />
+                    </div>
+                    <div className="space-y-2">
+                      {week.posts?.map((post, pi) => {
+                        const pColor = PLATFORM_COLORS[post.platform] || '#64748b';
+                        const tColor = TYPE_COLORS[post.content_type] || '#64748b';
+                        return (
+                          <div key={pi} className={`group flex items-start gap-3 p-3 rounded-xl border transition-all duration-200 ${dark ? 'border-white/[0.06] hover:border-white/[0.1]' : 'border-gray-200 hover:border-gray-300'}`}>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: pColor }}>{post.platform}</span>
+                                <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full" style={{ background: `${tColor}15`, color: tColor }}>{post.content_type}</span>
+                                <span className={`text-[10px] ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{post.day}</span>
+                              </div>
+                              <p className={`text-sm font-semibold ${dark ? 'text-gray-200' : 'text-gray-700'}`}>{post.topic}</p>
+                              {post.hook && <p className={`text-xs mt-0.5 italic ${dark ? 'text-gray-500' : 'text-gray-400'}`}>"{post.hook}"</p>}
+                            </div>
+                            <button className="flex-shrink-0 opacity-0 group-hover:opacity-100 text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all duration-200"
+                              style={{ background: `${MODULE_COLOR}12`, color: MODULE_COLOR, border: `1px solid ${MODULE_COLOR}25` }}
+                              onClick={async () => {
+                                const monthParts = planMonth.match(/(\w+)\s+(\d{4})/);
+                                let date = new Date().toISOString().slice(0, 10);
+                                if (monthParts) {
+                                  const mIdx = CAL_MONTHS.indexOf(monthParts[1]);
+                                  const yr = parseInt(monthParts[2]);
+                                  if (mIdx >= 0) {
+                                    const dayNum = Math.min((week.week - 1) * 7 + pi + 1, 28);
+                                    date = `${yr}-${String(mIdx + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+                                  }
+                                }
+                                try {
+                                  const type = CAL_EVENT_TYPES.find(t => t.name.toLowerCase() === (post.content_type || '').toLowerCase()) || CAL_EVENT_TYPES[1];
+                                  const created = await postJSON('/api/calendar/events', { title: post.topic, module_id: type.id, date, color: type.color, description: post.hook || '' });
+                                  setCalEvents(ev => [...ev, created]);
+                                } catch {}
+                              }}>+ Add</button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+              {contentPlan.notes && (
+                <div className={`px-4 py-3 rounded-xl text-xs ${dark ? 'bg-blue-500/8 text-gray-400' : 'bg-blue-50 text-gray-500'}`}>
+                  <p className="font-bold text-[10px] mb-1" style={{ color: MODULE_COLOR }}>STRATEGIC NOTES</p>
+                  <p className="leading-relaxed">{contentPlan.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* AI Fill output */}
+          {calOutput && (
+            <div className={`${panelCls} rounded-2xl p-5 mt-5 animate-fade-up`}>
+              <div className="flex items-center gap-2 mb-3">
+                <div className={`w-2 h-2 rounded-full ${calGenerating ? 'animate-pulse' : 'bg-emerald-400'}`} style={calGenerating ? { background: MODULE_COLOR } : {}} />
+                <span className="hud-label text-[11px]" style={{ color: calGenerating ? MODULE_COLOR : '#4ade80' }}>{calGenerating ? 'GENERATING...' : 'AI SUGGESTIONS'}</span>
+              </div>
+              <div className={`${dark ? 'bg-black/40' : 'bg-gray-50'} rounded-xl p-4 text-sm whitespace-pre-wrap leading-relaxed max-h-[40vh] overflow-y-auto ${dark ? 'text-gray-300' : 'text-gray-700'}`}>
+                {calOutput}{calGenerating && <span className="inline-block w-[2px] h-4 ml-0.5 animate-pulse" style={{ background: MODULE_COLOR }} />}
+              </div>
             </div>
           )}
         </div>

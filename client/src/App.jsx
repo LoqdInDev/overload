@@ -41,7 +41,6 @@ const InfluencersPage = lazy(() => import('./modules/influencers/InfluencersPage
 const ReviewsPage = lazy(() => import('./modules/reviews/ReviewsPage'));
 const CompetitorsPage = lazy(() => import('./modules/competitors/CompetitorsPage'));
 const AffiliatesPage = lazy(() => import('./modules/affiliates/AffiliatesPage'));
-const CalendarPage = lazy(() => import('./modules/calendar/CalendarPage'));
 const ProductFeedsPage = lazy(() => import('./modules/product-feeds/ProductFeedsPage'));
 const ReportsPage = lazy(() => import('./modules/reports/ReportsPage'));
 const AbTestingPage = lazy(() => import('./modules/ab-testing/AbTestingPage'));
@@ -447,7 +446,7 @@ export default function App() {
                     <Route path="/competitors/*" element={<M component={CompetitorsPage} name="Competitors" />} />
                     <Route path="/affiliates/*" element={<M component={AffiliatesPage} name="Affiliates" />} />
                     <Route path="/brand-strategy/*" element={<Navigate to="/brand-hub" replace />} />
-                    <Route path="/calendar/*" element={<M component={CalendarPage} name="Calendar" />} />
+                    {/* Calendar merged into Social Media module */}
                     <Route path="/chatbot/*" element={<Navigate to="/customer-ai" replace />} />
                     <Route path="/product-feeds/*" element={<M component={ProductFeedsPage} name="Product Feeds" />} />
                     <Route path="/reports/*" element={<M component={ReportsPage} name="Reports" />} />
